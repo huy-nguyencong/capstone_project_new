@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "person-search-backend"
+version = "0.1.0"
+description = "Flask API for the camera-based person search capstone project"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "Flask>=3.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-cov>=6",
+    "ruff>=0.11",
+]
+
+[project.scripts]
+person-search-api = "person_search.__main__:main"
+person-search-worker = "person_search.workers.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers --strict-config"
+testpaths = ["tests"]
+markers = [
+    "unit: fast tests without external services",
+    "contract: API request and response contract tests",
+    "integration: tests requiring external storage services",
+    "security: authentication and authorization security tests",
+    "e2e: end-to-end workflow tests",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["person_search"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
