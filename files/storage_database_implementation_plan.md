@@ -112,8 +112,8 @@ Trạng thái hợp lệ:
 | Task | Nội dung | Phụ thuộc | Trạng thái | Commit |
 | --- | --- | --- | --- | --- |
 | STO-00 | Khởi tạo skeleton và bộ lệnh kiểm thử | Không | DONE | `cc440d4` |
-| STO-01 | Chốt kiến trúc lưu trữ và hợp đồng dữ liệu | STO-00 | READY_FOR_REVIEW | — |
-| STO-02 | Dựng hạ tầng Docker Compose | STO-01 | TODO | — |
+| STO-01 | Chốt kiến trúc lưu trữ và hợp đồng dữ liệu | STO-00 | DONE | `222c0ad` |
+| STO-02 | Dựng hạ tầng Docker Compose | STO-01 | READY_FOR_REVIEW | — |
 | STO-03 | Cấu hình ứng dụng, kết nối và health check | STO-02 | TODO | — |
 | STO-04 | Schema PostgreSQL cho Area, User, Camera | STO-03 | TODO | — |
 | STO-05 | Schema PostgreSQL cho AI config, job và PersonTrack | STO-04 | TODO | — |
@@ -715,12 +715,23 @@ Mỗi lần làm task, thêm một mục theo mẫu:
 
 ### 2026-09-25 — STO-01
 
-- Trạng thái: `READY_FOR_REVIEW`.
+- Trạng thái: `DONE`.
 - Thay đổi chính: chấp thuận ADR-0001 cho vai trò ba kho, UUIDv4, UTC/source timeline, bbox pixel, state machine, soft-delete, naming MinIO/Milvus, RaSa vector profile và write ordering; bổ sung contract executable giữa AI worker và storage service.
 - File quan trọng: `docs/storage/adr/0001-storage-architecture-and-track-contract.md`, `docs/storage/track-ingestion-contract.md`, `backend/src/person_search/storage/contracts.py`, `backend/tests/unit/test_storage_contracts.py`.
 - Test đã chạy: PowerShell `scripts/check.ps1`; pytest với branch coverage; Git Bash syntax check; `git diff --check`.
 - Kết quả: 64 test đạt; coverage tổng 89%, contract module 95%; Ruff sạch; compile thành công.
 - Điểm cần người thực hiện review: UUIDv4, retention không tự xóa, một MinIO endpoint với bucket/credential tách biệt, RaSa CUHK-PEDES 256 chiều + IP và write flow `PENDING → READY/FAILED`.
+- Quyết định/chỉnh sửa sau review: người thực hiện đã chấp thuận và chuyển sang STO-02.
+- Commit SHA: `222c0ad`.
+
+### 2026-09-25 — STO-02
+
+- Trạng thái: `READY_FOR_REVIEW`.
+- Thay đổi chính: dựng stack local gồm PostgreSQL 17.11, Milvus 2.6.24, etcd 3.5.25 và MinIO; pin toàn bộ image, dùng named volume và network bridge riêng; chỉ publish port trên loopback; bootstrap bucket private `person-search-frames` cùng app user/policy giới hạn đúng bucket; bổ sung script validate/up/down/status/logs/smoke cho PowerShell và POSIX shell.
+- File quan trọng: `infra/compose.yaml`, `infra/.env.example`, `infra/minio/app-policy.json`, `infra/minio/bootstrap.sh`, `infra/minio/smoke.sh`, `infra/README.md`, `scripts/storage.ps1`, `scripts/storage.sh`.
+- Test đã chạy: Compose `config --quiet`; dựng thật bằng `scripts/storage.ps1 up`; `ps` và smoke riêng cho PostgreSQL/Milvus/MinIO; anonymous HTTP request; một vòng `down`/`up`; so sánh identity bốn named volume; parse PowerShell; `bash -n` cho ba shell script; JSON parse policy; `scripts/check.ps1`; `git diff --check`.
+- Kết quả: PostgreSQL, etcd, MinIO và Milvus đều healthy; bootstrap exit code 0; PostgreSQL nhận kết nối, Milvus health trả `OK`, app credential đọc được bucket ứng dụng nhưng không truy cập được bucket Milvus, anonymous request trả HTTP 403; port host chỉ bind `127.0.0.1`; bốn volume giữ nguyên qua restart; 64 unit test đạt, Ruff và compile sạch.
+- Điểm cần người thực hiện review: các port mặc định, mức RAM tối thiểu 8 GB/khuyến nghị 16 GB, policy cho phép Get/Put/Delete trong bucket ứng dụng, và việc giữ bộ MinIO/etcd đúng manifest standalone chính thức của Milvus 2.6.24 cho môi trường local.
 - Quyết định/chỉnh sửa sau review: chưa có.
 - Commit SHA: chưa commit; chờ người thực hiện review.
 
