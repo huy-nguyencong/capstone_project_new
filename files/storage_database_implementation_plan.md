@@ -113,8 +113,8 @@ Trạng thái hợp lệ:
 | --- | --- | --- | --- | --- |
 | STO-00 | Khởi tạo skeleton và bộ lệnh kiểm thử | Không | DONE | `cc440d4` |
 | STO-01 | Chốt kiến trúc lưu trữ và hợp đồng dữ liệu | STO-00 | DONE | `222c0ad` |
-| STO-02 | Dựng hạ tầng Docker Compose | STO-01 | READY_FOR_REVIEW | — |
-| STO-03 | Cấu hình ứng dụng, kết nối và health check | STO-02 | TODO | — |
+| STO-02 | Dựng hạ tầng Docker Compose | STO-01 | DONE | `aeb8203` |
+| STO-03 | Cấu hình ứng dụng, kết nối và health check | STO-02 | READY_FOR_REVIEW | — |
 | STO-04 | Schema PostgreSQL cho Area, User, Camera | STO-03 | TODO | — |
 | STO-05 | Schema PostgreSQL cho AI config, job và PersonTrack | STO-04 | TODO | — |
 | STO-06 | Schema PostgreSQL cho Case, CaseResult và AuditLog | STO-05 | TODO | — |
@@ -726,12 +726,23 @@ Mỗi lần làm task, thêm một mục theo mẫu:
 
 ### 2026-09-25 — STO-02
 
-- Trạng thái: `READY_FOR_REVIEW`.
+- Trạng thái: `DONE`.
 - Thay đổi chính: dựng stack local gồm PostgreSQL 17.11, Milvus 2.6.24, etcd 3.5.25 và MinIO; pin toàn bộ image, dùng named volume và network bridge riêng; chỉ publish port trên loopback; bootstrap bucket private `person-search-frames` cùng app user/policy giới hạn đúng bucket; bổ sung script validate/up/down/status/logs/smoke cho PowerShell và POSIX shell.
 - File quan trọng: `infra/compose.yaml`, `infra/.env.example`, `infra/minio/app-policy.json`, `infra/minio/bootstrap.sh`, `infra/minio/smoke.sh`, `infra/README.md`, `scripts/storage.ps1`, `scripts/storage.sh`.
 - Test đã chạy: Compose `config --quiet`; dựng thật bằng `scripts/storage.ps1 up`; `ps` và smoke riêng cho PostgreSQL/Milvus/MinIO; anonymous HTTP request; một vòng `down`/`up`; so sánh identity bốn named volume; parse PowerShell; `bash -n` cho ba shell script; JSON parse policy; `scripts/check.ps1`; `git diff --check`.
 - Kết quả: PostgreSQL, etcd, MinIO và Milvus đều healthy; bootstrap exit code 0; PostgreSQL nhận kết nối, Milvus health trả `OK`, app credential đọc được bucket ứng dụng nhưng không truy cập được bucket Milvus, anonymous request trả HTTP 403; port host chỉ bind `127.0.0.1`; bốn volume giữ nguyên qua restart; 64 unit test đạt, Ruff và compile sạch.
 - Điểm cần người thực hiện review: các port mặc định, mức RAM tối thiểu 8 GB/khuyến nghị 16 GB, policy cho phép Get/Put/Delete trong bucket ứng dụng, và việc giữ bộ MinIO/etcd đúng manifest standalone chính thức của Milvus 2.6.24 cho môi trường local.
+- Quyết định/chỉnh sửa sau review: người thực hiện đã chấp thuận và yêu cầu chuyển sang STO-03.
+- Commit SHA: `aeb8203`.
+
+### 2026-09-25 — STO-03
+
+- Trạng thái: `READY_FOR_REVIEW`.
+- Thay đổi chính: bổ sung cấu hình typed và fail-fast cho PostgreSQL/Milvus/MinIO; SQLAlchemy engine/session factory với pool và timeout giới hạn; client wrapper Milvus/MinIO lazy, injectable và có lifecycle close; health aggregator cô lập lỗi từng kho, redaction secret, endpoint `/health/ready` và `/health/storage`; cấu hình development qua `.env` và integration test kết nối thật.
+- File quan trọng: `backend/src/person_search/config.py`, `backend/src/person_search/storage/runtime.py`, `backend/src/person_search/storage/health.py`, ba module `storage/*/client.py`, `backend/src/person_search/api/health.py`, `backend/tests/unit/test_storage_configuration.py`, `backend/tests/unit/test_storage_clients.py`, `backend/tests/integration/test_storage_connections.py`.
+- Test đã chạy: `scripts/check.ps1`; pytest unit; integration test với stack thật; failure injection lần lượt dừng/khởi động lại PostgreSQL, Milvus và MinIO; pytest branch coverage; Ruff; compileall; `git diff --check`.
+- Kết quả: 78 unit test đạt; 2 integration test healthy đạt; ba failure-injection test đều trả 503 và chỉ đánh dấu đúng component bị dừng; stack được phục hồi healthy; tổng 80 test đạt, 1 test failure-injection được skip trong lượt coverage chuẩn; branch coverage 92%; Ruff và compile sạch; không có secret trong response/log test.
+- Điểm cần người thực hiện review: tên biến môi trường, pool mặc định `5 + 5`, timeout kết nối 3 giây, việc client Milvus/MinIO khởi tạo lazy, schema JSON của hai health endpoint và lifecycle đóng bằng runtime/`atexit`.
 - Quyết định/chỉnh sửa sau review: chưa có.
 - Commit SHA: chưa commit; chờ người thực hiện review.
 

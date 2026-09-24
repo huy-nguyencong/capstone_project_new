@@ -1,4 +1,5 @@
-"""MinIO object storage adapter namespace.
+"""MinIO object storage adapter namespace."""
 
-Private full-frame storage starts in STO-09.
-"""
+from person_search.storage.minio.client import MinioStorage
+
+__all__ = ["MinioStorage"]

@@ -1,4 +1,5 @@
-"""Milvus vector index adapter namespace.
+"""Milvus vector index adapter namespace."""
 
-Collection management and vector search start in STO-10.
-"""
+from person_search.storage.milvus.client import MilvusStorage
+
+__all__ = ["MilvusStorage"]

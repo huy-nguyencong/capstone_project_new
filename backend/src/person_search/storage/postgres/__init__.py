@@ -1,4 +1,5 @@
-"""PostgreSQL persistence adapter namespace.
+"""PostgreSQL persistence adapter namespace."""
 
-SQLAlchemy models, migrations, and repositories start in STO-04.
-"""
+from person_search.storage.postgres.client import PostgresStorage
+
+__all__ = ["PostgresStorage"]

@@ -5,6 +5,7 @@ import pytest
 from person_search import create_app
 from person_search.config import config_for_environment, parse_boolean_environment
 from person_search.dependencies import DependencyContainer, DependencyNotConfiguredError
+from person_search.storage.health import StorageHealthService
 
 pytestmark = pytest.mark.unit
 
@@ -23,6 +24,33 @@ def test_liveness_endpoint(client) -> None:  # type: ignore[no-untyped-def]
 
     assert response.status_code == 200
     assert response.get_json() == {"service": "person-search-api", "status": "ok"}
+
+
+def test_readiness_is_ok_when_storage_is_explicitly_disabled(client) -> None:  # type: ignore[no-untyped-def]
+    response = client.get("/health/ready")
+
+    assert response.status_code == 200
+    assert response.get_json() == {"status": "ok", "components": {}}
+
+
+def test_readiness_reports_exact_failing_component() -> None:
+    class FailingProbe:
+        name = "milvus"
+
+        def check_health(self) -> None:
+            raise RuntimeError("offline")
+
+    container = DependencyContainer()
+    container.register("storage.health", StorageHealthService((FailingProbe(),)))
+    app = create_app({"TESTING": True}, dependencies=container)
+
+    response = app.test_client().get("/health/storage")
+
+    assert response.status_code == 503
+    assert response.get_json() == {
+        "status": "error",
+        "components": {"milvus": {"status": "error", "error": "unavailable"}},
+    }
 
 
 def test_versioned_ping_endpoint(client) -> None:  # type: ignore[no-untyped-def]

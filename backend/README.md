@@ -2,8 +2,8 @@
 
 Flask API và background worker cho ứng dụng tìm kiếm người qua camera.
 
-Repository hiện đang ở giai đoạn skeleton `BE-00`. Chưa có endpoint nghiệp vụ, kết nối
-database hoặc mã suy luận AI.
+Repository hiện có skeleton API và lớp kết nối ba kho dữ liệu. Chưa có endpoint nghiệp vụ,
+schema database hoặc mã suy luận AI.
 
 ## Yêu cầu
 
@@ -23,6 +23,10 @@ python -m pip install -e ".[dev]"
 
 Không commit thư mục `.venv` hoặc file `.env`.
 
+Sao chép `backend/.env.example` thành `backend/.env` và giữ credential đồng bộ với `infra/.env`.
+Entrypoint development tự đọc file này; môi trường production phải cấp biến môi trường từ secret
+manager. Ứng dụng development/production từ chối khởi động nếu thiếu cấu hình storage.
+
 ## Chạy API phát triển
 
 ```powershell
@@ -35,6 +39,8 @@ cho phát triển; cấu hình WSGI phục vụ demo/triển khai sẽ được 
 Các endpoint skeleton:
 
 - `GET /health/live`
+- `GET /health/ready`
+- `GET /health/storage`
 - `GET /api/v1/ping`
 
 ## Chạy kiểm thử
@@ -48,6 +54,16 @@ python -m ruff check .
 
 Các test `integration`, `security` và `e2e` sẽ được bổ sung theo từng task trong
 `../files/backend_implementation_plan.md`.
+
+Khi storage stack đang chạy và đã có `backend/.env`, chạy integration test bằng:
+
+```powershell
+$env:PERSON_SEARCH_RUN_INTEGRATION = "1"
+python -m pytest -m integration
+```
+
+`GET /health/ready` trả HTTP 503 nếu bất kỳ kho bắt buộc nào lỗi và giữ riêng trạng thái
+`postgres`, `milvus`, `minio`; nội dung lỗi trả về không chứa credential.
 
 Từ thư mục gốc repository, có thể chạy toàn bộ kiểm tra nhanh bằng một trong hai lệnh:
 
