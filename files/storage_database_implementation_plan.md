@@ -111,8 +111,8 @@ Trạng thái hợp lệ:
 
 | Task | Nội dung | Phụ thuộc | Trạng thái | Commit |
 | --- | --- | --- | --- | --- |
-| STO-00 | Khởi tạo skeleton và bộ lệnh kiểm thử | Không | READY_FOR_REVIEW | — |
-| STO-01 | Chốt kiến trúc lưu trữ và hợp đồng dữ liệu | STO-00 | TODO | — |
+| STO-00 | Khởi tạo skeleton và bộ lệnh kiểm thử | Không | DONE | `cc440d4` |
+| STO-01 | Chốt kiến trúc lưu trữ và hợp đồng dữ liệu | STO-00 | READY_FOR_REVIEW | — |
 | STO-02 | Dựng hạ tầng Docker Compose | STO-01 | TODO | — |
 | STO-03 | Cấu hình ứng dụng, kết nối và health check | STO-02 | TODO | — |
 | STO-04 | Schema PostgreSQL cho Area, User, Camera | STO-03 | TODO | — |
@@ -704,24 +704,35 @@ Mỗi lần làm task, thêm một mục theo mẫu:
 
 ### 2026-09-25 — STO-00
 
-- Trạng thái: `READY_FOR_REVIEW`.
+- Trạng thái: `DONE`.
 - Thay đổi chính: bổ sung namespace domain/services/storage cho PostgreSQL, Milvus và MinIO; tạo ranh giới migrations, infra, scripts và tài liệu storage; thêm bộ lệnh kiểm tra đa nền tảng và smoke test không cần dịch vụ ngoài.
 - File quan trọng: `backend/src/person_search/storage/`, `backend/tests/unit/test_storage_skeleton.py`, `scripts/check.ps1`, `scripts/check.sh`, `docs/storage/README.md`, `infra/README.md`.
 - Test đã chạy: PowerShell `scripts/check.ps1`; Git Bash `scripts/check.sh`; pytest với coverage; `git diff --check`.
 - Kết quả: 23 test đạt; coverage 79%; Ruff sạch; toàn bộ source compile thành công; package storage import được khi PostgreSQL/Milvus/MinIO không chạy.
 - Điểm cần người thực hiện review: tên các namespace, vị trí migrations, hai script kiểm tra và việc chưa thêm dependency storage trong STO-00.
+- Quyết định/chỉnh sửa sau review: người thực hiện đã chuyển sang STO-01 sau khi commit.
+- Commit SHA: `cc440d4`.
+
+### 2026-09-25 — STO-01
+
+- Trạng thái: `READY_FOR_REVIEW`.
+- Thay đổi chính: chấp thuận ADR-0001 cho vai trò ba kho, UUIDv4, UTC/source timeline, bbox pixel, state machine, soft-delete, naming MinIO/Milvus, RaSa vector profile và write ordering; bổ sung contract executable giữa AI worker và storage service.
+- File quan trọng: `docs/storage/adr/0001-storage-architecture-and-track-contract.md`, `docs/storage/track-ingestion-contract.md`, `backend/src/person_search/storage/contracts.py`, `backend/tests/unit/test_storage_contracts.py`.
+- Test đã chạy: PowerShell `scripts/check.ps1`; pytest với branch coverage; Git Bash syntax check; `git diff --check`.
+- Kết quả: 64 test đạt; coverage tổng 89%, contract module 95%; Ruff sạch; compile thành công.
+- Điểm cần người thực hiện review: UUIDv4, retention không tự xóa, một MinIO endpoint với bucket/credential tách biệt, RaSa CUHK-PEDES 256 chiều + IP và write flow `PENDING → READY/FAILED`.
 - Quyết định/chỉnh sửa sau review: chưa có.
 - Commit SHA: chưa commit; chờ người thực hiện review.
 
-## 11. Các câu hỏi sẽ khóa ở STO-01
+## 11. Các quyết định đã khóa ở STO-01
 
-- PostgreSQL có được xác nhận là database nghiệp vụ cuối cùng không?
-- Dùng một MinIO endpoint với bucket/credential tách biệt cho ứng dụng và Milvus, hay chạy hai instance?
-- UUID version nào và được tạo ở application hay database?
-- Dimension/checkpoint RaSa chính xác và quy tắc normalize vector là gì?
-- Milvus collection theo từng encoder version hay collection mới + alias khi đổi version?
-- Bbox dùng pixel nguyên hay tọa độ chuẩn hóa; timestamp video dùng milliseconds hay microseconds?
-- Chính sách giữ/xóa track không được Case tham chiếu sau demo là gì?
-- Mức backup cần thiết cho demo và dữ liệu nào có thể tái tạo từ video nguồn?
+- PostgreSQL là database nghiệp vụ cuối cùng và là nguồn sự thật về quyền/trạng thái.
+- Local/demo dùng một MinIO endpoint; bucket ứng dụng `person-search-frames` và credential được tách khỏi bucket/credential nội bộ Milvus.
+- Application tạo UUIDv4 trước mọi I/O; PostgreSQL dùng `uuid`, Milvus/object key dùng chuỗi canonical.
+- Phiên bản đầu dùng profile `rasa_cuhk_pedes_v1`, vector 256 chiều, L2-normalized và metric IP; checkpoint SHA-256 bắt buộc được kiểm tra lúc worker khởi động.
+- Mỗi encoder version có collection vật lý riêng; application dùng alias `person_track_embeddings_active`.
+- Bbox dùng pixel nguyên trên full frame gốc; source offset dùng milliseconds, absolute time dùng UTC.
+- Trong phạm vi đồ án không có retention job tự xóa track, kể cả track chưa được Case tham chiếu.
+- PostgreSQL và bucket frame bắt buộc backup; Milvus được backup để phục hồi nhanh và không mặc định có thể tái tạo nếu video/checkpoint không còn.
 
-Các câu hỏi này không ngăn STO-00, nhưng phải được chốt trước khi hoàn thành schema và adapter thật.
+Chi tiết và hệ quả của từng quyết định nằm trong ADR-0001. Thay đổi các quyết định trên cần ADR mới hoặc thay thế ADR hiện tại trước khi sửa schema/adapter.

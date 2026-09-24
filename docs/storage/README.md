@@ -18,3 +18,8 @@ Chỉ có package namespace và tooling. Chưa có client, model, migration, con
 bucket hoặc collection thật. Vì vậy import package và tạo Flask app không cần dịch vụ ngoài.
 
 Các quyết định ID, timestamp, bounding box, state machine và naming được khóa ở `STO-01`.
+
+## Tài liệu đã chấp thuận
+
+- [ADR-0001](adr/0001-storage-architecture-and-track-contract.md): kiến trúc ba kho dữ liệu và các quyết định nền tảng.
+- [Track ingestion contract](track-ingestion-contract.md): hợp đồng giữa AI worker và storage service.
