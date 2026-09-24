@@ -47,7 +47,17 @@ python -m ruff check .
 ```
 
 Các test `integration`, `security` và `e2e` sẽ được bổ sung theo từng task trong
-`files/backend_implementation_plan.md`.
+`../files/backend_implementation_plan.md`.
+
+Từ thư mục gốc repository, có thể chạy toàn bộ kiểm tra nhanh bằng một trong hai lệnh:
+
+```powershell
+.\scripts\check.ps1
+```
+
+```bash
+./scripts/check.sh
+```
 
 ## Background worker
 

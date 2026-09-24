@@ -111,7 +111,7 @@ Trạng thái hợp lệ:
 
 | Task | Nội dung | Phụ thuộc | Trạng thái | Commit |
 | --- | --- | --- | --- | --- |
-| STO-00 | Khởi tạo skeleton và bộ lệnh kiểm thử | Không | TODO | — |
+| STO-00 | Khởi tạo skeleton và bộ lệnh kiểm thử | Không | READY_FOR_REVIEW | — |
 | STO-01 | Chốt kiến trúc lưu trữ và hợp đồng dữ liệu | STO-00 | TODO | — |
 | STO-02 | Dựng hạ tầng Docker Compose | STO-01 | TODO | — |
 | STO-03 | Cấu hình ứng dụng, kết nối và health check | STO-02 | TODO | — |
@@ -701,6 +701,17 @@ Mỗi lần làm task, thêm một mục theo mẫu:
 - Quyết định/chỉnh sửa sau review:
 - Commit SHA (chỉ điền sau khi DONE):
 ```
+
+### 2026-09-25 — STO-00
+
+- Trạng thái: `READY_FOR_REVIEW`.
+- Thay đổi chính: bổ sung namespace domain/services/storage cho PostgreSQL, Milvus và MinIO; tạo ranh giới migrations, infra, scripts và tài liệu storage; thêm bộ lệnh kiểm tra đa nền tảng và smoke test không cần dịch vụ ngoài.
+- File quan trọng: `backend/src/person_search/storage/`, `backend/tests/unit/test_storage_skeleton.py`, `scripts/check.ps1`, `scripts/check.sh`, `docs/storage/README.md`, `infra/README.md`.
+- Test đã chạy: PowerShell `scripts/check.ps1`; Git Bash `scripts/check.sh`; pytest với coverage; `git diff --check`.
+- Kết quả: 23 test đạt; coverage 79%; Ruff sạch; toàn bộ source compile thành công; package storage import được khi PostgreSQL/Milvus/MinIO không chạy.
+- Điểm cần người thực hiện review: tên các namespace, vị trí migrations, hai script kiểm tra và việc chưa thêm dependency storage trong STO-00.
+- Quyết định/chỉnh sửa sau review: chưa có.
+- Commit SHA: chưa commit; chờ người thực hiện review.
 
 ## 11. Các câu hỏi sẽ khóa ở STO-01
 
