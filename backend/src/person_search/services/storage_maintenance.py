@@ -8,13 +8,14 @@ from datetime import UTC, datetime, timedelta
 from itertools import islice
 from typing import Any, Protocol, TypeVar
 
+from person_search.services.audit import AuditEvent, record_audit
 from person_search.services.track_ingestion import (
     TRACK_INGEST_EVENT,
     TrackIngestionService,
 )
 from person_search.storage.contracts import FRAME_OBJECT_PREFIX
 from person_search.storage.minio.frames import FrameInfo, FrameNotFoundError
-from person_search.storage.postgres.models import AuditLog, AuditResult, TrackIndexStatus
+from person_search.storage.postgres.models import AuditResult, TrackIndexStatus
 from person_search.storage.postgres.repositories import Repositories
 from person_search.storage.postgres.unit_of_work import UnitOfWork
 
@@ -293,18 +294,15 @@ class StorageReconciler:
             self._vectors.delete(track_id)
             report.deleted_vectors.append(track_id)
         with self._unit_of_work_factory() as work:
-            _repositories(work).audit_logs.add(
-                AuditLog(
-                    id=uuid.uuid4(),
-                    actor_user_id=actor_user_id,
-                    event_type="storage.orphans_deleted",
-                    target_type="storage",
-                    target_id=None,
-                    result=AuditResult.SUCCESS,
-                    event_metadata={
-                        "deleted_objects": len(report.deleted_objects),
-                        "deleted_vectors": len(report.deleted_vectors),
-                    },
-                )
+            record_audit(
+                _repositories(work),
+                event_type=AuditEvent.STORAGE_ORPHANS_DELETED,
+                result=AuditResult.SUCCESS,
+                target_type="storage",
+                actor_user_id=actor_user_id,
+                metadata={
+                    "deleted_objects": len(report.deleted_objects),
+                    "deleted_vectors": len(report.deleted_vectors),
+                },
             )
             work.commit()

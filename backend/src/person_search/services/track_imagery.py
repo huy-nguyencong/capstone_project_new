@@ -10,6 +10,7 @@ from typing import Protocol
 
 from PIL import Image, ImageDraw, UnidentifiedImageError
 
+from person_search.services.storage_status import StorageComponent, StorageMetrics
 from person_search.storage.minio.frames import FrameNotFoundError, InvalidFrameError
 from person_search.storage.postgres.models import (
     PersonTrack,
@@ -78,6 +79,7 @@ class TrackImageService:
         crop_padding_ratio: float = 0.0,
         jpeg_quality: int = 90,
         max_output_bytes: int = 5 * 1024 * 1024,
+        storage_metrics: StorageMetrics | None = None,
     ) -> None:
         if max_edge < 16:
             raise ValueError("max_edge must be at least 16 pixels")
@@ -91,6 +93,7 @@ class TrackImageService:
         self._crop_padding_ratio = crop_padding_ratio
         self._jpeg_quality = jpeg_quality
         self._max_output_bytes = max_output_bytes
+        self._storage_metrics = storage_metrics
 
     def search_result_image(
         self, actor_user_id: uuid.UUID, track_id: uuid.UUID, variant: ImageVariant
@@ -139,6 +142,10 @@ class TrackImageService:
             raise TrackImageUnavailableError(source.track_id, "FRAME_MISSING") from error
         except InvalidFrameError as error:
             raise TrackImageUnavailableError(source.track_id, "FRAME_CORRUPT") from error
+        except Exception as error:
+            if self._storage_metrics is not None:
+                self._storage_metrics.record_error(StorageComponent.MINIO, error)
+            raise
         try:
             with Image.open(io.BytesIO(data)) as opened:
                 if opened.format not in {"JPEG", "PNG"}:

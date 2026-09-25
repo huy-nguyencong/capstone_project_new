@@ -154,9 +154,13 @@ def test_requeue_failed_track_resets_event_and_audits() -> None:
     assert track.index_status is TrackIndexStatus.PENDING and track.failure_code is None
     assert event.status is OutboxStatus.PENDING and event.attempts == 0
     assert [entry.event_type for entry in harness.database.audit_logs] == [
-        "storage.track_requeued"
+        "storage.track_failed",
+        "storage.track_requeued",
     ]
-    assert harness.database.audit_logs[0].actor_user_id == actor
+    failed_audit, requeue_audit = harness.database.audit_logs
+    assert failed_audit.result.value == "FAILURE"
+    assert failed_audit.event_metadata["step"] == "FRAME_UPLOAD"
+    assert requeue_audit.actor_user_id == actor
 
 
 def test_requeue_rejects_ready_track() -> None:

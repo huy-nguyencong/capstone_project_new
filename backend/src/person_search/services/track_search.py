@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Protocol
 
+from person_search.services.storage_status import StorageComponent, StorageMetrics
 from person_search.storage.contracts import BoundingBoxPixels
 from person_search.storage.milvus.vectors import InvalidVectorError, VectorFilter, VectorSearchHit
 from person_search.storage.postgres.models import (
@@ -77,10 +78,12 @@ class TrackSearchService:
         vectors: VectorSearcher,
         *,
         metrics: SearchMetrics | None = None,
+        storage_metrics: StorageMetrics | None = None,
     ) -> None:
         self._unit_of_work_factory = unit_of_work_factory
         self._vectors = vectors
         self.metrics = metrics or SearchMetrics()
+        self._storage_metrics = storage_metrics
 
     def search(self, actor_user_id: uuid.UUID, query: TrackSearchQuery) -> list[TrackSearchResult]:
         if isinstance(query.top_k, bool) or query.top_k not in ALLOWED_TOP_K:
@@ -100,6 +103,10 @@ class TrackSearchService:
             hits = self._vectors.search(query.embedding, filters, top_k=query.top_k)
         except InvalidVectorError as error:
             raise InvalidSearchRequestError("Query embedding is invalid.") from error
+        except Exception as error:
+            if self._storage_metrics is not None:
+                self._storage_metrics.record_error(StorageComponent.MILVUS, error)
+            raise
         self.metrics.searches += 1
         if not hits:
             return []

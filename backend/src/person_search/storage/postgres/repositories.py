@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Generic, TypeVar
 
-from sqlalchemy import Select, and_, exists, or_, select, update
+from sqlalchemy import Select, and_, exists, func, or_, select, tuple_, update
 from sqlalchemy.orm import Session
 
 from person_search.storage.postgres.errors import ConcurrentUpdateError
@@ -16,6 +16,7 @@ from person_search.storage.postgres.models import (
     AIConfigVersion,
     Area,
     AuditLog,
+    AuditResult,
     Camera,
     Case,
     CaseResult,
@@ -92,6 +93,47 @@ class CaseRepository(Repository[Case]):
         if result.rowcount != 1:
             raise ConcurrentUpdateError("Case was changed by another transaction.")
 
+    def get_for_update(self, case_id: uuid.UUID) -> Case | None:
+        return self.session.scalars(
+            select(Case).where(Case.id == case_id).with_for_update()
+        ).one_or_none()
+
+    def list_page(
+        self,
+        *,
+        owner_user_id: uuid.UUID | None = None,
+        created_from: datetime | None = None,
+        created_to: datetime | None = None,
+        after: tuple[datetime, uuid.UUID] | None = None,
+        limit: int = 51,
+    ) -> list[tuple[Case, User]]:
+        statement = (
+            select(Case, User)
+            .join(User, User.id == Case.owner_user_id)
+            .order_by(Case.created_at.desc(), Case.id.desc())
+        )
+        if owner_user_id is not None:
+            statement = statement.where(Case.owner_user_id == owner_user_id)
+        if created_from is not None:
+            statement = statement.where(Case.created_at >= created_from)
+        if created_to is not None:
+            statement = statement.where(Case.created_at <= created_to)
+        if after is not None:
+            statement = statement.where(tuple_(Case.created_at, Case.id) < after)
+        return [(case, owner) for case, owner in self.session.execute(statement.limit(limit))]
+
+    def recent_with_owner(self, *, limit: int) -> list[tuple[Case, User]]:
+        statement = (
+            select(Case, User)
+            .join(User, User.id == Case.owner_user_id)
+            .order_by(Case.updated_at.desc(), Case.id.desc())
+            .limit(limit)
+        )
+        return [(case, owner) for case, owner in self.session.execute(statement)]
+
+    def count(self) -> int:
+        return int(self.session.scalar(select(func.count()).select_from(Case)) or 0)
+
 
 class PersonTrackRepository(Repository[PersonTrack]):
     def __init__(self, session: Session) -> None:
@@ -156,6 +198,12 @@ class PersonTrackRepository(Repository[PersonTrack]):
             statement = statement.where(PersonTrack.id > after_id)
         return list(self.session.scalars(statement))
 
+    def count_by_status(self) -> dict[TrackIndexStatus, int]:
+        rows = self.session.execute(
+            select(PersonTrack.index_status, func.count()).group_by(PersonTrack.index_status)
+        )
+        return {status: count for status, count in rows}
+
     def stale_unready(self, *, updated_before: datetime, limit: int = 100) -> list[PersonTrack]:
         statement = (
             select(PersonTrack)
@@ -185,6 +233,20 @@ class StorageOutboxRepository(Repository[StorageOutboxEvent]):
         if for_update:
             statement = statement.with_for_update()
         return self.session.scalars(statement).one_or_none()
+
+    def count_by_status(self) -> dict[OutboxStatus, int]:
+        rows = self.session.execute(
+            select(StorageOutboxEvent.status, func.count()).group_by(StorageOutboxEvent.status)
+        )
+        return {status: count for status, count in rows}
+
+    def oldest_due_available_at(self, *, now: datetime) -> datetime | None:
+        return self.session.scalar(
+            select(func.min(StorageOutboxEvent.available_at)).where(
+                StorageOutboxEvent.status == OutboxStatus.PENDING,
+                StorageOutboxEvent.available_at <= now,
+            )
+        )
 
     def claim_due(
         self,
@@ -224,6 +286,21 @@ class CaseResultRepository(Repository[CaseResult]):
     def __init__(self, session: Session) -> None:
         super().__init__(session, CaseResult)
 
+    def for_case(self, case_id: uuid.UUID) -> list[CaseResult]:
+        return list(
+            self.session.scalars(
+                select(CaseResult)
+                .where(CaseResult.case_id == case_id)
+                .order_by(CaseResult.saved_at, CaseResult.id)
+            )
+        )
+
+    def delete(self, entity: CaseResult) -> None:
+        self.session.delete(entity)
+
+    def count(self) -> int:
+        return int(self.session.scalar(select(func.count()).select_from(CaseResult)) or 0)
+
     def exists_for_case_track(self, case_id: uuid.UUID, track_id: uuid.UUID) -> bool:
         return bool(
             self.session.scalar(
@@ -246,6 +323,37 @@ class CaseResultRepository(Repository[CaseResult]):
         )
 
 
+class AuditLogRepository(Repository[AuditLog]):
+    def __init__(self, session: Session) -> None:
+        super().__init__(session, AuditLog)
+
+    def search(
+        self,
+        *,
+        occurred_from: datetime | None = None,
+        occurred_to: datetime | None = None,
+        actor_user_id: uuid.UUID | None = None,
+        event_types: tuple[str, ...] = (),
+        result: AuditResult | None = None,
+        after: tuple[datetime, uuid.UUID] | None = None,
+        limit: int = 51,
+    ) -> list[AuditLog]:
+        statement = select(AuditLog).order_by(AuditLog.occurred_at.desc(), AuditLog.id.desc())
+        if occurred_from is not None:
+            statement = statement.where(AuditLog.occurred_at >= occurred_from)
+        if occurred_to is not None:
+            statement = statement.where(AuditLog.occurred_at <= occurred_to)
+        if actor_user_id is not None:
+            statement = statement.where(AuditLog.actor_user_id == actor_user_id)
+        if event_types:
+            statement = statement.where(AuditLog.event_type.in_(event_types))
+        if result is not None:
+            statement = statement.where(AuditLog.result == result)
+        if after is not None:
+            statement = statement.where(tuple_(AuditLog.occurred_at, AuditLog.id) < after)
+        return list(self.session.scalars(statement.limit(limit)))
+
+
 class Repositories:
     """Repository registry used by one UnitOfWork transaction."""
 
@@ -259,4 +367,4 @@ class Repositories:
         self.outbox = StorageOutboxRepository(session)
         self.cases = CaseRepository(session)
         self.case_results = CaseResultRepository(session)
-        self.audit_logs = Repository(session, AuditLog)
+        self.audit_logs = AuditLogRepository(session)

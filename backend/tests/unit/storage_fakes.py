@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import copy
 import io
 import uuid
 from collections.abc import Iterable, Iterator
-from datetime import datetime
+from datetime import UTC, datetime
 from types import SimpleNamespace
 from typing import Any
 
@@ -21,6 +22,8 @@ from person_search.storage.postgres.models.person_track import ALLOWED_TRACK_TRA
 
 
 def clone(entity: Any) -> Any:
+    if not hasattr(entity, "_sa_instance_state"):
+        return copy.copy(entity)
     mapper = sa.inspect(type(entity))
     values = {attribute.key: getattr(entity, attribute.key) for attribute in mapper.column_attrs}
     return type(entity)(**values)
@@ -40,6 +43,7 @@ class FakeDatabase:
         self.audit_logs: list[AuditLog] = []
         self.commits = 0
         self.commit_failures: dict[int, Exception] = {}
+        self.now = datetime(2026, 9, 25, 8, 0, tzinfo=UTC)
 
 
 class FakeLookup:
@@ -98,6 +102,12 @@ class FakeTracks(FakeLookup):
             tracks = [track for track in tracks if track.id > after_id]
         return tracks[:limit]
 
+    def count_by_status(self) -> dict[TrackIndexStatus, int]:
+        counts: dict[TrackIndexStatus, int] = {}
+        for track in self.rows.values():
+            counts[track.index_status] = counts.get(track.index_status, 0) + 1
+        return counts
+
     def stale_unready(self, *, updated_before: datetime, limit: int = 100) -> list[PersonTrack]:
         return [
             track
@@ -122,6 +132,20 @@ class FakeOutbox:
         self, track_id: uuid.UUID, event_type: str, *, for_update: bool = False
     ) -> StorageOutboxEvent | None:
         return self.rows.get((track_id, event_type))
+
+    def count_by_status(self) -> dict[OutboxStatus, int]:
+        counts: dict[OutboxStatus, int] = {}
+        for event in self.rows.values():
+            counts[event.status] = counts.get(event.status, 0) + 1
+        return counts
+
+    def oldest_due_available_at(self, *, now: datetime) -> datetime | None:
+        due = [
+            event.available_at
+            for event in self.rows.values()
+            if event.status is OutboxStatus.PENDING and event.available_at <= now
+        ]
+        return min(due) if due else None
 
     def claim_due(
         self,
@@ -151,7 +175,68 @@ class FakeOutbox:
         return due[:limit]
 
 
+class FakeCases(FakeLookup):
+    def __init__(self, rows: dict[uuid.UUID, Any], database: FakeDatabase) -> None:
+        super().__init__(rows)
+        self.database = database
+
+    def add(self, case: Any) -> None:
+        self.rows[case.id] = case
+
+    def get_for_update(self, case_id: uuid.UUID) -> Any:
+        return self.rows.get(case_id)
+
+    def _with_owner(self, cases: Iterable[Any]) -> list[tuple[Any, Any]]:
+        return [(case, self.database.users[case.owner_user_id]) for case in cases]
+
+    def list_page(
+        self,
+        *,
+        owner_user_id: uuid.UUID | None = None,
+        created_from: datetime | None = None,
+        created_to: datetime | None = None,
+        after: tuple[datetime, uuid.UUID] | None = None,
+        limit: int = 51,
+    ) -> list[tuple[Any, Any]]:
+        cases = sorted(
+            self.rows.values(), key=lambda case: (case.created_at, case.id), reverse=True
+        )
+        if owner_user_id is not None:
+            cases = [case for case in cases if case.owner_user_id == owner_user_id]
+        if created_from is not None:
+            cases = [case for case in cases if case.created_at >= created_from]
+        if created_to is not None:
+            cases = [case for case in cases if case.created_at <= created_to]
+        if after is not None:
+            cases = [case for case in cases if (case.created_at, case.id) < after]
+        return self._with_owner(cases[:limit])
+
+    def recent_with_owner(self, *, limit: int) -> list[tuple[Any, Any]]:
+        cases = sorted(
+            self.rows.values(), key=lambda case: (case.updated_at, case.id), reverse=True
+        )
+        return self._with_owner(cases[:limit])
+
+    def count(self) -> int:
+        return len(self.rows)
+
+
 class FakeCaseResults(FakeLookup):
+    def add(self, result: Any) -> None:
+        self.rows[result.id] = result
+
+    def delete(self, result: Any) -> None:
+        self.rows.pop(result.id, None)
+
+    def for_case(self, case_id: uuid.UUID) -> list[Any]:
+        return sorted(
+            (row for row in self.rows.values() if row.case_id == case_id),
+            key=lambda row: (row.saved_at, row.id),
+        )
+
+    def count(self) -> int:
+        return len(self.rows)
+
     def exists_for_case_track(self, case_id: uuid.UUID, track_id: uuid.UUID) -> bool:
         return any(
             row.case_id == case_id and row.track_id == track_id for row in self.rows.values()
@@ -163,11 +248,44 @@ class FakeCaseResults(FakeLookup):
 
 
 class FakeAuditLogs:
-    def __init__(self, rows: list[AuditLog]) -> None:
+    def __init__(self, rows: list[AuditLog], database: FakeDatabase) -> None:
         self.rows = rows
+        self.database = database
 
     def add(self, entry: AuditLog) -> None:
+        if entry.occurred_at is None:
+            entry.occurred_at = self.database.now
         self.rows.append(entry)
+
+    def search(
+        self,
+        *,
+        occurred_from: datetime | None = None,
+        occurred_to: datetime | None = None,
+        actor_user_id: uuid.UUID | None = None,
+        event_types: tuple[str, ...] = (),
+        result: Any = None,
+        after: tuple[datetime, uuid.UUID] | None = None,
+        limit: int = 51,
+    ) -> list[AuditLog]:
+        rows = sorted(
+            self.database.audit_logs,
+            key=lambda row: (row.occurred_at, row.id),
+            reverse=True,
+        )
+        if occurred_from is not None:
+            rows = [row for row in rows if row.occurred_at >= occurred_from]
+        if occurred_to is not None:
+            rows = [row for row in rows if row.occurred_at <= occurred_to]
+        if actor_user_id is not None:
+            rows = [row for row in rows if row.actor_user_id == actor_user_id]
+        if event_types:
+            rows = [row for row in rows if row.event_type in event_types]
+        if result is not None:
+            rows = [row for row in rows if row.result is result]
+        if after is not None:
+            rows = [row for row in rows if (row.occurred_at, row.id) < after]
+        return rows[:limit]
 
 
 class FakeUnitOfWork:
@@ -178,6 +296,10 @@ class FakeUnitOfWork:
     def __enter__(self) -> FakeUnitOfWork:
         self.tracks = {key: clone(value) for key, value in self.database.tracks.items()}
         self.events = {key: clone(value) for key, value in self.database.events.items()}
+        self.cases = {key: clone(value) for key, value in self.database.cases.items()}
+        self.case_results = {
+            key: clone(value) for key, value in self.database.case_results.items()
+        }
         self.audit_logs: list[AuditLog] = []
         self.repositories = SimpleNamespace(
             users=FakeLookup(self.database.users),
@@ -185,11 +307,11 @@ class FakeUnitOfWork:
             cameras=FakeLookup(self.database.cameras),
             jobs=FakeLookup(self.database.jobs),
             ai_configs=FakeLookup(self.database.configs),
-            cases=FakeLookup(self.database.cases),
-            case_results=FakeCaseResults(self.database.case_results),
+            cases=FakeCases(self.cases, self.database),
+            case_results=FakeCaseResults(self.case_results),
             tracks=FakeTracks(self.tracks, self.database),
             outbox=FakeOutbox(self.events),
-            audit_logs=FakeAuditLogs(self.audit_logs),
+            audit_logs=FakeAuditLogs(self.audit_logs, self.database),
         )
         return self
 
@@ -212,6 +334,8 @@ class FakeUnitOfWork:
             assert key[0] in self.tracks
         self.database.tracks = self.tracks
         self.database.events = self.events
+        self.database.cases = self.cases
+        self.database.case_results = self.case_results
         self.database.audit_logs.extend(self.audit_logs)
         self.audit_logs = []
 

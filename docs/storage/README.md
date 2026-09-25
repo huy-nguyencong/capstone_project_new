@@ -27,3 +27,5 @@ Các quyết định ID, timestamp, bounding box, state machine và naming đư�
 - [Retry và reconciliation](storage-maintenance.md): outbox worker, reconciliation và CLI (STO-12).
 - [Truy vấn vector có kiểm tra quyền](track-search.md): search scoped theo area Operator (STO-13).
 - [Ảnh track có kiểm tra quyền](track-imagery.md): crop động và full frame có bbox (STO-14).
+- [Case và dashboard Viewer](cases.md): lưu CaseResult, quyền đọc/sửa Case (STO-15).
+- [Audit và trạng thái vận hành](audit-and-status.md): catalog audit, redaction, metric theo component (STO-16).

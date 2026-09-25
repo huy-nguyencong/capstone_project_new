@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import time
 import uuid
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
@@ -8,12 +9,13 @@ from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 from typing import Any, Protocol
 
+from person_search.services.audit import AuditEvent, record_audit
+from person_search.services.storage_status import StorageComponent, StorageMetrics
 from person_search.storage.contracts import TrackIngestionRequest, frame_object_key
 from person_search.storage.milvus.vectors import CollectionContractError, InvalidVectorError
 from person_search.storage.minio.frames import FrameConflictError, FrameInfo, InvalidFrameError
 from person_search.storage.postgres.errors import DuplicateEntityError
 from person_search.storage.postgres.models import (
-    AuditLog,
     AuditResult,
     OutboxStatus,
     PersonTrack,
@@ -55,6 +57,13 @@ class IngestionStep(StrEnum):
     VECTOR_UPSERT = "VECTOR_UPSERT"
     PUBLISH = "PUBLISH"
 
+
+STEP_COMPONENTS = {
+    IngestionStep.FRAME_UPLOAD: StorageComponent.MINIO,
+    IngestionStep.FRAME_VERIFY: StorageComponent.MINIO,
+    IngestionStep.VECTOR_UPSERT: StorageComponent.MILVUS,
+    IngestionStep.PUBLISH: StorageComponent.POSTGRES,
+}
 
 NON_RETRYABLE_ERRORS: tuple[type[BaseException], ...] = (
     TrackIngestionError,
@@ -140,18 +149,31 @@ class TrackIngestionService:
         vectors: VectorIndex,
         *,
         retry_policy: RetryPolicy | None = None,
+        metrics: StorageMetrics | None = None,
         clock: Callable[[], datetime] = _utc_now,
     ) -> None:
         self._unit_of_work_factory = unit_of_work_factory
         self._frames = frames
         self._vectors = vectors
         self._retry_policy = retry_policy or RetryPolicy()
+        self.metrics = metrics or StorageMetrics()
         self._clock = clock
 
     def ingest_track(
         self, request: TrackIngestionRequest, *, correlation_id: str | None = None
     ) -> TrackIngestionResult:
-        correlation_id = correlation_id or uuid.uuid4().hex
+        started = time.perf_counter()
+        try:
+            result = self._ingest(request, correlation_id or uuid.uuid4().hex)
+        except NON_RETRYABLE_ERRORS:
+            raise
+        except Exception as error:
+            self.metrics.record_error(StorageComponent.POSTGRES, error)
+            raise
+        self.metrics.record_ingestion(result.status, (time.perf_counter() - started) * 1000)
+        return result
+
+    def _ingest(self, request: TrackIngestionRequest, correlation_id: str) -> TrackIngestionResult:
         status = self._register(request, correlation_id)
         if status is not TrackIndexStatus.PENDING:
             logger.info(
@@ -263,16 +285,14 @@ class TrackIngestionService:
             event.available_at = now
             event.locked_at = None
             event.last_error = None
-            repositories.audit_logs.add(
-                AuditLog(
-                    id=uuid.uuid4(),
-                    actor_user_id=actor_user_id,
-                    event_type="storage.track_requeued",
-                    target_type="person_track",
-                    target_id=track_id,
-                    result=AuditResult.SUCCESS,
-                    event_metadata={"previous_failure_code": previous_failure},
-                )
+            record_audit(
+                repositories,
+                event_type=AuditEvent.STORAGE_TRACK_REQUEUED,
+                result=AuditResult.SUCCESS,
+                target_type="person_track",
+                target_id=track_id,
+                actor_user_id=actor_user_id,
+                metadata={"previous_failure_code": previous_failure},
             )
             correlation_id = str(event.payload.get("correlation_id") or uuid.uuid4().hex)
             work.commit()
@@ -411,6 +431,8 @@ class TrackIngestionService:
         error: Exception,
     ) -> TrackIngestionResult:
         retryable = is_retryable(error)
+        if retryable:
+            self.metrics.record_error(STEP_COMPONENTS[step], error)
         failure_code = f"{step.value}_FAILED"
         failure_message = f"{step.value} raised {type(error).__name__}."
         logger.warning(
@@ -440,6 +462,20 @@ class TrackIngestionService:
             track.failure_message = failure_message
             if not will_retry:
                 track.index_status = TrackIndexStatus.FAILED
+                record_audit(
+                    repositories,
+                    event_type=AuditEvent.STORAGE_TRACK_FAILED,
+                    result=AuditResult.FAILURE,
+                    target_type="person_track",
+                    target_id=track_id,
+                    metadata={
+                        "correlation_id": correlation_id,
+                        "step": step.value,
+                        "error_type": type(error).__name__,
+                        "attempts": attempts,
+                        "retryable": retryable,
+                    },
+                )
             if event is not None:
                 event.attempts = attempts
                 event.last_error = failure_message
