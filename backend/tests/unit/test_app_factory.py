@@ -53,13 +53,6 @@ def test_readiness_reports_exact_failing_component() -> None:
     }
 
 
-def test_versioned_ping_endpoint(client) -> None:  # type: ignore[no-untyped-def]
-    response = client.get("/api/v1/ping")
-
-    assert response.status_code == 200
-    assert response.get_json() == {"status": "ok", "version": "v1"}
-
-
 def test_api_not_found_uses_json_error(client) -> None:  # type: ignore[no-untyped-def]
     response = client.get("/api/v1/does-not-exist", headers={"X-Request-ID": "req-00000001"})
 

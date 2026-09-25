@@ -4,26 +4,32 @@ import { Alert } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/Button'
 import { Dialog } from '@/components/ui/Dialog'
 import { TextAreaField, TextField } from '@/components/ui/Form'
+import { casesApi } from '@/services/api/cases'
 import { useAppStore, useToast } from '@/store/hooks'
 
 export function CreateCaseDialog({ result, onClose }) {
-  const { me, createCase, log } = useAppStore()
+  const { me } = useAppStore()
   const toast = useToast()
   const [title, setTitle] = useState('')
   const [note, setNote] = useState('')
   const [error, setError] = useState(null)
+  const [saving, setSaving] = useState(false)
 
-  const save = () => {
+  const save = async () => {
     if (!title.trim()) return setError('Vui lòng nhập tiêu đề Case.')
-    const id = createCase({
-      title: title.trim(),
-      note: note.trim(),
-      rid: result.id,
-      score: result.score,
-    })
-    log('Case', 'Tạo Case', id)
-    toast(`Đã tạo ${id} với kết quả đã chọn.`)
-    onClose()
+    setSaving(true)
+    try {
+      const created = await casesApi.create({
+        title: title.trim(),
+        note: note.trim() || null,
+        track_id: result.track,
+      })
+      toast(`Đã tạo Case ${created.case.code} với kết quả đã chọn.`)
+      onClose()
+    } catch (requestError) {
+      setError(requestError.message)
+      setSaving(false)
+    }
   }
 
   return (
@@ -35,7 +41,7 @@ export function CreateCaseDialog({ result, onClose }) {
       actions={
         <>
           <Button onClick={onClose}>Hủy</Button>
-          <Button variant="primary" onClick={save}>
+          <Button variant="primary" onClick={save} disabled={saving}>
             Tạo Case
           </Button>
         </>

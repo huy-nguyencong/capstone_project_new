@@ -208,6 +208,16 @@ class AuditLogView:
     target_id: uuid.UUID | None
     result: AuditResult
     metadata: dict[str, Any]
+    actor_username: str | None = None
+    target_label: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class AuditActorView:
+    id: uuid.UUID
+    username: str
+    display_name: str
+    role: UserRole
 
 
 @dataclass(frozen=True, slots=True)
@@ -233,9 +243,82 @@ def decode_audit_cursor(cursor: str) -> tuple[datetime, uuid.UUID]:
         raise InvalidAuditQueryError("Audit cursor is invalid.") from error
 
 
+def _actor_username(row: AuditLog, repositories: Repositories) -> str | None:
+    snapshot = row.event_metadata.get("actor") if row.event_metadata else None
+    if isinstance(snapshot, Mapping) and isinstance(snapshot.get("username"), str):
+        return snapshot["username"]
+    if row.actor_user_id is None:
+        return None
+    user = repositories.users.get(row.actor_user_id)
+    return user.username if user is not None else None
+
+
+class _TargetLabels:
+    def __init__(self, repositories: Repositories) -> None:
+        self._repositories = repositories
+        self._cache: dict[tuple[str, uuid.UUID], str | None] = {}
+
+    def __call__(self, target_type: str, target_id: uuid.UUID | None) -> str | None:
+        if target_id is None:
+            return None
+        key = (target_type, target_id)
+        if key not in self._cache:
+            self._cache[key] = self._resolve(target_type, target_id)
+        return self._cache[key]
+
+    def _resolve(self, target_type: str, target_id: uuid.UUID) -> str | None:
+        repositories = self._repositories
+        if target_type == "user":
+            user = repositories.users.get(target_id)
+            return user.username if user is not None else None
+        if target_type in ("camera", "ai"):
+            camera = repositories.cameras.get(target_id)
+            if camera is not None:
+                return camera.name
+            config = repositories.ai_configs.get(target_id)
+            if config is None:
+                return None
+            return f"{config.detector_name} · {config.tracker_name} · {config.encoder_version}"
+        if target_type == "case":
+            case = repositories.cases.get(target_id)
+            return case.title if case is not None else None
+        if target_type == "processing_job":
+            job = repositories.jobs.get(target_id)
+            camera = repositories.cameras.get(job.camera_id) if job is not None else None
+            return camera.name if camera is not None else None
+        return None
+
+
 class AuditLogService:
     def __init__(self, unit_of_work_factory: Callable[[], UnitOfWork]) -> None:
         self._unit_of_work_factory = unit_of_work_factory
+
+    def actors(self, actor_user_id: uuid.UUID) -> list[AuditActorView]:
+        with self._unit_of_work_factory() as work:
+            repositories = work.repositories
+            assert repositories is not None
+            self._require_admin(repositories, actor_user_id)
+            users = [
+                repositories.users.get(user_id) for user_id in repositories.audit_logs.actor_ids()
+            ]
+            return sorted(
+                (
+                    AuditActorView(user.id, user.username, user.display_name, user.role)
+                    for user in users
+                    if user is not None
+                ),
+                key=lambda view: view.username,
+            )
+
+    @staticmethod
+    def _require_admin(repositories: Repositories, actor_user_id: uuid.UUID) -> None:
+        actor = repositories.users.get(actor_user_id)
+        if (
+            actor is None
+            or actor.status is not UserStatus.ACTIVE
+            or actor.role is not (UserRole.ADMIN)
+        ):
+            raise AuditAccessDeniedError("Only an active Admin can read audit logs.")
 
     def list(self, actor_user_id: uuid.UUID, query: AuditLogQuery) -> AuditLogPage:
         if query.limit < 1 or query.limit > MAX_AUDIT_PAGE:
@@ -253,11 +336,7 @@ class AuditLogService:
         with self._unit_of_work_factory() as work:
             repositories = work.repositories
             assert repositories is not None
-            actor = repositories.users.get(actor_user_id)
-            if actor is None or actor.status is not UserStatus.ACTIVE or actor.role is not (
-                UserRole.ADMIN
-            ):
-                raise AuditAccessDeniedError("Only an active Admin can read audit logs.")
+            self._require_admin(repositories, actor_user_id)
             rows = repositories.audit_logs.search(
                 occurred_from=query.occurred_from,
                 occurred_to=query.occurred_to,
@@ -267,8 +346,11 @@ class AuditLogService:
                 after=after,
                 limit=query.limit + 1,
             )
-        has_more = len(rows) > query.limit
-        rows = rows[: query.limit]
+            has_more = len(rows) > query.limit
+            rows = rows[: query.limit]
+            labels = _TargetLabels(repositories)
+            usernames = {row.id: _actor_username(row, repositories) for row in rows}
+            target_labels = {row.id: labels(row.target_type, row.target_id) for row in rows}
         items = [
             AuditLogView(
                 id=row.id,
@@ -279,6 +361,8 @@ class AuditLogService:
                 target_id=row.target_id,
                 result=row.result,
                 metadata=dict(row.event_metadata),
+                actor_username=usernames[row.id],
+                target_label=target_labels[row.id],
             )
             for row in rows
         ]

@@ -13,11 +13,13 @@ from person_search.services.case_policy import (
     CaseOwnerNotAllowedError,
     owner_id_from_authenticated_actor,
 )
+from person_search.storage.contracts import BoundingBoxPixels
 from person_search.storage.postgres.errors import ConcurrentUpdateError
 from person_search.storage.postgres.models import (
     AuditResult,
     Case,
     CaseResult,
+    PersonTrack,
     TrackIndexStatus,
     User,
     UserRole,
@@ -66,8 +68,11 @@ class CaseSummary:
     note: str | None
     owner_user_id: uuid.UUID
     owner_display_name: str
+    owner_status: UserStatus
+    result_count: int
     created_at: datetime
     updated_at: datetime
+    version: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -79,6 +84,7 @@ class CaseResultView:
     area_name: str
     appeared_at: datetime
     saved_at: datetime
+    bbox: BoundingBoxPixels | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -100,6 +106,13 @@ class CaseListQuery:
 class CasePage:
     items: list[CaseSummary]
     next_cursor: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class CaseOwnerView:
+    id: uuid.UUID
+    display_name: str
+    status: UserStatus
 
 
 @dataclass(frozen=True, slots=True)
@@ -146,19 +159,38 @@ def _decode_cursor(cursor: str) -> tuple[datetime, uuid.UUID]:
         raise InvalidCaseRequestError("Case cursor is invalid.") from error
 
 
-def _summary(case: Case, owner: User) -> CaseSummary:
+def _summary(case: Case, owner: User, result_count: int) -> CaseSummary:
     return CaseSummary(
         id=case.id,
         title=case.title,
         note=case.note,
         owner_user_id=case.owner_user_id,
         owner_display_name=owner.display_name,
+        owner_status=owner.status,
+        result_count=result_count,
         created_at=case.created_at,
         updated_at=case.updated_at,
+        version=case.version,
     )
 
 
-def _result_view(result: CaseResult) -> CaseResultView:
+def _bbox(track: PersonTrack | None) -> BoundingBoxPixels | None:
+    if track is None:
+        return None
+    try:
+        return BoundingBoxPixels(
+            track.bbox_x,
+            track.bbox_y,
+            track.bbox_width,
+            track.bbox_height,
+            track.frame_width,
+            track.frame_height,
+        )
+    except (TypeError, ValueError):
+        return None
+
+
+def _result_view(result: CaseResult, track: PersonTrack | None = None) -> CaseResultView:
     return CaseResultView(
         id=result.id,
         case_id=result.case_id,
@@ -167,6 +199,7 @@ def _result_view(result: CaseResult) -> CaseResultView:
         area_name=result.area_name_snapshot,
         appeared_at=result.appeared_at_snapshot,
         saved_at=result.saved_at,
+        bbox=_bbox(track),
     )
 
 
@@ -203,10 +236,11 @@ class CaseService:
                 note=clean_note,
                 created_at=now,
                 updated_at=now,
+                version=1,
             )
             repositories.cases.add(case)
             work.flush()
-            results = []
+            results: list[tuple[CaseResult, PersonTrack]] = []
             if track_id is not None:
                 results.append(self._save_track(repositories, actor, case, track_id, now))
             record_audit(
@@ -219,7 +253,10 @@ class CaseService:
                 metadata={"has_note": clean_note is not None, "initial_results": len(results)},
             )
             work.commit()
-            return CaseDetail(_summary(case, actor), [_result_view(row) for row in results])
+            return CaseDetail(
+                _summary(case, actor, len(results)),
+                [_result_view(row, track) for row, track in results],
+            )
 
     def update_case(
         self,
@@ -229,6 +266,7 @@ class CaseService:
         title: Any = UNSET,
         note: Any = UNSET,
         expected_updated_at: datetime | None = None,
+        expected_version: int | None = None,
     ) -> CaseSummary:
         changes: dict[str, Any] = {}
         if title is not UNSET:
@@ -243,9 +281,12 @@ class CaseService:
             case = self._owned_case(repositories, actor, case_id, AuditEvent.CASE_UPDATED)
             if expected_updated_at is not None and case.updated_at != expected_updated_at:
                 raise ConcurrentUpdateError("Case was changed by another transaction.")
+            if expected_version is not None and case.version != expected_version:
+                raise ConcurrentUpdateError("Case was changed by another request.")
             changed = sorted(key for key, value in changes.items() if getattr(case, key) != value)
             for key, value in changes.items():
                 setattr(case, key, value)
+            case.version += 1
             case.updated_at = self._clock()
             record_audit(
                 repositories,
@@ -258,8 +299,9 @@ class CaseService:
             )
             work.flush()
             repositories.cases.refresh(case)
+            result_count = repositories.case_results.count_by_case([case.id]).get(case.id, 0)
             work.commit()
-            return _summary(case, actor)
+            return _summary(case, actor, result_count)
 
     def add_result(
         self, actor_user_id: uuid.UUID, case_id: uuid.UUID, track_id: uuid.UUID
@@ -271,7 +313,7 @@ class CaseService:
             )
             case = self._owned_case(repositories, actor, case_id, AuditEvent.CASE_RESULT_ADDED)
             now = self._clock()
-            result = self._save_track(repositories, actor, case, track_id, now)
+            result, track = self._save_track(repositories, actor, case, track_id, now)
             case.updated_at = now
             record_audit(
                 repositories,
@@ -283,7 +325,7 @@ class CaseService:
                 metadata={"case_result_id": result.id, "track_id": track_id},
             )
             work.commit()
-            return _result_view(result)
+            return _result_view(result, track)
 
     def remove_result(
         self, actor_user_id: uuid.UUID, case_id: uuid.UUID, case_result_id: uuid.UUID
@@ -329,9 +371,10 @@ class CaseService:
                 after=after,
                 limit=query.limit + 1,
             )
-        has_more = len(rows) > query.limit
-        rows = rows[: query.limit]
-        items = [_summary(case, owner) for case, owner in rows]
+            has_more = len(rows) > query.limit
+            rows = rows[: query.limit]
+            counts = repositories.case_results.count_by_case(case.id for case, _ in rows)
+        items = [_summary(case, owner, counts.get(case.id, 0)) for case, owner in rows]
         next_cursor = (
             _encode_cursor(rows[-1][0].created_at, rows[-1][0].id) if has_more and rows else None
         )
@@ -349,7 +392,16 @@ class CaseService:
             owner = repositories.users.get(case.owner_user_id)
             assert owner is not None
             results = repositories.case_results.for_case(case.id)
-            return CaseDetail(_summary(case, owner), [_result_view(row) for row in results])
+            tracks = {
+                track.id: track
+                for track, _, _ in repositories.tracks.with_location(
+                    {row.track_id for row in results}
+                )
+            }
+            return CaseDetail(
+                _summary(case, owner, len(results)),
+                [_result_view(row, tracks.get(row.track_id)) for row in results],
+            )
 
     def viewer_dashboard(
         self, actor_user_id: uuid.UUID, *, recent_limit: int = 10
@@ -363,14 +415,26 @@ class CaseService:
             actor = self._active(repositories, actor_user_id)
             if actor.role is not UserRole.VIEWER:
                 raise CaseAccessDeniedError("Only a Viewer can open the dashboard.")
+            recent = repositories.cases.recent_with_owner(limit=recent_limit)
+            counts = repositories.case_results.count_by_case(case.id for case, _ in recent)
             return ViewerDashboard(
                 total_cases=repositories.cases.count(),
                 total_case_results=repositories.case_results.count(),
                 recent_cases=[
-                    _summary(case, owner)
-                    for case, owner in repositories.cases.recent_with_owner(limit=recent_limit)
+                    _summary(case, owner, counts.get(case.id, 0)) for case, owner in recent
                 ],
             )
+
+    def viewer_operators(self, actor_user_id: uuid.UUID) -> list[CaseOwnerView]:
+        with self._unit_of_work_factory() as work:
+            repositories = self._repositories(work)
+            actor = self._active(repositories, actor_user_id)
+            if actor.role is not UserRole.VIEWER:
+                raise CaseAccessDeniedError("Only a Viewer can list Case owners.")
+            return [
+                CaseOwnerView(owner.id, owner.display_name, owner.status)
+                for owner in repositories.cases.owners()
+            ]
 
     def _save_track(
         self,
@@ -379,7 +443,7 @@ class CaseService:
         case: Case,
         track_id: uuid.UUID,
         now: datetime,
-    ) -> CaseResult:
+    ) -> tuple[CaseResult, PersonTrack]:
         rows = repositories.tracks.with_location([track_id])
         if not rows:
             raise TrackNotSavableError("Track is not available to this Operator.")
@@ -399,7 +463,7 @@ class CaseService:
             saved_at=now,
         )
         repositories.case_results.add(result)
-        return result
+        return result, track
 
     def _active(self, repositories: Repositories, actor_user_id: uuid.UUID) -> User:
         actor = repositories.users.get(actor_user_id)

@@ -8,6 +8,7 @@ from typing import Any
 from flask import Blueprint, Response, current_app, jsonify, request
 
 from person_search.api.errors import ApiError
+from person_search.api.rate_limit import rate_limited
 from person_search.auth.web import current_actor, require_auth
 from person_search.services.searches import (
     EncoderUnavailableError,
@@ -53,6 +54,7 @@ def my_cameras():
 
 @search_blueprint.post("/searches/image")
 @require_auth(UserRole.OPERATOR)
+@rate_limited("search")
 def image_search():
     if set(request.files) != {"image"} or len(request.files.getlist("image")) != 1:
         raise ApiError(422, "invalid_image", "Vui lòng gửi đúng một ảnh JPEG hoặc PNG.")
@@ -72,6 +74,7 @@ def image_search():
 
 @search_blueprint.post("/searches/text")
 @require_auth(UserRole.OPERATOR)
+@rate_limited("search")
 def text_search():
     body = _json_body()
     text = body.pop("text", None)
@@ -86,6 +89,7 @@ def text_search():
 
 @search_blueprint.post("/searches/attributes")
 @require_auth(UserRole.OPERATOR)
+@rate_limited("search")
 def attribute_search():
     body = _json_body()
     attributes = body.pop("attributes", None)

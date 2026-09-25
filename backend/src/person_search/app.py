@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import atexit
+import os
 from collections.abc import Mapping
 from typing import Any
 
@@ -16,10 +17,13 @@ from person_search.config import (
     parse_boolean_environment,
 )
 from person_search.dependencies import DependencyContainer
+from person_search.services.audit import AuditLogService, AuditRecorder
 from person_search.services.auth import AuthService, SessionPolicy
 from person_search.services.camera_runtime import CameraRuntime
 from person_search.services.cameras import CameraService
+from person_search.services.cases import CaseService
 from person_search.services.jobs import JobService
+from person_search.services.monitoring import MonitoringService
 from person_search.services.searches import SearchService
 from person_search.services.track_imagery import TrackImageService
 from person_search.services.users import UserService
@@ -46,6 +50,11 @@ def create_app(
     app.config.from_object(config_for_environment(requested_environment))
     app.config["AUTH_COOKIE_SECURE"] = parse_boolean_environment(
         "PERSON_SEARCH_COOKIE_SECURE", default=app.config["AUTH_COOKIE_SECURE"]
+    )
+    app.config["CORS_ORIGINS"] = tuple(
+        origin.strip()
+        for origin in os.getenv("PERSON_SEARCH_CORS_ORIGINS", "").split(",")
+        if origin.strip()
     )
 
     if config:
@@ -82,17 +91,37 @@ def create_app(
                 "users.service",
                 UserService(lambda: UnitOfWork(session_factory), hasher=password_hasher),
             )
+            camera_runtime = CameraRuntime.from_environment()
             container.register(
                 "cameras.service",
                 CameraService(
                     lambda: UnitOfWork(session_factory),
-                    CameraRuntime.from_environment(),
+                    camera_runtime,
                     CameraService.registry_from_environment(),
                 ),
             )
+            search_service = SearchService(
+                lambda: UnitOfWork(session_factory), runtime.milvus.client
+            )
+            container.register("searches.service", search_service)
             container.register(
-                "searches.service",
-                SearchService(lambda: UnitOfWork(session_factory), runtime.milvus.client),
+                "audit.service", AuditLogService(lambda: UnitOfWork(session_factory))
+            )
+            container.register(
+                "monitoring.service",
+                MonitoringService(
+                    lambda: UnitOfWork(session_factory),
+                    health=runtime.health,
+                    search=search_service,
+                    runtime=camera_runtime,
+                ),
+            )
+            container.register(
+                "cases.service",
+                CaseService(
+                    lambda: UnitOfWork(session_factory),
+                    audit=AuditRecorder(lambda: UnitOfWork(session_factory)),
+                ),
             )
             container.register(
                 "track_images.service",

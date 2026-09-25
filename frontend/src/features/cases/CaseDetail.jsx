@@ -3,31 +3,46 @@ import { Button } from '@/components/ui/Button'
 import { TextAreaField, TextField } from '@/components/ui/Form'
 import { Tag } from '@/components/ui/Tag'
 import { ResultViewer } from '@/features/results/ResultViewer'
-import { useAppStore, useConfirm, useToast } from '@/store/hooks'
+import { casesApi } from '@/services/api/cases'
+import { useConfirm, useToast } from '@/store/hooks'
 import { CaseItemGrid } from './CaseItemGrid'
 
-const ownerNote = (u) => {
-  if (!u || u.status === 'active') return null
-  return u.status === 'locked' ? 'Tài khoản đã khóa' : 'Tài khoản ngừng hoạt động'
+const OWNER_NOTE = {
+  locked: 'Tài khoản đã khóa',
+  inactive: 'Tài khoản ngừng hoạt động',
+  deleted: 'Tài khoản đã xóa',
 }
 
-export function CaseDetail({ caseFile, editable }) {
-  const { users, updateCase, removeFromCase, log } = useAppStore()
+export function CaseDetail({ detail, editable, onChange }) {
+  const { case: caseFile, results } = detail
   const confirm = useConfirm()
   const toast = useToast()
   const [title, setTitle] = useState(caseFile.title)
   const [note, setNote] = useState(caseFile.note)
-  const [viewer, setViewer] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const [viewerIndex, setViewerIndex] = useState(null)
 
-  const owner = users.find((u) => u.id === caseFile.owner)
-  const note2 = ownerNote(owner)
+  const ownerNote = OWNER_NOTE[caseFile.owner.status]
   const dirty = title !== caseFile.title || note !== caseFile.note
 
-  const save = () => {
+  const save = async () => {
     if (!title.trim()) return toast('Tiêu đề Case không được để trống.', 'err')
-    updateCase(caseFile.id, { title: title.trim(), note })
-    log('Case', 'Cập nhật Case', caseFile.id)
-    toast(`Đã lưu thay đổi của ${caseFile.id}.`)
+    setSaving(true)
+    try {
+      const updated = await casesApi.update(caseFile.id, {
+        title: title.trim(),
+        note: note.trim() || null,
+        version: caseFile.version,
+      })
+      setTitle(updated.title)
+      setNote(updated.note)
+      onChange({ case: updated, results })
+      toast(`Đã lưu thay đổi của Case ${updated.code}.`)
+    } catch (error) {
+      toast(error.message, 'err')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const discard = () => {
@@ -35,26 +50,32 @@ export function CaseDetail({ caseFile, editable }) {
     setNote(caseFile.note)
   }
 
-  const remove = (rid) =>
+  const remove = (resultId) =>
     confirm({
       title: 'Loại kết quả khỏi Case?',
       body: 'Kết quả chỉ bị loại khỏi Case này. Dữ liệu kết quả gốc trong hệ thống không bị xóa.',
       label: 'Loại khỏi Case',
-      onConfirm: () => {
-        removeFromCase(caseFile.id, rid)
-        log('Case', 'Loại kết quả khỏi Case', caseFile.id)
-        toast(`Đã loại kết quả khỏi ${caseFile.id}.`)
+      onConfirm: async () => {
+        try {
+          await casesApi.removeResult(caseFile.id, resultId)
+          onChange(await casesApi.get(caseFile.id))
+          toast(`Đã loại kết quả khỏi Case ${caseFile.code}.`)
+        } catch (error) {
+          toast(error.message, 'err')
+        }
       },
     })
 
   return (
     <section className="panel flex flex-col gap-4 p-[18px]">
       <div className="flex flex-wrap gap-x-[18px] gap-y-1.5 text-xs text-neutral-400">
-        <span className="font-mono text-accent-300">{caseFile.id}</span>
-        <span>
-          Phụ trách: <span className="text-text">{owner?.name ?? '—'}</span>
+        <span className="font-mono text-accent-300" title={caseFile.id}>
+          {caseFile.code}
         </span>
-        {note2 && <Tag>{note2}</Tag>}
+        <span>
+          Phụ trách: <span className="text-text">{caseFile.owner.name}</span>
+        </span>
+        {ownerNote && <Tag>{ownerNote}</Tag>}
         <span>Tạo: {caseFile.created}</span>
         <span>Cập nhật: {caseFile.updated}</span>
       </div>
@@ -64,10 +85,10 @@ export function CaseDetail({ caseFile, editable }) {
           <TextField label="Tiêu đề" value={title} onChange={(e) => setTitle(e.target.value)} />
           <TextAreaField label="Ghi chú" value={note} onChange={(e) => setNote(e.target.value)} />
           <div className="flex justify-end gap-2">
-            <Button onClick={discard} disabled={!dirty}>
+            <Button onClick={discard} disabled={!dirty || saving}>
               Hủy thay đổi
             </Button>
-            <Button variant="primary" onClick={save} disabled={!dirty}>
+            <Button variant="primary" onClick={save} disabled={!dirty || saving}>
               Lưu thay đổi
             </Button>
           </div>
@@ -82,22 +103,22 @@ export function CaseDetail({ caseFile, editable }) {
       <div>
         <div className="mb-2.5 flex items-center gap-2">
           <h5 className="m-0">Kết quả đã lưu</h5>
-          <span className="text-xs text-neutral-400">{caseFile.items.length} kết quả</span>
+          <span className="text-xs text-neutral-400">{results.length} kết quả</span>
         </div>
         <CaseItemGrid
-          items={caseFile.items}
-          onOpen={(items, index) => setViewer({ items, index })}
+          items={results}
+          onOpen={setViewerIndex}
           onRemove={editable ? remove : undefined}
         />
       </div>
 
-      {viewer && (
+      {viewerIndex != null && results[viewerIndex] && (
         <ResultViewer
-          items={viewer.items}
-          index={viewer.index}
+          items={results}
+          index={viewerIndex}
           context={editable ? 'case-op' : 'case-viewer'}
-          onIndexChange={(index) => setViewer((v) => ({ ...v, index }))}
-          onClose={() => setViewer(null)}
+          onIndexChange={setViewerIndex}
+          onClose={() => setViewerIndex(null)}
         />
       )}
     </section>

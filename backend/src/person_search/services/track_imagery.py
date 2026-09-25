@@ -116,7 +116,12 @@ class TrackImageService:
         return self._render(source, variant)
 
     def case_result_image(
-        self, actor_user_id: uuid.UUID, case_result_id: uuid.UUID, variant: ImageVariant
+        self,
+        actor_user_id: uuid.UUID,
+        case_result_id: uuid.UUID,
+        variant: ImageVariant,
+        *,
+        case_id: uuid.UUID | None = None,
     ) -> TrackImage:
         with self._unit_of_work_factory() as work:
             repositories = self._repositories(work)
@@ -126,6 +131,8 @@ class TrackImageService:
             case_result = repositories.case_results.get(case_result_id)
             case = repositories.cases.get(case_result.case_id) if case_result else None
             if case_result is None or case is None:
+                raise TrackImageNotFoundError("Case result was not found.")
+            if case_id is not None and case.id != case_id:
                 raise TrackImageNotFoundError("Case result was not found.")
             if user.role is UserRole.OPERATOR and case.owner_user_id != user.id:
                 raise TrackImageNotFoundError("Case result was not found.")

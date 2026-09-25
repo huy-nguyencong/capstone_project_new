@@ -1,6 +1,7 @@
 from flask import Blueprint, current_app, jsonify, request
 
 from person_search.api.errors import ApiError
+from person_search.api.rate_limit import rate_limited
 from person_search.auth.web import current_actor, require_auth
 from person_search.storage.postgres.models import UserRole
 
@@ -13,6 +14,7 @@ def service():
 
 @admin_jobs_blueprint.post("/cameras/<uuid:camera_id>/processing-jobs")
 @require_auth(UserRole.ADMIN)
+@rate_limited("upload")
 def upload_job(camera_id):
     if len(request.files.getlist("file")) != 1 or set(request.files) != {"file"}:
         raise ApiError(422, "file_required", "Chỉ chọn một file video.")

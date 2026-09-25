@@ -223,6 +223,13 @@ class FakeCases(FakeLookup):
     def count(self) -> int:
         return len(self.rows)
 
+    def owners(self) -> list[Any]:
+        owner_ids = {case.owner_user_id for case in self.rows.values()}
+        return sorted(
+            (self.database.users[owner_id] for owner_id in owner_ids),
+            key=lambda user: (user.display_name, user.id),
+        )
+
 
 class FakeCaseResults(FakeLookup):
     def add(self, result: Any) -> None:
@@ -240,6 +247,14 @@ class FakeCaseResults(FakeLookup):
     def count(self) -> int:
         return len(self.rows)
 
+    def count_by_case(self, case_ids: Iterable[uuid.UUID]) -> dict[uuid.UUID, int]:
+        wanted = set(case_ids)
+        totals: dict[uuid.UUID, int] = {}
+        for row in self.rows.values():
+            if row.case_id in wanted:
+                totals[row.case_id] = totals.get(row.case_id, 0) + 1
+        return totals
+
     def exists_for_case_track(self, case_id: uuid.UUID, track_id: uuid.UUID) -> bool:
         return any(
             row.case_id == case_id and row.track_id == track_id for row in self.rows.values()
@@ -254,6 +269,11 @@ class FakeAuditLogs:
     def __init__(self, rows: list[AuditLog], database: FakeDatabase) -> None:
         self.rows = rows
         self.database = database
+
+    def actor_ids(self) -> list[uuid.UUID]:
+        return list(
+            {row.actor_user_id for row in self.database.audit_logs if row.actor_user_id}
+        )
 
     def add(self, entry: AuditLog) -> None:
         if entry.occurred_at is None:

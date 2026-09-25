@@ -202,6 +202,14 @@ class CaseRepository(Repository[Case]):
     def count(self) -> int:
         return int(self.session.scalar(select(func.count()).select_from(Case)) or 0)
 
+    def owners(self) -> list[User]:
+        statement = (
+            select(User)
+            .where(User.id.in_(select(Case.owner_user_id).distinct()))
+            .order_by(User.display_name, User.id)
+        )
+        return list(self.session.scalars(statement))
+
 
 class PersonTrackRepository(Repository[PersonTrack]):
     def __init__(self, session: Session) -> None:
@@ -369,6 +377,17 @@ class CaseResultRepository(Repository[CaseResult]):
     def count(self) -> int:
         return int(self.session.scalar(select(func.count()).select_from(CaseResult)) or 0)
 
+    def count_by_case(self, case_ids: Iterable[uuid.UUID]) -> dict[uuid.UUID, int]:
+        candidates = list(case_ids)
+        if not candidates:
+            return {}
+        statement = (
+            select(CaseResult.case_id, func.count())
+            .where(CaseResult.case_id.in_(candidates))
+            .group_by(CaseResult.case_id)
+        )
+        return {case_id: int(total) for case_id, total in self.session.execute(statement)}
+
     def exists_for_case_track(self, case_id: uuid.UUID, track_id: uuid.UUID) -> bool:
         return bool(
             self.session.scalar(
@@ -420,6 +439,13 @@ class AuditLogRepository(Repository[AuditLog]):
         if after is not None:
             statement = statement.where(tuple_(AuditLog.occurred_at, AuditLog.id) < after)
         return list(self.session.scalars(statement.limit(limit)))
+
+    def actor_ids(self) -> list[uuid.UUID]:
+        return list(
+            self.session.scalars(
+                select(AuditLog.actor_user_id).where(AuditLog.actor_user_id.is_not(None)).distinct()
+            )
+        )
 
 
 class AIConfigRepository(Repository[AIConfigVersion]):

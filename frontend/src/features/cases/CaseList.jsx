@@ -11,8 +11,8 @@ export function CaseList({ cases, selectedId, onSelect, metaFor, emptyText }) {
           onClick={() => onSelect(c.id)}
         >
           <div className="flex gap-2 text-[11px] text-neutral-400">
-            <span className="font-mono">{c.id}</span>
-            <span className="ml-auto">{c.items.length} kết quả</span>
+            <span className="font-mono">{c.code}</span>
+            <span className="ml-auto">{c.resultCount} kết quả</span>
           </div>
           <div className="text-sm leading-[1.35] text-pretty">{c.title}</div>
           <div className="text-[11px] text-neutral-400">{metaFor(c)}</div>

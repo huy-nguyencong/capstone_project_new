@@ -1,6 +1,5 @@
 import {
   CheckCircleIcon,
-  CircleDashedIcon,
   MagnifyingGlassIcon,
   MinusCircleIcon,
   PlayIcon,
@@ -8,16 +7,18 @@ import {
   WarningCircleIcon,
   XCircleIcon,
 } from '@phosphor-icons/react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router'
+import { Alert } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/Button'
 import { OptionCard } from '@/components/ui/Chip'
 import { SelectField } from '@/components/ui/Form'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Spinner } from '@/components/ui/Spinner'
 import { CAMERA_STATUS, TONE } from '@/constants/status'
-import { useAppStore } from '@/store/hooks'
-import { buildDiagnosticPlan, summarizeDiagnostic } from '@/utils/diagnostics'
+import { camerasApi } from '@/services/api/cameras'
+import { monitorApi } from '@/services/api/monitor'
+import { summarizeDiagnostic, toDiagnosticSteps } from '@/utils/diagnostics'
 import { pad } from '@/utils/format'
 
 const GROUPS = [
@@ -25,21 +26,19 @@ const GROUPS = [
     id: 'pipeline',
     name: 'Camera Processing Pipeline',
     icon: VideoCameraIcon,
-    flow: 'RTSP → Detector → Tracker → Image Encoder',
+    flow: 'Nguồn khung hình → Detector → Tracker → Image Encoder',
     note: 'Chọn một camera đang bật xử lý AI.',
   },
   {
     id: 'search',
     name: 'Search Components',
     icon: MagnifyingGlassIcon,
-    flow: 'Image Encoder · Text Encoder',
+    flow: 'Text Encoder · Image Encoder · Kho dữ liệu',
     note: 'Không cần chọn camera.',
   },
 ]
 
 const STEP = {
-  pending: { icon: CircleDashedIcon, color: 'var(--color-neutral-500)', label: 'Chờ' },
-  running: { icon: Spinner, color: 'var(--color-accent)', label: 'Đang kiểm tra' },
   ok: { icon: CheckCircleIcon, color: TONE.ok, label: 'Hoạt động' },
   fail: { icon: XCircleIcon, color: TONE.err, label: 'Lỗi' },
   warn: { icon: WarningCircleIcon, color: TONE.warn, label: 'Chưa xác minh' },
@@ -49,54 +48,56 @@ const STEP = {
 const SUMMARY_ICON = { ok: CheckCircleIcon, warn: WarningCircleIcon, err: XCircleIcon }
 
 export default function DiagnosticsPage() {
-  const { cameras, models } = useAppStore()
   const [params] = useSearchParams()
-  const aiCams = cameras.filter((c) => c.ai && c.status !== 'retired')
-  const initialCam = aiCams.some((c) => c.id === params.get('cam'))
-    ? params.get('cam')
-    : aiCams[0]?.id
+  const [aiCams, setAiCams] = useState([])
   const [group, setGroup] = useState('pipeline')
-  const [camId, setCamId] = useState(initialCam ?? '')
+  const [camId, setCamId] = useState(params.get('cam') ?? '')
   const [steps, setSteps] = useState(null)
   const [summary, setSummary] = useState(null)
   const [running, setRunning] = useState(false)
-  const timers = useRef([])
+  const [error, setError] = useState(null)
 
-  useEffect(() => () => timers.current.forEach(clearTimeout), [])
+  useEffect(() => {
+    let active = true
+    camerasApi
+      .list({ status: 'ACTIVE', limit: 100 })
+      .then((page) => {
+        if (!active) return
+        const enabled = page.items.filter((c) => c.ai)
+        setAiCams(enabled)
+        setCamId((current) =>
+          enabled.some((c) => c.id === current) ? current : (enabled[0]?.id ?? ''),
+        )
+      })
+      .catch((requestError) => active && setError(requestError.message))
+    return () => {
+      active = false
+    }
+  }, [])
 
   const reset = () => {
     setSteps(null)
     setSummary(null)
+    setError(null)
   }
 
-  const run = () => {
-    const plan = buildDiagnosticPlan(
-      group,
-      cameras.find((c) => c.id === camId),
-      models,
-    )
-    const patch = (i, next) =>
-      setSteps((prev) => prev.map((s, j) => (j === i ? { ...s, ...next } : s)))
+  const run = async () => {
+    if (group === 'pipeline' && !camId) return setError('Chọn một camera đang bật xử lý AI.')
+    reset()
     setRunning(true)
-    setSummary(null)
-    setSteps(plan.map((p) => ({ name: p.name, state: 'pending', msg: '' })))
-    plan.forEach((p, i) => {
-      timers.current.push(
-        setTimeout(() => patch(i, { state: 'running', msg: 'Đang kiểm tra…' }), i * 650 + 60),
-      )
-      timers.current.push(
-        setTimeout(
-          () => {
-            patch(i, { state: p.out, msg: p.msg })
-            if (i === plan.length - 1) {
-              setRunning(false)
-              setSummary(summarizeDiagnostic(plan))
-            }
-          },
-          i * 650 + 560,
-        ),
-      )
-    })
+    try {
+      const report =
+        group === 'pipeline'
+          ? await monitorApi.cameraPipeline(camId)
+          : await monitorApi.searchComponents()
+      const next = toDiagnosticSteps(report)
+      setSteps(next)
+      setSummary(summarizeDiagnostic(report, next))
+    } catch (requestError) {
+      setError(requestError.message)
+    } finally {
+      setRunning(false)
+    }
   }
 
   const SummaryIcon = summary && SUMMARY_ICON[summary.tone]
@@ -141,6 +142,7 @@ export default function DiagnosticsPage() {
               setCamId(e.target.value)
               reset()
             }}
+            placeholder={aiCams.length ? undefined : 'Không có camera bật AI'}
             options={aiCams.map((c) => ({
               value: c.id,
               label: `${c.name} · ${CAMERA_STATUS[c.status].label}`,
@@ -152,13 +154,22 @@ export default function DiagnosticsPage() {
         </Button>
       </div>
 
+      {error && <Alert className="mb-3 max-w-[880px]">{error}</Alert>}
+
+      {running && (
+        <div className="panel flex max-w-[880px] items-center gap-3 px-4 py-3.5 text-sm">
+          <Spinner className="text-accent" />
+          Đang kiểm tra các thành phần…
+        </div>
+      )}
+
       {steps && (
         <div className="panel flex max-w-[880px] flex-col">
           {steps.map((s, i) => {
             const st = STEP[s.state]
             return (
               <div
-                key={s.name}
+                key={`${i}-${s.name}`}
                 className="flex items-center gap-3.5 px-4 py-3.5 shadow-[inset_0_-1px_0_color-mix(in_srgb,var(--color-text)_7%,transparent)]"
               >
                 <span className="font-mono text-xs text-neutral-500">{pad(i + 1)}</span>

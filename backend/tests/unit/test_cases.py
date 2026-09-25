@@ -374,3 +374,56 @@ def test_cases_of_locked_operator_remain_visible_to_viewer() -> None:
     assert world.service.get_case(world.viewer, case_id).case.owner_user_id == world.operator
     with pytest.raises(CaseAccessDeniedError):
         world.service.get_case(world.operator, case_id)
+
+
+def test_version_increments_and_stale_version_is_rejected() -> None:
+    world = World()
+    created = world.service.create_case(world.operator, title="Old").case
+    assert created.version == 1
+
+    updated = world.service.update_case(
+        world.operator, created.id, title="New", expected_version=1
+    )
+
+    assert updated.version == 2
+    with pytest.raises(ConcurrentUpdateError):
+        world.service.update_case(world.operator, created.id, title="Stale", expected_version=1)
+    assert world.database.cases[created.id].title == "New"
+
+
+def test_summaries_carry_result_count_owner_status_and_bbox() -> None:
+    world = World()
+    case_id = world.service.create_case(
+        world.operator, title="Case", track_id=world.track_a
+    ).case.id
+    world.service.add_result(world.operator, case_id, world.track_a)
+    world.service.create_case(world.operator, title="Empty")
+    world.database.users[world.operator].status = UserStatus.LOCKED
+
+    page = world.service.list_cases(world.viewer, CaseListQuery())
+    detail = world.service.get_case(world.viewer, case_id)
+    dashboard = world.service.viewer_dashboard(world.viewer)
+
+    counts = {item.title: item.result_count for item in page.items}
+    assert counts == {"Case": 2, "Empty": 0}
+    assert page.items[0].owner_status is UserStatus.LOCKED
+    assert detail.case.result_count == 2
+    assert detail.results[0].bbox is not None
+    assert (detail.results[0].bbox.width, detail.results[0].bbox.frame_width) == (10, 64)
+    assert {item.title: item.result_count for item in dashboard.recent_cases} == counts
+
+
+def test_viewer_operators_lists_every_case_owner_including_locked() -> None:
+    world = World()
+    world.service.create_case(world.operator, title="A")
+    world.service.create_case(world.operator, title="B")
+    world.database.users[world.operator].status = UserStatus.LOCKED
+
+    owners = world.service.viewer_operators(world.viewer)
+
+    assert [(owner.id, owner.status) for owner in owners] == [
+        (world.operator, UserStatus.LOCKED)
+    ]
+    for actor in (world.operator, world.admin):
+        with pytest.raises(CaseAccessDeniedError):
+            world.service.viewer_operators(actor)

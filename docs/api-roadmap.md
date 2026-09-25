@@ -268,7 +268,9 @@ Camera item:
 - Media: `image/jpeg`; `404 track_not_found` khi ngoài area; `410 image_unavailable` khi frame mất (FE hiện placeholder "Ảnh không khả dụng", metadata vẫn hiển thị).
 - Không ghi audit cho mỗi lượt search.
 
-### Phase 6 — Case của Operator (BE-17)
+### Phase 6 — Case của Operator (BE-17) · ĐÃ TRIỂN KHAI
+
+Đã có route `/cases` dùng `CaseService`, ảnh crop/frame của CaseResult và giao diện Operator/Viewer (`CaseBrowserPage`, `CaseDetail`, `AddToCaseDialog`, `CreateCaseDialog`) dùng dữ liệu thật. Migration `20260925_0009` thêm cột `cases.version`; [OpenAPI Phase 6](openapi-phase-6.json).
 
 | Method | Path | Role | BE sẵn có | FE dùng tại |
 | --- | --- | --- | --- | --- |
@@ -284,23 +286,38 @@ Camera item:
 - `GET /cases?owner_user_id=&created_from=&created_to=&limit=20&cursor=`. Operator luôn chỉ nhận Case của mình (backend bỏ qua `owner_user_id`); Viewer được lọc theo Operator.
 - Case summary: `id`, `title`, `note`, `owner` (`id`, `display_name`, `status`), `result_count`, `created_at`, `updated_at`, `version`. `result_count` cần bổ sung vào `CaseSummary` vì `CaseList` hiển thị "N kết quả".
 - `POST /cases`: `{ "title", "note", "track_id" }`; `track_id` tùy chọn để khớp luồng "Tạo Case từ kết quả" trong `CreateCaseDialog` (tạo Case và CaseResult đầu tiên trong một transaction).
-- `GET /cases/{id}`: `{ "case": {...}, "results": [{ "id", "track_id", "camera_name", "area_name", "appeared_at", "saved_at", "crop_url", "frame_url" }] }`. Không có `matching_score`.
-- `PATCH`: `title`, `note`, `version`. Gửi `owner_user_id`/`status`/`area_id` trả `422`.
+- `GET /cases/{id}`: `{ "case": {...}, "results": [{ "id", "case_id", "track_id", "camera_name", "area_name", "appeared_at", "saved_at", "bbox", "crop_url", "frame_url" }] }`. Không có `matching_score`. `bbox` (pixel, cùng dạng Phase 5) lấy từ track để `ResultViewer` vẽ khung; `null` nếu không đọc được.
+- `PATCH`: `title`, `note`, `version` (bắt buộc). Gửi `owner_user_id`/`status`/`area_id` trả `422`. Lệch `version` trả `409 version_conflict`. `version` chỉ tăng khi sửa title/note; thêm/xóa kết quả chỉ đổi `updated_at`.
 - `POST /cases/{id}/results`: `{ "track_id" }`, trả `201` với CaseResult. Luôn tạo row mới kể cả trùng track. Track ngoài area hiện tại trả `403 track_not_savable`.
 - `DELETE` trả `204`, chỉ xóa CaseResult, không xóa track/frame/vector.
+- Case của Operator khác, hoặc CaseResult không thuộc Case trên URL, trả `404` (`case_not_found` / `case_result_not_found`). Admin gọi `/cases` trả `403`.
+- Bộ lọc Operator phía Viewer lấy từ `GET /viewer/operators` (Phase 7). Bộ lọc ngày lọc theo `created_at`.
 
-### Phase 7 — Viewer (BE-18)
+### Phase 7 — Viewer (BE-18) · ĐÃ TRIỂN KHAI
+
+Đã có `/viewer/dashboard`, `/viewer/operators`; `OverviewPage` và bộ lọc Operator của `CaseBrowserPage` dùng dữ liệu thật, đã xóa `src/mocks/cases.js`. Không cần migration. [OpenAPI Phase 7](openapi-phase-7.json).
 
 | Method | Path | Role | BE sẵn có | FE dùng tại |
 | --- | --- | --- | --- | --- |
 | GET | `/viewer/dashboard` | Viewer | service (`viewer_dashboard`) | `OverviewPage` |
 | GET | `/viewer/operators` | Viewer | mới | `CaseBrowserPage` filter Operator |
 
-- Dashboard: `{ "total_cases", "total_case_results", "recent_cases": [CaseSummary] }`. `total_case_results` đếm cả CaseResult trùng track.
+- Dashboard: `{ "total_cases", "total_case_results", "recent_cases": [CaseSummary] }`. `total_case_results` đếm cả CaseResult trùng track. Query `recent_limit` (1–50, mặc định 10; FE gửi 6); `recent_cases` sắp theo `updated_at` giảm dần.
 - `/viewer/operators`: danh sách `id`, `display_name`, `status` của mọi Operator từng sở hữu Case, kể cả đã khóa/ngừng hoạt động; thay `users` mock đang dùng để hiển thị tên owner.
 - Viewer đọc Case và media qua cùng endpoint Phase 6; mọi request sửa trả `403`.
 
-### Phase 8 — Giám sát: trạng thái, chẩn đoán, audit (BE-11, BE-12, BE-13, BE-22)
+### Phase 8 — Giám sát: trạng thái, chẩn đoán, audit (BE-11, BE-12, BE-13, BE-22) · ĐÃ TRIỂN KHAI
+
+Đã có `MonitoringService` (trạng thái + chẩn đoán), `AuditLogService` trả `target_label`/`actor` và danh sách actor; `SystemStatusPage`, `DiagnosticsPage`, `AuditLogPage` dùng dữ liệu thật. Không cần migration. [OpenAPI Phase 8](openapi-phase-8.json).
+
+Khác biệt so với thiết kế ban đầu:
+
+- `worker_state` tính từ `processing_jobs`: `DISABLED` khi tắt AI, `RUNNING`/`QUEUED` theo job đang chạy/chờ, `ERROR` khi lease job hết hạn (`worker_heartbeat_lost`) hoặc job cuối cùng `FAILED` (`last_error` = mã stage), còn lại `IDLE`. Chưa có bảng heartbeat riêng của worker.
+- `connection` thêm `NOT_CONFIGURED` cho camera chỉ dùng video tải lên (FE hiển thị "Video tải lên", tính là bình thường). Mỗi camera có `category` để FE lọc, `summary` đếm theo `category`.
+- `metrics` luôn `null` cho tới khi worker báo số liệu.
+- Chẩn đoán pipeline chạy Detector/Tracker/Image Encoder trên khung hình tổng hợp (không dùng ảnh camera thật); nguồn RTSP được kiểm tra bằng `ffprobe` với allowlist mạng. Cấu hình AI không có adapter trên máy chủ trả bước `DETECTOR` `FAILED`.
+- Chẩn đoán search kiểm tra cấu hình encoder, Text/Image Encoder và ba kho dữ liệu.
+- Bộ lọc audit theo nhóm: FE gửi nhiều `event_type`. Ô tìm kiếm tự do cũ bị bỏ vì backend chưa hỗ trợ.
 
 | Method | Path | Role | BE sẵn có | FE dùng tại |
 | --- | --- | --- | --- | --- |
@@ -357,7 +374,16 @@ Camera item:
 - Audit: `GET /admin/audit-logs?occurred_from=&occurred_to=&actor_user_id=&event_type=case.created&event_type=auth.login&result=FAILURE&limit=50&cursor=`. Item: `id`, `occurred_at`, `actor` (`id`, `username` hoặc `null` = system), `event_type`, `target_type`, `target_id`, `target_label`, `result`, `metadata`. `target_label` cần thêm (tên camera/username/tiêu đề Case) vì `AuditLogPage` hiển thị cột "Đối tượng".
 - Nhóm FE theo `event_type`: `auth.*` → Đăng nhập, `user.*`/`operator.*` → Tài khoản, `camera.*` → Camera, `ai.state_changed` → Xử lý AI, `ai.config_*` → Mô hình AI, `case.*` → Case, `system.*`/`storage.*` → Lỗi hệ thống.
 
-### Phase 9 — Hardening (BE-19 đến BE-25)
+### Phase 9 — Hardening (BE-19 đến BE-25) · ĐÃ TRIỂN KHAI (trừ E2E)
+
+- Rate limit fixed-window trong bộ nhớ mỗi process (`RATE_LIMITS` trong config): login 10/phút theo IP + username, search 30/phút, upload 10/phút, RTSP test 10/phút, diagnostics 6/phút theo người dùng. Vượt ngưỡng trả `429 rate_limited` + `Retry-After`. Chạy nhiều process thì mỗi process đếm riêng.
+- Security headers cho mọi response (`nosniff`, `X-Frame-Options: DENY`, CSP `default-src 'none'`, `Referrer-Policy`, `Cache-Control: no-store` cho `/api`, HSTS khi cookie `Secure`).
+- CORS allowlist qua `PERSON_SEARCH_CORS_ORIGINS` (danh sách origin, phân tách bằng dấu phẩy; để trống khi dùng proxy Vite).
+- FE thêm "Mã tra cứu" (8 ký tự đầu `request_id`) vào thông báo lỗi 5xx.
+- Test ma trận quyền tự duyệt mọi route `/api/v1` (route mới chưa khai báo quyền sẽ làm test fail), test CSRF, rate limit, header, CORS.
+- Đã có từ trước: chữ ký file upload, chống SSRF RTSP, `Idempotency-Key`, `version`, request ID trong envelope.
+- Đã xóa `GET /api/v1/ping` và toàn bộ `frontend/src/mocks`.
+- Chưa làm: E2E login → job → search → Case → Viewer (cần stack Docker).
 
 Không thêm endpoint mới. Áp dụng lên mọi endpoint ở trên:
 
@@ -455,7 +481,7 @@ Mỗi mốc xong khi: endpoint có trong OpenAPI, có test route + quyền, màn
 | 45 | GET | `/admin/audit-logs` | Admin | 8 |
 | 46 | GET | `/admin/audit-logs/actors` | Admin | 8 |
 
-Health (hạ tầng, đã có): `GET /health/live`, `GET /health/ready`, `GET /health/storage`. `GET /api/v1/ping` xóa khi có endpoint nghiệp vụ đầu tiên.
+Health (hạ tầng, đã có): `GET /health/live`, `GET /health/ready`, `GET /health/storage`. `GET /api/v1/ping` đã xóa ở Phase 9.
 
 ## 7. Câu hỏi mở cần chốt ở BE-01
 

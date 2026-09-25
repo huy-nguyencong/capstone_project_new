@@ -1,6 +1,7 @@
 from flask import Blueprint, current_app, jsonify, request
 
 from person_search.api.errors import ApiError
+from person_search.api.rate_limit import rate_limited
 from person_search.api.v1.users import _json_body
 from person_search.auth.web import current_actor, require_auth
 from person_search.storage.postgres.models import UserRole
@@ -44,6 +45,7 @@ def retire_camera(camera_id):
 
 @admin_cameras_blueprint.post("/cameras/<uuid:camera_id>/connection-tests")
 @require_auth(UserRole.ADMIN)
+@rate_limited("connection_test")
 def test_camera(camera_id):
     return jsonify(service().test(camera_id, current_actor().id))
 

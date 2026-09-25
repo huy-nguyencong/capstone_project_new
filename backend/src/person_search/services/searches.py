@@ -165,15 +165,15 @@ class SearchService:
 
     def search_image(self, actor: uuid.UUID, content: bytes, **filters: object) -> SearchResponse:
         decode_query_image(content)
-        config = self._active_config()
-        vector = self._gateway(config.encoder_version).image(
+        config = self.active_config()
+        vector = self.gateway(config.encoder_version).image(
             content, version=config.encoder_version, dimension=config.encoder_dimension
         )
         return self._search(actor, "IMAGE", None, vector, config, filters)
 
     def search_text(self, actor: uuid.UUID, text: str, **filters: object) -> SearchResponse:
-        config = self._active_config()
-        vector = self._gateway(config.encoder_version).text(
+        config = self.active_config()
+        vector = self.gateway(config.encoder_version).text(
             text, version=config.encoder_version, dimension=config.encoder_dimension
         )
         return self._search(actor, "TEXT", text, vector, config, filters)
@@ -182,8 +182,8 @@ class SearchService:
         self, actor: uuid.UUID, attributes: Mapping[str, object], **filters: object
     ) -> SearchResponse:
         prompt = attributes_prompt(attributes)
-        config = self._active_config()
-        vector = self._gateway(config.encoder_version).text(
+        config = self.active_config()
+        vector = self.gateway(config.encoder_version).text(
             prompt, version=config.encoder_version, dimension=config.encoder_dimension
         )
         return self._search(actor, "ATTRIBUTES", prompt, vector, config, filters)
@@ -205,14 +205,14 @@ class SearchService:
         results = service.search(actor, query)
         return SearchResponse(mode, prompt, config.encoder_version, query.top_k, tuple(results))
 
-    def _active_config(self):
+    def active_config(self):
         with self._unit_of_work_factory() as work:
             config = _repositories(work).ai_configs.active()
             if config is None:
                 raise EncoderUnavailableError("No active encoder configuration exists.")
             return config
 
-    def _gateway(self, version: str) -> EncoderGateway:
+    def gateway(self, version: str) -> EncoderGateway:
         if self._encoder is not None:
             return self._encoder
         if version == DEMO_ENCODER_VERSION:

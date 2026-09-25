@@ -12,6 +12,7 @@ export const CAMERA_STATUS = {
   unverified: { label: 'Chưa xác minh', tone: 'warn' },
   unknown: { label: 'Không xác định', tone: 'mute' },
   retired: { label: 'Ngừng vận hành', tone: 'mute' },
+  noRtsp: { label: 'Video tải lên', tone: 'mute' },
 }
 
 export const AI_STATE = {
@@ -56,12 +57,48 @@ export const PANTS_COLORS = ['black', 'blue', 'gray', 'beige']
 
 export const CLOTHING_TYPES = ['Áo thun', 'Áo sơ mi', 'Áo khoác', 'Váy/đầm']
 
-export const AUDIT_TYPES = [
-  'Đăng nhập',
-  'Tài khoản',
-  'Camera',
-  'Xử lý AI',
-  'Mô hình AI',
-  'Case',
-  'Lỗi hệ thống',
+export const AUDIT_EVENTS = {
+  'auth.login': 'Đăng nhập',
+  'auth.logout': 'Đăng xuất',
+  'auth.session_expired': 'Phiên làm việc hết hạn',
+  'user.created': 'Tạo tài khoản',
+  'user.updated': 'Cập nhật tài khoản',
+  'user.status_changed': 'Đổi trạng thái tài khoản',
+  'user.role_changed': 'Đổi vai trò',
+  'operator.area_assigned': 'Gán khu vực cho Operator',
+  'camera.created': 'Thêm camera',
+  'camera.updated': 'Cập nhật camera',
+  'camera.deactivated': 'Ngừng vận hành camera',
+  'camera.connection_tested': 'Kiểm tra kết nối RTSP',
+  'ai.state_changed': 'Bật/tắt xử lý AI',
+  'job.created': 'Tạo job xử lý video',
+  'job.cancel_requested': 'Yêu cầu hủy job',
+  'job.finished': 'Job xử lý kết thúc',
+  'ai.config_requested': 'Yêu cầu đổi mô hình',
+  'ai.config_applied': 'Áp dụng mô hình',
+  'ai.config_failed': 'Áp dụng mô hình thất bại',
+  'case.created': 'Tạo Case',
+  'case.updated': 'Cập nhật Case',
+  'case.result_added': 'Thêm kết quả vào Case',
+  'case.result_removed': 'Loại kết quả khỏi Case',
+  'storage.track_failed': 'Lưu track thất bại',
+  'storage.track_requeued': 'Xếp lại track',
+  'storage.orphans_deleted': 'Dọn dữ liệu mồ côi',
+  'system.technical_failure': 'Lỗi kỹ thuật',
+}
+
+const eventsWithPrefix = (...prefixes) =>
+  Object.keys(AUDIT_EVENTS).filter((event) => prefixes.some((p) => event.startsWith(p)))
+
+export const AUDIT_GROUPS = [
+  { label: 'Đăng nhập', events: eventsWithPrefix('auth.') },
+  { label: 'Tài khoản', events: eventsWithPrefix('user.', 'operator.') },
+  { label: 'Camera', events: eventsWithPrefix('camera.') },
+  { label: 'Xử lý AI', events: eventsWithPrefix('ai.state_changed', 'job.') },
+  { label: 'Mô hình AI', events: eventsWithPrefix('ai.config_') },
+  { label: 'Case', events: eventsWithPrefix('case.') },
+  { label: 'Lỗi hệ thống', events: eventsWithPrefix('system.', 'storage.') },
 ]
+
+export const auditGroupOf = (eventType) =>
+  AUDIT_GROUPS.find((group) => group.events.includes(eventType))?.label ?? 'Khác'

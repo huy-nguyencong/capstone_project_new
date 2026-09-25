@@ -47,6 +47,7 @@ export function BoundingBox({ box, label, dashed, className, children }) {
 export function ResultScene({ result }) {
   const [failedUrl, setFailedUrl] = useState(null)
   const available = result.hasFrame && failedUrl !== result.frameUrl
+  const label = result.scoreText ? `${result.track} · ${result.scoreText}` : result.track
   return (
     <SceneFrame osd={result.osd} className="rounded-md">
       {available ? (
@@ -58,10 +59,10 @@ export function ResultScene({ result }) {
               className="absolute inset-0 h-full w-full object-fill"
               onError={() => setFailedUrl(result.frameUrl)}
             />
-            <BoundingBox box={result.bbox} label={`${result.track} · ${result.scoreText}`} />
+            {result.bbox && <BoundingBox box={result.bbox} label={label} />}
           </>
         ) : (
-          <BoundingBox box={result.bbox} label={`${result.track} · ${result.scoreText}`}>
+          <BoundingBox box={result.bbox} label={label}>
             <PersonFigure
               shirt={result.shirt}
               pants={result.pants}

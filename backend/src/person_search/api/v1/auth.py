@@ -5,6 +5,7 @@ from typing import Any
 from flask import Blueprint, Response, jsonify, request
 
 from person_search.api.errors import ApiError, validation_error
+from person_search.api.rate_limit import client_address, enforce
 from person_search.auth.tokens import csrf_token_for
 from person_search.auth.web import (
     auth_service,
@@ -57,6 +58,7 @@ def _login_payload() -> tuple[str, str]:
 @auth_blueprint.post("/login")
 def login():  # type: ignore[no-untyped-def]
     username, password = _login_payload()
+    enforce("login", f"{client_address()}|{username.strip().lower()}")
     try:
         grant = auth_service().login(username, password, previous_token=session_token())
     except InvalidCredentialsError as error:

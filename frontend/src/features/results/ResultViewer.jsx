@@ -12,9 +12,6 @@ import { Button, IconButton } from '@/components/ui/Button'
 import { KeyValueList } from '@/components/ui/Panel'
 import { PersonCrop } from '@/components/person/PersonCrop'
 import { ResultScene } from '@/components/person/SceneFrame'
-import { findDetection } from '@/mocks/detections'
-import { useAppStore } from '@/store/hooks'
-import { describeResult } from '@/utils/results'
 import { AddToCaseDialog } from './AddToCaseDialog'
 import { CreateCaseDialog } from './CreateCaseDialog'
 
@@ -25,14 +22,8 @@ const KICKER = {
 }
 
 export function ResultViewer({ items, index, context, onIndexChange, onClose }) {
-  const { cameras } = useAppStore()
   const [dialog, setDialog] = useState(null)
-  const item = items[index]
-  const result =
-    item.result ||
-    describeResult(findDetection(item.rid), cameras, item.score, {
-      saved: item.saved ?? null,
-    })
+  const result = items[index]
   const hasPrev = index > 0
   const hasNext = index < items.length - 1
 
@@ -106,17 +97,21 @@ export function ResultViewer({ items, index, context, onIndexChange, onClose }) 
                 <div className="w-[84px] flex-none">
                   <PersonCrop result={result} showScore={false} />
                 </div>
-                <div>
-                  <div className="text-[11px] text-neutral-400">Điểm phù hợp</div>
-                  <div className="text-[30px] leading-[1.1] font-medium text-accent-200">
-                    {result.scoreText}
+                {result.scoreText && (
+                  <div>
+                    <div className="text-[11px] text-neutral-400">Điểm phù hợp</div>
+                    <div className="text-[30px] leading-[1.1] font-medium text-accent-200">
+                      {result.scoreText}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
               <KeyValueList items={meta} />
-              <p className="m-0 text-xs text-pretty text-neutral-400">
-                Điểm phù hợp chỉ hỗ trợ xếp hạng; người dùng cần quan sát ảnh để xác định kết quả.
-              </p>
+              {result.scoreText && (
+                <p className="m-0 text-xs text-pretty text-neutral-400">
+                  Điểm phù hợp chỉ hỗ trợ xếp hạng; người dùng cần quan sát ảnh để xác định kết quả.
+                </p>
+              )}
               {context === 'search' && (
                 <div className="flex flex-col gap-1.5">
                   <Button

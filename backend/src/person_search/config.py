@@ -189,6 +189,13 @@ class BaseConfig:
     AUTH_COOKIE_NAME = "ps_session"
     AUTH_COOKIE_SECURE = True
     AUTH_COOKIE_SAMESITE = "Lax"
+    RATE_LIMITS = {
+        "login": (10, 60),
+        "search": (30, 60),
+        "upload": (10, 60),
+        "connection_test": (10, 60),
+        "diagnostics": (6, 60),
+    }
 
 
 class DevelopmentConfig(BaseConfig):

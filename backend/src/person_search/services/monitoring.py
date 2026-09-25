@@ -1,0 +1,521 @@
+from __future__ import annotations
+
+import io
+import math
+import time
+import uuid
+from collections.abc import Callable, Sequence
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from enum import StrEnum
+from typing import Any
+
+from PIL import Image, ImageDraw
+from sqlalchemy import func, select
+
+from person_search.api.errors import ApiError
+from person_search.services.searches import DemoEncoderGateway, EncoderUnavailableError
+from person_search.storage.postgres.models import (
+    Area,
+    Camera,
+    CameraStatus,
+    JobStatus,
+    ProcessingJob,
+    RtspStatus,
+)
+from person_search.workers.pipeline import Pipeline, SourceFrame
+
+TERMINAL_JOBS = (JobStatus.SUCCEEDED, JobStatus.FAILED, JobStatus.CANCELLED)
+PROBE_TEXT = "A person walking."
+TRACKER_WARMUP_FRAMES = 5
+
+
+class Outcome(StrEnum):
+    SUCCESS = "SUCCESS"
+    INCONCLUSIVE = "INCONCLUSIVE"
+    FAILED = "FAILED"
+    SKIPPED = "SKIPPED"
+
+
+class WorkerState(StrEnum):
+    IDLE = "IDLE"
+    QUEUED = "QUEUED"
+    RUNNING = "RUNNING"
+    ERROR = "ERROR"
+    DISABLED = "DISABLED"
+
+
+@dataclass(frozen=True, slots=True)
+class Step:
+    component: str
+    label: str
+    outcome: Outcome
+    message: str | None = None
+    duration_ms: int | None = None
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "component": self.component,
+            "label": self.label,
+            "outcome": self.outcome.value,
+            "message": self.message,
+            "duration_ms": self.duration_ms,
+        }
+
+
+def _utc_now() -> datetime:
+    return datetime.now(UTC)
+
+
+def iso(value: datetime | None) -> str | None:
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=UTC)
+    return value.astimezone(UTC).isoformat().replace("+00:00", "Z")
+
+
+def overall(steps: Sequence[Step]) -> Outcome:
+    outcomes = {step.outcome for step in steps}
+    if Outcome.FAILED in outcomes:
+        return Outcome.FAILED
+    if Outcome.INCONCLUSIVE in outcomes:
+        return Outcome.INCONCLUSIVE
+    return Outcome.SUCCESS
+
+
+def connection_state(camera: Any) -> str:
+    if not camera.rtsp_url:
+        return "NOT_CONFIGURED"
+    return camera.rtsp_status.value
+
+
+def worker_state(
+    camera: Any, active_job: Any | None, last_job: Any | None, now: datetime
+) -> tuple[WorkerState, str | None]:
+    if not camera.ai_enabled:
+        return WorkerState.DISABLED, None
+    if active_job is not None and active_job.status is JobStatus.RUNNING:
+        if active_job.lease_expires_at is not None and active_job.lease_expires_at < now:
+            return WorkerState.ERROR, "worker_heartbeat_lost"
+        return WorkerState.RUNNING, None
+    if active_job is not None:
+        return WorkerState.QUEUED, None
+    if last_job is not None and last_job.status is JobStatus.FAILED:
+        return WorkerState.ERROR, last_job.error_code or "job_failed"
+    return WorkerState.IDLE, None
+
+
+def camera_category(camera: Any, connection: str, state: WorkerState) -> str:
+    if state is WorkerState.ERROR:
+        return "ai_issues"
+    if connection in (RtspStatus.OFFLINE.value, RtspStatus.ERROR.value):
+        return "connection_issues"
+    if camera.status is not CameraStatus.ACTIVE or connection == RtspStatus.UNKNOWN.value:
+        return "unknown"
+    return "healthy"
+
+
+def synthetic_frame() -> SourceFrame:
+    image = Image.new("RGB", (640, 360), (72, 72, 72))
+    ImageDraw.Draw(image).rectangle((280, 90, 360, 300), fill=(180, 40, 40))
+    return SourceFrame(0, 0, image)
+
+
+def check_embedding(values: Sequence[float], dimension: int) -> str | None:
+    if len(values) != dimension:
+        return f"Embedding có {len(values)} chiều, cấu hình yêu cầu {dimension}."
+    if not all(math.isfinite(value) for value in values):
+        return "Embedding chứa giá trị không hợp lệ."
+    if not math.isclose(math.sqrt(sum(v * v for v in values)), 1.0, abs_tol=1e-3):
+        return "Embedding chưa được chuẩn hóa L2."
+    return None
+
+
+class _Timer:
+    def __enter__(self) -> _Timer:
+        self.start = time.perf_counter()
+        self.ms = 0
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        self.ms = round((time.perf_counter() - self.start) * 1000)
+
+
+def run_pipeline_steps(
+    camera: Any,
+    config: Any | None,
+    probe: Callable[[str, str | None], str],
+    pipeline_factory: Callable[[Any], Pipeline],
+) -> list[Step]:
+    steps: list[Step] = []
+    detector_label = (
+        f"Detector · {config.detector_name} {config.detector_version}" if config else "Detector"
+    )
+    tracker_label = (
+        f"Tracker · {config.tracker_name} {config.tracker_version}" if config else "Tracker"
+    )
+    encoder_label = (
+        f"Image Encoder · {config.encoder_name} {config.encoder_version}"
+        if config
+        else "Image Encoder"
+    )
+    rest = [
+        ("DETECTOR", detector_label),
+        ("TRACKER", tracker_label),
+        ("IMAGE_ENCODER", encoder_label),
+    ]
+
+    def skip_rest(reason: str, start: int = 0) -> list[Step]:
+        return steps + [
+            Step(component, label, Outcome.SKIPPED, reason) for component, label in rest[start:]
+        ]
+
+    if camera.status is not CameraStatus.ACTIVE:
+        steps.append(
+            Step("FRAME_SOURCE", "Nguồn khung hình", Outcome.FAILED, "Camera không hoạt động.")
+        )
+        return skip_rest("Bỏ qua vì nguồn khung hình lỗi.")
+    if not camera.ai_enabled:
+        steps.append(
+            Step("FRAME_SOURCE", "Nguồn khung hình", Outcome.FAILED, "Camera chưa bật xử lý AI.")
+        )
+        return skip_rest("Bỏ qua vì camera chưa bật xử lý AI.")
+    if camera.rtsp_url:
+        with _Timer() as timer:
+            try:
+                status = probe(camera.rtsp_url, camera.rtsp_credentials)
+                message = {
+                    "ONLINE": "Kết nối RTSP thành công.",
+                    "OFFLINE": "Không nhận được luồng RTSP.",
+                    "ERROR": "Không chạy được ffprobe trên máy chủ.",
+                }[status]
+            except ApiError as error:
+                status, message = "ERROR", error.message
+        outcome = Outcome.SUCCESS if status == "ONLINE" else Outcome.FAILED
+        steps.append(Step("FRAME_SOURCE", "Nhận khung hình RTSP", outcome, message, timer.ms))
+        if outcome is Outcome.FAILED:
+            return skip_rest("Bỏ qua vì nguồn khung hình lỗi.")
+    else:
+        steps.append(
+            Step(
+                "FRAME_SOURCE",
+                "Nguồn khung hình",
+                Outcome.SKIPPED,
+                "Camera dùng video tải lên; kiểm tra mô hình bằng khung hình tổng hợp.",
+            )
+        )
+    if config is None:
+        steps.append(
+            Step("DETECTOR", detector_label, Outcome.FAILED, "Chưa có cấu hình AI đang áp dụng.")
+        )
+        return skip_rest("Bỏ qua vì chưa có cấu hình AI.", 1)
+    try:
+        pipeline = pipeline_factory(config)
+    except ValueError:
+        steps.append(
+            Step(
+                "DETECTOR",
+                detector_label,
+                Outcome.FAILED,
+                "Máy chủ chưa có adapter cho cấu hình AI đang áp dụng.",
+            )
+        )
+        return skip_rest("Bỏ qua vì không nạp được mô hình.", 1)
+
+    frame = synthetic_frame()
+    try:
+        with _Timer() as timer:
+            try:
+                boxes = pipeline.detector.detect(frame)
+            except Exception:
+                steps.append(Step("DETECTOR", detector_label, Outcome.FAILED, "Detector lỗi."))
+                return skip_rest("Bỏ qua vì Detector lỗi.", 1)
+        if not boxes:
+            steps.append(
+                Step(
+                    "DETECTOR",
+                    detector_label,
+                    Outcome.INCONCLUSIVE,
+                    "Khung hình kiểm tra không có người.",
+                    timer.ms,
+                )
+            )
+            return skip_rest("Chưa có vùng người để kiểm tra.", 1)
+        steps.append(
+            Step(
+                "DETECTOR",
+                detector_label,
+                Outcome.SUCCESS,
+                f"{len(boxes)} vùng phát hiện trên khung {frame.image.width}×{frame.image.height}.",
+                timer.ms,
+            )
+        )
+        with _Timer() as timer:
+            try:
+                tracks = []
+                for index in range(TRACKER_WARMUP_FRAMES):
+                    tracks += pipeline.tracker.update(
+                        SourceFrame(index, index * 40, frame.image), boxes
+                    )
+                tracks += pipeline.tracker.finish()
+            except Exception:
+                steps.append(Step("TRACKER", tracker_label, Outcome.FAILED, "Tracker lỗi."))
+                return skip_rest("Bỏ qua vì Tracker lỗi.", 2)
+        if not tracks:
+            steps.append(
+                Step(
+                    "TRACKER",
+                    tracker_label,
+                    Outcome.INCONCLUSIVE,
+                    "Chưa hình thành track để xác minh.",
+                    timer.ms,
+                )
+            )
+            return skip_rest("Chưa có track để mã hóa.", 2)
+        steps.append(
+            Step("TRACKER", tracker_label, Outcome.SUCCESS, f"{len(tracks)} track.", timer.ms)
+        )
+        box = tracks[0].bbox
+        crop = frame.image.crop((box.x, box.y, box.x + box.width, box.y + box.height))
+        with _Timer() as timer:
+            try:
+                embedding = pipeline.encoder.encode(crop)
+                problem = check_embedding(embedding, config.encoder_dimension)
+            except Exception:
+                problem = "Image Encoder lỗi."
+        steps.append(
+            Step(
+                "IMAGE_ENCODER",
+                encoder_label,
+                Outcome.FAILED if problem else Outcome.SUCCESS,
+                problem or f"Embedding {config.encoder_dimension} chiều.",
+                timer.ms,
+            )
+        )
+    finally:
+        pipeline.tracker.close()
+    return steps
+
+
+def _probe_image() -> bytes:
+    output = io.BytesIO()
+    synthetic_frame().image.save(output, format="JPEG", quality=85)
+    return output.getvalue()
+
+
+class MonitoringService:
+    def __init__(
+        self,
+        unit_of_work_factory: Callable[[], Any],
+        *,
+        health: Any,
+        search: Any,
+        runtime: Any,
+        pipeline_factory: Callable[[Any], Pipeline] = Pipeline.demo,
+        clock: Callable[[], datetime] = _utc_now,
+    ) -> None:
+        self._factory = unit_of_work_factory
+        self._health = health
+        self._search = search
+        self._runtime = runtime
+        self._pipeline_factory = pipeline_factory
+        self._clock = clock
+
+    def system_status(self) -> dict[str, Any]:
+        now = self._clock()
+        with self._factory() as work:
+            session = work.session
+            cameras = session.execute(
+                select(Camera, Area)
+                .join(Area, Area.id == Camera.area_id)
+                .where(Camera.status != CameraStatus.RETIRED)
+                .order_by(Camera.name, Camera.id)
+            ).all()
+            active_jobs = list(
+                session.scalars(
+                    select(ProcessingJob)
+                    .where(ProcessingJob.status.in_((JobStatus.PENDING, JobStatus.RUNNING)))
+                    .order_by(ProcessingJob.created_at, ProcessingJob.id)
+                )
+            )
+            last_jobs = {
+                job.camera_id: job
+                for job in session.scalars(
+                    select(ProcessingJob)
+                    .where(ProcessingJob.status.in_(TERMINAL_JOBS))
+                    .distinct(ProcessingJob.camera_id)
+                    .order_by(ProcessingJob.camera_id, ProcessingJob.updated_at.desc())
+                )
+            }
+            last_heartbeat = session.scalar(select(func.max(ProcessingJob.heartbeat_at)))
+            items = self._camera_rows(cameras, active_jobs, last_jobs, now)
+        summary = {"healthy": 0, "connection_issues": 0, "ai_issues": 0, "unknown": 0}
+        for item in items:
+            summary[item["category"]] += 1
+        running = [job for job in active_jobs if job.status is JobStatus.RUNNING]
+        if any(job.lease_expires_at and job.lease_expires_at < now for job in running):
+            worker = WorkerState.ERROR
+        elif running:
+            worker = WorkerState.RUNNING
+        else:
+            worker = WorkerState.IDLE
+        return {
+            "generated_at": iso(now),
+            "summary": summary,
+            "cameras": items,
+            "storage": self._storage(),
+            "encoder": self._encoder_status(),
+            "worker": {
+                "state": worker.value,
+                "queue_depth": sum(job.status is JobStatus.PENDING for job in active_jobs),
+                "last_heartbeat_at": iso(last_heartbeat),
+            },
+        }
+
+    def _camera_rows(self, cameras, active_jobs, last_jobs, now) -> list[dict[str, Any]]:
+        by_camera: dict[uuid.UUID, ProcessingJob] = {}
+        for job in active_jobs:
+            current = by_camera.get(job.camera_id)
+            if current is None or (
+                job.status is JobStatus.RUNNING and current.status is not JobStatus.RUNNING
+            ):
+                by_camera[job.camera_id] = job
+        items = []
+        for camera, area in cameras:
+            active = by_camera.get(camera.id)
+            last = last_jobs.get(camera.id)
+            state, error = worker_state(camera, active, last, now)
+            connection = connection_state(camera)
+            heartbeat = active.heartbeat_at if active is not None else None
+            items.append(
+                {
+                    "id": str(camera.id),
+                    "code": camera.code,
+                    "name": camera.name,
+                    "area_name": area.name,
+                    "status": camera.status.value,
+                    "connection": connection,
+                    "last_checked_at": iso(camera.last_checked_at),
+                    "ai_enabled": camera.ai_enabled,
+                    "worker_state": state.value,
+                    "active_job_id": str(active.id) if active is not None else None,
+                    "last_heartbeat_at": iso(heartbeat),
+                    "last_error": error,
+                    "metrics": {"source_fps": None, "processed_fps": None, "latency_ms": None},
+                    "category": camera_category(camera, connection, state),
+                }
+            )
+        return items
+
+    def _storage(self) -> dict[str, str]:
+        report = self._health.check()
+        return {
+            name: "UP" if values.get("status") == "ok" else "DOWN"
+            for name, values in report.components.items()
+        }
+
+    def _encoder_status(self) -> str:
+        try:
+            config = self._search.active_config()
+            gateway = self._search.gateway(config.encoder_version)
+            if isinstance(gateway, DemoEncoderGateway):
+                return "UP"
+            gateway.text(
+                PROBE_TEXT, version=config.encoder_version, dimension=config.encoder_dimension
+            )
+            return "UP"
+        except EncoderUnavailableError:
+            return "DOWN"
+
+    def camera_pipeline(self, camera_id: uuid.UUID) -> dict[str, Any]:
+        with self._factory() as work:
+            camera = work.repositories.cameras.get(camera_id)
+            if camera is None:
+                raise ApiError(404, "camera_not_found", "Không tìm thấy camera.")
+            config = work.repositories.ai_configs.active()
+        steps = run_pipeline_steps(camera, config, self._runtime.probe, self._pipeline_factory)
+        return self._report(steps)
+
+    def search_components(self) -> dict[str, Any]:
+        steps: list[Step] = []
+        try:
+            config = self._search.active_config()
+        except EncoderUnavailableError:
+            steps.append(
+                Step("ACTIVE_CONFIG", "Cấu hình encoder", Outcome.FAILED, "Chưa có cấu hình AI.")
+            )
+            steps += [
+                Step(component, label, Outcome.SKIPPED, "Bỏ qua vì chưa có cấu hình AI.")
+                for component, label in (
+                    ("TEXT_ENCODER", "Text Encoder"),
+                    ("IMAGE_ENCODER", "Image Encoder"),
+                )
+            ]
+        else:
+            name = f"{config.encoder_name} {config.encoder_version}"
+            steps.append(
+                Step(
+                    "ACTIVE_CONFIG",
+                    "Cấu hình encoder",
+                    Outcome.SUCCESS,
+                    f"{name} · {config.encoder_dimension} chiều.",
+                )
+            )
+            steps.append(
+                self._encode_step(
+                    "TEXT_ENCODER",
+                    f"Text Encoder · {name}",
+                    config,
+                    lambda gateway: gateway.text(
+                        PROBE_TEXT,
+                        version=config.encoder_version,
+                        dimension=config.encoder_dimension,
+                    ),
+                )
+            )
+            steps.append(
+                self._encode_step(
+                    "IMAGE_ENCODER",
+                    f"Image Encoder · {name}",
+                    config,
+                    lambda gateway: gateway.image(
+                        _probe_image(),
+                        version=config.encoder_version,
+                        dimension=config.encoder_dimension,
+                    ),
+                )
+            )
+        labels = {"postgres": "PostgreSQL", "milvus": "Milvus", "minio": "MinIO"}
+        for name, state in self._storage().items():
+            steps.append(
+                Step(
+                    f"STORAGE_{name.upper()}",
+                    labels.get(name, name),
+                    Outcome.SUCCESS if state == "UP" else Outcome.FAILED,
+                    "Kết nối được." if state == "UP" else "Không kết nối được.",
+                )
+            )
+        return self._report(steps)
+
+    def _encode_step(self, component: str, label: str, config: Any, call) -> Step:
+        with _Timer() as timer:
+            try:
+                embedding = call(self._search.gateway(config.encoder_version))
+                problem = check_embedding(embedding, config.encoder_dimension)
+            except EncoderUnavailableError:
+                problem = "Encoder không khả dụng."
+        return Step(
+            component,
+            label,
+            Outcome.FAILED if problem else Outcome.SUCCESS,
+            problem or f"Embedding {config.encoder_dimension} chiều.",
+            timer.ms,
+        )
+
+    def _report(self, steps: list[Step]) -> dict[str, Any]:
+        return {
+            "ran_at": iso(self._clock()),
+            "overall": overall(steps).value,
+            "steps": [step.as_dict() for step in steps],
+        }

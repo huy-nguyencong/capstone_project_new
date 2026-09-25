@@ -56,3 +56,68 @@ export const toCamera = (camera) => ({
   lastCheckedAt: camera.last_checked_at,
   version: camera.version,
 })
+
+export const shortId = (id) => (id ? id.slice(0, 8) : '')
+
+export const toCaseSummary = (item) => ({
+  id: item.id,
+  code: shortId(item.id),
+  title: item.title,
+  note: item.note || '',
+  owner: {
+    id: item.owner.id,
+    name: item.owner.display_name,
+    status: item.owner.status.toLowerCase(),
+  },
+  resultCount: item.result_count,
+  created: dateTimeFormatter.format(new Date(item.created_at)),
+  updated: dateTimeFormatter.format(new Date(item.updated_at)),
+  version: item.version,
+})
+
+const WORKER_AI_STATE = {
+  DISABLED: 'off',
+  RUNNING: 'running',
+  QUEUED: 'starting',
+  IDLE: 'stopped',
+  ERROR: 'error',
+}
+
+const CONNECTION_STATUS = {
+  ONLINE: 'online',
+  OFFLINE: 'offline',
+  ERROR: 'offline',
+  UNKNOWN: 'unverified',
+  NOT_CONFIGURED: 'noRtsp',
+}
+
+const formatDateTime = (value) => (value ? dateTimeFormatter.format(new Date(value)) : '—')
+
+export const toStatusCamera = (camera) => ({
+  id: camera.id,
+  code: camera.code,
+  name: camera.name,
+  areaName: camera.area_name,
+  status: camera.status === 'ACTIVE' ? CONNECTION_STATUS[camera.connection] : 'unknown',
+  connection: camera.connection,
+  ai: camera.ai_enabled,
+  aiState: WORKER_AI_STATE[camera.worker_state] || 'unknown',
+  category: camera.category,
+  activeJobId: camera.active_job_id,
+  lastChecked: formatDateTime(camera.last_checked_at),
+  lastHeartbeat: formatDateTime(camera.last_heartbeat_at),
+  lastError: camera.last_error,
+  metrics: camera.metrics,
+})
+
+export const toAuditLog = (item) => ({
+  id: item.id,
+  at: formatDateTime(item.occurred_at),
+  actor: item.actor?.username ?? 'system',
+  eventType: item.event_type,
+  targetType: item.target_type,
+  targetId: item.target_id,
+  target: item.target_label || (item.target_id ? shortId(item.target_id) : '—'),
+  ok: item.result === 'SUCCESS',
+  metadata: item.metadata || {},
+})

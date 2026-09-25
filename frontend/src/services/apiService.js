@@ -40,13 +40,16 @@ const toApiError = (error) => {
   }
   const data = response.data
   const envelope = data?.error
+  const requestId = envelope?.request_id || response.headers?.['x-request-id']
+  const text = envelope?.message || data?.message || message
   return new ApiError({
-    message: envelope?.message || data?.message || message,
+    message:
+      response.status >= 500 && requestId ? `${text} (Mã tra cứu: ${requestId.slice(0, 8)})` : text,
     status: response.status,
     data,
     code: envelope?.code || code,
     details: envelope?.details,
-    requestId: envelope?.request_id || response.headers?.['x-request-id'],
+    requestId,
   })
 }
 

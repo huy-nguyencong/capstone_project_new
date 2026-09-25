@@ -52,7 +52,6 @@ export function SearchResults({ status, results, queryLabel, topk, runningMessag
   if (sort === 'time') {
     list = [...list].sort((a, b) => b.appearedAt.localeCompare(a.appearedAt))
   }
-  const viewerItems = list.map((result) => ({ rid: result.id, score: result.score, result }))
 
   const camOptions = [
     { value: 'all', label: 'Tất cả camera' },
@@ -98,7 +97,7 @@ export function SearchResults({ status, results, queryLabel, topk, runningMessag
 
       {viewerIndex != null && (
         <ResultViewer
-          items={viewerItems}
+          items={list}
           index={viewerIndex}
           context="search"
           onIndexChange={setViewerIndex}

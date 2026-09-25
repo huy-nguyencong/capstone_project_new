@@ -1,14 +1,16 @@
 import { MagnifyingGlassIcon } from '@phosphor-icons/react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
+import { Alert } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/Button'
 import { SelectField, TextField } from '@/components/ui/Form'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { Spinner } from '@/components/ui/Spinner'
 import { PATHS } from '@/constants/navigation'
 import { CaseDetail } from '@/features/cases/CaseDetail'
 import { CaseList } from '@/features/cases/CaseList'
-import { useAppStore } from '@/store/hooks'
-import { byUpdatedDesc, dmyToIso } from '@/utils/format'
+import { casesApi } from '@/services/api/cases'
+import { viewerApi } from '@/services/api/viewer'
 
 const COPY = {
   operator: {
@@ -25,31 +27,106 @@ const COPY = {
   },
 }
 
+const PAGE_SIZE = 20
+
+const OWNER_STATUS = {
+  locked: 'đã khóa',
+  inactive: 'ngừng hoạt động',
+  deleted: 'đã xóa',
+}
+
+const localDayToUtc = (day, end) =>
+  day ? new Date(`${day}T${end ? '23:59:59.999' : '00:00:00'}`).toISOString() : undefined
+
+const listParams = (filters) => ({
+  owner_user_id: filters.op || undefined,
+  created_from: localDayToUtc(filters.from, false),
+  created_to: localDayToUtc(filters.to, true),
+  limit: PAGE_SIZE,
+})
+
 export default function CaseBrowserPage({ mode }) {
-  const { me, users, cases } = useAppStore()
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
   const [filters, setFilters] = useState({ op: '', from: '', to: '' })
+  const [cases, setCases] = useState([])
+  const [operators, setOperators] = useState([])
+  const [nextCursor, setNextCursor] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [detail, setDetail] = useState(null)
+  const [detailError, setDetailError] = useState(null)
   const isOperator = mode === 'operator'
   const copy = COPY[mode]
 
-  const userName = (id) => users.find((u) => u.id === id)?.name ?? '—'
+  useEffect(() => {
+    let active = true
+    casesApi
+      .list(listParams(filters))
+      .then((page) => {
+        if (!active) return
+        setCases(page.items)
+        setNextCursor(page.nextCursor)
+      })
+      .catch((requestError) => active && setError(requestError.message))
+      .finally(() => active && setLoading(false))
+    return () => {
+      active = false
+    }
+  }, [filters])
 
-  const list = cases
-    .filter((c) => {
-      if (isOperator) return c.owner === me.id
-      const updated = dmyToIso(c.updated)
-      return (
-        (!filters.op || c.owner === filters.op) &&
-        (!filters.from || updated >= filters.from) &&
-        (!filters.to || updated <= filters.to)
+  useEffect(() => {
+    if (isOperator) return undefined
+    let active = true
+    viewerApi
+      .operators()
+      .then((items) => active && setOperators(items))
+      .catch((requestError) => active && setError(requestError.message))
+    return () => {
+      active = false
+    }
+  }, [isOperator])
+
+  const selectedId = params.get('case') || cases[0]?.id
+
+  useEffect(() => {
+    if (!selectedId) return undefined
+    let active = true
+    casesApi
+      .get(selectedId)
+      .then((next) => active && setDetail(next))
+      .catch(
+        (requestError) =>
+          active && setDetailError({ id: selectedId, message: requestError.message }),
       )
-    })
-    .sort(byUpdatedDesc)
+    return () => {
+      active = false
+    }
+  }, [selectedId])
 
-  const current = list.find((c) => c.id === params.get('case')) ?? list[0]
-  const owners = [...new Set(cases.map((c) => c.owner))]
-  const setFilter = (key) => (e) => setFilters((f) => ({ ...f, [key]: e.target.value }))
+  const loadMore = async () => {
+    setLoading(true)
+    try {
+      const page = await casesApi.list({ ...listParams(filters), cursor: nextCursor })
+      setCases((items) => [...items, ...page.items])
+      setNextCursor(page.nextCursor)
+    } catch (requestError) {
+      setError(requestError.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const applyChange = (next) => {
+    setDetail(next)
+    setCases((items) => items.map((c) => (c.id === next.case.id ? next.case : c)))
+  }
+
+  const setFilter = (key) => (e) => {
+    setLoading(true)
+    setError(null)
+    setFilters((f) => ({ ...f, [key]: e.target.value }))
+  }
 
   return (
     <>
@@ -69,27 +146,45 @@ export default function CaseBrowserPage({ mode }) {
             value={filters.op}
             onChange={setFilter('op')}
             placeholder="Tất cả Operator"
-            options={owners.map((id) => ({ value: id, label: userName(id) }))}
+            options={operators.map((op) => ({
+              value: op.id,
+              label: op.status === 'active' ? op.name : `${op.name} (${OWNER_STATUS[op.status]})`,
+            }))}
           />
-          <TextField
-            label="Cập nhật từ"
-            type="date"
-            value={filters.from}
-            onChange={setFilter('from')}
-          />
+          <TextField label="Tạo từ" type="date" value={filters.from} onChange={setFilter('from')} />
           <TextField label="Đến" type="date" value={filters.to} onChange={setFilter('to')} />
+          {loading && <Spinner className="mb-2.5 text-neutral-400" />}
         </div>
       )}
 
+      {error && <Alert className="mb-3">{error}</Alert>}
+
       <div className="grid items-start gap-[18px] lg:grid-cols-[minmax(260px,320px)_minmax(0,1fr)]">
-        <CaseList
-          cases={list}
-          selectedId={current?.id}
-          onSelect={(id) => setParams({ case: id }, { replace: true })}
-          metaFor={(c) => `${isOperator ? '' : `${userName(c.owner)} · `}Cập nhật ${c.updated}`}
-          emptyText={copy.empty}
-        />
-        {current && <CaseDetail key={current.id} caseFile={current} editable={isOperator} />}
+        <div className="flex flex-col gap-2">
+          <CaseList
+            cases={cases}
+            selectedId={selectedId}
+            onSelect={(id) => setParams({ case: id }, { replace: true })}
+            metaFor={(c) => `${isOperator ? '' : `${c.owner.name} · `}Cập nhật ${c.updated}`}
+            emptyText={loading ? 'Đang tải Case…' : copy.empty}
+          />
+          {nextCursor && (
+            <Button onClick={loadMore} disabled={loading}>
+              Tải thêm
+            </Button>
+          )}
+        </div>
+        {detailError?.id === selectedId && detail?.case.id !== selectedId && (
+          <Alert>{detailError.message}</Alert>
+        )}
+        {detail && detail.case.id === selectedId && (
+          <CaseDetail
+            key={detail.case.id}
+            detail={detail}
+            editable={isOperator}
+            onChange={applyChange}
+          />
+        )}
       </div>
     </>
   )

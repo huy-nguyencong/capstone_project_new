@@ -1,44 +1,70 @@
 import { ArrowsClockwiseIcon, CaretRightIcon } from '@phosphor-icons/react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
+import { Alert } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/Button'
 import { CellStack, DataTable } from '@/components/ui/DataTable'
 import { MetricCard } from '@/components/ui/MetricCard'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { Tag } from '@/components/ui/Tag'
 import { PATHS } from '@/constants/navigation'
-import { useAppStore } from '@/store/hooks'
-import { byUpdatedDesc, nowTime, wait } from '@/utils/format'
+import { viewerApi } from '@/services/api/viewer'
+import { nowTime } from '@/utils/format'
+
+const OWNER_NOTE = {
+  locked: 'Đã khóa',
+  inactive: 'Ngừng hoạt động',
+  deleted: 'Đã xóa',
+}
 
 export default function OverviewPage() {
-  const { cases, users } = useAppStore()
   const navigate = useNavigate()
-  const [lastUpdated, setLastUpdated] = useState('09:50:02')
-  const [refreshing, setRefreshing] = useState(false)
+  const [dashboard, setDashboard] = useState(null)
+  const [lastUpdated, setLastUpdated] = useState(null)
+  const [refreshing, setRefreshing] = useState(true)
+  const [error, setError] = useState(null)
+  const [reloadKey, setReloadKey] = useState(0)
 
-  const recent = [...cases].sort(byUpdatedDesc).slice(0, 6)
-  const totalItems = cases.reduce((n, c) => n + c.items.length, 0)
-  const userName = (id) => users.find((u) => u.id === id)?.name ?? '—'
+  useEffect(() => {
+    let active = true
+    viewerApi
+      .dashboard()
+      .then((next) => {
+        if (!active) return
+        setDashboard(next)
+        setLastUpdated(nowTime())
+        setError(null)
+      })
+      .catch((requestError) => active && setError(requestError.message))
+      .finally(() => active && setRefreshing(false))
+    return () => {
+      active = false
+    }
+  }, [reloadKey])
 
-  const refresh = async () => {
+  const refresh = () => {
     setRefreshing(true)
-    await wait(800)
-    setLastUpdated(nowTime())
-    setRefreshing(false)
+    setReloadKey((key) => key + 1)
   }
 
   const columns = [
     {
       key: 'case',
       header: 'Case',
-      render: (c) => <CellStack primary={c.title} secondary={c.id} mono />,
+      render: (c) => <CellStack primary={c.title} secondary={c.code} mono />,
     },
     {
       key: 'owner',
       header: 'Operator phụ trách',
       className: 'text-[13px]',
-      render: (c) => userName(c.owner),
+      render: (c) => (
+        <span className="flex items-center gap-2">
+          {c.owner.name}
+          {OWNER_NOTE[c.owner.status] && <Tag>{OWNER_NOTE[c.owner.status]}</Tag>}
+        </span>
+      ),
     },
-    { key: 'count', header: 'Kết quả', className: 'text-[13px]', render: (c) => c.items.length },
+    { key: 'count', header: 'Kết quả', className: 'text-[13px]', render: (c) => c.resultCount },
     {
       key: 'updated',
       header: 'Cập nhật gần nhất',
@@ -61,23 +87,32 @@ export default function OverviewPage() {
         title="Tổng quan"
         description="Case và kết quả đã lưu trên toàn hệ thống."
       >
-        <span className="text-xs text-neutral-400">Cập nhật lúc {lastUpdated}</span>
+        {lastUpdated && (
+          <span className="text-xs text-neutral-400">Cập nhật lúc {lastUpdated}</span>
+        )}
         <Button icon={ArrowsClockwiseIcon} onClick={refresh} disabled={refreshing}>
           {refreshing ? 'Đang làm mới…' : 'Làm mới'}
         </Button>
       </PageHeader>
 
+      {error && <Alert className="mb-3">{error}</Alert>}
+
       <div className="mb-[26px] grid max-w-[720px] grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-3">
-        <MetricCard label="Tổng số Case" value={cases.length} size="lg" highlight />
-        <MetricCard label="Kết quả đã lưu vào Case" value={totalItems} size="lg" />
+        <MetricCard label="Tổng số Case" value={dashboard?.totalCases ?? '—'} size="lg" highlight />
+        <MetricCard
+          label="Kết quả đã lưu vào Case"
+          value={dashboard?.totalCaseResults ?? '—'}
+          size="lg"
+        />
       </div>
 
       <h5 className="mb-2">Case gần đây</h5>
       <DataTable
         columns={columns}
-        rows={recent}
+        rows={dashboard?.recentCases ?? []}
         rowKey={(c) => c.id}
         onRowClick={(c) => navigate(`${PATHS.caseFiles}?case=${c.id}`)}
+        emptyText={dashboard ? 'Chưa có Case nào.' : 'Đang tải…'}
       />
     </>
   )

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import CheckConstraint, ForeignKey, Index, String, Text
+from sqlalchemy import CheckConstraint, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -15,6 +15,7 @@ class Case(TimestampMixin, Base):
     __tablename__ = "cases"
     __table_args__ = (
         CheckConstraint("length(btrim(title)) > 0", name="ck_cases_title_not_blank"),
+        CheckConstraint("version > 0", name="ck_cases_version_positive"),
         Index("ix_cases_owner_created_at", "owner_user_id", "created_at"),
     )
 
@@ -26,3 +27,4 @@ class Case(TimestampMixin, Base):
     )
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
