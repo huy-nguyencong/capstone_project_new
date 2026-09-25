@@ -1,6 +1,6 @@
 # Kế hoạch thiết kế và hiện thực tầng lưu trữ dữ liệu
 
-> Tài liệu làm việc cho ứng dụng tìm kiếm người qua camera. Mỗi task bên dưới là một đơn vị triển khai, review, kiểm thử và commit độc lập. Không chuyển sang task kế tiếp khi task hiện tại chưa được người thực hiện review và chấp thuận.
+> Đây là kế hoạch triển khai tầng lưu trữ trực thuộc đặc tả backend chính thức `backend_implementation_plan.md`. Mỗi task bên dưới là một đơn vị triển khai, review, kiểm thử và commit độc lập. Không chuyển sang task kế tiếp khi task hiện tại chưa được người thực hiện review và chấp thuận. Các roadmap bên ngoài thư mục `files/`, bao gồm `docs/api-roadmap.md`, không phải nguồn yêu cầu và không được ghi đè kế hoạch chính thức này.
 
 ## 1. Mục tiêu
 
@@ -23,11 +23,12 @@ Tầng lưu trữ phải bảo đảm các quy tắc đã chốt trong `architec
 
 ## 2. Nguồn yêu cầu và thứ tự ưu tiên
 
-1. `files/architect.md` là nguồn quyết định mới nhất.
-2. `files/usecase_detail.md` mô tả luồng chính, ngoại lệ và quyền của 15 use case.
-3. `files/project_requirements.md` mô tả phạm vi nghiệp vụ tổng quát.
+1. `files/backend_implementation_plan.md` là đặc tả chính quy, có thẩm quyền cao nhất đối với hành vi backend.
+2. `files/architect.md` quy định kiến trúc và quyết định kỹ thuật chính thức.
+3. `files/usecase_detail.md` mô tả luồng chính, ngoại lệ và quyền của 15 use case.
+4. `files/project_requirements.md` mô tả phạm vi nghiệp vụ tổng quát.
 
-Nếu ba tài liệu mâu thuẫn, áp dụng quyết định trong `architect.md` và ghi lại khác biệt trong ADR hoặc changelog của task liên quan.
+Nếu các tài liệu chính thức mâu thuẫn, không lấy roadmap hoặc code hiện tại làm yêu cầu. Phải đối chiếu quyết định đã được phê duyệt, ưu tiên `backend_implementation_plan.md` cho hành vi backend và cập nhật đồng bộ tài liệu liên quan trước khi triển khai.
 
 ## 3. Công nghệ mặc định để lập kế hoạch
 

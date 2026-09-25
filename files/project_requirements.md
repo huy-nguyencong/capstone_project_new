@@ -1,10 +1,12 @@
 # Project Requirements
 
+> Đây là tài liệu yêu cầu chính thức của dự án. Đối với phạm vi và hành vi backend, `backend_implementation_plan.md` là đặc tả triển khai chính thức đã được phê duyệt. Các roadmap hoặc tài liệu theo dõi tiến độ nằm ngoài thư mục `files/`, bao gồm `docs/api-roadmap.md`, chỉ dùng để theo dõi thực hiện và không được bổ sung, thay đổi hoặc ghi đè yêu cầu trong bộ tài liệu chính thức này.
+
 ## Bối cảnh dự án
 
 Trong thực tế, các hệ thống camera giám sát ngày càng được triển khai rộng rãi tại các tòa nhà, khu dân cư, doanh nghiệp, nhà máy và nhiều khu vực công cộng. Số lượng camera lớn và thời gian ghi hình liên tục tạo ra một lượng dữ liệu hình ảnh đáng kể, khiến việc tìm kiếm một người cụ thể bằng phương pháp quan sát thủ công trở nên mất nhiều thời gian và phụ thuộc nhiều vào người vận hành. Đặc biệt, khi người dùng chỉ có một số thông tin ban đầu như hình ảnh của người cần tìm, đặc điểm trang phục hoặc mô tả bằng ngôn ngữ tự nhiên, việc xác định thời điểm và camera mà người đó xuất hiện là một bài toán khó nếu chỉ sử dụng hệ thống camera truyền thống.
 
-Xuất phát từ nhu cầu đó, dự án hướng đến xây dựng một hệ thống ứng dụng trí tuệ nhân tạo hỗ trợ tìm kiếm người trong dữ liệu thu thập từ các luồng camera RTSP. Hệ thống tiếp nhận và phân tích hình ảnh từ camera, phát hiện và theo dõi người, tạo đặc trưng hình ảnh phục vụ lập chỉ mục, từ đó cho phép Operator tìm kiếm người bằng ảnh crop, câu mô tả văn bản hoặc bộ lọc thuộc tính. Bộ lọc thuộc tính chỉ đóng vai trò hỗ trợ người dùng xây dựng nhanh câu mô tả; hệ thống chuyển các thuộc tính được lựa chọn thành văn bản rồi xử lý bằng Text Encoder. Danh sách kết quả ban đầu hiển thị ảnh người được crop động từ **frame toàn cảnh + bounding box**, cùng camera phát hiện, khu vực, thời điểm xuất hiện và Điểm phù hợp. Khi bấm vào ảnh người, hệ thống hiển thị frame toàn cảnh và vẽ bounding box của người trên frame để người dùng đánh giá trong ngữ cảnh.
+Xuất phát từ nhu cầu đó, dự án hướng đến xây dựng một hệ thống ứng dụng trí tuệ nhân tạo hỗ trợ tìm kiếm người trong dữ liệu thu thập từ các luồng camera RTSP. Hệ thống tiếp nhận và phân tích hình ảnh từ camera, phát hiện và theo dõi người, tạo đặc trưng hình ảnh phục vụ lập chỉ mục, từ đó cho phép Operator tìm kiếm người bằng ảnh crop, câu mô tả văn bản **tiếng Anh** hoặc bộ lọc thuộc tính **tiếng Anh**. Bộ lọc thuộc tính chỉ đóng vai trò hỗ trợ người dùng xây dựng nhanh câu mô tả; hệ thống chuyển các thuộc tính được lựa chọn thành câu tiếng Anh có cấu trúc rồi xử lý bằng Text Encoder. Danh sách kết quả ban đầu hiển thị ảnh người được crop động từ **frame toàn cảnh + bounding box**, cùng camera phát hiện, khu vực, thời điểm xuất hiện và Điểm phù hợp. Khi bấm vào ảnh người, hệ thống hiển thị frame toàn cảnh và vẽ bounding box của người trên frame để người dùng đánh giá trong ngữ cảnh.
 
 ## 1. Chức năng của tài khoản quản trị viên
 
@@ -31,15 +33,15 @@ Xuất phát từ nhu cầu đó, dự án hướng đến xây dựng một h�
 
 - **Tìm kiếm người bằng hình ảnh:** Operator tải lên ảnh đã được crop chứa người cần tìm. Hệ thống sử dụng Image Encoder để tạo biểu diễn truy vấn và so sánh với dữ liệu embedding đã được lập chỉ mục.
 
-- **Tìm kiếm người bằng mô tả văn bản:** Operator nhập câu hoặc đoạn mô tả đặc điểm người cần tìm, ví dụ “người mặc áo đỏ, quần đen, mang ba lô”. Hệ thống sử dụng Text Encoder để mã hóa mô tả thành biểu diễn truy vấn và thực hiện tìm kiếm.
+- **Tìm kiếm người bằng mô tả văn bản:** Operator nhập câu hoặc đoạn mô tả **bằng tiếng Anh** về đặc điểm người cần tìm, ví dụ “a person wearing a red shirt, black pants, and a backpack”. Hệ thống sử dụng Text Encoder để mã hóa mô tả thành biểu diễn truy vấn và thực hiện tìm kiếm. Phiên bản hiện tại không hỗ trợ truy vấn văn bản bằng tiếng Việt và không thực hiện dịch tự động sang tiếng Anh.
 
-- **Tìm kiếm người theo thuộc tính:** Operator lựa chọn nhanh các thuộc tính được giao diện hỗ trợ như màu áo, màu quần, loại trang phục hoặc mang ba lô. Bộ lọc thuộc tính là UX helper/prompt builder, không phải mô hình AI riêng. Hệ thống chuyển các thuộc tính đã chọn thành một câu mô tả văn bản có cấu trúc rồi đưa câu này vào Text Encoder để thực hiện tìm kiếm giống với tìm kiếm bằng mô tả văn bản.
+- **Tìm kiếm người theo thuộc tính:** Operator lựa chọn nhanh các thuộc tính **được trình bày bằng tiếng Anh** như màu áo, màu quần, loại trang phục hoặc mang ba lô. Bộ lọc thuộc tính là UX helper/prompt builder, không phải mô hình AI riêng. Tên thuộc tính, giá trị lựa chọn và câu mô tả có cấu trúc được sinh ra đều dùng tiếng Anh; câu này được đưa vào Text Encoder để thực hiện tìm kiếm giống với tìm kiếm bằng mô tả văn bản.
 
 - **Lưu trữ hình ảnh kết quả:** Hệ thống không lưu person crop như một ảnh độc lập. Đối với mỗi lần xuất hiện/track, hệ thống lưu frame toàn cảnh đại diện, bounding box của người trên frame và metadata liên quan. Danh sách kết quả dùng frame + bounding box để crop động ảnh người; khi người dùng bấm vào ảnh, hệ thống hiển thị full frame và vẽ bounding box trên đó.
 
 - **Xem và đánh giá kết quả tìm kiếm:** Operator chọn số lượng kết quả muốn hiển thị (`top_k`) khi gửi yêu cầu tìm kiếm. Hệ thống kiểm tra `top_k` hợp lệ và trả về tối đa số lượng đó trong tập kết quả có **Điểm phù hợp (Matching Score)** cao nhất, sắp xếp từ cao xuống thấp. Danh sách ban đầu hiển thị ảnh người crop động từ frame toàn cảnh và bounding box, camera phát hiện, khu vực, thời gian xuất hiện và Điểm phù hợp. Khi Operator bấm vào ảnh người, hệ thống hiển thị frame toàn cảnh và vẽ bounding box của người trên frame để Operator đánh giá bằng mắt. Phiên bản hiện tại không dùng ngưỡng Matching Score để tự động loại kết quả. Mỗi kết quả đại diện cho một lần xuất hiện/track của một người trên một camera, sử dụng một frame toàn cảnh đại diện và bounding box; hệ thống không tạo một kết quả riêng cho từng frame của cùng track.
 
-- **Nguyên tắc trả kết quả:** Hệ thống không dùng ngưỡng Matching Score để quyết định một kết quả có được hiển thị hay không. Hệ thống trả về tối đa `top_k` kết quả có điểm cao nhất trong phạm vi tìm kiếm theo số lượng Operator chọn; `top_k` phải là số nguyên dương và được backend kiểm tra giới hạn hợp lệ. Giá trị giới hạn tối đa chưa được quy định. Điểm phù hợp chỉ phục vụ xếp hạng và hỗ trợ Operator đánh giá bằng mắt.
+- **Nguyên tắc trả kết quả:** Hệ thống không dùng ngưỡng Matching Score để quyết định một kết quả có được hiển thị hay không. Hệ thống trả về tối đa `top_k` kết quả có điểm cao nhất trong phạm vi tìm kiếm theo số lượng Operator chọn; `top_k` phải là số nguyên dương và được backend kiểm tra giới hạn hợp lệ. Giá trị giới hạn tối đa chưa được quy định. Điểm phù hợp chỉ phục vụ xếp hạng và hỗ trợ Operator đánh giá bằng mắt trong **lượt tìm kiếm hiện tại**; không được lưu vào Case hoặc hiển thị lại khi xem Case.
 
 - **Quản lý hồ sơ vụ việc:** Khi xem một kết quả tìm kiếm, Operator có hai lựa chọn: **Tạo Case mới** hoặc **Thêm vào Case đã có**. Mỗi Case có đúng **một Operator phụ trách**. Khi tạo Case, hệ thống tự động lấy Operator đang đăng nhập làm người phụ trách; Operator không chọn người phụ trách trong biểu mẫu và không thể chỉ định người khác qua request. Khi thêm vào Case đã có, hệ thống chỉ hiển thị và cho phép thao tác trên các Case do chính Operator đó phụ trách. Phiên bản hiện tại không hỗ trợ chuyển quyền phụ trách Case sang Operator khác. Case không có trạng thái và không gắn với khu vực. Nội dung nghiệp vụ của Case gồm **tiêu đề**, **ghi chú** và **các kết quả tìm kiếm đã lưu**. Mỗi kết quả giữ tham chiếu tới frame toàn cảnh, bounding box và metadata; không lưu person crop riêng. Một Case có thể chứa nhiều kết quả tìm kiếm; khu vực chỉ dùng để giới hạn dữ liệu tìm kiếm mà Operator được phép truy cập, không dùng để ràng buộc Case.
 ## 3. Chức năng của tài khoản Viewer
@@ -48,7 +50,7 @@ Viewer được định nghĩa là người dùng ở vai trò quản lý như *
 
 - **Xem thông tin tổng quan:** Viewer có thể xem dashboard trên toàn hệ thống với các nội dung tối thiểu gồm **tổng số Case**, **tổng số kết quả tìm kiếm đã được lưu vào Case** và **danh sách các Case gần đây**.
 - **Xem hồ sơ vụ việc:** Viewer có thể xem toàn bộ Case trong hệ thống. Mỗi Case hiển thị tiêu đề, ghi chú, Operator phụ trách và các kết quả tìm kiếm đã lưu; Viewer luôn ở chế độ chỉ đọc.
-- **Xem thông tin kết quả tìm kiếm đã lưu:** Viewer có thể xem ảnh người được dựng từ frame toàn cảnh và bounding box, camera phát hiện, khu vực, thời gian phát hiện và điểm phù hợp của các kết quả đã được Operator lưu trong Case.
+- **Xem thông tin kết quả tìm kiếm đã lưu:** Viewer có thể xem ảnh người được dựng từ frame toàn cảnh và bounding box, camera phát hiện, khu vực và thời gian phát hiện của các kết quả đã được Operator lưu trong Case. **Matching Score không được lưu và không hiển thị lại trong Case.**
 
 - **Hạn chế quyền thao tác:** Viewer chỉ có quyền đọc; không được thực hiện tìm kiếm AI, tạo hoặc chỉnh sửa Case, thay đổi kết quả tìm kiếm, quản lý camera, quản lý người dùng hoặc cấu hình mô hình AI.
 
@@ -121,15 +123,16 @@ Query Embedding
 Vector Search
 ```
 
-Search Components gồm **Image Encoder** và **Text Encoder**. Hai encoder này được cố định trong phiên bản hiện tại và không phải là tham số cấu hình của Admin. Image Encoder được sử dụng cho truy vấn bằng ảnh crop; Text Encoder được sử dụng cho truy vấn bằng văn bản và cho câu mô tả được sinh từ bộ lọc thuộc tính.
+Search Components gồm **Image Encoder** và **Text Encoder**. Hai encoder này được cố định trong phiên bản hiện tại và không phải là tham số cấu hình của Admin. Image Encoder được sử dụng cho truy vấn bằng ảnh crop; Text Encoder chỉ nhận truy vấn văn bản tiếng Anh và câu mô tả tiếng Anh được sinh từ bộ lọc thuộc tính.
 
 Đơn vị kết quả tìm kiếm được xác định theo **track/lần xuất hiện**, không theo từng frame. Một track trên một camera được biểu diễn bằng **frame toàn cảnh đại diện + bounding box + Person Embedding + metadata** như camera, khu vực và thời gian xuất hiện. Ảnh người trong danh sách được crop động từ frame và bounding box; khi bấm vào ảnh, frame toàn cảnh được hiển thị cùng bounding box vẽ trên frame.
 
 
 ## 6. Quy ước hiển thị kết quả tìm kiếm
 
-Hệ thống sử dụng một thông số chính trên giao diện kết quả là **Điểm phù hợp (Matching Score)**. Điểm này thể hiện mức độ phù hợp giữa truy vấn và kết quả, được sử dụng để **sắp xếp top kết quả** và hỗ trợ người dùng đánh giá bằng mắt. Điểm phù hợp không được xem là kết luận chắc chắn rằng hai hình ảnh thuộc cùng một người; người dùng vẫn cần quan sát ảnh và các thông tin liên quan để đưa ra đánh giá cuối cùng.
+Hệ thống sử dụng một thông số chính trên giao diện kết quả của **lượt tìm kiếm hiện tại** là **Điểm phù hợp (Matching Score)**. Điểm này thể hiện mức độ phù hợp giữa truy vấn và kết quả, được sử dụng để **sắp xếp top kết quả** và hỗ trợ người dùng đánh giá bằng mắt. Điểm phù hợp không được xem là kết luận chắc chắn rằng hai hình ảnh thuộc cùng một người; người dùng vẫn cần quan sát ảnh và các thông tin liên quan để đưa ra đánh giá cuối cùng.
 
-- Giao diện người dùng chỉ hiển thị **Điểm phù hợp (Matching Score)** cho mỗi kết quả tìm kiếm.
+- Giao diện người dùng chỉ hiển thị **Điểm phù hợp (Matching Score)** cho mỗi kết quả trong lượt tìm kiếm hiện tại.
 - Điểm phù hợp được sử dụng để xếp hạng và hỗ trợ người dùng đánh giá kết quả; không được xem là kết luận chắc chắn rằng hai hình ảnh thuộc cùng một người.
+- Điểm phù hợp không được lưu vào `PersonTrack`, `Case` hoặc `CaseResult`, không xuất hiện trong API Case và không hiển thị lại cho Operator hoặc Viewer khi xem Case.
 - Các giá trị confidence nội bộ của Detector hoặc các thành phần AI khác, nếu có, chỉ phục vụ xử lý backend và không được hiển thị trên giao diện/nghiệp vụ.

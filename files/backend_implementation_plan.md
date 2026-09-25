@@ -1,6 +1,6 @@
 # Kế hoạch thiết kế và hiện thực Backend
 
-> Tài liệu làm việc cho Flask API và các tiến trình backend của ứng dụng tìm kiếm người qua camera. Mỗi task là một đơn vị triển khai, kiểm thử, review và commit độc lập. Sau khi hoàn thành một task, dừng để người thực hiện review; chỉ commit và chuyển task khi test đạt và review được chấp thuận.
+> Đây là **đặc tả triển khai backend chính thức đã được phê duyệt** cho Flask API và các tiến trình backend của ứng dụng tìm kiếm người qua camera. Tài liệu quy định những gì backend phải thực hiện. Mỗi task là một đơn vị triển khai, kiểm thử, review và commit độc lập. Sau khi hoàn thành một task, dừng để người thực hiện review; chỉ commit và chuyển task khi test đạt và review được chấp thuận. Các roadmap hoặc tài liệu theo dõi tiến độ bên ngoài thư mục `files/`, bao gồm `docs/api-roadmap.md`, không phải nguồn yêu cầu và không được ghi đè đặc tả này.
 
 ## 1. Mục tiêu Backend
 
@@ -45,10 +45,13 @@ Việc tích hợp model sẽ thông qua interface rõ ràng. Mã suy luận c�
 
 ## 3. Nguồn yêu cầu và quy tắc ưu tiên
 
-1. `files/architect.md` là nguồn quyết định mới nhất.
-2. `files/usecase_detail.md` mô tả luồng chính, ngoại lệ và hậu điều kiện của UC-01 đến UC-15.
-3. `files/project_requirements.md` mô tả phạm vi nghiệp vụ tổng quát.
-4. `files/storage_database_implementation_plan.md` quy định cách backend tương tác với ba kho dữ liệu.
+1. **`files/backend_implementation_plan.md` (tài liệu này)** là nguồn chính quy và có thẩm quyền cao nhất về phạm vi, hành vi và tiêu chí chấp nhận của backend.
+2. `files/architect.md` quy định kiến trúc và các quyết định kỹ thuật chính thức.
+3. `files/usecase_detail.md` mô tả luồng chính, ngoại lệ và hậu điều kiện của UC-01 đến UC-15.
+4. `files/project_requirements.md` mô tả phạm vi nghiệp vụ tổng quát.
+5. `files/storage_database_implementation_plan.md` là kế hoạch cấp dưới, quy định cách backend tương tác với ba kho dữ liệu và phải tuân theo tài liệu này.
+
+Khi phát hiện mâu thuẫn giữa các tài liệu chính thức trong `files/`, phải dừng việc suy diễn, đối chiếu quyết định đã được phê duyệt và cập nhật đồng bộ tài liệu này. Không sử dụng roadmap, trạng thái triển khai hiện tại hoặc hành vi code hiện hữu để tự thay đổi yêu cầu.
 
 Các quyết định bắt buộc phải được giữ xuyên suốt backend:
 
@@ -63,6 +66,8 @@ Các quyết định bắt buộc phải được giữ xuyên suốt backend:
 - Ảnh kết quả được tạo động từ full frame và bbox; MinIO không public.
 - Demo nhận file video và có thể xử lý tuần tự; RTSP là đường thử nghiệm tại nhà.
 - Detector/Tracker là cấu hình chung toàn hệ thống; Image/Text Encoder cố định trong phiên bản đầu.
+- Text search chỉ nhận mô tả tiếng Anh; không hỗ trợ tiếng Việt và không dịch tự động.
+- Tên/giá trị bộ lọc thuộc tính dùng tiếng Anh; prompt builder sinh câu tiếng Anh deterministic.
 
 ## 4. Kiến trúc Backend dự kiến
 
@@ -573,14 +578,14 @@ Không xây dựng “superuser bypass” ẩn. Nếu tương lai cần một va
 **Phạm vi:**
 
 - Image endpoint: validate ảnh crop, decode an toàn, orientation, kích thước, channel và preprocessing theo RaSa.
-- Text endpoint: validate length/encoding; chốt cách xử lý tiếng Việt trước khi tuyên bố hỗ trợ đầy đủ.
-- Attribute endpoint: whitelist thuộc tính và prompt builder deterministic sang câu tiếng Anh có kiểm soát.
+- Text endpoint: chỉ nhận mô tả tiếng Anh, validate length/encoding và từ chối input không được hỗ trợ; không có bước dịch tự động.
+- Attribute endpoint: whitelist tên/giá trị thuộc tính tiếng Anh và prompt builder deterministic sang câu tiếng Anh có kiểm soát.
 - Gateway tới RaSa Image/Text Encoder, timeout và model version check.
 - Normalize/vector dimension theo cùng policy lúc lập chỉ mục.
 - Không persist raw query image, text hoặc embedding mặc định.
 - Không nhận đồng thời nhiều mode trong một request.
 
-**Kiểm thử:** ảnh hỏng/bomb/quá lớn, text rỗng/quá dài, attribute lạ/conflict, prompt snapshot, encoder timeout/sai dimension và không log query nhạy cảm.
+**Kiểm thử:** ảnh hỏng/bomb/quá lớn, text rỗng/quá dài/không phải tiếng Anh, attribute lạ/conflict/không phải tiếng Anh, prompt snapshot tiếng Anh, encoder timeout/sai dimension và không log query nhạy cảm.
 
 **Tiêu chí chấp nhận:** ba mode trả cùng một `QueryEmbedding` contract kèm encoder version; lỗi input tách biệt lỗi model.
 
@@ -903,7 +908,7 @@ Thêm một mục cho mỗi vòng triển khai/review:
 - Video upload staging dùng filesystem private hay bucket riêng; retention sau khi job hoàn tất.
 - Giới hạn ảnh/video, text query, timeout encoder và timeout RTSP test.
 - Job cancel/graceful-stop semantics khi Admin tắt AI giữa lúc xử lý.
-- Chuẩn dịch/tiền xử lý mô tả tiếng Việt trước RaSa Text Encoder.
+- Quy tắc validate truy vấn tiếng Anh và thông báo lỗi cho ngôn ngữ không được hỗ trợ; backend không dịch tự động.
 - Policy 403/404 cho tài nguyên tồn tại nhưng không có quyền.
 - Có cần presigned URL hay luôn stream media qua Flask; mặc định stream qua backend.
 
