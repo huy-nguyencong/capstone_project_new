@@ -16,9 +16,9 @@ import { AddToCaseDialog } from './AddToCaseDialog'
 import { CreateCaseDialog } from './CreateCaseDialog'
 
 const KICKER = {
-  search: 'Kết quả tìm kiếm · UC-10',
-  'case-op': 'Kết quả trong Case · UC-11',
-  'case-viewer': 'Kết quả đã lưu · UC-14',
+  search: 'Kết quả tìm kiếm',
+  'case-op': 'Kết quả trong Case',
+  'case-viewer': 'Kết quả đã lưu',
 }
 
 export function ResultViewer({ items, index, context, onIndexChange, onClose }) {

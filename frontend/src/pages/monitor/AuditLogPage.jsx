@@ -159,7 +159,6 @@ export default function AuditLogPage() {
   return (
     <>
       <PageHeader
-        kicker="UC-08 · Giám sát"
         title="Nhật ký hệ thống"
         description="Audit log thao tác quản trị và sự kiện kỹ thuật. Chỉ tra cứu, không chỉnh sửa."
       />

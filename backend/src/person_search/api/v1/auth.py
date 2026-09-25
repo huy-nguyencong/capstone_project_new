@@ -11,6 +11,7 @@ from person_search.auth.web import (
     auth_service,
     clear_session_cookie,
     current_actor,
+    raise_session_invalid,
     require_auth,
     require_csrf,
     session_token,
@@ -20,6 +21,8 @@ from person_search.services.auth import (
     AccountDisabledError,
     AuthenticatedUser,
     InvalidCredentialsError,
+    SessionGrant,
+    SessionInvalidError,
 )
 
 auth_blueprint = Blueprint("auth", __name__, url_prefix="/auth")
@@ -36,6 +39,15 @@ def serialize_user(user: AuthenticatedUser) -> dict[str, Any]:
             if user.area is not None
             else None
         ),
+    }
+
+
+def serialize_session(grant: SessionGrant) -> dict[str, Any]:
+    return {
+        "user": serialize_user(grant.user),
+        "csrf_token": csrf_token_for(grant.token),
+        "expires_at": grant.expires_at.isoformat(),
+        "refresh_after_seconds": auth_service().policy.refresh_after_seconds,
     }
 
 
@@ -74,9 +86,7 @@ def login():  # type: ignore[no-untyped-def]
             "Tài khoản đã bị khóa hoặc ngừng hoạt động và không có quyền truy cập hệ thống. "
             "Liên hệ Admin.",
         ) from error
-    response = jsonify(
-        {"user": serialize_user(grant.user), "csrf_token": csrf_token_for(grant.token)}
-    )
+    response = jsonify(serialize_session(grant))
     set_session_cookie(response, grant.token, grant.expires_at)
     return response
 
@@ -86,7 +96,27 @@ def login():  # type: ignore[no-untyped-def]
 def me():  # type: ignore[no-untyped-def]
     token = session_token()
     assert token is not None
-    return jsonify({"user": serialize_user(current_actor()), "csrf_token": csrf_token_for(token)})
+    return jsonify(
+        {
+            "user": serialize_user(current_actor()),
+            "csrf_token": csrf_token_for(token),
+            "refresh_after_seconds": auth_service().policy.refresh_after_seconds,
+        }
+    )
+
+
+@auth_blueprint.post("/refresh")
+def refresh():  # type: ignore[no-untyped-def]
+    token = session_token()
+    if token:
+        require_csrf(token)
+    try:
+        grant = auth_service().refresh(token)
+    except SessionInvalidError as error:
+        raise_session_invalid(error, token)
+    response = jsonify(serialize_session(grant))
+    set_session_cookie(response, grant.token, grant.expires_at)
+    return response
 
 
 @auth_blueprint.post("/logout")

@@ -64,7 +64,7 @@
 ```
 
 - Status code: `200` đọc/sửa, `201` tạo, `202` job đã nhận, `204` xóa/logout, `400` request sai định dạng, `401` chưa đăng nhập/phiên hết hạn, `403` không đủ quyền, `404` không tồn tại hoặc không được phép biết, `409` xung đột version/trùng, `413` file quá lớn, `422` validate lỗi, `429` rate limit, `503` dependency (Milvus/MinIO/encoder) lỗi.
-- Session: cookie `ps_session` (`HttpOnly`, `SameSite=Lax`, `Secure` ngoài local). CSRF token trả trong `GET /auth/me` và `POST /auth/login`; mọi request `POST/PUT/PATCH/DELETE` gửi header `X-CSRF-Token`.
+- Session: cookie `ps_session` (`HttpOnly`, `SameSite=Lax`, `Secure` ngoài local). CSRF token trả trong `GET /auth/me`, `POST /auth/login` và `POST /auth/refresh`; mọi request `POST/PUT/PATCH/DELETE` gửi header `X-CSRF-Token`.
 - Optimistic locking: resource có thể sửa đồng thời trả `version`; request sửa gửi lại `version`, lệch thì `409 version_conflict`.
 - Media: luôn stream qua backend, `Cache-Control: private, no-store`, không có URL MinIO public.
 
@@ -87,6 +87,7 @@ Backend và frontend đã nối xong. Riêng BE-04 mới có `require_auth(*role
 | --- | --- | --- | --- | --- |
 | POST | `/auth/login` | Public | mới | `LoginPage` |
 | GET | `/auth/me` | Đã đăng nhập | mới | `AppStoreProvider` khi khởi động, `RequireAuth` |
+| POST | `/auth/refresh` | Đã đăng nhập | mới | `AppStoreProvider` theo lịch từ server |
 | POST | `/auth/logout` | Đã đăng nhập | mới | `UserCard` |
 
 `POST /auth/login`
@@ -116,7 +117,7 @@ Lỗi FE cần xử lý (thông điệp đang có trong `AppStoreProvider.login`
 - `403 account_disabled`: tài khoản `LOCKED`/`INACTIVE`/`DELETED`.
 - `503 service_unavailable`: lỗi hệ thống.
 
-`GET /auth/me` trả cùng shape `user` + `csrf_token`; `401` khi phiên hết hạn hoặc user bị khóa (FE chuyển về `/login` qua `onUnauthorized`). `POST /auth/logout` trả `204`, idempotent.
+`GET /auth/me` trả cùng shape `user` + `csrf_token` + `refresh_after_seconds`; `401` khi phiên hết hạn hoặc user bị khóa (FE chuyển về `/login` qua `onUnauthorized`). `POST /auth/refresh` yêu cầu CSRF, thu hồi token hiện tại, đặt cookie mới và trả session payload mới; token đã hết hạn hoặc bị thu hồi không thể refresh. `POST /auth/logout` trả `204`, idempotent.
 
 Tiêu chí xong phase: FE bỏ `mocks/users.js` khỏi luồng đăng nhập, route guard dựa trên `GET /auth/me`.
 

@@ -9,6 +9,7 @@ const EXPIRED_NOTICE = 'Phiên làm việc đã hết hạn. Vui lòng đăng nh
 
 export function AppStoreProvider({ children }) {
   const [me, setMe] = useState(null)
+  const [refreshAfterMs, setRefreshAfterMs] = useState(null)
   const [authStatus, setAuthStatus] = useState('loading')
   const [logoutNotice, setLogoutNotice] = useState(null)
 
@@ -16,7 +17,11 @@ export function AppStoreProvider({ children }) {
     let active = true
     authApi
       .me()
-      .then((user) => active && setMe(user))
+      .then((session) => {
+        if (!active) return
+        setMe(session.user)
+        setRefreshAfterMs(session.refreshAfterMs)
+      })
       .catch(() => active && setMe(null))
       .finally(() => active && setAuthStatus('ready'))
     return () => {
@@ -28,17 +33,46 @@ export function AppStoreProvider({ children }) {
     () =>
       onUnauthorized((error) => {
         setMe(null)
+        setRefreshAfterMs(null)
         setLogoutNotice(error.code === 'session_expired' ? EXPIRED_NOTICE : null)
       }),
     [],
   )
 
+  const userId = me?.id
+  useEffect(() => {
+    if (!userId || !refreshAfterMs) return undefined
+    let active = true
+    let timer
+
+    const schedule = (delay) => {
+      timer = window.setTimeout(async () => {
+        try {
+          const session = await authApi.refresh()
+          if (!active) return
+          setMe(session.user)
+          schedule(session.refreshAfterMs || delay)
+        } catch (error) {
+          if (!active) return
+          if (!error.status || error.status >= 500) schedule(Math.min(delay, 60_000))
+        }
+      }, delay)
+    }
+
+    schedule(refreshAfterMs)
+    return () => {
+      active = false
+      window.clearTimeout(timer)
+    }
+  }, [userId, refreshAfterMs])
+
   const login = useCallback(async (username, password) => {
     try {
-      const user = await authApi.login(username.trim(), password)
-      setMe(user)
+      const session = await authApi.login(username.trim(), password)
+      setMe(session.user)
+      setRefreshAfterMs(session.refreshAfterMs)
       setLogoutNotice(null)
-      return { user }
+      return { user: session.user }
     } catch (error) {
       if (error.status && error.status < 500) return { error: error.message }
       return { error: SYSTEM_ERROR }
@@ -48,6 +82,7 @@ export function AppStoreProvider({ children }) {
   const logout = useCallback(async () => {
     await authApi.logout().catch(() => null)
     setMe(null)
+    setRefreshAfterMs(null)
     setLogoutNotice('Bạn đã đăng xuất. Phiên làm việc đã kết thúc.')
   }, [])
 

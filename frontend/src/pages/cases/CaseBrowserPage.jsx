@@ -14,13 +14,11 @@ import { viewerApi } from '@/services/api/viewer'
 
 const COPY = {
   operator: {
-    kicker: 'UC-11 · Điều tra',
     title: 'Case của tôi',
     desc: 'Các Case do bạn phụ trách: tiêu đề, ghi chú và kết quả tìm kiếm đã lưu.',
     empty: 'Bạn chưa có Case nào. Tạo Case từ một kết quả trong trang Tìm kiếm.',
   },
   viewer: {
-    kicker: 'UC-13 · UC-14 · Báo cáo',
     title: 'Hồ sơ vụ việc',
     desc: 'Toàn bộ Case trên hệ thống, chế độ chỉ xem.',
     empty: 'Không có Case nào phù hợp.',
@@ -130,7 +128,7 @@ export default function CaseBrowserPage({ mode }) {
 
   return (
     <>
-      <PageHeader kicker={copy.kicker} title={copy.title} description={copy.desc}>
+      <PageHeader title={copy.title} description={copy.desc}>
         {isOperator && (
           <Button icon={MagnifyingGlassIcon} onClick={() => navigate(PATHS.search)}>
             Tìm thêm kết quả

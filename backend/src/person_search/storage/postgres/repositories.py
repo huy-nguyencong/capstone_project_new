@@ -111,8 +111,12 @@ class AuthSessionRepository(Repository[AuthSession]):
     def __init__(self, session: Session) -> None:
         super().__init__(session, AuthSession)
 
-    def get_by_token_hash(self, token_hash: str) -> AuthSession | None:
+    def get_by_token_hash(
+        self, token_hash: str, *, for_update: bool = False
+    ) -> AuthSession | None:
         statement = select(AuthSession).where(AuthSession.token_hash == token_hash)
+        if for_update:
+            statement = statement.with_for_update()
         return self.session.scalars(statement).one_or_none()
 
     def revoke_for_user(self, user_id: uuid.UUID, *, at: datetime, reason: str) -> int:

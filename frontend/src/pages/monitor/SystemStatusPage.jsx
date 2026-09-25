@@ -174,7 +174,6 @@ export default function SystemStatusPage() {
   return (
     <>
       <PageHeader
-        kicker="UC-06 · Giám sát"
         title="Trạng thái hệ thống"
         description="Kết nối camera, tiến trình AI và các dịch vụ lưu trữ, tìm kiếm."
       >

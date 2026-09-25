@@ -59,7 +59,6 @@ export default function ModelsPage() {
   return (
     <>
       <PageHeader
-        kicker="UC-05 · Quản trị"
         title="Cấu hình mô hình AI"
         description="Chọn Detector và Tracker dùng chung. Encoder là thành phần cố định."
       />

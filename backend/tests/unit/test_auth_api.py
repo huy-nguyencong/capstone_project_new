@@ -83,6 +83,39 @@ def test_me_returns_same_actor_and_csrf_token(api) -> None:  # type: ignore[no-u
     assert response.status_code == 200
     assert response.get_json()["user"]["username"] == "khoa.tran"
     assert response.get_json()["csrf_token"] == csrf
+    assert response.get_json()["refresh_after_seconds"] == 900
+
+
+def test_refresh_rotates_cookie_and_csrf_token(api, world: AuthWorld) -> None:  # type: ignore[no-untyped-def]
+    logged_in = login(api)
+    old_csrf = logged_in.get_json()["csrf_token"]
+    old_token = api.get_cookie(COOKIE).value
+    world.clock.advance(minutes=10)
+
+    response = api.post("/api/v1/auth/refresh", headers={"X-CSRF-Token": old_csrf})
+
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["user"]["username"] == "khoa.tran"
+    assert body["csrf_token"] != old_csrf
+    assert body["refresh_after_seconds"] == 900
+    assert body["expires_at"] == (world.clock.now + timedelta(hours=12)).isoformat()
+    assert api.get_cookie(COOKIE).value != old_token
+    assert api.get("/api/v1/auth/me").status_code == 200
+
+    replay = build_app(world).test_client()
+    replay.set_cookie(COOKIE, old_token)
+    assert replay.get("/api/v1/auth/me").status_code == 401
+
+
+def test_refresh_requires_session_and_csrf(api) -> None:  # type: ignore[no-untyped-def]
+    assert api.post("/api/v1/auth/refresh").status_code == 401
+
+    login(api)
+    rejected = api.post("/api/v1/auth/refresh")
+    assert rejected.status_code == 403
+    assert rejected.get_json()["error"]["code"] == "csrf_failed"
+    assert api.get("/api/v1/auth/me").status_code == 200
 
 
 @pytest.mark.parametrize(

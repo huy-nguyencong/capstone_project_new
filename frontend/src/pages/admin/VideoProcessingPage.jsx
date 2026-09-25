@@ -221,7 +221,6 @@ export default function VideoProcessingPage() {
   return (
     <>
       <PageHeader
-        kicker="Quản trị"
         title="Xử lý video"
         description="Tải video lên camera đang bật AI và theo dõi tiến độ xử lý."
       >

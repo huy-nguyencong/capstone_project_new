@@ -105,7 +105,6 @@ export default function DiagnosticsPage() {
   return (
     <>
       <PageHeader
-        kicker="UC-07 · Giám sát"
         title="Kiểm tra hoạt động của AI"
         description="Kiểm tra độc lập hai nhóm thành phần. Kết quả phản ánh trạng thái hoạt động, không đánh giá độ chính xác mô hình."
       />

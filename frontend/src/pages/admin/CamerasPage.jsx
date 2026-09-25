@@ -143,7 +143,6 @@ export default function CamerasPage() {
   return (
     <>
       <PageHeader
-        kicker="UC-03 · Quản trị"
         title="Camera"
         description="Camera kết nối qua RTSP. Camera không kết nối được vẫn có thể lưu ở trạng thái Chưa xác minh."
       >

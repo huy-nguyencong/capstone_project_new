@@ -205,6 +205,37 @@ def test_login_rotates_previous_session() -> None:
     assert world.service.authenticate(second.token).username == "admin"
 
 
+def test_refresh_rotates_session_and_renews_absolute_lifetime() -> None:
+    world = AuthWorld()
+    world.user("admin", UserRole.ADMIN)
+    first = world.service.login("admin", PASSWORD)
+    world.clock.advance(minutes=10)
+
+    refreshed = world.service.refresh(first.token)
+
+    assert refreshed.token != first.token
+    assert refreshed.expires_at == world.clock.now + timedelta(hours=12)
+    old_session = next(
+        session
+        for session in world.database.sessions.values()
+        if session.token_hash == hash_session_token(first.token)
+    )
+    assert old_session.revoke_reason == "refreshed"
+    with pytest.raises(SessionInvalidError, match="revoked"):
+        world.service.authenticate(first.token)
+    assert world.service.authenticate(refreshed.token).username == "admin"
+
+
+def test_refresh_rejects_expired_session() -> None:
+    world = AuthWorld(SessionPolicy(idle_timeout=timedelta(minutes=30)))
+    world.user("admin", UserRole.ADMIN)
+    grant = world.service.login("admin", PASSWORD)
+    world.clock.advance(minutes=31)
+
+    with pytest.raises(SessionInvalidError, match="expired"):
+        world.service.refresh(grant.token)
+
+
 def test_outdated_password_hash_is_upgraded_on_login() -> None:
     world = AuthWorld()
     user = world.user("admin", UserRole.ADMIN)

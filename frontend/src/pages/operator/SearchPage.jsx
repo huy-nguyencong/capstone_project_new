@@ -78,7 +78,6 @@ export default function SearchPage() {
   return (
     <>
       <PageHeader
-        kicker="UC-09 · UC-10 · Điều tra"
         title="Tìm kiếm người"
         description="Tìm bằng ảnh crop, mô tả văn bản hoặc thuộc tính ngoại hình trong dữ liệu đã được AI phân tích."
       >

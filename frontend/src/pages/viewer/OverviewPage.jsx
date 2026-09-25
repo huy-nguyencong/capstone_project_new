@@ -83,7 +83,6 @@ export default function OverviewPage() {
   return (
     <>
       <PageHeader
-        kicker="UC-12 · Báo cáo"
         title="Tổng quan"
         description="Case và kết quả đã lưu trên toàn hệ thống."
       >

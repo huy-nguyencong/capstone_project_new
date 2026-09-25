@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from datetime import datetime
 from functools import wraps
-from typing import Any, TypeVar, cast
+from typing import Any, NoReturn, TypeVar, cast
 
 from flask import Response, current_app, g, request
 
@@ -73,6 +73,18 @@ def current_actor() -> AuthenticatedUser:
     return cast(AuthenticatedUser, g.actor)
 
 
+def raise_session_invalid(error: SessionInvalidError, token: str | None) -> NoReturn:
+    if token:
+        mark_session_cookie_for_clearing()
+    if error.reason == "expired":
+        raise ApiError(
+            401,
+            "session_expired",
+            "Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.",
+        ) from error
+    raise ApiError(401, "unauthenticated", "Vui lòng đăng nhập để tiếp tục.") from error
+
+
 def require_auth(*roles: UserRole) -> Callable[[RouteT], RouteT]:
     allowed = frozenset(roles)
 
@@ -83,15 +95,7 @@ def require_auth(*roles: UserRole) -> Callable[[RouteT], RouteT]:
             try:
                 actor = auth_service().authenticate(token)
             except SessionInvalidError as error:
-                if token:
-                    mark_session_cookie_for_clearing()
-                if error.reason == "expired":
-                    raise ApiError(
-                        401,
-                        "session_expired",
-                        "Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.",
-                    ) from error
-                raise ApiError(401, "unauthenticated", "Vui lòng đăng nhập để tiếp tục.") from error
+                raise_session_invalid(error, token)
             require_csrf(token)
             if allowed and actor.role not in allowed:
                 raise ApiError(403, "forbidden", "Bạn không có quyền thực hiện thao tác này.")

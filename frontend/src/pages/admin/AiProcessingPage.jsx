@@ -97,7 +97,6 @@ export default function AiProcessingPage() {
   return (
     <>
       <PageHeader
-        kicker="UC-04 · Quản trị"
         title="Xử lý AI trên camera"
         description="Bật hoặc tắt phân tích AI cho từng camera. Tắt xử lý không xóa dữ liệu đã phân tích."
       />

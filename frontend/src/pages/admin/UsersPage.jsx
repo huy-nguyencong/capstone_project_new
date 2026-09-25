@@ -216,7 +216,6 @@ export default function UsersPage() {
   return (
     <>
       <PageHeader
-        kicker="UC-02 · Quản trị"
         title="Tài khoản người dùng"
         description="Tạo, cập nhật, khóa hoặc ngừng hoạt động tài khoản. Mỗi Operator được gán đúng một khu vực giám sát."
       >

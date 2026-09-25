@@ -20,6 +20,7 @@ ANY = frozenset({ADMIN, OPERATOR, VIEWER})
 ACCESS: dict[tuple[str, str], frozenset[UserRole] | None] = {
     ("POST", "/api/v1/auth/login"): None,
     ("POST", "/api/v1/auth/logout"): None,
+    ("POST", "/api/v1/auth/refresh"): ANY,
     ("GET", "/api/v1/auth/me"): ANY,
     ("GET", "/api/v1/areas"): frozenset({ADMIN, OPERATOR}),
     ("GET", "/api/v1/me/cameras"): frozenset({OPERATOR}),
@@ -112,7 +113,10 @@ def test_permission_matrix_for_every_route() -> None:
         if status != 401:
             failures.append((method, path, "anonymous", status))
         for role, client in clients.items():
-            status = client.open(url, method=method, json={}).status_code
+            response = client.open(url, method=method, json={})
+            status = response.status_code
+            if path == "/api/v1/auth/refresh" and status == 200:
+                client.environ_base["HTTP_X_CSRF_TOKEN"] = response.get_json()["csrf_token"]
             denied = status == 403
             if (role in allowed) == denied or status == 401:
                 failures.append((method, path, role.value, status))

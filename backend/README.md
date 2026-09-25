@@ -187,7 +187,9 @@ Endpoint `/health/storage` cũng cung cấp trạng thái các kho dữ liệu.
 
 API dùng session phía server: `POST /api/v1/auth/login` đặt cookie `ps_session` (HttpOnly) và trả
 `csrf_token`; mọi request `POST/PUT/PATCH/DELETE` cần header `X-CSRF-Token`. `GET /api/v1/auth/me`
-trả người dùng hiện tại, `POST /api/v1/auth/logout` thu hồi phiên.
+trả người dùng hiện tại, `POST /api/v1/auth/refresh` xoay token và gia hạn phiên còn hợp lệ,
+`POST /api/v1/auth/logout` thu hồi phiên. Response đăng nhập, lấy thông tin phiên và refresh trả
+`refresh_after_seconds` để frontend lên lịch refresh trước idle timeout.
 
 Các username là `admin`, `operator`, `viewer`; cả ba dùng password `password`. Operator được gán
 vào Area `GATE-A`. Seed idempotent, không ghi đè user đã tồn tại và từ chối chạy khi

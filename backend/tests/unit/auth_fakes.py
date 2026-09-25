@@ -95,7 +95,9 @@ class FakeSessions:
     def add(self, session: AuthSession) -> None:
         self.rows[session.id] = session
 
-    def get_by_token_hash(self, token_hash: str) -> AuthSession | None:
+    def get_by_token_hash(
+        self, token_hash: str, *, for_update: bool = False
+    ) -> AuthSession | None:
         return next((row for row in self.rows.values() if row.token_hash == token_hash), None)
 
     def revoke_for_user(self, user_id: uuid.UUID, *, at: datetime, reason: str) -> int:

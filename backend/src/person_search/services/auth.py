@@ -85,6 +85,10 @@ class SessionPolicy:
             idle_timeout=_minutes(values, "PERSON_SEARCH_SESSION_IDLE_MINUTES", 30),
         )
 
+    @property
+    def refresh_after_seconds(self) -> int:
+        return max(1, int(self.idle_timeout.total_seconds() / 2))
+
 
 def normalize_username(username: str) -> str:
     return username.strip().lower() if isinstance(username, str) else ""
@@ -176,37 +180,36 @@ class AuthService:
         with self._unit_of_work_factory() as work:
             repositories = work.repositories
             assert repositories is not None
-            session = repositories.auth_sessions.get_by_token_hash(hash_session_token(token))
-            if session is None:
-                raise SessionInvalidError("unknown")
-            if session.revoked_at is not None:
-                raise SessionInvalidError("revoked")
-            user = repositories.users.get(session.user_id)
-            if now >= session.expires_at or now - session.last_seen_at >= self._policy.idle_timeout:
-                session.revoked_at = now
-                session.revoke_reason = "expired"
-                record_audit(
-                    repositories,
-                    event_type=AuditEvent.AUTH_SESSION_EXPIRED,
-                    result=AuditResult.SUCCESS,
-                    target_type="user",
-                    target_id=session.user_id,
-                    actor=user,
-                )
-                work.commit()
-                raise SessionInvalidError("expired")
-            if user is None or user.status is not UserStatus.ACTIVE:
-                session.revoked_at = now
-                session.revoke_reason = "user_disabled"
-                work.commit()
-                raise SessionInvalidError("user_disabled")
-            area = self._area_for(repositories, user)
-            if user.role is UserRole.OPERATOR and area is None:
-                raise SessionInvalidError("user_disabled")
+            session, user, area = self._active_session(work, token, now)
             if now - session.last_seen_at >= self._policy.touch_interval:
                 session.last_seen_at = now
                 work.commit()
             return self._view(user, area)
+
+    def refresh(self, token: str | None) -> SessionGrant:
+        if not token:
+            raise SessionInvalidError("missing")
+        now = self._clock()
+        with self._unit_of_work_factory() as work:
+            repositories = work.repositories
+            assert repositories is not None
+            session, user, area = self._active_session(work, token, now, for_update=True)
+            session.revoked_at = now
+            session.revoke_reason = "refreshed"
+            next_token = self._token_factory()
+            expires_at = now + self._policy.absolute_ttl
+            repositories.auth_sessions.add(
+                AuthSession(
+                    id=uuid.uuid4(),
+                    user_id=user.id,
+                    token_hash=hash_session_token(next_token),
+                    created_at=now,
+                    last_seen_at=now,
+                    expires_at=expires_at,
+                )
+            )
+            work.commit()
+            return SessionGrant(self._view(user, area), next_token, expires_at)
 
     def logout(self, token: str | None) -> None:
         if not token:
@@ -227,6 +230,49 @@ class AuthService:
                 actor=repositories.users.get(session.user_id),
             )
             work.commit()
+
+    def _active_session(
+        self,
+        work: Any,
+        token: str,
+        now: datetime,
+        *,
+        for_update: bool = False,
+    ) -> tuple[AuthSession, User, AreaRef | None]:
+        repositories = work.repositories
+        session = repositories.auth_sessions.get_by_token_hash(
+            hash_session_token(token), for_update=for_update
+        )
+        if session is None:
+            raise SessionInvalidError("unknown")
+        if session.revoked_at is not None:
+            raise SessionInvalidError("revoked")
+        user = repositories.users.get(session.user_id)
+        if now >= session.expires_at or now - session.last_seen_at >= self._policy.idle_timeout:
+            session.revoked_at = now
+            session.revoke_reason = "expired"
+            record_audit(
+                repositories,
+                event_type=AuditEvent.AUTH_SESSION_EXPIRED,
+                result=AuditResult.SUCCESS,
+                target_type="user",
+                target_id=session.user_id,
+                actor=user,
+            )
+            work.commit()
+            raise SessionInvalidError("expired")
+        if user is None or user.status is not UserStatus.ACTIVE:
+            session.revoked_at = now
+            session.revoke_reason = "user_disabled"
+            work.commit()
+            raise SessionInvalidError("user_disabled")
+        area = self._area_for(repositories, user)
+        if user.role is UserRole.OPERATOR and area is None:
+            session.revoked_at = now
+            session.revoke_reason = "user_disabled"
+            work.commit()
+            raise SessionInvalidError("user_disabled")
+        return session, user, area
 
     @staticmethod
     def _revoke(repositories: Any, token: str, now: datetime, reason: str) -> AuthSession | None:
