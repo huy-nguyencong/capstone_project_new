@@ -6,31 +6,19 @@ import math
 import uuid
 from dataclasses import dataclass
 from datetime import UTC
-from typing import Protocol
 
 import av
-from PIL import Image
 
 from person_search.storage.contracts import (
     BoundingBoxPixels,
     EncoderManifest,
     TrackIngestionRequest,
 )
-
-
-@dataclass(frozen=True)
-class SourceFrame:
-    index: int
-    timestamp_ms: int
-    image: Image.Image | None
-
-
-class FrameSource(Protocol):
-    def frames(self, source, sampling): ...
+from person_search.workers.contracts import Detection, ModelLineage, SourceFrame
 
 
 class VideoFrameSource:
-    def frames(self, source, sampling):
+    def frames(self, source, sampling, camera_id):
         # Upload source is always a private local file, never a client supplied URL.
         with av.open(str(source), options={"protocol_whitelist": "file"}) as container:
             stream = container.streams.video[0]
@@ -47,16 +35,19 @@ class VideoFrameSource:
                     raise ValueError("Invalid video frame metadata")
                 previous_ms = timestamp
                 yield SourceFrame(
-                    index, timestamp, frame.to_image() if index % sampling == 0 else None
+                    camera_id=camera_id,
+                    source_frame_index=index,
+                    source_timestamp_ms=timestamp,
+                    image=frame.to_image(),
+                    width=frame.width,
+                    height=frame.height,
                 )
 
 
-class Detector(Protocol):
-    def detect(self, frame: SourceFrame) -> list[BoundingBoxPixels]: ...
-
-
 @dataclass(frozen=True)
-class CompletedTrack:
+class _DemoCompletedTrack:
+    """Legacy demo output kept private until AIW-16 replaces orchestration."""
+
     key: str
     started_ms: int
     ended_ms: int
@@ -64,26 +55,27 @@ class CompletedTrack:
     bbox: BoundingBoxPixels
 
 
-class Tracker(Protocol):
-    def update(
-        self, frame: SourceFrame, boxes: list[BoundingBoxPixels]
-    ) -> list[CompletedTrack]: ...
-    def finish(self) -> list[CompletedTrack]: ...
-    def close(self) -> None: ...
-
-
-class Encoder(Protocol):
-    def encode(self, crop: Image.Image) -> list[float]: ...
-
-
 class DemoDetector:
     """Synthetic central box; deliberately NOT a person detector."""
+
+    lineage = ModelLineage("demo_detector", "1", "0" * 64)
 
     def detect(self, frame):
         width, height = frame.image.size
         return [
-            BoundingBoxPixels(
-                width // 4, height // 4, max(1, width // 2), max(1, height // 2), width, height
+            Detection(
+                bbox=BoundingBoxPixels(
+                    width // 4,
+                    height // 4,
+                    max(1, width // 2),
+                    max(1, height // 2),
+                    width,
+                    height,
+                ),
+                class_id=0,
+                class_name="person",
+                confidence=1.0,
+                detector=self.lineage,
             )
         ]
 
@@ -100,7 +92,7 @@ class DemoTracker:
         if not boxes:
             return []
         if self.first is None:
-            self.first = (frame, boxes[0])
+            self.first = (frame, boxes[0].bbox)
         self.last_ms = frame.timestamp_ms
         self.count += 1
         return self.finish() if self.count == 5 else []
@@ -109,7 +101,9 @@ class DemoTracker:
         if self.first is None:
             return []
         frame, bbox = self.first
-        result = CompletedTrack(str(frame.index), frame.timestamp_ms, self.last_ms, frame, bbox)
+        result = _DemoCompletedTrack(
+            str(frame.index), frame.timestamp_ms, self.last_ms, frame, bbox
+        )
         self.close()
         return [result]
 

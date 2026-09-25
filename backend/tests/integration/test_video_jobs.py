@@ -231,8 +231,8 @@ def test_worker_crash_replay_lock_and_cancel_running(setup, video):
     second = upload(setup, video).json["id"]
 
     class CancelSource(VideoFrameSource):
-        def frames(self, source, sampling):
-            for frame in super().frames(source, sampling):
+        def frames(self, source, sampling, camera_id):
+            for frame in super().frames(source, sampling, camera_id):
                 if frame.index == 1:
                     setup.api.post(f"/api/v1/admin/processing-jobs/{second}/cancel")
                 yield frame
@@ -249,8 +249,8 @@ def test_crash_after_track_ingestion_replays_without_duplicates(setup, video):
         pass
 
     class CrashingSource(VideoFrameSource):
-        def frames(self, source, sampling):
-            for frame in super().frames(source, sampling):
+        def frames(self, source, sampling, camera_id):
+            for frame in super().frames(source, sampling, camera_id):
                 if frame.index == 45:
                     raise ProcessCrash()
                 yield frame

@@ -16,7 +16,8 @@ from person_search.storage.postgres.models import (
     JobStatus,
     TrackIndexStatus,
 )
-from person_search.workers.pipeline import Pipeline, SourceFrame
+from person_search.workers.contracts import SourceFrame
+from person_search.workers.pipeline import Pipeline
 from person_search.workers.runner import VideoWorker
 
 pytestmark = pytest.mark.unit
@@ -81,12 +82,19 @@ class _Jobs:
 
 
 class _Source:
-    def frames(self, source, sampling):
+    def frames(self, source, sampling, camera_id):
         assert source == "memory://fixture"
         assert sampling == 10
         image = Image.new("RGB", (64, 48), "red")
-        for index in range(5):
-            yield SourceFrame(index=index, timestamp_ms=index * 400, image=image.copy())
+        for index in range(41):
+            yield SourceFrame(
+                camera_id=camera_id,
+                source_frame_index=index,
+                source_timestamp_ms=index * 40,
+                image=image.copy(),
+                width=64,
+                height=48,
+            )
 
 
 class _Ingestion:
@@ -131,7 +139,7 @@ def test_demo_worker_smoke_uses_memory_only_and_completes_one_track():
 
     assert worker.run_once() is True
     assert jobs.finished == [(JobStatus.SUCCEEDED, None)]
-    assert jobs.checkpoints[-1] == (5, 5)
+    assert jobs.checkpoints[-1] == (41, 5)
     assert len(ingestion.requests) == 1
     request = ingestion.requests[0]
     assert request.processing_job_id == job.id

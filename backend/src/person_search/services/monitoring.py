@@ -23,7 +23,8 @@ from person_search.storage.postgres.models import (
     ProcessingJob,
     RtspStatus,
 )
-from person_search.workers.pipeline import Pipeline, SourceFrame
+from person_search.workers.contracts import SourceFrame
+from person_search.workers.pipeline import Pipeline
 
 TERMINAL_JOBS = (JobStatus.SUCCEEDED, JobStatus.FAILED, JobStatus.CANCELLED)
 PROBE_TEXT = "A person walking."
@@ -119,7 +120,14 @@ def camera_category(camera: Any, connection: str, state: WorkerState) -> str:
 def synthetic_frame() -> SourceFrame:
     image = Image.new("RGB", (640, 360), (72, 72, 72))
     ImageDraw.Draw(image).rectangle((280, 90, 360, 300), fill=(180, 40, 40))
-    return SourceFrame(0, 0, image)
+    return SourceFrame(
+        camera_id=uuid.UUID("00000000-0000-4000-8000-000000000000"),
+        source_frame_index=0,
+        source_timestamp_ms=0,
+        image=image,
+        width=640,
+        height=360,
+    )
 
 
 def check_embedding(values: Sequence[float], dimension: int) -> str | None:
@@ -255,8 +263,16 @@ def run_pipeline_steps(
             try:
                 tracks = []
                 for index in range(TRACKER_WARMUP_FRAMES):
+                    warmup = SourceFrame(
+                        camera_id=frame.camera_id,
+                        source_frame_index=index,
+                        source_timestamp_ms=index * 40,
+                        image=frame.image,
+                        width=frame.width,
+                        height=frame.height,
+                    )
                     tracks += pipeline.tracker.update(
-                        SourceFrame(index, index * 40, frame.image), boxes
+                        warmup, boxes
                     )
                 tracks += pipeline.tracker.finish()
             except Exception:

@@ -265,8 +265,8 @@ Quy trình cho mỗi task:
 | ID | Task | Phụ thuộc | Trạng thái |
 | --- | --- | --- | --- |
 | AIW-00 | Baseline và ma trận truy vết | — | DONE |
-| AIW-01 | Inventory 7 video và bộ dữ liệu đánh giá | AIW-00 | REVIEW |
-| AIW-02 | Khóa contract và taxonomy lỗi AI | AIW-00 | TODO |
+| AIW-01 | Inventory 7 video và bộ dữ liệu đánh giá | AIW-00 | DONE |
+| AIW-02 | Khóa contract và taxonomy lỗi AI | AIW-00 | REVIEW |
 | AIW-03 | Registry Detector/Tracker/Encoder và kiểm tra artifact | AIW-02 | TODO |
 | AIW-04 | Runtime/device preflight và giới hạn tài nguyên | AIW-03 | TODO |
 | AIW-05 | Fake adapters và fixtures chỉ dành cho test | AIW-02 | TODO |
@@ -993,6 +993,9 @@ Mỗi lần hoàn tất hoặc review task, thêm một dòng; không sửa lị
 | 2026-09-25 | AIW-00 | DONE | — | Không chạy lại; người thực hiện yêu cầu bắt đầu task kế tiếp | Baseline được chấp thuận qua chỉ dẫn tiếp tục; khóa phạm vi AIW-00. |
 | 2026-09-25 | AIW-01 | IN_PROGRESS | — | Đang thực hiện | Bắt đầu inventory 7 video, annotation, checksum, fixture policy và evaluation query set. |
 | 2026-09-25 | AIW-01 | REVIEW | — | `pytest -m unit`: 326 passed, 25 deselected; `ruff check .`; `compileall`; `wildtrack_manifest.py verify`; `validate-queries` | Đã inventory 3.236 file/10,84 GiB, khóa manifest SHA-256 `b214b4dc…ae8f`, xác thực 7 video và 6 query. Dataset binary vẫn ignored; chờ review trước khi chuyển `DONE`. |
+| 2026-09-25 | AIW-01 | DONE | — | Không chạy lại; người thực hiện yêu cầu bắt đầu task kế tiếp | Kết quả AIW-01 được chấp thuận qua chỉ dẫn tiếp tục; khóa manifest, fixture policy và evaluation query set. |
+| 2026-09-25 | AIW-02 | IN_PROGRESS | — | Đang thực hiện | Bắt đầu tách contract AI khỏi pipeline, chuẩn hóa lifecycle và taxonomy lỗi retryable/terminal. |
+| 2026-09-26 | AIW-02 | REVIEW | — | `pytest -m unit`: 337 passed, 25 deselected; `ruff check .`; `compileall` | Đã thêm contract framework-neutral, 7 Protocol, lifecycle close idempotent, 10 error stage và public serialization an toàn; pipeline demo dùng SourceFrame/Detection chuẩn hóa. Chờ review trước khi chuyển `DONE`. |
 
 ## 13. Rủi ro cần theo dõi
 

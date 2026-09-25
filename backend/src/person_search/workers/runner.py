@@ -85,11 +85,11 @@ class VideoWorker:
             checkpoint()
             stage = "video_decode_failed"
             for frame in self.source.frames(
-                self.jobs.staging.path(job.source_ref), job.sampling_interval
+                self.jobs.staging.path(job.source_ref), job.sampling_interval, job.camera_id
             ):
                 processed = frame.index + 1
                 checkpoint()
-                if frame.image is not None:
+                if frame.index % job.sampling_interval == 0:
                     sampled += 1
                     stage = "detector_failed"
                     boxes = pipeline.detector.detect(frame)
