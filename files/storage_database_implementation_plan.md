@@ -115,8 +115,8 @@ Trạng thái hợp lệ:
 | STO-01 | Chốt kiến trúc lưu trữ và hợp đồng dữ liệu | STO-00 | DONE | `222c0ad` |
 | STO-02 | Dựng hạ tầng Docker Compose | STO-01 | DONE | `aeb8203` |
 | STO-03 | Cấu hình ứng dụng, kết nối và health check | STO-02 | DONE | `df1456b` |
-| STO-04 | Schema PostgreSQL cho Area, User, Camera | STO-03 | READY_FOR_REVIEW | — |
-| STO-05 | Schema PostgreSQL cho AI config, job và PersonTrack | STO-04 | TODO | — |
+| STO-04 | Schema PostgreSQL cho Area, User, Camera | STO-03 | DONE | `ba19a77` |
+| STO-05 | Schema PostgreSQL cho AI config, job và PersonTrack | STO-04 | READY_FOR_REVIEW | — |
 | STO-06 | Schema PostgreSQL cho Case, CaseResult và AuditLog | STO-05 | TODO | — |
 | STO-07 | Ràng buộc, index, seed và kiểm thử migration | STO-06 | TODO | — |
 | STO-08 | Repository và transaction cho PostgreSQL | STO-07 | TODO | — |
@@ -748,14 +748,25 @@ Mỗi lần làm task, thêm một mục theo mẫu:
 
 ### 2026-09-25 — STO-04
 
-- Trạng thái: `READY_FOR_REVIEW`.
+- Trạng thái: `DONE`.
 - Thay đổi chính: thêm Alembic environment và migration đầu tiên; model SQLAlchemy cho Area/User/Camera với UUIDv4, enum trạng thái, timestamp UTC, role–area check constraint, foreign key `RESTRICT`, RTSP secret reference; trigger database và guard ORM khóa `Area.code`, `Camera.code` và `Camera.area_id`; trigger đồng bộ `updated_at` cho cả ORM/raw SQL.
 - File quan trọng: `backend/alembic.ini`, `backend/migrations/versions/20260925_0001_area_user_camera.py`, `backend/src/person_search/storage/postgres/models/`, `backend/tests/integration/test_identity_schema.py`, `docs/storage/postgres-identity-schema.md`.
 - Test đã chạy: `scripts/check.ps1`; 81 unit test; migration integration trên database dùng một lần; `downgrade base → upgrade head → alembic check → constraint tests → downgrade base`; Ruff; compileall; branch coverage; `git diff --check`.
 - Kết quả: 81 unit test đạt; migration integration đạt; Alembic không phát hiện schema drift; Operator thiếu area và Admin có area bị từ chối; Camera thiếu area hoặc RTSP nhúng credential bị từ chối; đổi Camera area bị chặn ở ORM lẫn raw SQL; đổi Area code bị chặn; xóa Area đang được User/Camera tham chiếu bị FK `RESTRICT` chặn; inactive row vẫn giữ area FK; downgrade xóa sạch ba bảng/type; unit branch coverage tổng 89%.
 - Điểm cần người thực hiện review: enum/status, quy tắc uppercase và bất biến của code, role–area constraint, việc chỉ lưu `rtsp_secret_ref`, trigger PostgreSQL, tên migration và giới hạn STO-04 chưa có repository nghiệp vụ đầy đủ.
-- Quyết định/chỉnh sửa sau review: chưa có.
-- Commit SHA: chưa commit; chờ người thực hiện review.
+- Quyết định/chỉnh sửa sau review: người thực hiện đã chấp thuận và yêu cầu chuyển sang STO-05.
+- Commit SHA: `ba19a77`.
+
+### 2026-09-25 — STO-05
+
+- Trạng thái: `READY_FOR_REVIEW`.
+- Thay đổi chính: thêm model và migration cho phiên bản cấu hình AI, processing job, PersonTrack và transactional outbox; bảo vệ bbox/timeline/progress bằng constraint; khóa state machine track ở cả ORM và PostgreSQL; chỉ cho phép `READY` khi MinIO artifact và vector index đã được xác nhận; giữ đầy đủ lineage camera/area/job/config/encoder và không lưu Matching Score.
+- File quan trọng: `backend/migrations/versions/20260925_0002_processing_tracks.py`, `backend/src/person_search/storage/postgres/models/ai_config.py`, `processing_job.py`, `person_track.py`, `outbox.py`, `backend/tests/integration/test_processing_schema.py`, `docs/storage/postgres-processing-schema.md`.
+- Test đã chạy: Ruff; 85 unit test; migration integration trên database dùng một lần; `downgrade base → upgrade head → alembic check → constraint/state-transition tests → downgrade 0001 → downgrade base`.
+- Kết quả: unit và integration đều đạt; Alembic không phát hiện schema drift; PostgreSQL từ chối sampling interval không dương, bbox vượt frame, track khởi tạo ở `READY`, `READY` thiếu artifact và chuyển ngược `READY → FAILED`; rollback giữ schema STO-04 rồi xóa sạch về base.
+- Điểm cần người thực hiện review: bộ field lineage, quy tắc một AI config `ACTIVE`, state machine `PENDING → READY/FAILED`, retry `FAILED → PENDING`, `READY` là trạng thái cuối, payload JSONB và unique `(track_id, event_type)` của outbox.
+- Quyết định/chỉnh sửa sau review: chờ review.
+- Commit SHA: —.
 
 ## 11. Các quyết định đã khóa ở STO-01
 

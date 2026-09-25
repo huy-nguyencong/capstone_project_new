@@ -10,3 +10,6 @@ các biến storage trong `backend/.env.example`.
 Migration test STO-04 cần thêm `PERSON_SEARCH_RUN_MIGRATION_INTEGRATION=1` và DSN trỏ tới một
 database dùng một lần. Test tự chạy `downgrade base → upgrade head → alembic check → constraint
 checks → downgrade base`, nhưng không tự tạo hoặc xóa database bên ngoài DSN được cung cấp.
+
+STO-05 dùng cùng cơ chế qua `test_processing_schema.py`, bổ sung kiểm tra bbox, sampling interval,
+artifact `READY`, state transition và rollback riêng về revision `20260925_0001`.

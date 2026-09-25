@@ -27,3 +27,35 @@ class RtspStatus(StrEnum):
     ONLINE = "ONLINE"
     OFFLINE = "OFFLINE"
     ERROR = "ERROR"
+
+
+class AIConfigStatus(StrEnum):
+    DRAFT = "DRAFT"
+    ACTIVE = "ACTIVE"
+    RETIRED = "RETIRED"
+
+
+class JobSourceType(StrEnum):
+    FILE = "FILE"
+    RTSP = "RTSP"
+
+
+class JobStatus(StrEnum):
+    PENDING = "PENDING"
+    RUNNING = "RUNNING"
+    SUCCEEDED = "SUCCEEDED"
+    FAILED = "FAILED"
+    CANCELLED = "CANCELLED"
+
+
+class TrackIndexStatus(StrEnum):
+    PENDING = "PENDING"
+    READY = "READY"
+    FAILED = "FAILED"
+
+
+class OutboxStatus(StrEnum):
+    PENDING = "PENDING"
+    PROCESSING = "PROCESSING"
+    COMPLETED = "COMPLETED"
+    DEAD = "DEAD"
