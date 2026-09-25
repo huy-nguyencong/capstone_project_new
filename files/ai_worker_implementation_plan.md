@@ -264,7 +264,7 @@ Quy trình cho mỗi task:
 
 | ID | Task | Phụ thuộc | Trạng thái |
 | --- | --- | --- | --- |
-| AIW-00 | Baseline và ma trận truy vết | — | TODO |
+| AIW-00 | Baseline và ma trận truy vết | — | REVIEW |
 | AIW-01 | Inventory 7 video và bộ dữ liệu đánh giá | AIW-00 | TODO |
 | AIW-02 | Khóa contract và taxonomy lỗi AI | AIW-00 | TODO |
 | AIW-03 | Registry Detector/Tracker/Encoder và kiểm tra artifact | AIW-02 | TODO |
@@ -334,7 +334,7 @@ AIW-12 + AIW-14 → AIW-16 → AIW-17 → AIW-18 → AIW-25
 - Input đã có tại `wildtrack-dataset/`: `cam1.mp4` đến `cam7.mp4`, 400 file annotation position và 401 ảnh 1920×1080 cho mỗi camera `C1` đến `C7`; tổng dung lượng sơ bộ khoảng 10,84 GiB.
 - Ghi camera logic, khu vực, codec, độ phân giải, FPS, số frame, thời lượng và kích thước từng video.
 - Tạo checksum và manifest; không commit video thật nếu vi phạm dung lượng/quyền riêng tư.
-- Quyết định rõ dataset được quản lý bằng local path, download script hay Git LFS. Hiện thư mục đang untracked và chưa được `.gitignore` loại trừ, nên không được stage trước khi chốt cách quản lý và điều khoản phân phối.
+- Quyết định rõ dataset được quản lý bằng local path, download script hay Git LFS. Hiện `wildtrack-dataset/` đã được `.gitignore` loại trừ; tiếp tục không force-add trước khi chốt cách quản lý và điều khoản phân phối.
 - Chọn các đoạn ngắn an toàn làm fixture hoặc ghi hướng dẫn tạo fixture cục bộ.
 - Xây ground-truth tối thiểu cho người/track/query dùng đánh giá.
 - Chuẩn bị tập truy vấn ảnh, câu tiếng Anh và thuộc tính tiếng Anh.
@@ -988,6 +988,8 @@ Mỗi lần hoàn tất hoặc review task, thêm một dòng; không sửa lị
 | Ngày | Task | Trạng thái mới | Commit/PR | Test đã chạy | Kết quả và ghi chú review |
 | --- | --- | --- | --- | --- | --- |
 | — | — | — | — | — | Chưa bắt đầu triển khai theo kế hoạch này. |
+| 2026-09-25 | AIW-00 | IN_PROGRESS | — | Đang thực hiện | Bắt đầu inventory worker/pipeline/adapter/job/ingestion/diagnostics và ma trận truy vết. |
+| 2026-09-25 | AIW-00 | REVIEW | — | `pytest -m unit`; smoke in-memory; `ruff check .`; `compileall` | Baseline report và ma trận truy vết hoàn tất; 324 unit test đạt, smoke worker không ghi production đạt. Chờ review trước khi chuyển `DONE`. |
 
 ## 13. Rủi ro cần theo dõi
 
@@ -1007,7 +1009,7 @@ Mỗi lần hoàn tất hoặc review task, thêm một dòng; không sửa lị
 | Fake adapter lọt production | Kết quả có bbox/vector synthetic | AIW-03, AIW-05, AIW-24, AIW-29. |
 | Lộ credential/dữ liệu hình ảnh | URL/frame/query xuất hiện trong log | AIW-09, AIW-23. |
 | Không đủ dung lượng cho 7 video | Disk tăng nhanh | AIW-01, AIW-04, AIW-27; chỉ lưu frame đại diện. |
-| Dataset 10,84 GiB bị commit nhầm | `git status` hiện toàn bộ `wildtrack-dataset/` untracked | AIW-01 khóa local/LFS/download policy và `.gitignore` trước khi stage dữ liệu. |
+| Dataset 10,84 GiB bị commit nhầm | Thư mục bị force-add hoặc rule ignore bị xóa | `wildtrack-dataset/` đã nằm trong `.gitignore`; AIW-01 tiếp tục khóa local/LFS/download policy và kiểm tra staged files. |
 | License Detector không phù hợp phạm vi phát hành | Dùng Ultralytics trong dự án không đáp ứng AGPL/giấy phép thương mại | AIW-03 ghi license/provenance; dùng YOLOX + ByteTrack làm đường dự phòng nếu cần. |
 | Chưa có ngưỡng chất lượng chính thức | Không thể kết luận pass/fail AI | AIW-26 tạo baseline và trình người thực hiện duyệt ngưỡng. |
 
