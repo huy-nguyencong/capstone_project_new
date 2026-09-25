@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { SearchForm } from '@/features/search/SearchForm'
 import { SearchResults } from '@/features/search/SearchResults'
-import { AREAS } from '@/mocks/areas'
+import { mockAreaIndex } from '@/mocks/areas'
 import { useAppStore } from '@/store/hooks'
 import { wait } from '@/utils/format'
 import { runMockSearch, validateSearch } from '@/utils/search'
@@ -27,7 +27,9 @@ export default function SearchPage() {
   const [form, setForm] = useState(INITIAL)
   const [outcome, setOutcome] = useState({ status: 'idle', runId: 0 })
 
-  const areaCameras = cameras.filter((c) => c.area === me.area && c.status !== 'retired')
+  const areaCameras = cameras.filter(
+    (c) => c.area === mockAreaIndex(me.area) && c.status !== 'retired',
+  )
 
   const run = async () => {
     const error = validateSearch(form)
@@ -65,7 +67,7 @@ export default function SearchPage() {
         <div className="flex items-center gap-2 rounded-md px-3 py-[7px] text-xs shadow-sm">
           <LockSimpleIcon size={14} className="text-accent" />
           <span className="text-muted">Khu vực giám sát</span>
-          <span>{AREAS[me.area]}</span>
+          <span>{me.area?.name}</span>
         </div>
       </PageHeader>
 

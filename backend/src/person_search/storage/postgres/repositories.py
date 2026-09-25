@@ -17,6 +17,7 @@ from person_search.storage.postgres.models import (
     Area,
     AuditLog,
     AuditResult,
+    AuthSession,
     Camera,
     Case,
     CaseResult,
@@ -57,6 +58,24 @@ class Repository(Generic[ModelT]):
         if after_id is not None:
             statement = statement.where(self.model.id > after_id)  # type: ignore[attr-defined]
         return list(self.session.scalars(statement.limit(limit)))
+
+
+class UserRepository(Repository[User]):
+    def __init__(self, session: Session) -> None:
+        super().__init__(session, User)
+
+    def get_by_username(self, username: str) -> User | None:
+        statement = select(User).where(User.username == username)
+        return self.session.scalars(statement).one_or_none()
+
+
+class AuthSessionRepository(Repository[AuthSession]):
+    def __init__(self, session: Session) -> None:
+        super().__init__(session, AuthSession)
+
+    def get_by_token_hash(self, token_hash: str) -> AuthSession | None:
+        statement = select(AuthSession).where(AuthSession.token_hash == token_hash)
+        return self.session.scalars(statement).one_or_none()
 
 
 class CameraRepository(Repository[Camera]):
@@ -362,7 +381,8 @@ class Repositories:
 
     def __init__(self, session: Session) -> None:
         self.areas = Repository(session, Area)
-        self.users = Repository(session, User)
+        self.users = UserRepository(session)
+        self.auth_sessions = AuthSessionRepository(session)
         self.cameras = CameraRepository(session)
         self.ai_configs = Repository(session, AIConfigVersion)
         self.jobs = Repository(session, ProcessingJob)

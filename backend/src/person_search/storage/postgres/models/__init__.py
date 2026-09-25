@@ -3,6 +3,7 @@
 from person_search.storage.postgres.models.ai_config import AIConfigVersion
 from person_search.storage.postgres.models.area import Area
 from person_search.storage.postgres.models.audit_log import AuditLog
+from person_search.storage.postgres.models.auth_session import AuthSession
 from person_search.storage.postgres.models.base import Base
 from person_search.storage.postgres.models.camera import Camera
 from person_search.storage.postgres.models.case import Case
@@ -34,6 +35,7 @@ __all__ = [
     "Area",
     "AuditLog",
     "AuditResult",
+    "AuthSession",
     "Base",
     "Camera",
     "CameraStatus",

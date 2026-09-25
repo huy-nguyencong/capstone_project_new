@@ -43,6 +43,31 @@ Các endpoint skeleton:
 - `GET /health/storage`
 - `GET /api/v1/ping`
 
+## Xác thực và tài khoản
+
+API dùng session phía server: `POST /api/v1/auth/login` đặt cookie `ps_session` (HttpOnly) và trả
+`csrf_token`; mọi request `POST/PUT/PATCH/DELETE` cần header `X-CSRF-Token`. `GET /api/v1/auth/me`
+trả người dùng hiện tại, `POST /api/v1/auth/logout` thu hồi phiên.
+
+Chưa có API quản lý tài khoản (BE-05), nên tạo Admin và tài khoản test bằng CLI sau khi migrate và seed:
+
+```bash
+python -m alembic upgrade head
+person-search-seed
+person-search-user create --username admin --display-name "Quản trị" --role ADMIN
+person-search-user create --username khoa.tran --display-name "Trần Minh Khoa" --role OPERATOR --area GATE-A
+person-search-user create --username lan.nguyen --display-name "Nguyễn Thị Lan" --role VIEWER
+person-search-user set-password --username admin
+```
+
+Mật khẩu được hỏi qua prompt, hoặc lấy từ `PERSON_SEARCH_NEW_USER_PASSWORD` khi chạy script.
+Thời hạn phiên cấu hình bằng `PERSON_SEARCH_SESSION_TTL_MINUTES` (mặc định 720) và
+`PERSON_SEARCH_SESSION_IDLE_MINUTES` (mặc định 30). Cookie có cờ `Secure` ngoài môi trường
+development; ghi đè bằng `PERSON_SEARCH_COOKIE_SECURE`.
+
+Trên macOS, port 5000 thường bị AirPlay Receiver chiếm. Khi đó đặt `PERSON_SEARCH_PORT=5050` và
+`VITE_API_PROXY_TARGET=http://127.0.0.1:5050` trong `frontend/.env`.
+
 ## Chạy kiểm thử
 
 ```powershell

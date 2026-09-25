@@ -186,16 +186,21 @@ class BaseConfig:
     TESTING = False
     JSON_SORT_KEYS = False
     STORAGE_ENABLED = True
+    AUTH_COOKIE_NAME = "ps_session"
+    AUTH_COOKIE_SECURE = True
+    AUTH_COOKIE_SAMESITE = "Lax"
 
 
 class DevelopmentConfig(BaseConfig):
     ENVIRONMENT = "development"
+    AUTH_COOKIE_SECURE = False
 
 
 class TestingConfig(BaseConfig):
     ENVIRONMENT = "testing"
     TESTING = True
     STORAGE_ENABLED = False
+    AUTH_COOKIE_SECURE = False
 
 
 class ProductionConfig(BaseConfig):

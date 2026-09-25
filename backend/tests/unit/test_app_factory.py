@@ -61,14 +61,16 @@ def test_versioned_ping_endpoint(client) -> None:  # type: ignore[no-untyped-def
 
 
 def test_api_not_found_uses_json_error(client) -> None:  # type: ignore[no-untyped-def]
-    response = client.get("/api/v1/does-not-exist")
+    response = client.get("/api/v1/does-not-exist", headers={"X-Request-ID": "req-00000001"})
 
     assert response.status_code == 404
+    assert response.headers["X-Request-ID"] == "req-00000001"
     assert response.get_json() == {
         "error": {
             "code": "not_found",
             "message": "The requested URL was not found on the server. If you entered the URL "
             "manually please check your spelling and try again.",
+            "request_id": "req-00000001",
         }
     }
 

@@ -1,20 +1,29 @@
 import axios from 'axios'
 
-const TOKEN_KEY = 'access_token'
+const CSRF_HEADER = 'X-CSRF-Token'
+const SAFE_METHODS = new Set(['get', 'head', 'options'])
 
-export const tokenStorage = {
-  get: () => localStorage.getItem(TOKEN_KEY),
-  set: (token) => localStorage.setItem(TOKEN_KEY, token),
-  clear: () => localStorage.removeItem(TOKEN_KEY),
+let csrfToken = null
+
+export const csrfStorage = {
+  get: () => csrfToken,
+  set: (token) => {
+    csrfToken = token || null
+  },
+  clear: () => {
+    csrfToken = null
+  },
 }
 
 export class ApiError extends Error {
-  constructor({ message, status, data, code }) {
+  constructor({ message, status, data, code, details, requestId }) {
     super(message)
     this.name = 'ApiError'
     this.status = status
     this.data = data
     this.code = code
+    this.details = details
+    this.requestId = requestId
   }
 }
 
@@ -24,20 +33,27 @@ const toApiError = (error) => {
   }
   const { response, code, message } = error
   if (!response) {
-    return new ApiError({ message: message || 'Network error', code })
+    return new ApiError({
+      message: 'Không kết nối được tới máy chủ. Vui lòng thử lại sau.',
+      code: code || 'network_error',
+    })
   }
   const data = response.data
+  const envelope = data?.error
   return new ApiError({
-    message: data?.message || data?.detail || message,
+    message: envelope?.message || data?.message || message,
     status: response.status,
     data,
-    code,
+    code: envelope?.code || code,
+    details: envelope?.details,
+    requestId: envelope?.request_id || response.headers?.['x-request-id'],
   })
 }
 
 const httpClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1',
   timeout: Number(import.meta.env.VITE_API_TIMEOUT) || 15000,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
@@ -45,9 +61,9 @@ const httpClient = axios.create({
 })
 
 httpClient.interceptors.request.use((config) => {
-  const token = tokenStorage.get()
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
+  const method = (config.method || 'get').toLowerCase()
+  if (!SAFE_METHODS.has(method) && csrfToken) {
+    config.headers[CSRF_HEADER] = csrfToken
   }
   return config
 })
@@ -63,8 +79,8 @@ httpClient.interceptors.response.use(
   (response) => response,
   (error) => {
     const apiError = toApiError(error)
-    if (apiError.status === 401) {
-      tokenStorage.clear()
+    if (apiError.status === 401 && !error.config?.skipUnauthorizedHandler) {
+      csrfStorage.clear()
       unauthorizedHandlers.forEach((handler) => handler(apiError))
     }
     return Promise.reject(apiError)

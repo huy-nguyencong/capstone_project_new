@@ -174,8 +174,8 @@ Trạng thái hợp lệ: `TODO`, `IN_PROGRESS`, `READY_FOR_REVIEW`, `DONE`, `BL
 | --- | --- | --- | --- | --- |
 | BE-00 | Khởi tạo backend application skeleton | Không; dùng chung nền với STO-00 | DONE | `first commit` |
 | BE-01 | Chốt API contract và quy ước HTTP | BE-00, STO-01 | TODO | — |
-| BE-02 | Nền tảng password, session và CSRF | BE-01, STO-04 | TODO | — |
-| BE-03 | UC-01/UC-15: đăng nhập, phiên và đăng xuất | BE-02 | TODO | — |
+| BE-02 | Nền tảng password, session và CSRF | BE-01, STO-04 | READY_FOR_REVIEW | — |
+| BE-03 | UC-01/UC-15: đăng nhập, phiên và đăng xuất | BE-02 | READY_FOR_REVIEW | — |
 | BE-04 | Policy phân quyền tập trung | BE-03 | TODO | — |
 | BE-05 | UC-02: quản lý Area tham chiếu và tài khoản | BE-04, STO-08 | TODO | — |
 | BE-06 | UC-03: quản lý camera và kiểm tra RTSP | BE-04, STO-08 | TODO | — |
@@ -922,3 +922,15 @@ Các câu hỏi trên không ngăn BE-00, nhưng phải được quyết định
 - Rủi ro hoặc điểm cần review: cấu trúc module, dependency injection, dependency version range và việc giữ `ping` như endpoint smoke tạm thời.
 - Chỉnh sửa sau review: người thực hiện yêu cầu commit toàn bộ workspace.
 - Commit: root commit `first commit`; SHA được xác minh bằng `git log` sau khi hoàn tất amend.
+
+### 2026-09-25 — BE-02, BE-03
+
+- Trạng thái: `READY_FOR_REVIEW`.
+- Use case/endpoint liên quan: UC-01, UC-15; `POST /api/v1/auth/login`, `GET /api/v1/auth/me`, `POST /api/v1/auth/logout`.
+- Thay đổi chính: migration `20260925_0005` thêm bảng `auth_sessions` và cột `users.last_login_at`; hash Argon2id; session opaque lưu SHA-256 trong PostgreSQL, hết hạn tuyệt đối 12h và idle 30 phút (cấu hình qua `PERSON_SEARCH_SESSION_TTL_MINUTES`, `PERSON_SEARCH_SESSION_IDLE_MINUTES`); cookie `ps_session` `HttpOnly`/`SameSite=Lax`/`Secure` ngoài development; CSRF token = HMAC từ session token, gửi qua header `X-CSRF-Token`; rotate session khi login; user bị khóa mất quyền ở request kế tiếp; audit login thành công/thất bại, logout, session hết hạn; error envelope có `request_id`; decorator `require_auth(*roles)` thô (policy theo resource vẫn thuộc BE-04); CLI `person-search-user` để bootstrap Admin và tạo tài khoản test.
+- File quan trọng: `backend/src/person_search/services/auth.py`, `backend/src/person_search/auth/`, `backend/src/person_search/api/v1/auth.py`, `backend/src/person_search/api/errors.py`, `backend/migrations/versions/20260925_0005_auth_sessions.py`.
+- Test đã chạy: `pytest` toàn bộ, `ruff check .`, `compileall src`, integration migration trên database PostgreSQL tạm, E2E thủ công qua Vite proxy và headless browser.
+- Kết quả test: 248 unit test đạt; 6 integration migration test đạt (7 test cần Milvus/MinIO bị skip); login/me/logout/CSRF/audit xác nhận trên database thật.
+- Rủi ro hoặc điểm cần review: CSRF dẫn xuất từ session token thay vì lưu riêng; logout yêu cầu CSRF khi còn cookie; username chuẩn hóa về chữ thường; chưa có rate limit login (BE-21).
+- Chỉnh sửa sau review:
+- Commit SHA (chỉ điền sau khi DONE):

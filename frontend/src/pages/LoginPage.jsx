@@ -7,17 +7,18 @@ import { Button } from '@/components/ui/Button'
 import { TextField } from '@/components/ui/Form'
 import { Dot } from '@/components/ui/StatusDot'
 import { HOME_BY_ROLE } from '@/constants/navigation'
-import { DEMO_ACCOUNTS } from '@/mocks/users'
+import { SessionLoading } from '@/routes/guards'
 import { useAppStore } from '@/store/hooks'
 
 export default function LoginPage() {
-  const { me, login, logoutNotice } = useAppStore()
+  const { me, authStatus, login, logoutNotice } = useAppStore()
   const navigate = useNavigate()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState(null)
   const [busy, setBusy] = useState(false)
 
+  if (authStatus === 'loading') return <SessionLoading />
   if (me && !busy) return <Navigate to={HOME_BY_ROLE[me.role]} replace />
 
   const submit = async (e) => {
@@ -32,12 +33,6 @@ export default function LoginPage() {
     setBusy(false)
     if (res.error) setError(res.error)
     else navigate(HOME_BY_ROLE[res.user.role], { replace: true })
-  }
-
-  const fillDemo = (u) => {
-    setUsername(u)
-    setPassword('demo1234')
-    setError(null)
   }
 
   return (
@@ -73,16 +68,6 @@ export default function LoginPage() {
             {busy ? 'Đang xác thực…' : 'Đăng nhập'}
           </Button>
         </form>
-        <div className="flex flex-col gap-2">
-          <div className="kicker text-neutral-500">Tài khoản demo · mật khẩu bất kỳ</div>
-          <div className="flex flex-wrap gap-1.5">
-            {DEMO_ACCOUNTS.map((d) => (
-              <Button key={d.username} className="text-xs" onClick={() => fillDemo(d.username)}>
-                {d.label} · {d.username}
-              </Button>
-            ))}
-          </div>
-        </div>
       </div>
 
       <div className="hidden items-center py-12 pr-[6vw] lg:flex">

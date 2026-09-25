@@ -63,10 +63,3 @@ export const USERS = [
     last: '24/09/2026 17:58',
   },
 ]
-
-export const DEMO_ACCOUNTS = [
-  { username: 'admin', label: 'Admin' },
-  { username: 'khoa.tran', label: 'Operator' },
-  { username: 'lan.nguyen', label: 'Viewer' },
-  { username: 'hung.le', label: 'Bị khóa' },
-]

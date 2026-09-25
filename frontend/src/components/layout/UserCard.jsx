@@ -1,7 +1,6 @@
 import { MapPinIcon, SignOutIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/Button'
 import { ROLE_LABEL } from '@/constants/status'
-import { AREAS } from '@/mocks/areas'
 import { initials } from '@/utils/format'
 
 export function UserCard({ user, onLogout }) {
@@ -17,10 +16,10 @@ export function UserCard({ user, onLogout }) {
           <div className="text-[11px] text-neutral-400">{roleLabel}</div>
         </div>
       </div>
-      {user.role === 'operator' && (
+      {user.role === 'operator' && user.area && (
         <div className="flex items-center gap-1.5 text-[11px] text-neutral-300">
           <MapPinIcon size={12} />
-          {AREAS[user.area]}
+          {user.area.name}
         </div>
       )}
       <Button

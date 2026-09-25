@@ -1,29 +1,16 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AUDIT_LOGS } from '@/mocks/auditLogs'
 import { CAMERAS } from '@/mocks/cameras'
 import { CASES } from '@/mocks/cases'
 import { USERS } from '@/mocks/users'
-import { stamp, stampMinute, wait } from '@/utils/format'
+import { authApi } from '@/services/api/auth'
+import { onUnauthorized } from '@/services/apiService'
+import { stamp, stampMinute } from '@/utils/format'
 import { AppStoreContext } from './contexts'
 
-const SESSION_KEY = 'visiontrace.session'
-
-const readSession = () => {
-  try {
-    return sessionStorage.getItem(SESSION_KEY)
-  } catch {
-    return null
-  }
-}
-
-const writeSession = (id) => {
-  try {
-    if (id) sessionStorage.setItem(SESSION_KEY, id)
-    else sessionStorage.removeItem(SESSION_KEY)
-  } catch {
-    return
-  }
-}
+const SYSTEM_ERROR =
+  'Không thể đăng nhập tại thời điểm hiện tại do lỗi hệ thống. Vui lòng thử lại sau.'
+const EXPIRED_NOTICE = 'Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.'
 
 export function AppStoreProvider({ children }) {
   const [users, setUsers] = useState(USERS)
@@ -31,13 +18,30 @@ export function AppStoreProvider({ children }) {
   const [cases, setCases] = useState(CASES)
   const [logs, setLogs] = useState(AUDIT_LOGS)
   const [models, setModels] = useState({ det: 'yolov8m', trk: 'bytetrack' })
-  const [userId, setUserId] = useState(() => {
-    const id = readSession()
-    return USERS.some((u) => u.id === id && u.status === 'active') ? id : null
-  })
+  const [me, setMe] = useState(null)
+  const [authStatus, setAuthStatus] = useState('loading')
   const [logoutNotice, setLogoutNotice] = useState(null)
 
-  const me = users.find((u) => u.id === userId) ?? null
+  useEffect(() => {
+    let active = true
+    authApi
+      .me()
+      .then((user) => active && setMe(user))
+      .catch(() => active && setMe(null))
+      .finally(() => active && setAuthStatus('ready'))
+    return () => {
+      active = false
+    }
+  }, [])
+
+  useEffect(
+    () =>
+      onUnauthorized((error) => {
+        setMe(null)
+        setLogoutNotice(error.code === 'session_expired' ? EXPIRED_NOTICE : null)
+      }),
+    [],
+  )
 
   const log = useCallback(
     (type, action, target, ok = true, detail) => {
@@ -47,40 +51,23 @@ export function AppStoreProvider({ children }) {
     [me],
   )
 
-  const login = useCallback(
-    async (username, password) => {
-      await wait(650)
-      const un = username.trim().toLowerCase()
-      if (un === 'error') {
-        return {
-          error:
-            'Không thể đăng nhập tại thời điểm hiện tại do lỗi hệ thống. Vui lòng thử lại sau.',
-        }
-      }
-      const user = users.find((u) => u.username === un)
-      if (!user || password === 'sai') {
-        return { error: 'Tên đăng nhập hoặc mật khẩu không chính xác. Vui lòng nhập lại.' }
-      }
-      if (user.status !== 'active') {
-        return {
-          error:
-            'Tài khoản đã bị khóa hoặc ngừng hoạt động và không có quyền truy cập hệ thống. Liên hệ Admin.',
-        }
-      }
-      setUserId(user.id)
+  const login = useCallback(async (username, password) => {
+    try {
+      const user = await authApi.login(username.trim(), password)
+      setMe(user)
       setLogoutNotice(null)
-      writeSession(user.id)
       return { user }
-    },
-    [users],
-  )
+    } catch (error) {
+      if (error.status && error.status < 500) return { error: error.message }
+      return { error: SYSTEM_ERROR }
+    }
+  }, [])
 
-  const logout = useCallback(() => {
-    log('Đăng nhập', 'Đăng xuất', me?.username ?? '')
-    setUserId(null)
-    writeSession(null)
+  const logout = useCallback(async () => {
+    await authApi.logout().catch(() => null)
+    setMe(null)
     setLogoutNotice('Bạn đã đăng xuất. Phiên làm việc đã kết thúc.')
-  }, [log, me])
+  }, [])
 
   const addUser = useCallback((user) => {
     setUsers((prev) => [...prev, { id: `u${Date.now()}`, status: 'active', last: '—', ...user }])
@@ -146,6 +133,7 @@ export function AppStoreProvider({ children }) {
   const value = useMemo(
     () => ({
       me,
+      authStatus,
       users,
       cameras,
       cases,
@@ -167,6 +155,7 @@ export function AppStoreProvider({ children }) {
     }),
     [
       me,
+      authStatus,
       users,
       cameras,
       cases,

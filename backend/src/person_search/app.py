@@ -9,9 +9,16 @@ from typing import Any
 from flask import Flask
 
 from person_search.api import register_api
-from person_search.config import StorageSettings, config_for_environment
+from person_search.auth.passwords import PasswordHasher
+from person_search.config import (
+    StorageSettings,
+    config_for_environment,
+    parse_boolean_environment,
+)
 from person_search.dependencies import DependencyContainer
+from person_search.services.auth import AuthService, SessionPolicy
 from person_search.storage.health import StorageHealthService
+from person_search.storage.postgres.unit_of_work import UnitOfWork
 from person_search.storage.runtime import StorageRuntime
 
 
@@ -29,6 +36,9 @@ def create_app(
         if requested_environment is None and config.get("TESTING"):
             requested_environment = "testing"
     app.config.from_object(config_for_environment(requested_environment))
+    app.config["AUTH_COOKIE_SECURE"] = parse_boolean_environment(
+        "PERSON_SEARCH_COOKIE_SECURE", default=app.config["AUTH_COOKIE_SECURE"]
+    )
 
     if config:
         app.config.from_mapping(config)
@@ -43,6 +53,15 @@ def create_app(
             container.register("storage.milvus", runtime.milvus)
             container.register("storage.minio", runtime.minio)
             container.register("storage.health", runtime.health)
+            session_factory = runtime.postgres.session_factory
+            container.register(
+                "auth.service",
+                AuthService(
+                    lambda: UnitOfWork(session_factory),
+                    hasher=PasswordHasher(),
+                    policy=SessionPolicy.from_environment(),
+                ),
+            )
             app.extensions["person_search.storage_runtime"] = runtime
             atexit.register(runtime.close)
         else:

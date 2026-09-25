@@ -10,6 +10,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "alembic>=1.16,<2",
+    "argon2-cffi>=23.1,<26",
     "Flask>=3.1",
     "minio>=7.2,<8",
     "Pillow>=11,<13",
@@ -30,6 +31,7 @@ dev = [
 person-search-api = "person_search.__main__:main"
 person-search-worker = "person_search.workers.main:main"
 person-search-seed = "person_search.storage.postgres.seed:main"
+person-search-user = "person_search.auth.cli:main"
 person-search-storage = "person_search.storage.maintenance_cli:main"
 
 [tool.setuptools.packages.find]

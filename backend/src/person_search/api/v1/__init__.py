@@ -2,7 +2,10 @@
 
 from flask import Blueprint, jsonify
 
+from person_search.api.v1.auth import auth_blueprint
+
 api_v1_blueprint = Blueprint("api_v1", __name__)
+api_v1_blueprint.register_blueprint(auth_blueprint)
 
 
 @api_v1_blueprint.get("/ping")
