@@ -43,5 +43,6 @@ erDiagram
 - Danh sách Case của Operator: `ix_cases_owner_created_at`.
 - Kết quả đã lưu và audit dùng các index theo owner/actor/target và timestamp.
 
-Seed development được chạy chủ động bằng `person-search-seed`. Seed chỉ chứa Area có UUID ổn định,
-dùng `ON CONFLICT DO NOTHING`, không tạo admin, password hoặc secret.
+Seed development được chạy chủ động bằng `person-search-seed`. Seed tạo Area và ba user có UUID ổn
+định: `admin`/ADMIN, `operator`/OPERATOR thuộc `GATE-A`, `viewer`/VIEWER. Cả ba dùng password
+`password`; chỉ dành cho local/demo và lệnh từ chối chạy khi `PERSON_SEARCH_ENV=production`.

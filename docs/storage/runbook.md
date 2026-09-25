@@ -29,7 +29,8 @@ cd backend
 .venv/bin/person-search-seed
 ```
 
-Seed idempotent và không tạo user/credential.
+Seed idempotent, tạo `admin`, `operator`, `viewer` với password `password`, và không ghi đè tài
+khoản đã tồn tại. Đây là credential local/demo; seed từ chối chạy trong production.
 
 ## 3. Retry, dead-letter, reconciliation
 

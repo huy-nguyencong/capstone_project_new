@@ -24,4 +24,5 @@ Seed development là thao tác chủ động và idempotent, không nằm trong 
 person-search-seed
 ```
 
-Lệnh này chỉ tạo Area mẫu và không tạo user, password hay secret.
+Lệnh này tạo Area mẫu và ba tài khoản local/demo `admin`, `operator`, `viewer`, cùng password
+`password`. Seed idempotent và từ chối chạy khi `PERSON_SEARCH_ENV=production`.

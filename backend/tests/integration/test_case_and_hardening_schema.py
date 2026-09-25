@@ -13,8 +13,9 @@ from alembic.config import Config
 from dotenv import load_dotenv
 from sqlalchemy.exc import DBAPIError
 
+from person_search.auth.passwords import PasswordHasher
 from person_search.config import PostgresSettings
-from person_search.storage.postgres.seed import seed_reference_data
+from person_search.storage.postgres.seed import seed_development_users, seed_reference_data
 
 load_dotenv()
 pytestmark = [
@@ -53,6 +54,22 @@ def test_case_rules_populated_migration_indexes_and_seed() -> None:
     try:
         assert seed_reference_data(os.environ) == 2
         assert seed_reference_data(os.environ) == 0
+        assert seed_development_users(os.environ) == 3
+        assert seed_development_users(os.environ) == 0
+        with engine.connect() as connection:
+            seeded_users = connection.execute(
+                sa.text(
+                    "SELECT username, password_hash, role, assigned_area_id "
+                    "FROM users WHERE username IN ('admin', 'operator', 'viewer') "
+                    "ORDER BY username"
+                )
+            ).all()
+        assert [row.username for row in seeded_users] == ["admin", "operator", "viewer"]
+        assert [row.role for row in seeded_users] == ["ADMIN", "OPERATOR", "VIEWER"]
+        assert seeded_users[1].assigned_area_id is not None
+        assert seeded_users[0].assigned_area_id is None
+        assert seeded_users[2].assigned_area_id is None
+        assert all(PasswordHasher().verify(row.password_hash, "password") for row in seeded_users)
         with engine.begin() as connection:
             connection.execute(
                 sa.text("INSERT INTO areas (id, code, name) VALUES (:id, 'AREA-X', 'Area X')"),
