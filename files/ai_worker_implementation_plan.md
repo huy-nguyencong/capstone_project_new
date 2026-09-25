@@ -268,7 +268,7 @@ Quy trình cho mỗi task:
 | AIW-01 | Inventory 7 video và bộ dữ liệu đánh giá | AIW-00 | DONE |
 | AIW-02 | Khóa contract và taxonomy lỗi AI | AIW-00 | DONE |
 | AIW-03 | Registry Detector/Tracker/Encoder và kiểm tra artifact | AIW-02 | DONE |
-| AIW-04 | Runtime/device preflight và giới hạn tài nguyên | AIW-03 | REVIEW |
+| AIW-04 | Runtime/device preflight và giới hạn tài nguyên | AIW-03 | DONE |
 | AIW-05 | Fake adapters và fixtures chỉ dành cho test | AIW-02 | TODO |
 | AIW-06 | Interface nguồn frame dùng chung | AIW-02 | TODO |
 | AIW-07 | File video source production | AIW-06 | TODO |
@@ -355,7 +355,9 @@ AIW-12 + AIW-14 → AIW-16 → AIW-17 → AIW-18 → AIW-25
 
 - Định nghĩa các contract tại mục 6 bằng type rõ ràng.
 - Định nghĩa interface `FrameSource`, `Detector`, `Tracker`, `ImageEncoder`, `TextEncoder`, `TrackSelector` và `TrackPublisher`.
-- Chuẩn hóa lifecycle `open/read/flush/close` và ownership tài nguyên.
+- Chuẩn hóa lifecycle và ownership tài nguyên: mọi adapter có `open/close`; `FrameSource`
+  dùng `read` đến EOF; `flush` bắt buộc với `Tracker`, `TrackSelector` và `TrackPublisher`
+  là các component có state/output tồn đọng.
 - Định nghĩa mã lỗi theo stage: source, sampling, detector, tracker, selector, encoder, storage, cancellation và resource exhaustion.
 - Phân biệt lỗi retryable và terminal; message public không chứa secret.
 
@@ -997,11 +999,13 @@ Mỗi lần hoàn tất hoặc review task, thêm một dòng; không sửa lị
 | 2026-09-25 | AIW-02 | IN_PROGRESS | — | Đang thực hiện | Bắt đầu tách contract AI khỏi pipeline, chuẩn hóa lifecycle và taxonomy lỗi retryable/terminal. |
 | 2026-09-26 | AIW-02 | REVIEW | — | `pytest -m unit`: 337 passed, 25 deselected; `ruff check .`; `compileall` | Đã thêm contract framework-neutral, 7 Protocol, lifecycle close idempotent, 10 error stage và public serialization an toàn; pipeline demo dùng SourceFrame/Detection chuẩn hóa. Chờ review trước khi chuyển `DONE`. |
 | 2026-09-26 | AIW-02 | DONE | — | Không chạy lại; người thực hiện yêu cầu bắt đầu task kế tiếp | Contract và taxonomy được chấp thuận qua chỉ dẫn tiếp tục; khóa boundary cho registry/adapters. |
+| 2026-09-26 | AIW-02 | DONE | — | `test_ai_worker_contracts.py`: 11 passed; `pytest -m unit`: 359 passed, 25 deselected; `ruff check .`; `compileall` | Vá contract sau review: `ResultBundleManifest` bổ sung `ai_config_version_id` và danh sách `track_ids` duy nhất; làm rõ `flush` chỉ bắt buộc cho component stateful. |
 | 2026-09-26 | AIW-03 | IN_PROGRESS | — | Đang thực hiện | Bắt đầu registry typed, artifact checksum, compatibility, provenance/license và tách production/demo. |
 | 2026-09-26 | AIW-03 | REVIEW | — | `pytest -m unit`: 350 passed, 25 deselected; `ruff check .`; `compileall`; validate hai manifest bằng CLI | Registry fail-fast đã khóa adapter allowlist, local artifact/checksum, compatibility, preflight-derived availability và request chỉ nhận ID; chờ review trước khi chuyển `DONE`. |
 | 2026-09-26 | AIW-03 | DONE | — | Không chạy lại; người thực hiện yêu cầu bắt đầu task kế tiếp | Registry typed và policy artifact được chấp thuận qua chỉ dẫn tiếp tục. |
 | 2026-09-26 | AIW-04 | IN_PROGRESS | — | Đang thực hiện | Bắt đầu runtime/device/resource preflight, report local/Colab và worker readiness guard. |
 | 2026-09-26 | AIW-04 | REVIEW | — | `pytest -m unit`: 359 passed, 25 deselected; `ruff check .`; `compileall`; local preflight CLI; worker refusal smoke | Đã khóa profile local CPU/Colab T4, package/runtime/GPU/codec/resource/model-load report và readiness guard. Local hiện bị chặn đúng với `codec_unavailable`; notebook T4 chờ chạy trên Colab thật. |
+| 2026-09-26 | AIW-04 | DONE | — | Colab T4 preflight thực tế; `test_ai_preflight.py`: 9 passed | Colab nhận Tesla T4, CUDA 12.8, FFmpeg/PyAV H.264 và MPEG-4; disk đạt. Preflight phát hiện đúng RAM khả dụng biến động dưới ngưỡng 8 GiB và chặn pipeline production chưa có artifact/checkpoint. `pipeline_models_unavailable` và cảnh báo lệch phiên bản RaSa được chuyển tiếp cho AIW-10–AIW-15; không hạ ngưỡng chỉ để đạt `ready=true`. Chốt phương án local chạy ứng dụng/storage, Colab T4 phục vụ AI batch và video demo dự phòng. |
 
 ## 13. Rủi ro cần theo dõi
 

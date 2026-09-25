@@ -1,7 +1,7 @@
 # AI worker contracts và error taxonomy
 
 > Task: AIW-02  
-> Trạng thái: `REVIEW` sau khi code và contract tests đạt
+> Trạng thái: `DONE`; contract được vá và xác minh lại ngày 2026-09-26
 
 ## 1. Ranh giới contract
 
@@ -17,7 +17,8 @@ Các invariant chính:
 - `CompletedTrack` khóa camera/job/config, timeline nguồn, representative candidate, sampling và lineage Detector/Tracker/Encoder.
 - `EmbeddingVector` khóa dimension, tính hữu hạn và chính sách L2 normalization.
 - `PublishedTrack` chỉ được tạo ở trạng thái `READY`, với cùng một track identity ở metadata và vector index.
-- `ResultBundleManifest` chỉ nhận relative path an toàn và SHA-256 hợp lệ.
+- `ResultBundleManifest` khóa `ai_config_version_id`, danh sách `track_ids` duy nhất,
+  model/checkpoint lineage, sampling interval, relative path an toàn và SHA-256 hợp lệ.
 - Projection dùng cho diagnostics loại bỏ image bytes và vector values.
 
 `BoundingBoxPixels` và storage invariant hiện hữu tiếp tục được tái sử dụng từ `person_search.storage.contracts`; không tạo định dạng bbox thứ hai.
@@ -36,6 +37,10 @@ FrameSource.open(source, camera)
                                      └─ TrackPublisher.open/publish/flush/close
 ```
 
+- `flush()` chỉ bắt buộc với component có state/output tồn đọng: `Tracker`,
+  `TrackSelector` và `TrackPublisher`. `FrameSource` kết thúc bằng EOF; Detector và Encoder
+  là adapter request/response stateless ở contract v1 nên dùng `open()/close()` mà không có
+  `flush()` no-op.
 - `flush()` chỉ xuất phần state còn lại; không tự mở lại component.
 - `close()` phải idempotent. `IdempotentCloseMixin` bảo đảm resource-release chỉ chạy một lần, kể cả lần release đầu phát sinh lỗi.
 - `FrameSource.read()` trả `None` tại EOF.
@@ -87,3 +92,14 @@ Retryability là thuộc tính của error code, không được đoán chỉ t�
 3. AIW-16 orchestration kiểm tra output contract sau mỗi boundary và map lỗi adapter sang `AIWorkerError`.
 4. AIW-17/AIW-20 dùng `retryable` trong taxonomy để quyết định retry job; không tiếp tục dùng stage string tự do.
 5. AIW-18 map `CompletedTrack` + `EmbeddingVector` sang storage contract và chỉ trả `PublishedTrack` sau khi ba kho nhất quán.
+
+## 6. Bản vá contract sau review
+
+Review ngày 2026-09-26 phát hiện manifest bundle ban đầu mới có danh sách artifact,
+chưa mang config lineage và danh sách track như hợp đồng tối thiểu tại mục 6 của kế hoạch.
+Bản vá bổ sung `ai_config_version_id` và `track_ids`, từ chối danh sách track rỗng,
+không phải UUID hoặc bị trùng. Việc ánh xạ từng track tới JSONL/frame/embedding và kiểm tra
+đúng một full frame cho mỗi track thuộc AIW-18, nhưng identity tối thiểu đã được khóa từ AIW-02.
+
+Contract lifecycle cũng được làm rõ: chỉ component stateful mới có `flush()`; không yêu cầu
+method no-op trên source/detector/encoder stateless.

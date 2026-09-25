@@ -132,6 +132,7 @@ def test_embedding_requires_dimension_and_normalization_contract() -> None:
 
 def test_published_track_and_bundle_keep_cross_storage_identity_and_checksums() -> None:
     track_id = uuid.uuid4()
+    config_id = uuid.uuid4()
     published = PublishedTrack(
         track_id,
         f"tracks/v1/{track_id}/representative.jpg",
@@ -143,17 +144,47 @@ def test_published_track_and_bundle_keep_cross_storage_identity_and_checksums() 
     manifest = ResultBundleManifest(
         "person-search-result-bundle/v1",
         "b" * 64,
+        config_id,
         10,
         lineage("detector"),
         lineage("tracker"),
         lineage("encoder"),
+        (track_id,),
         (artifact,),
     )
 
     assert published.state is PublishedState.READY
+    assert manifest.ai_config_version_id == config_id
+    assert manifest.track_ids == (track_id,)
     assert manifest.artifacts[0].sha256 == SHA
     with pytest.raises(ValueError, match="inside the result bundle"):
         BundleArtifact("../escape.json", SHA, 1)
+
+    with pytest.raises(ValueError, match="track_ids must contain UUID"):
+        ResultBundleManifest(
+            "person-search-result-bundle/v1",
+            "b" * 64,
+            config_id,
+            10,
+            lineage("detector"),
+            lineage("tracker"),
+            lineage("encoder"),
+            (),
+            (artifact,),
+        )
+
+    with pytest.raises(ValueError, match="track IDs must be unique"):
+        ResultBundleManifest(
+            "person-search-result-bundle/v1",
+            "b" * 64,
+            config_id,
+            10,
+            lineage("detector"),
+            lineage("tracker"),
+            lineage("encoder"),
+            (track_id, track_id),
+            (artifact,),
+        )
 
 
 def test_component_status_and_public_projection_exclude_sensitive_payloads() -> None:

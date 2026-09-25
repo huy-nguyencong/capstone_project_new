@@ -352,12 +352,16 @@ class BundleArtifact:
 
 @dataclass(frozen=True, slots=True)
 class ResultBundleManifest:
+    """Versioned batch result inventory with config, model, track, and artifact lineage."""
+
     schema_version: str
     source_sha256: str
+    ai_config_version_id: UUID
     sampling_interval: int
     detector: ModelLineage
     tracker: ModelLineage
     encoder: ModelLineage
+    track_ids: tuple[UUID, ...]
     artifacts: tuple[BundleArtifact, ...]
 
     def __post_init__(self) -> None:
@@ -365,10 +369,17 @@ class ResultBundleManifest:
         object.__setattr__(
             self, "source_sha256", _require_sha256(self.source_sha256, "source_sha256")
         )
+        _require_uuid(self.ai_config_version_id, "ai_config_version_id")
         _require_int(self.sampling_interval, "sampling_interval", minimum=1)
         for name in ("detector", "tracker", "encoder"):
             if not isinstance(getattr(self, name), ModelLineage):
                 raise ValueError(f"{name} must be a ModelLineage value.")
+        track_ids = tuple(self.track_ids)
+        if not track_ids or not all(isinstance(item, UUID) for item in track_ids):
+            raise ValueError("track_ids must contain UUID values.")
+        if len(set(track_ids)) != len(track_ids):
+            raise ValueError("Bundle track IDs must be unique.")
+        object.__setattr__(self, "track_ids", track_ids)
         artifacts = tuple(self.artifacts)
         if not artifacts or not all(isinstance(item, BundleArtifact) for item in artifacts):
             raise ValueError("artifacts must contain BundleArtifact values.")
