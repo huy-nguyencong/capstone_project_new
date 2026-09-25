@@ -17,6 +17,8 @@ from person_search.config import (
 )
 from person_search.dependencies import DependencyContainer
 from person_search.services.auth import AuthService, SessionPolicy
+from person_search.services.camera_runtime import CameraRuntime
+from person_search.services.cameras import CameraService
 from person_search.services.users import UserService
 from person_search.storage.health import StorageHealthService
 from person_search.storage.postgres.unit_of_work import UnitOfWork
@@ -67,6 +69,14 @@ def create_app(
             container.register(
                 "users.service",
                 UserService(lambda: UnitOfWork(session_factory), hasher=password_hasher),
+            )
+            container.register(
+                "cameras.service",
+                CameraService(
+                    lambda: UnitOfWork(session_factory),
+                    CameraRuntime.from_environment(),
+                    CameraService.registry_from_environment(),
+                ),
             )
             app.extensions["person_search.storage_runtime"] = runtime
             atexit.register(runtime.close)

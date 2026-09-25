@@ -28,3 +28,31 @@ export const toUser = (user) => ({
   createdAt: user.created_at,
   version: user.version,
 })
+
+export const toCamera = (camera) => ({
+  id: camera.id,
+  code: camera.code,
+  name: camera.name,
+  area: toArea(camera.area),
+  lifecycle: camera.status,
+  status:
+    camera.status === 'RETIRED'
+      ? 'retired'
+      : camera.status !== 'ACTIVE'
+        ? 'unknown'
+        : camera.rtsp_status === 'ONLINE'
+          ? 'online'
+          : ['OFFLINE', 'ERROR'].includes(camera.rtsp_status)
+            ? 'offline'
+            : 'unverified',
+  rtsp: camera.rtsp_url_masked || '',
+  hasRtsp: camera.has_rtsp,
+  ai: camera.ai_enabled,
+  aiState: !camera.ai_enabled
+    ? 'off'
+    : { RUNNING: 'running', QUEUED: 'starting', IDLE: 'stopped', ERROR: 'error' }[
+        camera.worker_state
+      ] || 'unknown',
+  lastCheckedAt: camera.last_checked_at,
+  version: camera.version,
+})

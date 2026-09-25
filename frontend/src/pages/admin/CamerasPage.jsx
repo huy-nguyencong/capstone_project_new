@@ -1,21 +1,17 @@
 import { ArchiveIcon, PencilSimpleIcon, PlugsConnectedIcon, PlusIcon } from '@phosphor-icons/react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button, IconButton } from '@/components/ui/Button'
 import { CellStack, DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { Dot, StatusDot } from '@/components/ui/StatusDot'
 import { AI_STATE, CAMERA_STATUS } from '@/constants/status'
-import { AREAS, areaShort } from '@/mocks/areas'
-import { isRtspReachable } from '@/mocks/cameras'
-import { useAppStore, useConfirm, useToast } from '@/store/hooks'
-import { wait } from '@/utils/format'
+import { camerasApi } from '@/services/api/cameras'
+import { usersApi } from '@/services/api/users'
+import { useCameraAdmin } from '@/hooks/useCameraAdmin'
+import { Alert } from '@/components/ui/Alert'
+import { useConfirm, useToast } from '@/store/hooks'
 import { CameraDialog } from './CameraDialog'
-
-const AREA_FILTERS = [
-  { value: 'all', label: 'Tất cả' },
-  ...AREAS.map((_, i) => ({ value: String(i), label: areaShort(i) })),
-]
 
 function CameraThumb({ status }) {
   return (
@@ -26,34 +22,46 @@ function CameraThumb({ status }) {
 }
 
 export default function CamerasPage() {
-  const { cameras, updateCamera, log } = useAppStore()
   const confirm = useConfirm()
   const toast = useToast()
   const [area, setArea] = useState('all')
+  const { cameras, error, loading, nextCursor, load } = useCameraAdmin(area)
+  const [areas, setAreas] = useState([])
+  useEffect(() => {
+    let live = true
+    usersApi
+      .areas()
+      .then((items) => {
+        if (live) setAreas(items)
+      })
+      .catch((e) => {
+        if (live) toast(e.message, 'err')
+      })
+    return () => {
+      live = false
+    }
+  }, [toast])
+  const areaFilters = [
+    { value: 'all', label: 'Tất cả' },
+    ...areas.map((a) => ({ value: a.id, label: a.name })),
+  ]
   const [testing, setTesting] = useState({})
   const [editing, setEditing] = useState(undefined)
 
-  const rows = cameras.filter((c) => area === 'all' || String(c.area) === area)
+  const rows = cameras
   const activeCount = rows.filter((c) => c.status !== 'retired').length
 
   const testRow = async (c) => {
     setTesting((t) => ({ ...t, [c.id]: true }))
-    await wait(1100)
-    const ok = isRtspReachable(c.rtsp)
-    setTesting((t) => ({ ...t, [c.id]: false }))
-    updateCamera(
-      c.id,
-      ok
-        ? { status: 'online', fps: c.fps || 25, bitrate: c.bitrate || '3.6 Mbps', last: 'vừa xong' }
-        : { status: c.status === 'unverified' ? 'unverified' : 'offline' },
-    )
-    log('Camera', 'Kiểm tra kết nối', c.name, ok, ok ? undefined : 'RTSP timeout sau 10s')
-    toast(
-      ok
-        ? `${c.name}: kết nối RTSP thành công.`
-        : `${c.name}: không thể kết nối RTSP. Kiểm tra địa chỉ, thông tin xác thực hoặc mạng.`,
-      ok ? 'ok' : 'err',
-    )
+    try {
+      const result = await camerasApi.test(c.id)
+      toast(result.message, result.rtsp_status === 'ONLINE' ? 'ok' : 'warn')
+      await load()
+    } catch (e) {
+      toast(e.message, 'err')
+    } finally {
+      setTesting((t) => ({ ...t, [c.id]: false }))
+    }
   }
 
   const retire = (c) =>
@@ -61,10 +69,14 @@ export default function CamerasPage() {
       title: 'Loại camera khỏi vận hành?',
       body: `${c.name} sẽ ngừng tạo dữ liệu AI mới và không được chọn cho truy vấn mới. Embedding, frame, bounding box và kết quả đã lưu trong Case được giữ nguyên.`,
       label: 'Loại khỏi vận hành',
-      onConfirm: () => {
-        updateCamera(c.id, { status: 'retired', ai: false, aiState: 'off' })
-        log('Camera', 'Loại camera khỏi vận hành', c.name)
-        toast(`Đã loại ${c.name} khỏi vận hành. Dữ liệu lịch sử được giữ lại.`)
+      onConfirm: async () => {
+        try {
+          await camerasApi.retire(c.id)
+          await load()
+          toast(`Đã loại ${c.name} khỏi vận hành.`)
+        } catch (e) {
+          toast(e.message, 'err')
+        }
       },
     })
 
@@ -75,11 +87,11 @@ export default function CamerasPage() {
       render: (c) => (
         <div className="flex items-center gap-3">
           <CameraThumb status={c.status} />
-          <CellStack primary={c.name} secondary={c.res} />
+          <CellStack primary={c.name} secondary={c.code} />
         </div>
       ),
     },
-    { key: 'area', header: 'Khu vực', className: 'text-[13px]', render: (c) => AREAS[c.area] },
+    { key: 'area', header: 'Khu vực', className: 'text-[13px]', render: (c) => c.area.name },
     {
       key: 'rtsp',
       header: 'Địa chỉ RTSP',
@@ -106,12 +118,22 @@ export default function CamerasPage() {
               variant="quiet"
               icon={PlugsConnectedIcon}
               className="text-xs"
-              disabled={testing[c.id]}
+              disabled={testing[c.id] || !c.hasRtsp}
               onClick={() => testRow(c)}
             >
               {testing[c.id] ? 'Đang kiểm tra…' : 'Kiểm tra'}
             </Button>
-            <IconButton icon={PencilSimpleIcon} label="Chỉnh sửa" onClick={() => setEditing(c)} />
+            <IconButton
+              icon={PencilSimpleIcon}
+              label="Chỉnh sửa"
+              onClick={async () => {
+                try {
+                  setEditing(await camerasApi.get(c.id))
+                } catch (e) {
+                  toast(e.message, 'err')
+                }
+              }}
+            />
             <IconButton icon={ArchiveIcon} label="Loại khỏi vận hành" onClick={() => retire(c)} />
           </div>
         ),
@@ -131,10 +153,19 @@ export default function CamerasPage() {
       </PageHeader>
 
       <div className="mb-3 flex flex-wrap items-center gap-2.5">
-        <SegmentedControl options={AREA_FILTERS} value={area} onChange={setArea} />
-        <span className="text-xs text-neutral-400">{activeCount} camera đang vận hành</span>
+        <SegmentedControl options={areaFilters} value={area} onChange={setArea} />
+        <span className="text-xs text-neutral-400">
+          {activeCount} camera đang vận hành trong trang đã tải
+        </span>
       </div>
 
+      {error && (
+        <Alert>
+          {error}
+          <Button onClick={() => load()}>Thử lại</Button>
+        </Alert>
+      )}
+      {loading && <p className="text-muted text-sm">Đang tải…</p>}
       <DataTable
         columns={columns}
         rows={rows}
@@ -142,8 +173,17 @@ export default function CamerasPage() {
         rowClassName={(c) => c.status === 'retired' && 'opacity-50'}
       />
 
+      {nextCursor && (
+        <Button disabled={loading} onClick={() => load(nextCursor)}>
+          Tải thêm
+        </Button>
+      )}
       {editing !== undefined && (
-        <CameraDialog camera={editing} onClose={() => setEditing(undefined)} />
+        <CameraDialog
+          onSaved={() => load()}
+          camera={editing}
+          onClose={() => setEditing(undefined)}
+        />
       )}
     </>
   )

@@ -1,3 +1,7 @@
+import { useEffect, useState } from 'react'
+import { Alert } from '@/components/ui/Alert'
+import { useCameraAdmin } from '@/hooks/useCameraAdmin'
+import { aiApi, camerasApi } from '@/services/api/cameras'
 import { ArrowRightIcon, StackIcon } from '@phosphor-icons/react'
 import { useNavigate } from 'react-router'
 import { Button } from '@/components/ui/Button'
@@ -7,17 +11,31 @@ import { StatusDot } from '@/components/ui/StatusDot'
 import { Switch } from '@/components/ui/Switch'
 import { PATHS } from '@/constants/navigation'
 import { AI_STATE, CAMERA_STATUS } from '@/constants/status'
-import { AREAS } from '@/mocks/areas'
-import { detectorName, trackerName } from '@/mocks/models'
-import { useAppStore, useConfirm, useToast } from '@/store/hooks'
+import { useConfirm, useToast } from '@/store/hooks'
 
 export default function AiProcessingPage() {
-  const { cameras, models, updateCamera, log } = useAppStore()
+  const { cameras, error, loading, nextCursor, load } = useCameraAdmin()
+  const [models, setModels] = useState(null)
+  const [busy, setBusy] = useState({})
   const confirm = useConfirm()
   const toast = useToast()
   const navigate = useNavigate()
-  const det = detectorName(models.det)
-  const trk = trackerName(models.trk)
+  useEffect(() => {
+    let live = true
+    aiApi
+      .config()
+      .then((value) => {
+        if (live) setModels(value)
+      })
+      .catch((e) => {
+        if (live) toast(e.message, 'err')
+      })
+    return () => {
+      live = false
+    }
+  }, [toast])
+  const det = models?.detector_id || 'Chưa cấu hình'
+  const trk = models?.tracker_id || 'Chưa cấu hình'
 
   const toggle = (c) => {
     if (c.status === 'retired') {
@@ -28,37 +46,27 @@ export default function AiProcessingPage() {
     confirm({
       title: on ? 'Bật xử lý AI?' : 'Tắt xử lý AI?',
       body: on
-        ? `Hệ thống sẽ khởi động tiến trình phân tích cho ${c.name} với Detector ${det} và Tracker ${trk}.`
-        : `Tiến trình phân tích của ${c.name} sẽ dừng. Dữ liệu đã phân tích trước đó được giữ nguyên.`,
+        ? `Cho phép xử lý dữ liệu từ ${c.name} với Detector ${det} và Tracker ${trk}.`
+        : `Camera ${c.name} sẽ không nhận tác vụ mới. Dữ liệu đã phân tích trước đó được giữ nguyên.`,
       label: on ? 'Bật xử lý AI' : 'Tắt xử lý AI',
-      onConfirm: () => {
-        if (!on) {
-          updateCamera(c.id, { ai: false, aiState: 'off', procFps: 0, latency: null })
-          log('Xử lý AI', 'Tắt xử lý AI', c.name)
-          toast(`Đã dừng xử lý AI cho ${c.name}. Dữ liệu cũ được giữ nguyên.`)
-          return
+      onConfirm: async () => {
+        setBusy((old) => ({ ...old, [c.id]: true }))
+        try {
+          await camerasApi.state(c.id, on)
+          await load()
+          toast(on ? 'Đã bật quyền xử lý AI cho camera.' : 'Đã tắt quyền xử lý AI cho camera.')
+        } catch (e) {
+          toast(e.message, 'err')
+        } finally {
+          setBusy((old) => ({ ...old, [c.id]: false }))
         }
-        if (c.status !== 'online') {
-          log('Xử lý AI', 'Bật xử lý AI', c.name, false, 'Camera không khả dụng')
-          toast(
-            `Không thể bật: ${c.name} đang ở trạng thái "${CAMERA_STATUS[c.status].label}". Tiến trình chưa được khởi động.`,
-            'err',
-          )
-          return
-        }
-        updateCamera(c.id, { ai: true, aiState: 'starting' })
-        log('Xử lý AI', 'Bật xử lý AI', c.name)
-        setTimeout(() => {
-          updateCamera(c.id, { aiState: 'running', procFps: 12, latency: 88 })
-          toast(`Đã khởi động xử lý AI cho ${c.name}.`)
-        }, 1300)
       },
     })
   }
 
   const columns = [
     { key: 'name', header: 'Camera', className: 'text-sm', render: (c) => c.name },
-    { key: 'area', header: 'Khu vực', className: 'text-[13px]', render: (c) => AREAS[c.area] },
+    { key: 'area', header: 'Khu vực', className: 'text-[13px]', render: (c) => c.area.name },
     {
       key: 'conn',
       header: 'Kết nối RTSP',
@@ -72,7 +80,7 @@ export default function AiProcessingPage() {
       render: (c) => (
         <Switch
           checked={c.ai}
-          disabled={c.status === 'retired'}
+          disabled={c.lifecycle !== 'ACTIVE' || busy[c.id]}
           onChange={() => toggle(c)}
           label={
             c.status === 'retired'
@@ -113,12 +121,24 @@ export default function AiProcessingPage() {
         </Button>
       </div>
 
+      {error && (
+        <Alert>
+          {error}
+          <Button onClick={() => load()}>Thử lại</Button>
+        </Alert>
+      )}
+      {loading && <p className="text-muted text-sm">Đang tải…</p>}
       <DataTable
         columns={columns}
         rows={cameras}
         rowKey={(c) => c.id}
         rowClassName={(c) => c.status === 'retired' && 'opacity-45'}
       />
+      {nextCursor && (
+        <Button disabled={loading} onClick={() => load(nextCursor)}>
+          Tải thêm
+        </Button>
+      )}
     </>
   )
 }

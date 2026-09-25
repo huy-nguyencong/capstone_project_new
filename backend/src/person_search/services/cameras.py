@@ -1,0 +1,357 @@
+"""Transactional camera administration and global model configuration."""
+
+import base64
+import json
+import os
+import re
+import uuid
+from datetime import UTC, datetime
+
+from sqlalchemy import select, text
+
+from person_search.api.errors import ApiError
+from person_search.services.audit import AuditEvent, record_audit
+from person_search.storage.postgres.errors import DuplicateEntityError
+from person_search.storage.postgres.models import (
+    AIConfigStatus,
+    AIConfigVersion,
+    Area,
+    AuditResult,
+    Camera,
+    CameraStatus,
+    RtspStatus,
+)
+
+
+def iso(value):
+    return value.astimezone(UTC).isoformat().replace("+00:00", "Z") if value else None
+
+
+def identifier(value):
+    try:
+        return uuid.UUID(str(value))
+    except ValueError:
+        raise ApiError(422, "invalid_id", "ID không hợp lệ.") from None
+
+
+def required(value, limit):
+    if not isinstance(value, str) or not value.strip() or len(value.strip()) > limit:
+        raise ApiError(422, "invalid_field", "Trường bắt buộc bị trống hoặc quá dài.")
+    return value.strip()
+
+
+class CameraService:
+    def __init__(self, factory, runtime, registry=None, apply_config=None):
+        self.factory = factory
+        self.runtime = runtime
+        self.registry = registry or {"detectors": [], "trackers": [], "encoder": None}
+        self._validate_registry()
+        self.apply_config = apply_config or (lambda config: None)
+
+    def _validate_registry(self):
+        """Fail at startup, rather than publishing a malformed deployment manifest."""
+        for kind in ("detectors", "trackers"):
+            models = self.registry.get(kind)
+            if not isinstance(models, list):
+                raise ValueError(f"Model registry {kind} must be a list")
+            ids = set()
+            for model in models:
+                for field in ("id", "name", "version"):
+                    if not isinstance(model.get(field), str) or not 1 <= len(model[field]) <= 100:
+                        raise ValueError(f"Invalid model registry field: {field}")
+                if model["id"] in ids or type(model.get("available")) is not bool:
+                    raise ValueError("Duplicate model ID or invalid availability")
+                ids.add(model["id"])
+                if kind == "trackers" and not isinstance(model.get("compatible_detectors"), list):
+                    raise ValueError("Tracker must declare compatible_detectors")
+        encoder = self.registry.get("encoder")
+        if encoder is not None:
+            if (
+                not isinstance(encoder, dict)
+                or any(
+                    not isinstance(encoder.get(k), str) or not 1 <= len(encoder[k]) <= 100
+                    for k in ("name", "version")
+                )
+                or type(encoder.get("dimension")) is not int
+                or encoder["dimension"] <= 0
+                or not re.fullmatch(r"[0-9a-f]{64}", str(encoder.get("checkpoint_sha256")))
+            ):
+                raise ValueError("Invalid encoder registry metadata")
+        self.registry.setdefault("encoder", None)
+
+    @staticmethod
+    def registry_from_environment():
+        path = os.getenv("PERSON_SEARCH_MODEL_REGISTRY")
+        if not path:
+            return None
+        with open(path) as stream:
+            return json.load(stream)
+
+    def models(self):
+        fields = {"id", "name", "description", "meta", "available", "compatible_detectors"}
+        return {
+            **{
+                kind: [{k: v for k, v in m.items() if k in fields} for m in self.registry[kind]]
+                for kind in ("detectors", "trackers")
+            },
+            "encoder": (
+                {k: self.registry["encoder"][k] for k in ("name", "version", "dimension")}
+                if self.registry["encoder"]
+                else None
+            ),
+        }
+
+    def view(self, work, camera):
+        area = work.session.get(Area, camera.area_id)
+        url = camera.rtsp_url
+        if url and (camera.rtsp_credentials or camera.rtsp_secret_ref):
+            scheme, tail = url.split("://", 1)
+            url = scheme + "://***@" + tail
+        return dict(
+            id=str(camera.id),
+            code=camera.code,
+            name=camera.name,
+            area=dict(id=str(area.id), code=area.code, name=area.name),
+            status=camera.status.value,
+            rtsp_status=camera.rtsp_status.value,
+            rtsp_url_masked=url,
+            has_rtsp=bool(camera.rtsp_url),
+            ai_enabled=camera.ai_enabled,
+            version=camera.version,
+            last_checked_at=iso(camera.last_checked_at),
+        )
+
+    def camera(self, work, camera_id, lock=False):
+        query = select(Camera).where(Camera.id == identifier(camera_id))
+        if lock:
+            query = query.with_for_update()
+        row = work.session.scalar(query)
+        if row is None:
+            raise ApiError(404, "camera_not_found", "Không tìm thấy camera.")
+        return row
+
+    def audit(self, work, actor, event, target, success=True):
+        with work.session.no_autoflush:
+            actor_row = work.repositories.users.get(actor)
+        record_audit(
+            work.repositories,
+            event_type=event,
+            result=AuditResult.SUCCESS if success else AuditResult.FAILURE,
+            target_type="camera" if event.value.startswith("camera.") else "ai",
+            target_id=target,
+            actor=actor_row,
+        )
+
+    def list(self, args):
+        try:
+            limit = int(args.get("limit", 20))
+            if not 1 <= limit <= 100:
+                raise ValueError
+            query = select(Camera).order_by(Camera.id)
+            if args.get("area_id"):
+                query = query.where(Camera.area_id == identifier(args["area_id"]))
+            if args.get("status"):
+                query = query.where(Camera.status == CameraStatus(args["status"]))
+            if args.get("cursor"):
+                raw = base64.b64decode(args["cursor"], altchars=b"-_", validate=True)
+                query = query.where(Camera.id > uuid.UUID(bytes=raw))
+        except (ValueError, TypeError):
+            raise ApiError(422, "invalid_filter", "Bộ lọc hoặc cursor không hợp lệ.") from None
+        with self.factory() as work:
+            rows = list(work.session.scalars(query.limit(limit + 1)))
+            return dict(
+                items=[self.view(work, r) for r in rows[:limit]],
+                next_cursor=base64.urlsafe_b64encode(rows[limit - 1].id.bytes).decode()
+                if len(rows) > limit
+                else None,
+            )
+
+    def get(self, camera_id):
+        with self.factory() as work:
+            return self.view(work, self.camera(work, camera_id))
+
+    def save(self, body, actor, camera_id=None):
+        allowed = (
+            {"name", "rtsp_url", "version"}
+            if camera_id
+            else {"code", "name", "area_id", "rtsp_url"}
+        )
+        if camera_id and "area_id" in body:
+            raise ApiError(422, "camera_area_immutable", "Không thể thay đổi khu vực camera.")
+        if body.keys() - allowed:
+            raise ApiError(422, "unknown_fields", "Có trường không được hỗ trợ.")
+        with self.factory() as work:
+            if camera_id:
+                row = self.camera(work, camera_id, True)
+                if type(body.get("version")) is not int or row.version != body["version"]:
+                    raise ApiError(409, "version_conflict", "Camera đã thay đổi. Hãy tải lại.")
+                if row.status != CameraStatus.ACTIVE:
+                    raise ApiError(409, "camera_not_active", "Camera đã ngừng vận hành.")
+                row.version += 1
+            else:
+                area_id = identifier(body.get("area_id"))
+                if work.session.get(Area, area_id) is None:
+                    raise ApiError(422, "area_not_found", "Không tìm thấy khu vực.")
+                row = Camera(
+                    id=uuid.uuid4(),
+                    code=required(body.get("code"), 50).upper(),
+                    area_id=area_id,
+                    status=CameraStatus.ACTIVE,
+                    rtsp_status=RtspStatus.UNKNOWN,
+                    ai_enabled=False,
+                    version=1,
+                )
+                work.session.add(row)
+            if not camera_id or "name" in body:
+                row.name = required(body.get("name"), 200)
+            if "rtsp_url" in body:
+                row.rtsp_url, row.rtsp_credentials = self.runtime.split_url(body["rtsp_url"])
+                row.rtsp_secret_ref = None
+                row.rtsp_status = RtspStatus.UNKNOWN
+                row.last_checked_at = None
+            self.audit(
+                work,
+                actor,
+                AuditEvent.CAMERA_UPDATED if camera_id else AuditEvent.CAMERA_CREATED,
+                row.id,
+            )
+            try:
+                work.commit()
+            except DuplicateEntityError:
+                raise ApiError(409, "camera_code_taken", "Mã camera đã tồn tại.") from None
+            return self.view(work, row)
+
+    def transition(self, camera_id, actor, enabled=None):
+        with self.factory() as work:
+            row = self.camera(work, camera_id, True)
+            if enabled is not None:
+                if row.status != CameraStatus.ACTIVE:
+                    raise ApiError(409, "camera_not_active", "Camera đã ngừng vận hành.")
+                if enabled and not self.active(work):
+                    raise ApiError(409, "ai_config_missing", "Chưa có cấu hình AI.")
+                changed = row.ai_enabled != enabled
+                row.ai_enabled = enabled
+            else:
+                changed = row.status != CameraStatus.RETIRED or row.ai_enabled
+                row.status, row.ai_enabled = CameraStatus.RETIRED, False
+            if changed:
+                row.version += 1
+                self.audit(
+                    work,
+                    actor,
+                    AuditEvent.AI_STATE_CHANGED
+                    if enabled is not None
+                    else AuditEvent.CAMERA_DEACTIVATED,
+                    row.id,
+                )
+                work.commit()
+            return self.view(work, row)
+
+    def test(self, camera_id, actor):
+        # Network I/O outside the row lock; reject a stale result if URL changed meanwhile.
+        with self.factory() as work:
+            row = self.camera(work, camera_id)
+            url, secret, version = row.rtsp_url, row.rtsp_credentials, row.version
+            if not url:
+                raise ApiError(422, "camera_has_no_rtsp", "Camera không có RTSP.")
+            if row.rtsp_secret_ref and not secret:
+                raise ApiError(503, "secret_store_unavailable", "Cần cập nhật thông tin RTSP.")
+        status = self.runtime.probe(url, secret)
+        with self.factory() as work:
+            row = self.camera(work, camera_id, True)
+            if row.version != version:
+                raise ApiError(409, "version_conflict", "Camera đã thay đổi trong lúc kiểm tra.")
+            row.rtsp_status, row.last_checked_at = RtspStatus(status), datetime.now(UTC)
+            row.version += 1
+            self.audit(work, actor, AuditEvent.CAMERA_CONNECTION_TESTED, row.id, status == "ONLINE")
+            work.commit()
+            return dict(
+                rtsp_status=status,
+                checked_at=iso(row.last_checked_at),
+                message={
+                    "ONLINE": "Kết nối thành công.",
+                    "OFFLINE": "Không kết nối được RTSP.",
+                    "ERROR": "Không chạy được ffprobe trên máy chủ.",
+                }[status],
+            )
+
+    def active(self, work):
+        return work.session.scalar(
+            select(AIConfigVersion).where(AIConfigVersion.status == AIConfigStatus.ACTIVE)
+        )
+
+    def config_view(self, row):
+        return dict(
+            detector_id=row.detector_name if row else None,
+            tracker_id=row.tracker_name if row else None,
+            version=row.version if row else None,
+            applied_at=iso(row.created_at) if row else None,
+        )
+
+    def config(self):
+        with self.factory() as work:
+            return self.config_view(self.active(work))
+
+    def configure(self, body, actor):
+        try:
+            return self._configure(body, actor)
+        except ApiError as error:
+            if error.code == "model_apply_failed":
+                with self.factory() as work:
+                    self.audit(work, actor, AuditEvent.AI_CONFIG_FAILED, None, False)
+                    work.commit()
+            raise
+
+    def _configure(self, body, actor):
+        if set(body) != {"detector_id", "tracker_id", "version"}:
+            raise ApiError(422, "invalid_config", "Cần detector_id, tracker_id và version.")
+        detector = next(
+            (m for m in self.registry["detectors"] if m["id"] == body["detector_id"]), None
+        )
+        tracker = next(
+            (m for m in self.registry["trackers"] if m["id"] == body["tracker_id"]), None
+        )
+        encoder = self.registry["encoder"]
+        if (
+            not detector
+            or not tracker
+            or not detector.get("available")
+            or not tracker.get("available")
+            or not encoder
+        ):
+            raise ApiError(422, "model_unavailable", "Mô hình chưa khả dụng.")
+        if detector["id"] not in tracker["compatible_detectors"]:
+            raise ApiError(422, "incompatible_model_pair", "Detector và Tracker không tương thích.")
+        with self.factory() as work:
+            # Also serialize the initial apply when no active row exists yet.
+            work.session.execute(text("SELECT pg_advisory_xact_lock(734201)"))
+            old = self.active(work)
+            if body["version"] != (old.version if old else None):
+                raise ApiError(409, "version_conflict", "Cấu hình đã thay đổi. Hãy tải lại.")
+            row = AIConfigVersion(
+                id=uuid.uuid4(),
+                version=str(uuid.uuid4()),
+                detector_name=detector["id"],
+                detector_version=detector["version"],
+                tracker_name=tracker["id"],
+                tracker_version=tracker["version"],
+                encoder_name=encoder["name"],
+                encoder_version=encoder["version"],
+                encoder_dimension=encoder["dimension"],
+                checkpoint_sha256=encoder["checkpoint_sha256"],
+                status=AIConfigStatus.ACTIVE,
+            )
+            self.audit(work, actor, AuditEvent.AI_CONFIG_REQUESTED, row.id)
+            try:
+                self.apply_config(row)
+            except Exception:
+                raise ApiError(
+                    503, "model_apply_failed", "Không áp dụng được cấu hình; giữ cấu hình cũ."
+                ) from None
+            if old:
+                old.status = AIConfigStatus.RETIRED
+                work.flush()
+            work.session.add(row)
+            self.audit(work, actor, AuditEvent.AI_CONFIG_APPLIED, row.id)
+            work.commit()
+            return self.config_view(row)

@@ -46,6 +46,7 @@ class AuditEvent(StrEnum):
     AI_STATE_CHANGED = "ai.state_changed"
     AI_CONFIG_REQUESTED = "ai.config_requested"
     AI_CONFIG_APPLIED = "ai.config_applied"
+    AI_CONFIG_FAILED = "ai.config_failed"
     CASE_CREATED = "case.created"
     CASE_UPDATED = "case.updated"
     CASE_RESULT_ADDED = "case.result_added"

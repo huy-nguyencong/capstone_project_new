@@ -1,193 +1,145 @@
-import {
-  ArrowRightIcon,
-  CheckCircleIcon,
-  InfoIcon,
-  LockSimpleIcon,
-  XCircleIcon,
-} from '@phosphor-icons/react'
-import { Fragment, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { Alert } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/Button'
 import { OptionCard } from '@/components/ui/Chip'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Tag } from '@/components/ui/Tag'
-import { cx } from '@/components/ui/cx'
-import { TONE } from '@/constants/status'
-import {
-  DETECTORS,
-  FIXED_ENCODERS,
-  INCOMPATIBLE,
-  TRACKERS,
-  detectorName,
-  trackerName,
-} from '@/mocks/models'
-import { useAppStore, useToast } from '@/store/hooks'
-import { wait } from '@/utils/format'
-
-function ModelOption({ model, active, current, onPick }) {
-  const unavailable = model.ready === false
-  return (
-    <OptionCard active={active} disabled={unavailable} onClick={onPick}>
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-medium">{model.name}</span>
-        {current && <Tag variant="accent">Đang dùng</Tag>}
-        {unavailable && <Tag>Không khả dụng</Tag>}
-      </div>
-      <div className="text-xs text-neutral-300">{model.desc}</div>
-      <div className="text-[11px] text-neutral-500">{model.meta}</div>
-    </OptionCard>
-  )
-}
+import { aiApi } from '@/services/api/cameras'
+import { useToast } from '@/store/hooks'
 
 export default function ModelsPage() {
-  const { models, setModels, log } = useAppStore()
   const toast = useToast()
-  const [sel, setSel] = useState(models)
-  const [applying, setApplying] = useState(false)
-
-  const selDet = DETECTORS.find((d) => d.id === sel.det)
-  const incompat = INCOMPATIBLE[`${sel.det}|${sel.trk}`]
-  const noChange = sel.det === models.det && sel.trk === models.trk
-  const invalid = !selDet.ready || Boolean(incompat)
-
-  const pipeline = [
-    { k: 'Nguồn', v: 'RTSP', changed: false },
-    { k: 'Detector', v: detectorName(sel.det), changed: sel.det !== models.det },
-    { k: 'Tracker', v: trackerName(sel.trk), changed: sel.trk !== models.trk },
-    { k: 'Image Encoder', v: 'Cố định', changed: false },
-  ]
-
-  let check
-  if (!selDet.ready)
-    check = {
-      icon: XCircleIcon,
-      color: TONE.err,
-      msg: `${selDet.name} không ở trạng thái sẵn sàng.`,
+  const [registry, setRegistry] = useState(null)
+  const [config, setConfig] = useState(null)
+  const [selected, setSelected] = useState({ detector_id: null, tracker_id: null })
+  const [error, setError] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const [reload, setReload] = useState(0)
+  useEffect(() => {
+    let live = true
+    Promise.all([aiApi.models(), aiApi.config()])
+      .then(([models, active]) => {
+        if (!live) return
+        setRegistry(models)
+        setConfig(active)
+        setSelected(active)
+        setError(null)
+      })
+      .catch((e) => {
+        if (live) setError(e.message)
+      })
+    return () => {
+      live = false
     }
-  else if (incompat)
-    check = {
-      icon: XCircleIcon,
-      color: TONE.err,
-      msg: `Không tương thích: ${incompat} Hãy chọn tổ hợp khác.`,
-    }
-  else if (noChange)
-    check = {
-      icon: InfoIcon,
-      color: 'var(--color-neutral-400)',
-      msg: 'Đang dùng cấu hình này. Chọn Detector hoặc Tracker khác để thay đổi.',
-    }
-  else
-    check = {
-      icon: CheckCircleIcon,
-      color: TONE.ok,
-      msg: `Tổ hợp ${detectorName(sel.det)} + ${trackerName(sel.trk)} tương thích với pipeline.`,
-    }
-
+  }, [reload])
+  const retry = useCallback(() => setReload((old) => old + 1), [])
+  const detector = registry?.detectors.find((m) => m.id === selected.detector_id)
+  const tracker = registry?.trackers.find((m) => m.id === selected.tracker_id)
+  const compatible = tracker?.compatible_detectors?.includes(selected.detector_id)
+  const unchanged =
+    selected.detector_id === config?.detector_id && selected.tracker_id === config?.tracker_id
   const apply = async () => {
-    setApplying(true)
-    await wait(1200)
-    if (sel.det !== models.det) {
-      log(
-        'Mô hình AI',
-        'Thay đổi Detector',
-        'Camera Processing Pipeline',
-        true,
-        `${detectorName(models.det)} → ${detectorName(sel.det)}`,
-      )
+    setBusy(true)
+    setError(null)
+    try {
+      const active = await aiApi.apply({
+        detector_id: selected.detector_id,
+        tracker_id: selected.tracker_id,
+        version: config.version,
+      })
+      setConfig(active)
+      setSelected(active)
+      toast('Đã áp dụng cấu hình AI cho tác vụ mới.')
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setBusy(false)
     }
-    if (sel.trk !== models.trk) {
-      log(
-        'Mô hình AI',
-        'Thay đổi Tracker',
-        'Camera Processing Pipeline',
-        true,
-        `${trackerName(models.trk)} → ${trackerName(sel.trk)}`,
-      )
-    }
-    setModels(sel)
-    setApplying(false)
-    toast('Đã áp dụng cấu hình mới. Nên chạy lại Kiểm tra Camera Processing Pipeline.')
   }
-
   return (
     <>
       <PageHeader
         kicker="UC-05 · Quản trị"
         title="Cấu hình mô hình AI"
-        description="Chọn Detector và Tracker cho Camera Processing Pipeline. Image Encoder và Text Encoder là thành phần cố định."
+        description="Chọn Detector và Tracker dùng chung. Encoder là thành phần cố định."
       />
-
-      <div className="mb-[22px] flex flex-wrap items-stretch gap-2">
-        {pipeline.map((p, i) => (
-          <Fragment key={p.k}>
-            <div
-              className={cx(
-                'min-w-[150px] rounded-md bg-surface px-3.5 py-2.5',
-                p.changed ? 'shadow-accent' : 'shadow-sm',
-              )}
+      {error && (
+        <Alert>
+          {error}
+          <Button disabled={busy} onClick={retry}>
+            Tải lại
+          </Button>
+        </Alert>
+      )}
+      {!registry && !error && <p>Đang tải cấu hình…</p>}
+      {registry && (
+        <>
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-5">
+            {['detectors', 'trackers'].map((kind) => {
+              const key = kind === 'detectors' ? 'detector_id' : 'tracker_id'
+              return (
+                <div key={kind} className="flex flex-col gap-2">
+                  <h5>{kind === 'detectors' ? 'Detector' : 'Tracker'}</h5>
+                  {!registry[kind].length && (
+                    <p className="text-muted text-sm">Chưa có mô hình được đăng ký.</p>
+                  )}
+                  {registry[kind].map((model) => (
+                    <OptionCard
+                      key={model.id}
+                      active={selected[key] === model.id}
+                      disabled={!model.available || busy}
+                      onPick={() => setSelected((old) => ({ ...old, [key]: model.id }))}
+                    >
+                      <div className="text-sm font-medium">
+                        {model.name}{' '}
+                        {config?.[key] === model.id && <Tag variant="accent">Đang dùng</Tag>}{' '}
+                        {!model.available && <Tag>Không khả dụng</Tag>}
+                      </div>
+                      <div className="text-muted text-xs">{model.description}</div>
+                      <div className="text-muted text-xs">{model.meta}</div>
+                    </OptionCard>
+                  ))}
+                </div>
+              )
+            })}
+          </div>
+          <p className="text-muted my-4 text-sm">
+            Encoder:{' '}
+            {registry.encoder
+              ? `${registry.encoder.name} · ${registry.encoder.version} · ${registry.encoder.dimension} chiều`
+              : 'Chưa cấu hình'}
+          </p>
+          <div className="panel mt-5 flex items-center gap-3 p-4">
+            <span className="flex-1 text-sm">
+              {!detector || !tracker
+                ? 'Chọn một Detector và Tracker.'
+                : !compatible
+                  ? 'Cặp mô hình không tương thích.'
+                  : unchanged
+                    ? 'Đang dùng cấu hình này.'
+                    : 'Cặp mô hình tương thích.'}
+            </span>
+            <Button disabled={busy || !config} onClick={() => setSelected(config)}>
+              Hoàn tác
+            </Button>
+            <Button
+              variant="primary"
+              onClick={apply}
+              disabled={
+                busy ||
+                unchanged ||
+                !compatible ||
+                !detector?.available ||
+                !tracker?.available ||
+                !config ||
+                !registry.encoder
+              }
             >
-              <div className="text-[10px] tracking-[0.1em] text-neutral-400 uppercase">{p.k}</div>
-              <div className="mt-0.5 text-sm">{p.v}</div>
-            </div>
-            {i < pipeline.length - 1 && (
-              <ArrowRightIcon size={16} className="self-center text-neutral-500" />
-            )}
-          </Fragment>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-5">
-        <div className="flex flex-col gap-2">
-          <h5 className="mb-1">Detector</h5>
-          {DETECTORS.map((d) => (
-            <ModelOption
-              key={d.id}
-              model={d}
-              active={d.id === sel.det}
-              current={d.id === models.det}
-              onPick={() => setSel((s) => ({ ...s, det: d.id }))}
-            />
-          ))}
-        </div>
-        <div className="flex flex-col gap-2">
-          <h5 className="mb-1">Tracker</h5>
-          {TRACKERS.map((t) => (
-            <ModelOption
-              key={t.id}
-              model={t}
-              active={t.id === sel.trk}
-              current={t.id === models.trk}
-              onPick={() => setSel((s) => ({ ...s, trk: t.id }))}
-            />
-          ))}
-          <h5 className="mt-4 mb-1">Thành phần cố định</h5>
-          {FIXED_ENCODERS.map((e) => (
-            <div
-              key={e.name}
-              className="flex items-center gap-3 rounded-md border border-dashed border-divider px-3.5 py-2.5"
-            >
-              <LockSimpleIcon size={16} className="text-neutral-400" />
-              <div className="flex-1">
-                <div className="text-[13px]">{e.name}</div>
-                <div className="text-[11px] text-neutral-400">{e.role}</div>
-              </div>
-              <span className="text-xs text-neutral-300">{e.model}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="panel mt-[22px] flex flex-wrap items-center gap-3 px-4 py-3.5">
-        <span className="flex" style={{ color: check.color }}>
-          <check.icon size={18} />
-        </span>
-        <span className="min-w-[220px] flex-1 text-[13px]">{check.msg}</span>
-        <Button onClick={() => setSel(models)} disabled={noChange}>
-          Hoàn tác
-        </Button>
-        <Button variant="primary" onClick={apply} disabled={noChange || invalid || applying}>
-          {applying ? 'Đang áp dụng…' : 'Áp dụng cấu hình'}
-        </Button>
-      </div>
+              {busy ? 'Đang áp dụng…' : 'Áp dụng cấu hình'}
+            </Button>
+          </div>
+        </>
+      )}
     </>
   )
 }

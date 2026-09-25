@@ -1,0 +1,9 @@
+{
+  "detectors": [
+    {"id": "yolov8m", "name": "YOLOv8-m", "version": "8", "description": "Person detector", "meta": "640 px", "available": false}
+  ],
+  "trackers": [
+    {"id": "bytetrack", "name": "ByteTrack", "version": "1", "description": "Multi-object tracker", "meta": "", "available": false, "compatible_detectors": ["yolov8m"]}
+  ],
+  "encoder": null
+}

@@ -140,7 +140,9 @@ Tiêu chí xong phase: FE bỏ `mocks/users.js` khỏi luồng đăng nhập, ro
 - Lỗi: `409 username_taken`, `422 operator_area_required`, `422 viewer_area_forbidden`, `409 cannot_lock_self`.
 - Chọn `/deactivate` thay cho `DELETE`: dữ liệu lịch sử (Case owner, audit) phải còn.
 
-### Phase 3 — Camera, AI state, cấu hình Detector/Tracker (BE-06, BE-07, BE-08)
+### Phase 3 — Camera, AI state, cấu hình Detector/Tracker (BE-06, BE-07, BE-08) · ĐÃ TRIỂN KHAI
+
+Backend + bốn màn hình quản trị đã nối API. Migration `20260925_0007`; [hướng dẫn cấu hình và kiểm thử](phase-3-setup.md), [OpenAPI Phase 3](openapi-phase-3.json). Registry mặc định rỗng; worker và chẩn đoán thực tế thuộc phase sau.
 
 | Method | Path | Role | BE sẵn có | FE dùng tại |
 | --- | --- | --- | --- | --- |

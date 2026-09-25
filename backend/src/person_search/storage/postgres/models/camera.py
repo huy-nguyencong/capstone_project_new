@@ -3,14 +3,17 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
+    DateTime,
     Enum,
     ForeignKey,
     Index,
     String,
+    Text,
     event,
     inspect,
     text,
@@ -26,6 +29,7 @@ from person_search.storage.postgres.models.guards import ImmutableFieldError
 class Camera(TimestampMixin, Base):
     __tablename__ = "cameras"
     __table_args__ = (
+        CheckConstraint("version > 0", name="ck_cameras_version_positive"),
         CheckConstraint("code = upper(code)", name="ck_cameras_code_uppercase"),
         CheckConstraint("length(btrim(code)) > 0", name="ck_cameras_code_not_blank"),
         CheckConstraint("length(btrim(name)) > 0", name="ck_cameras_name_not_blank"),
@@ -62,6 +66,10 @@ class Camera(TimestampMixin, Base):
         default=RtspStatus.UNKNOWN,
         server_default=RtspStatus.UNKNOWN.value,
     )
+    version: Mapped[int] = mapped_column(nullable=False, default=1, server_default="1")
+    last_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    rtsp_credentials: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     ai_enabled: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default="false"
     )
