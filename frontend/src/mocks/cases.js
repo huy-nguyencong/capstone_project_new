@@ -1,0 +1,72 @@
+export const CASES = [
+  {
+    id: 'CS-0142',
+    title: 'Tìm người để quên hành lý tại sảnh A',
+    note: 'Khách báo mất vali lúc khoảng 14h. Đối chiếu người mặc áo đỏ, mang ba lô đi qua cổng chính và sảnh thang máy.',
+    owner: 'u2',
+    created: '24/09/2026 15:10',
+    updated: '25/09/2026 09:42',
+    items: [
+      { rid: 'r1', score: 0.91, saved: '24/09/2026 15:12' },
+      { rid: 'r6', score: 0.87, saved: '24/09/2026 15:14' },
+      { rid: 'r10', score: 0.79, saved: '25/09/2026 09:42' },
+    ],
+  },
+  {
+    id: 'CS-0139',
+    title: 'Đối tượng lảng vảng khu thang máy ca đêm',
+    note: 'Bảo vệ ca đêm báo cáo. Cần xác định các lần xuất hiện trong 2 ngày.',
+    owner: 'u2',
+    created: '23/09/2026 22:40',
+    updated: '24/09/2026 08:15',
+    items: [
+      { rid: 'r19', score: 0.74, saved: '23/09/2026 22:45' },
+      { rid: 'r34', score: 0.71, saved: '24/09/2026 08:15' },
+    ],
+  },
+  {
+    id: 'CS-0131',
+    title: 'Hỗ trợ tìm trẻ lạc tại sảnh chính',
+    note: 'Đã tìm thấy, lưu lại làm hồ sơ.',
+    owner: 'u2',
+    created: '20/09/2026 10:05',
+    updated: '20/09/2026 10:31',
+    items: [{ rid: 'r15', score: 0.83, saved: '20/09/2026 10:31' }],
+  },
+  {
+    id: 'CS-0140',
+    title: 'Nhân chứng vụ va quệt xe tại lối vào B',
+    note: 'Tìm người đi bộ gần cổng lúc xảy ra va quệt để làm chứng.',
+    owner: 'u3',
+    created: '24/09/2026 09:20',
+    updated: '24/09/2026 17:05',
+    items: [
+      { rid: 'r21', score: 0.81, saved: '24/09/2026 09:25' },
+      { rid: 'r22', score: 0.69, saved: '24/09/2026 17:05' },
+    ],
+  },
+  {
+    id: 'CS-0136',
+    title: 'Kiểm tra ra vào kho ngoài giờ',
+    note: 'Đối chiếu danh sách ca làm việc với người xuất hiện sau 20h.',
+    owner: 'u4',
+    created: '22/09/2026 08:10',
+    updated: '22/09/2026 16:30',
+    items: [
+      { rid: 'r26', score: 0.77, saved: '22/09/2026 08:12' },
+      { rid: 'r999', score: 0.72, saved: '22/09/2026 16:30' },
+    ],
+  },
+  {
+    id: 'CS-0128',
+    title: 'Tranh chấp tại quầy nhận hàng',
+    note: 'Lưu các lần xuất hiện của hai bên liên quan.',
+    owner: 'u7',
+    created: '18/09/2026 14:00',
+    updated: '19/09/2026 10:12',
+    items: [
+      { rid: 'r31', score: 0.8, saved: '18/09/2026 14:02' },
+      { rid: 'r27', score: 0.76, saved: '19/09/2026 10:12' },
+    ],
+  },
+]

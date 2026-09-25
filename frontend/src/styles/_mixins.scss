@@ -1,0 +1,19 @@
+@mixin fade-rule($color: var(--color-divider)) {
+  background: linear-gradient(
+      to right,
+      transparent,
+      $color 48px,
+      $color calc(100% - 48px),
+      transparent
+    )
+    no-repeat bottom / 100% 1px;
+}
+
+@mixin tint($color, $amount) {
+  background: color-mix(in srgb, #{$color} #{$amount}, transparent);
+}
+
+@mixin focus-ring($offset: 2px) {
+  outline: 2px solid var(--color-accent);
+  outline-offset: $offset;
+}
