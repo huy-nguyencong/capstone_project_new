@@ -34,6 +34,59 @@ class FakeUsers:
     def add(self, user: User) -> None:
         self.rows[user.id] = user
 
+    def search(
+        self,
+        *,
+        role=None,
+        status=None,
+        query=None,
+        after_id=None,
+        limit=21,
+    ):  # type: ignore[no-untyped-def]
+        rows = sorted(self.rows.values(), key=lambda user: user.id)
+        if role is not None:
+            rows = [user for user in rows if user.role is role]
+        if status is not None:
+            rows = [user for user in rows if user.status is status]
+        if query:
+            needle = query.lower()
+            rows = [
+                user
+                for user in rows
+                if needle in user.username.lower() or needle in user.display_name.lower()
+            ]
+        if after_id is not None:
+            rows = [user for user in rows if user.id > after_id]
+        return rows[:limit]
+
+    def update_if_version(
+        self, user_id: uuid.UUID, *, expected_version: int, values: dict[str, object]
+    ) -> bool:
+        user = self.rows.get(user_id)
+        if user is None or user.version != expected_version:
+            return False
+        for key, value in values.items():
+            setattr(user, key, value)
+        user.version += 1
+        return True
+
+    def refresh(self, user: User) -> None:
+        return None
+
+
+class FakeAreas:
+    def __init__(self, rows: dict[uuid.UUID, Area]) -> None:
+        self.rows = rows
+
+    def get(self, area_id: uuid.UUID) -> Area | None:
+        return self.rows.get(area_id)
+
+    def page(self, *, limit: int = 50, after_id=None):  # type: ignore[no-untyped-def]
+        rows = sorted(self.rows.values(), key=lambda area: area.id)
+        if after_id is not None:
+            rows = [area for area in rows if area.id > after_id]
+        return rows[:limit]
+
 
 class FakeSessions:
     def __init__(self, rows: dict[uuid.UUID, AuthSession]) -> None:
@@ -44,6 +97,15 @@ class FakeSessions:
 
     def get_by_token_hash(self, token_hash: str) -> AuthSession | None:
         return next((row for row in self.rows.values() if row.token_hash == token_hash), None)
+
+    def revoke_for_user(self, user_id: uuid.UUID, *, at: datetime, reason: str) -> int:
+        count = 0
+        for row in self.rows.values():
+            if row.user_id == user_id and row.revoked_at is None:
+                row.revoked_at = at
+                row.revoke_reason = reason
+                count += 1
+        return count
 
 
 class FakeAudit:
@@ -72,7 +134,7 @@ class AuthUnitOfWork:
     def __enter__(self) -> AuthUnitOfWork:
         self.repositories = SimpleNamespace(
             users=FakeUsers(self.database.users),
-            areas=SimpleNamespace(get=self.database.areas.get),
+            areas=FakeAreas(self.database.areas),
             auth_sessions=FakeSessions(self.database.sessions),
             audit_logs=FakeAudit(self.database.audit_logs),
         )
@@ -128,6 +190,9 @@ class AuthWorld:
             role=role,
             status=status,
             assigned_area_id=self.area.id if role is UserRole.OPERATOR else None,
+            version=1,
+            created_at=START,
+            updated_at=START,
         )
         self.database.users[user.id] = user
         return user

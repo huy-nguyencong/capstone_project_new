@@ -120,7 +120,7 @@ Lỗi FE cần xử lý (thông điệp đang có trong `AppStoreProvider.login`
 
 Tiêu chí xong phase: FE bỏ `mocks/users.js` khỏi luồng đăng nhập, route guard dựa trên `GET /auth/me`.
 
-### Phase 2 — Area và tài khoản (BE-05)
+### Phase 2 — Area và tài khoản (BE-05) · ĐÃ XONG, chờ review
 
 | Method | Path | Role | BE sẵn có | FE dùng tại |
 | --- | --- | --- | --- | --- |

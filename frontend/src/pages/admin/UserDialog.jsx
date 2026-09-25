@@ -1,38 +1,53 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Alert } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/Button'
 import { Dialog } from '@/components/ui/Dialog'
 import { Field, SelectField, TextField } from '@/components/ui/Form'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
-import { AREAS } from '@/mocks/areas'
-import { useAppStore, useToast } from '@/store/hooks'
-
-const AREA_OPTIONS = AREAS.map((label, i) => ({ value: String(i), label }))
+import { usersApi } from '@/services/api/users'
+import { useToast } from '@/store/hooks'
 
 const ROLE_OPTIONS = [
   { value: 'operator', label: 'Operator' },
   { value: 'viewer', label: 'Viewer' },
 ]
 
-const emptyForm = { name: '', username: '', password: '', role: 'operator', area: '' }
+const emptyForm = { name: '', username: '', password: '', role: 'operator', areaId: '' }
 
-const toForm = (u) => ({
-  name: u.name,
-  username: u.username,
+const toForm = (user) => ({
+  name: user.name,
+  username: user.username,
   password: '',
-  role: u.role,
-  area: u.area == null ? '' : String(u.area),
+  role: user.role,
+  areaId: user.area?.id ?? '',
 })
 
-export function UserDialog({ user, onClose }) {
-  const { users, addUser, updateUser, log } = useAppStore()
+export function UserDialog({ user, areas, onClose, onSaved }) {
   const toast = useToast()
   const isEdit = Boolean(user)
+  const [currentUser, setCurrentUser] = useState(user)
   const [form, setForm] = useState(() => (user ? toForm(user) : emptyForm))
   const [error, setError] = useState(null)
+  const [saving, setSaving] = useState(false)
 
-  const set = (key) => (e) => {
-    setForm((f) => ({ ...f, [key]: e.target.value }))
+  useEffect(() => {
+    if (!user) return undefined
+    let active = true
+    usersApi
+      .get(user.id)
+      .then((fresh) => {
+        if (!active) return
+        setCurrentUser(fresh)
+        setForm(toForm(fresh))
+      })
+      .catch((requestError) => active && setError(requestError.message))
+    return () => {
+      active = false
+    }
+  }, [user])
+
+  const set = (key) => (event) => {
+    setForm((value) => ({ ...value, [key]: event.target.value }))
     setError(null)
   }
 
@@ -43,38 +58,53 @@ export function UserDialog({ user, onClose }) {
     if (!/^[a-z0-9._]{3,32}$/.test(form.username)) {
       return 'Tên đăng nhập chỉ gồm chữ thường, số, dấu chấm hoặc gạch dưới (3–32 ký tự).'
     }
-    if ((!isEdit || form.password) && form.password.length < 8) return 'Mật khẩu tối thiểu 8 ký tự.'
-    if (users.some((u) => u.username === form.username && u.id !== user?.id)) {
-      return 'Tên đăng nhập đã tồn tại. Vui lòng chọn tên khác.'
+    if ((!isEdit || form.password) && form.password.length < 8) {
+      return 'Mật khẩu tối thiểu 8 ký tự.'
     }
-    if (form.role === 'operator' && form.area === '') {
+    if (form.role === 'operator' && !form.areaId) {
       return 'Operator phải được gán đúng một khu vực giám sát.'
     }
     return null
   }
 
-  const save = () => {
-    const err = validate()
-    if (err) return setError(err)
-    const area = form.role === 'operator' ? Number(form.area) : null
-    const data = { name: form.name.trim(), username: form.username, role: form.role, area }
-    if (isEdit) {
-      updateUser(user.id, data)
-      const action =
-        user.role !== form.role
-          ? 'Thay đổi vai trò'
-          : user.area !== area
-            ? 'Thay đổi khu vực giám sát'
-            : 'Cập nhật tài khoản'
-      log('Tài khoản', action, form.username)
-      toast(`Đã cập nhật tài khoản ${form.username}.`)
-    } else {
-      addUser(data)
-      log('Tài khoản', 'Tạo tài khoản', form.username)
-      toast(`Đã tạo tài khoản ${form.username}.`)
+  const save = async () => {
+    const validationMessage = validate()
+    if (validationMessage) {
+      setError(validationMessage)
+      return
     }
-    onClose()
+    setSaving(true)
+    setError(null)
+    const payload = {
+      display_name: form.name.trim(),
+      role: form.role.toUpperCase(),
+      area_id: form.role === 'operator' ? form.areaId : null,
+    }
+    if (form.password) payload.password = form.password
+    try {
+      const saved = isEdit
+        ? await usersApi.update(user.id, { ...payload, version: currentUser.version })
+        : await usersApi.create({
+            ...payload,
+            username: form.username.trim(),
+            password: form.password,
+          })
+      toast(
+        isEdit ? `Đã cập nhật tài khoản ${saved.username}.` : `Đã tạo tài khoản ${saved.username}.`,
+      )
+      onSaved(saved)
+      onClose()
+    } catch (requestError) {
+      setError(requestError.message)
+    } finally {
+      setSaving(false)
+    }
   }
+
+  const areaOptions = areas.map((area) => ({
+    value: area.id,
+    label: `${area.code} · ${area.name}`,
+  }))
 
   return (
     <Dialog
@@ -83,9 +113,11 @@ export function UserDialog({ user, onClose }) {
       onClose={onClose}
       actions={
         <>
-          <Button onClick={onClose}>Hủy</Button>
-          <Button variant="primary" onClick={save}>
-            {isEdit ? 'Lưu thay đổi' : 'Tạo tài khoản'}
+          <Button onClick={onClose} disabled={saving}>
+            Hủy
+          </Button>
+          <Button variant="primary" onClick={save} disabled={saving}>
+            {saving ? 'Đang lưu…' : isEdit ? 'Lưu thay đổi' : 'Tạo tài khoản'}
           </Button>
         </>
       }
@@ -97,6 +129,7 @@ export function UserDialog({ user, onClose }) {
           value={form.username}
           onChange={set('username')}
           placeholder="vd. minh.le"
+          disabled={isEdit}
         />
         <TextField
           label={isEdit ? 'Mật khẩu mới (để trống nếu không đổi)' : 'Mật khẩu'}
@@ -111,7 +144,11 @@ export function UserDialog({ user, onClose }) {
             options={ROLE_OPTIONS}
             value={form.role}
             onChange={(role) => {
-              setForm((f) => ({ ...f, role }))
+              setForm((value) => ({
+                ...value,
+                role,
+                areaId: role === 'viewer' ? '' : value.areaId,
+              }))
               setError(null)
             }}
           />
@@ -119,14 +156,14 @@ export function UserDialog({ user, onClose }) {
         {form.role === 'operator' ? (
           <SelectField
             label="Khu vực giám sát (chọn đúng một)"
-            value={form.area}
-            onChange={set('area')}
-            options={AREA_OPTIONS}
+            value={form.areaId}
+            onChange={set('areaId')}
+            options={areaOptions}
             placeholder="— Chọn khu vực —"
           />
         ) : (
           <div className="text-xs text-neutral-400">
-            Viewer xem được toàn bộ Case trên hệ thống ở chế độ chỉ đọc, không gắn khu vực.
+            Viewer xem được toàn bộ Case ở chế độ chỉ đọc và không được gán khu vực.
           </div>
         )}
         {error && <Alert>{error}</Alert>}

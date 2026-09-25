@@ -177,7 +177,7 @@ Trạng thái hợp lệ: `TODO`, `IN_PROGRESS`, `READY_FOR_REVIEW`, `DONE`, `BL
 | BE-02 | Nền tảng password, session và CSRF | BE-01, STO-04 | READY_FOR_REVIEW | — |
 | BE-03 | UC-01/UC-15: đăng nhập, phiên và đăng xuất | BE-02 | READY_FOR_REVIEW | — |
 | BE-04 | Policy phân quyền tập trung | BE-03 | TODO | — |
-| BE-05 | UC-02: quản lý Area tham chiếu và tài khoản | BE-04, STO-08 | TODO | — |
+| BE-05 | UC-02: quản lý Area tham chiếu và tài khoản | BE-04, STO-08 | READY_FOR_REVIEW | — |
 | BE-06 | UC-03: quản lý camera và kiểm tra RTSP | BE-04, STO-08 | TODO | — |
 | BE-07 | UC-05: registry và cấu hình Detector/Tracker | BE-04, STO-08 | TODO | — |
 | BE-08 | UC-04: bật/tắt AI theo camera | BE-06, BE-07 | TODO | — |

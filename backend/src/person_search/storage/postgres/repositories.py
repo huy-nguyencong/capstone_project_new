@@ -28,6 +28,7 @@ from person_search.storage.postgres.models import (
     TrackIndexStatus,
     User,
     UserRole,
+    UserStatus,
 )
 
 ModelT = TypeVar("ModelT")
@@ -68,6 +69,42 @@ class UserRepository(Repository[User]):
         statement = select(User).where(User.username == username)
         return self.session.scalars(statement).one_or_none()
 
+    def search(
+        self,
+        *,
+        role: UserRole | None = None,
+        status: UserStatus | None = None,
+        query: str | None = None,
+        after_id: uuid.UUID | None = None,
+        limit: int = 21,
+    ) -> list[User]:
+        statement = select(User).order_by(User.id)
+        if role is not None:
+            statement = statement.where(User.role == role)
+        if status is not None:
+            statement = statement.where(User.status == status)
+        if query:
+            pattern = f"%{query}%"
+            statement = statement.where(
+                or_(User.username.ilike(pattern), User.display_name.ilike(pattern))
+            )
+        if after_id is not None:
+            statement = statement.where(User.id > after_id)
+        return list(self.session.scalars(statement.limit(limit)))
+
+    def update_if_version(
+        self, user_id: uuid.UUID, *, expected_version: int, values: dict[str, object]
+    ) -> bool:
+        result = self.session.execute(
+            update(User)
+            .where(User.id == user_id, User.version == expected_version)
+            .values(**values, version=User.version + 1)
+        )
+        return result.rowcount == 1
+
+    def refresh(self, user: User) -> None:
+        self.session.refresh(user)
+
 
 class AuthSessionRepository(Repository[AuthSession]):
     def __init__(self, session: Session) -> None:
@@ -76,6 +113,14 @@ class AuthSessionRepository(Repository[AuthSession]):
     def get_by_token_hash(self, token_hash: str) -> AuthSession | None:
         statement = select(AuthSession).where(AuthSession.token_hash == token_hash)
         return self.session.scalars(statement).one_or_none()
+
+    def revoke_for_user(self, user_id: uuid.UUID, *, at: datetime, reason: str) -> int:
+        result = self.session.execute(
+            update(AuthSession)
+            .where(AuthSession.user_id == user_id, AuthSession.revoked_at.is_(None))
+            .values(revoked_at=at, revoke_reason=reason)
+        )
+        return int(result.rowcount or 0)
 
 
 class CameraRepository(Repository[Camera]):

@@ -17,6 +17,7 @@ from person_search.config import (
 )
 from person_search.dependencies import DependencyContainer
 from person_search.services.auth import AuthService, SessionPolicy
+from person_search.services.users import UserService
 from person_search.storage.health import StorageHealthService
 from person_search.storage.postgres.unit_of_work import UnitOfWork
 from person_search.storage.runtime import StorageRuntime
@@ -54,13 +55,18 @@ def create_app(
             container.register("storage.minio", runtime.minio)
             container.register("storage.health", runtime.health)
             session_factory = runtime.postgres.session_factory
+            password_hasher = PasswordHasher()
             container.register(
                 "auth.service",
                 AuthService(
                     lambda: UnitOfWork(session_factory),
-                    hasher=PasswordHasher(),
+                    hasher=password_hasher,
                     policy=SessionPolicy.from_environment(),
                 ),
+            )
+            container.register(
+                "users.service",
+                UserService(lambda: UnitOfWork(session_factory), hasher=password_hasher),
             )
             app.extensions["person_search.storage_runtime"] = runtime
             atexit.register(runtime.close)

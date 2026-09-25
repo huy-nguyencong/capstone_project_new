@@ -96,6 +96,20 @@ def test_migration_constraints_and_round_trip() -> None:
                     {"id": uuid.uuid4(), "area_id": area_a},
                 )
 
+        with engine.begin() as connection:
+            version = connection.scalar(
+                sa.text("SELECT version FROM users WHERE id = :id"),
+                {"id": operator_id},
+            )
+            assert version == 1
+
+        with pytest.raises(IntegrityError):
+            with engine.begin() as connection:
+                connection.execute(
+                    sa.text("UPDATE users SET version = 0 WHERE id = :id"),
+                    {"id": operator_id},
+                )
+
         with pytest.raises(IntegrityError):
             with engine.begin() as connection:
                 connection.execute(
