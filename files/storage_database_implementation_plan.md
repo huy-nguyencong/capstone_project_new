@@ -126,8 +126,8 @@ Trạng thái hợp lệ:
 | STO-12 | Retry, reconciliation và xử lý dữ liệu dở dang | STO-11 | READY_FOR_REVIEW | — |
 | STO-13 | Truy vấn vector có lọc và kiểm tra quyền | STO-11 | READY_FOR_REVIEW | — |
 | STO-14 | Đọc ảnh, crop động và kiểm tra quyền truy cập | STO-11 | READY_FOR_REVIEW | — |
-| STO-15 | Lưu CaseResult và thống kê Viewer | STO-08, STO-14 | IN_PROGRESS | — |
-| STO-16 | Audit log và trạng thái vận hành lưu trữ | STO-08, STO-12 | IN_PROGRESS | — |
+| STO-15 | Lưu CaseResult và thống kê Viewer | STO-08, STO-14 | READY_FOR_REVIEW | — |
+| STO-16 | Audit log và trạng thái vận hành lưu trữ | STO-08, STO-12 | READY_FOR_REVIEW | — |
 | STO-17 | Kiểm thử tích hợp và E2E toàn luồng | STO-13 đến STO-16 | TODO | — |
 | STO-18 | Đo hiệu năng, tài nguyên và dung lượng | STO-17 | TODO | — |
 | STO-19 | Backup, restore, bảo mật và runbook | STO-18 | TODO | — |
@@ -859,21 +859,21 @@ Mỗi lần làm task, thêm một mục theo mẫu:
 
 ### 2026-09-25 — STO-15
 
-- Trạng thái: `IN_PROGRESS` (chờ test và sửa lỗi).
+- Trạng thái: `READY_FOR_REVIEW`.
 - Thay đổi chính: `CaseService` tạo/sửa Case, thêm/xóa `CaseResult`, list/detail, dashboard Viewer; owner lấy từ actor đọc lại ở PostgreSQL; lưu track chỉ khi track `READY` thuộc area hiện tại; snapshot camera/area/thời gian phía server; không deduplicate; optimistic check bằng `expected_updated_at`; cursor keyset; audit `case.*` thành công trong cùng transaction và audit thất bại khi bị từ chối.
 - Quyết định: Case người khác trả 404, sai vai trò trả 403; thêm/xóa mục cập nhật `cases.updated_at`; list sắp xếp theo `created_at`, dashboard theo `updated_at`; title tối đa 200, note tối đa 5000 ký tự.
-- Test đã chạy: toàn bộ unit suite (194 test đạt), Ruff, compile; SQL mới được compile sang dialect PostgreSQL để soát. Chưa có integration test riêng cho task này; chưa chạy trên PostgreSQL thật.
-- Kết quả: 19 unit test mới của STO-15 đạt.
+- Test đã chạy: toàn bộ unit suite (194 test đạt), Ruff, compile và integration service trên PostgreSQL thật.
+- Kết quả: 19 unit test mới đạt; integration xác nhận duplicate CaseResult, Viewer read-only, đổi Area vẫn xem Case cũ và dashboard đếm đúng từng row.
 - Điểm cần review: giới hạn độ dài note, quy tắc 403/404, audit không ghi nội dung title/note.
 - Commit SHA: —.
 
 ### 2026-09-25 — STO-16
 
-- Trạng thái: `IN_PROGRESS` (chờ test và sửa lỗi).
+- Trạng thái: `READY_FOR_REVIEW`.
 - Thay đổi chính: catalog `AuditEvent`, `redact_metadata`, `record_audit`/`AuditRecorder`, `AuditLogService` cho Admin với filter và cursor; audit `storage.track_failed`; hai audit storage cũ chuyển sang catalog; `StorageMetrics` theo component và thời gian ingestion; `StorageStatusService` tổng hợp track/outbox/health/cảnh báo.
 - Quyết định: metric in-memory theo tiến trình; search không tạo audit; audit thất bại không làm hỏng thao tác chính.
-- Test đã chạy: toàn bộ unit suite (194 test đạt), Ruff, compile; SQL mới được compile sang dialect PostgreSQL để soát. Chưa có integration test riêng cho task này; chưa chạy trên PostgreSQL thật.
-- Kết quả: 13 unit test mới của STO-16 đạt, gồm redaction, filter/pagination, quyền Admin, search không tạo audit, lỗi quy đúng component.
+- Test đã chạy: toàn bộ unit suite (194 test đạt), Ruff, compile và integration service trên PostgreSQL thật.
+- Kết quả: 13 unit test mới đạt; integration xác nhận audit SUCCESS/FAILURE, filter event, metadata chuẩn hóa, quyền Admin, track/outbox counts và cảnh báo component health.
 - Điểm cần review: danh sách key bị redact, ngưỡng vector 16 phần tử, metric in-memory có đủ cho demo không.
 - Commit SHA: —.
 
