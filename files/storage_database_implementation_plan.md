@@ -117,11 +117,11 @@ Trạng thái hợp lệ:
 | STO-03 | Cấu hình ứng dụng, kết nối và health check | STO-02 | DONE | `df1456b` |
 | STO-04 | Schema PostgreSQL cho Area, User, Camera | STO-03 | DONE | `ba19a77` |
 | STO-05 | Schema PostgreSQL cho AI config, job và PersonTrack | STO-04 | DONE | `54f80d1` |
-| STO-06 | Schema PostgreSQL cho Case, CaseResult và AuditLog | STO-05 | READY_FOR_REVIEW | — |
-| STO-07 | Ràng buộc, index, seed và kiểm thử migration | STO-06 | READY_FOR_REVIEW | — |
-| STO-08 | Repository và transaction cho PostgreSQL | STO-07 | TODO | — |
-| STO-09 | Adapter lưu full frame trên MinIO | STO-03 | TODO | — |
-| STO-10 | Collection và adapter vector trên Milvus | STO-03 | TODO | — |
+| STO-06 | Schema PostgreSQL cho Case, CaseResult và AuditLog | STO-05 | DONE | `91e073c` |
+| STO-07 | Ràng buộc, index, seed và kiểm thử migration | STO-06 | DONE | `91e073c` |
+| STO-08 | Repository và transaction cho PostgreSQL | STO-07 | READY_FOR_REVIEW | — |
+| STO-09 | Adapter lưu full frame trên MinIO | STO-03 | READY_FOR_REVIEW | — |
+| STO-10 | Collection và adapter vector trên Milvus | STO-03 | READY_FOR_REVIEW | — |
 | STO-11 | Điều phối ghi track xuyên ba kho dữ liệu | STO-08, STO-09, STO-10 | TODO | — |
 | STO-12 | Retry, reconciliation và xử lý dữ liệu dở dang | STO-11 | TODO | — |
 | STO-13 | Truy vấn vector có lọc và kiểm tra quyền | STO-11 | TODO | — |
@@ -759,7 +759,7 @@ Mỗi lần làm task, thêm một mục theo mẫu:
 
 ### 2026-09-25 — STO-05
 
-- Trạng thái: `READY_FOR_REVIEW`.
+- Trạng thái: `DONE`.
 - Thay đổi chính: thêm model và migration cho phiên bản cấu hình AI, processing job, PersonTrack và transactional outbox; bảo vệ bbox/timeline/progress bằng constraint; khóa state machine track ở cả ORM và PostgreSQL; chỉ cho phép `READY` khi MinIO artifact và vector index đã được xác nhận; giữ đầy đủ lineage camera/area/job/config/encoder và không lưu Matching Score.
 - File quan trọng: `backend/migrations/versions/20260925_0002_processing_tracks.py`, `backend/src/person_search/storage/postgres/models/ai_config.py`, `processing_job.py`, `person_track.py`, `outbox.py`, `backend/tests/integration/test_processing_schema.py`, `docs/storage/postgres-processing-schema.md`.
 - Test đã chạy: Ruff; 85 unit test; migration integration trên database dùng một lần; `downgrade base → upgrade head → alembic check → constraint/state-transition tests → downgrade 0001 → downgrade base`.
@@ -770,24 +770,51 @@ Mỗi lần làm task, thêm một mục theo mẫu:
 
 ### 2026-09-25 — STO-06
 
-- Trạng thái: `READY_FOR_REVIEW`.
+- Trạng thái: `DONE`.
 - Thay đổi chính: thêm Case, CaseResult snapshot và AuditLog; owner Case được suy ra từ Operator đăng nhập và được trigger PostgreSQL kiểm tra; cho phép lưu cùng track nhiều lần; snapshot bất biến; audit append-only; không có status/area/Matching Score trong Case.
 - File quan trọng: `backend/migrations/versions/20260925_0003_cases_and_audit.py`, `backend/src/person_search/storage/postgres/models/case.py`, `case_result.py`, `audit_log.py`, `backend/src/person_search/services/case_policy.py`.
 - Test đã chạy: unit policy/schema; integration PostgreSQL cho owner role, duplicate result, delete độc lập, khóa Operator, snapshot và audit append-only.
 - Kết quả: test đạt; Viewer/Admin bị từ chối làm owner; khóa Operator không làm mất Case; xóa một CaseResult không xóa result còn lại hoặc PersonTrack.
 - Điểm cần người thực hiện review: CaseResult cascade theo Case nhưng `RESTRICT` về PersonTrack; actor audit được `SET NULL`; audit và snapshot là bất biến.
-- Quyết định/chỉnh sửa sau review: chờ review.
-- Commit SHA: —.
+- Quyết định/chỉnh sửa sau review: người thực hiện đã chấp thuận và commit cùng STO-07.
+- Commit SHA: `91e073c`.
 
 ### 2026-09-25 — STO-07
 
-- Trạng thái: `READY_FOR_REVIEW`.
+- Trạng thái: `DONE`.
 - Thay đổi chính: thêm index theo camera active, job status và timeline/status track; partial index cho track `READY`; seed Area development idempotent không chứa secret; xuất ER diagram và data dictionary; kiểm thử migration trên database đã có dữ liệu.
 - File quan trọng: `backend/migrations/versions/20260925_0004_schema_hardening.py`, `backend/src/person_search/storage/postgres/seed.py`, `backend/tests/integration/test_case_and_hardening_schema.py`, `docs/storage/postgres-er-and-data-dictionary.md`.
 - Test đã chạy: seed hai lần; migration `base → 0003` với dữ liệu → `head`; `alembic check`; kiểm tra index; `EXPLAIN`; downgrade `0003` rồi upgrade lại `head`; cuối cùng downgrade base.
 - Kết quả: test đạt; lần seed thứ hai thêm 0 row; database có dữ liệu nâng cấp thành công; query READY theo camera dùng partial index; upgrade/downgrade lặp lại không lệch schema.
 - Điểm cần người thực hiện review: danh sách Area mẫu, partial index `READY`, phạm vi seed chủ động ngoài production migration và sơ đồ ER/data dictionary.
-- Quyết định/chỉnh sửa sau review: chờ review.
+- Quyết định/chỉnh sửa sau review: người thực hiện đã chấp thuận và commit cùng STO-06.
+- Commit SHA: `91e073c`.
+
+### 2026-09-25 — STO-08
+
+- Trạng thái: `READY_FOR_REVIEW`.
+- Thay đổi chính: repository cho toàn bộ model, actor-scoped query, cursor pagination, Unit of Work commit/rollback, mapping lỗi constraint và optimistic update bằng `updated_at`.
+- Test đã chạy: unit với mocked session; integration PostgreSQL thật cho commit, rollback, duplicate mapping, pagination và concurrent update.
+- Kết quả: test đạt; transaction lỗi không để lại row nửa chừng và writer dùng dữ liệu cũ bị từ chối.
+- Điểm cần review: API repository registry, giới hạn page 100 và chiến lược optimistic concurrency.
+- Commit SHA: —.
+
+### 2026-09-25 — STO-09
+
+- Trạng thái: `READY_FOR_REVIEW`.
+- Thay đổi chính: adapter put/head/get/delete frame; key ổn định; kiểm tra MIME, decode, dimension, size và SHA-256; put idempotent và conflict khi checksum khác; không phát URL public.
+- Test đã chạy: fake MinIO cho idempotency/corruption/conflict; integration MinIO thật cho round-trip và anonymous access.
+- Kết quả: unit và integration đạt; checksum giữ nguyên và anonymous HTTP trả 403.
+- Điểm cần review: hỗ trợ JPEG/PNG, giới hạn mặc định 20 MiB và metadata tối thiểu.
+- Commit SHA: —.
+
+### 2026-09-25 — STO-10
+
+- Trạng thái: `READY_FOR_REVIEW`.
+- Thay đổi chính: collection versioned, alias, HNSW/IP index, vector validation, typed filter builder, upsert/get/delete/search và DTO score tạm thời.
+- Test đã chạy: unit dimension/NaN/normalization/filter; integration Milvus thật cho ensure idempotent, upsert, filter trước top-k, get và delete.
+- Kết quả: unit và integration đạt; area filter loại track ngoài phạm vi dù vector giống hệt; collection test được dọn sạch.
+- Điểm cần review: HNSW `M=16`, `efConstruction=128`, search `ef=64`, tập top-k và collection/alias naming.
 - Commit SHA: —.
 
 ## 11. Các quyết định đã khóa ở STO-01
