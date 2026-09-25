@@ -19,7 +19,7 @@ from person_search.services.monitoring import (
 )
 from person_search.services.searches import DemoEncoderGateway, EncoderUnavailableError
 from person_search.storage.postgres.models import CameraStatus, JobStatus, RtspStatus
-from person_search.workers.pipeline import Pipeline
+from person_search.workers.pipeline import DEMO_ENCODER_SHA256, Pipeline
 
 pytestmark = pytest.mark.unit
 
@@ -33,7 +33,7 @@ DEMO_CONFIG = SimpleNamespace(
     encoder_name="demo_encoder",
     encoder_version="fake_demo_v1",
     encoder_dimension=256,
-    checkpoint_sha256="0" * 64,
+    checkpoint_sha256=DEMO_ENCODER_SHA256,
 )
 
 

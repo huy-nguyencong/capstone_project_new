@@ -16,6 +16,8 @@ from person_search.storage.contracts import (
 )
 from person_search.workers.contracts import Detection, ModelLineage, SourceFrame
 
+DEMO_ENCODER_SHA256 = "eed9d600efbe54cebfb11d6bc78260fd41e2d7b652ce1ed389600fade8b6cf83"
+
 
 class VideoFrameSource:
     def frames(self, source, sampling, camera_id):
@@ -137,14 +139,14 @@ class Pipeline:
             or config.tracker_name != "demo_tracker"
             or config.encoder_version != "fake_demo_v1"
             or config.encoder_dimension != 256
-            or config.checkpoint_sha256 != "0" * 64
+            or config.checkpoint_sha256 != DEMO_ENCODER_SHA256
         ):
             raise ValueError("Demo worker requires the isolated demo model configuration")
         return cls(
             DemoDetector(),
             DemoTracker(),
             DemoEncoder(),
-            EncoderManifest("fake_demo_v1", 256, "0" * 64),
+            EncoderManifest("fake_demo_v1", 256, DEMO_ENCODER_SHA256),
         )
 
     def request(self, job, area_id, track):

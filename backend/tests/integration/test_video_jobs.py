@@ -28,26 +28,6 @@ pytestmark = [
     ),
 ]
 
-DEMO = {
-    "detectors": [{"id": "demo_detector", "name": "Demo", "version": "1", "available": True}],
-    "trackers": [
-        {
-            "id": "demo_tracker",
-            "name": "Demo",
-            "version": "1",
-            "available": True,
-            "compatible_detectors": ["demo_detector"],
-        }
-    ],
-    "encoder": {
-        "name": "Demo",
-        "version": "fake_demo_v1",
-        "dimension": 256,
-        "checkpoint_sha256": "0" * 64,
-    },
-}
-
-
 @pytest.fixture
 def video(tmp_path):
     path = tmp_path / "fixture.mp4"
@@ -75,7 +55,6 @@ def video(tmp_path):
 @pytest.fixture
 def setup(world, tmp_path):
     app, cameras, users, area, factory = world
-    cameras.registry = DEMO
     cameras.configure(
         {
             "detector_id": "demo_detector",

@@ -1,5 +1,47 @@
 {
-  "detectors": [{"id": "demo_detector", "name": "Detector giả lập (demo)", "version": "1", "description": "Sinh bounding box tổng hợp, không nhận diện người.", "meta": "Chỉ kiểm thử luồng", "available": true}],
-  "trackers": [{"id": "demo_tracker", "name": "Tracker giả lập (demo)", "version": "1", "description": "Một track cho mỗi nhóm 5 frame lấy mẫu.", "meta": "Deterministic", "available": true, "compatible_detectors": ["demo_detector"]}],
-  "encoder": {"name": "Encoder giả lập (demo)", "version": "fake_demo_v1", "dimension": 256, "checkpoint_sha256": "0000000000000000000000000000000000000000000000000000000000000000"}
+  "schema_version": "model-registry/v1",
+  "mode": "demo",
+  "detectors": [{
+    "id": "demo_detector", "display_name": "Synthetic detector (demo)", "version": "1",
+    "description": "Generates one deterministic box; never detects a real person.",
+    "adapter_kind": "demo_detector",
+    "artifact": {"path": "demo_artifacts/detector.json", "sha256": "b809b7f300314cf9d864c971dcfa06cb8fe9cc0f8139c2c3eb528615d79b6599"},
+    "devices": ["cpu"], "input_shape": [3, 640, 640],
+    "provenance": {
+      "package_name": "person-search-backend", "package_version": "0.1.0",
+      "source_url": "https://example.invalid/person-search-backend", "weights_url": null,
+      "license": "INTERNAL-DEMO", "approved_for_project": true,
+      "review_note": "Synthetic implementation committed with this project; test/demo only."
+    },
+    "person_class_id": 0, "preprocessing_version": "demo_v1"
+  }],
+  "trackers": [{
+    "id": "demo_tracker", "display_name": "Synthetic tracker (demo)", "version": "1",
+    "description": "Completes one deterministic track per five sampled frames.",
+    "adapter_kind": "demo_tracker",
+    "artifact": {"path": "demo_artifacts/tracker.json", "sha256": "51bd7767431a50e05380cbb3e18f9d0ed95d7f6a83898b7a6a8a254630c45c47"},
+    "devices": ["cpu"], "input_shape": [6],
+    "provenance": {
+      "package_name": "person-search-backend", "package_version": "0.1.0",
+      "source_url": "https://example.invalid/person-search-backend", "weights_url": null,
+      "license": "INTERNAL-DEMO", "approved_for_project": true,
+      "review_note": "Synthetic implementation committed with this project; test/demo only."
+    },
+    "compatible_detectors": ["demo_detector"]
+  }],
+  "encoder": {
+    "id": "demo_encoder", "display_name": "Synthetic encoder (demo)",
+    "version": "fake_demo_v1",
+    "description": "Produces deterministic hash vectors; not a learned embedding model.",
+    "adapter_kind": "demo_encoder",
+    "artifact": {"path": "demo_artifacts/encoder.json", "sha256": "eed9d600efbe54cebfb11d6bc78260fd41e2d7b652ce1ed389600fade8b6cf83"},
+    "devices": ["cpu"], "input_shape": [3, 384, 128],
+    "provenance": {
+      "package_name": "person-search-backend", "package_version": "0.1.0",
+      "source_url": "https://example.invalid/person-search-backend", "weights_url": null,
+      "license": "INTERNAL-DEMO", "approved_for_project": true,
+      "review_note": "Synthetic implementation committed with this project; test/demo only."
+    },
+    "dimension": 256, "normalized": true, "preprocessing_version": "demo_v1"
+  }
 }

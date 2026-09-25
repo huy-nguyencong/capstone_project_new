@@ -1,14 +1,20 @@
 """Transactional camera administration and global model configuration."""
 
 import base64
-import json
 import os
-import re
 import uuid
 from datetime import UTC, datetime
+from pathlib import Path
 
 from sqlalchemy import select, text
 
+from person_search.ai.registry import (
+    IncompatibleModelPairError,
+    ModelNotFoundError,
+    ModelRegistry,
+    ModelUnavailableError,
+    load_registry,
+)
 from person_search.api.errors import ApiError
 from person_search.services.audit import AuditEvent, record_audit
 from person_search.storage.postgres.errors import DuplicateEntityError
@@ -41,65 +47,35 @@ def required(value, limit):
 
 
 class CameraService:
-    def __init__(self, factory, runtime, registry=None, apply_config=None):
+    def __init__(
+        self,
+        factory,
+        runtime,
+        registry: ModelRegistry | None = None,
+        apply_config=None,
+    ):
         self.factory = factory
         self.runtime = runtime
-        self.registry = registry or {"detectors": [], "trackers": [], "encoder": None}
-        self._validate_registry()
+        if registry is not None and not isinstance(registry, ModelRegistry):
+            raise TypeError("registry must be a validated ModelRegistry.")
+        self.registry = registry or ModelRegistry.empty()
         self.apply_config = apply_config or (lambda config: None)
 
-    def _validate_registry(self):
-        """Fail at startup, rather than publishing a malformed deployment manifest."""
-        for kind in ("detectors", "trackers"):
-            models = self.registry.get(kind)
-            if not isinstance(models, list):
-                raise ValueError(f"Model registry {kind} must be a list")
-            ids = set()
-            for model in models:
-                for field in ("id", "name", "version"):
-                    if not isinstance(model.get(field), str) or not 1 <= len(model[field]) <= 100:
-                        raise ValueError(f"Invalid model registry field: {field}")
-                if model["id"] in ids or type(model.get("available")) is not bool:
-                    raise ValueError("Duplicate model ID or invalid availability")
-                ids.add(model["id"])
-                if kind == "trackers" and not isinstance(model.get("compatible_detectors"), list):
-                    raise ValueError("Tracker must declare compatible_detectors")
-        encoder = self.registry.get("encoder")
-        if encoder is not None:
-            if (
-                not isinstance(encoder, dict)
-                or any(
-                    not isinstance(encoder.get(k), str) or not 1 <= len(encoder[k]) <= 100
-                    for k in ("name", "version")
-                )
-                or type(encoder.get("dimension")) is not int
-                or encoder["dimension"] <= 0
-                or not re.fullmatch(r"[0-9a-f]{64}", str(encoder.get("checkpoint_sha256")))
-            ):
-                raise ValueError("Invalid encoder registry metadata")
-        self.registry.setdefault("encoder", None)
-
     @staticmethod
-    def registry_from_environment():
+    def registry_from_environment() -> ModelRegistry | None:
         path = os.getenv("PERSON_SEARCH_MODEL_REGISTRY")
         if not path:
             return None
-        with open(path) as stream:
-            return json.load(stream)
+        artifact_root = os.getenv("PERSON_SEARCH_MODEL_ARTIFACT_ROOT")
+        allow_demo = os.getenv("PERSON_SEARCH_ALLOW_DEMO_MODELS") == "1"
+        return load_registry(
+            path,
+            artifact_root=artifact_root or Path(path).resolve().parent,
+            allow_demo=allow_demo,
+        )
 
     def models(self):
-        fields = {"id", "name", "description", "meta", "available", "compatible_detectors"}
-        return {
-            **{
-                kind: [{k: v for k, v in m.items() if k in fields} for m in self.registry[kind]]
-                for kind in ("detectors", "trackers")
-            },
-            "encoder": (
-                {k: self.registry["encoder"][k] for k in ("name", "version", "dimension")}
-                if self.registry["encoder"]
-                else None
-            ),
-        }
+        return self.registry.public_catalog()
 
     def view(self, work, camera):
         area = work.session.get(Area, camera.area_id)
@@ -305,23 +281,21 @@ class CameraService:
     def _configure(self, body, actor):
         if set(body) != {"detector_id", "tracker_id", "version"}:
             raise ApiError(422, "invalid_config", "Cần detector_id, tracker_id và version.")
-        detector = next(
-            (m for m in self.registry["detectors"] if m["id"] == body["detector_id"]), None
-        )
-        tracker = next(
-            (m for m in self.registry["trackers"] if m["id"] == body["tracker_id"]), None
-        )
-        encoder = self.registry["encoder"]
-        if (
-            not detector
-            or not tracker
-            or not detector.get("available")
-            or not tracker.get("available")
-            or not encoder
-        ):
+        if not isinstance(body["detector_id"], str) or not isinstance(body["tracker_id"], str):
             raise ApiError(422, "model_unavailable", "Mô hình chưa khả dụng.")
-        if detector["id"] not in tracker["compatible_detectors"]:
-            raise ApiError(422, "incompatible_model_pair", "Detector và Tracker không tương thích.")
+        try:
+            selection = self.registry.resolve(body["detector_id"], body["tracker_id"])
+        except (ModelNotFoundError, ModelUnavailableError):
+            raise ApiError(422, "model_unavailable", "Mô hình chưa khả dụng.") from None
+        except IncompatibleModelPairError:
+            raise ApiError(
+                422, "incompatible_model_pair", "Detector và Tracker không tương thích."
+            ) from None
+        detector, tracker, encoder = (
+            selection.detector,
+            selection.tracker,
+            selection.encoder,
+        )
         with self.factory() as work:
             # Also serialize the initial apply when no active row exists yet.
             work.session.execute(text("SELECT pg_advisory_xact_lock(734201)"))
@@ -331,14 +305,14 @@ class CameraService:
             row = AIConfigVersion(
                 id=uuid.uuid4(),
                 version=str(uuid.uuid4()),
-                detector_name=detector["id"],
-                detector_version=detector["version"],
-                tracker_name=tracker["id"],
-                tracker_version=tracker["version"],
-                encoder_name=encoder["name"],
-                encoder_version=encoder["version"],
-                encoder_dimension=encoder["dimension"],
-                checkpoint_sha256=encoder["checkpoint_sha256"],
+                detector_name=detector.id,
+                detector_version=detector.version,
+                tracker_name=tracker.id,
+                tracker_version=tracker.version,
+                encoder_name=encoder.id,
+                encoder_version=encoder.version,
+                encoder_dimension=encoder.dimension,
+                checkpoint_sha256=encoder.artifact.sha256,
                 status=AIConfigStatus.ACTIVE,
             )
             self.audit(work, actor, AuditEvent.AI_CONFIG_REQUESTED, row.id)

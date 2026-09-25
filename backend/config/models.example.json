@@ -1,9 +1,115 @@
 {
+  "schema_version": "model-registry/v1",
+  "mode": "production",
   "detectors": [
-    {"id": "yolov8m", "name": "YOLOv8-m", "version": "8", "description": "Person detector", "meta": "640 px", "available": false}
+    {
+      "id": "yolo_nano_candidate", "display_name": "Ultralytics YOLO nano candidate",
+      "version": "pin-before-use",
+      "description": "Functional baseline candidate; disabled until artifact, license and preflight are approved.",
+      "adapter_kind": "ultralytics_yolo",
+      "artifact": {"path": "model_artifacts/yolo_nano.pt", "sha256": "0000000000000000000000000000000000000000000000000000000000000000"},
+      "devices": ["cpu", "cuda"], "input_shape": [3, 640, 640],
+      "provenance": {
+        "package_name": "ultralytics", "package_version": "pin-before-use",
+        "source_url": "https://github.com/ultralytics/ultralytics",
+        "weights_url": "https://github.com/ultralytics/assets/releases",
+        "license": "AGPL-3.0-or-commercial", "approved_for_project": false,
+        "review_note": "Confirm AGPL compliance or an Enterprise license before enabling."
+      },
+      "person_class_id": 0, "preprocessing_version": "letterbox_rgb_v1"
+    },
+    {
+      "id": "yolo_small_candidate", "display_name": "Ultralytics YOLO small candidate",
+      "version": "pin-before-use",
+      "description": "Higher-cost baseline candidate; disabled until artifact, license and preflight are approved.",
+      "adapter_kind": "ultralytics_yolo",
+      "artifact": {"path": "model_artifacts/yolo_small.pt", "sha256": "0000000000000000000000000000000000000000000000000000000000000000"},
+      "devices": ["cpu", "cuda"], "input_shape": [3, 640, 640],
+      "provenance": {
+        "package_name": "ultralytics", "package_version": "pin-before-use",
+        "source_url": "https://github.com/ultralytics/ultralytics",
+        "weights_url": "https://github.com/ultralytics/assets/releases",
+        "license": "AGPL-3.0-or-commercial", "approved_for_project": false,
+        "review_note": "Confirm AGPL compliance or an Enterprise license before enabling."
+      },
+      "person_class_id": 0, "preprocessing_version": "letterbox_rgb_v1"
+    },
+    {
+      "id": "yolox_tiny_candidate", "display_name": "YOLOX-Tiny candidate", "version": "0.3.0",
+      "description": "Fallback detector candidate with Apache-2.0 source code.",
+      "adapter_kind": "yolox",
+      "artifact": {"path": "model_artifacts/yolox_tiny.pth", "sha256": "0000000000000000000000000000000000000000000000000000000000000000"},
+      "devices": ["cpu", "cuda"], "input_shape": [3, 640, 640],
+      "provenance": {
+        "package_name": "yolox", "package_version": "0.3.0",
+        "source_url": "https://github.com/Megvii-BaseDetection/YOLOX",
+        "weights_url": "https://github.com/Megvii-BaseDetection/YOLOX/releases",
+        "license": "Apache-2.0", "approved_for_project": true,
+        "review_note": "Reconfirm the selected checkpoint provenance when its checksum is pinned."
+      },
+      "person_class_id": 0, "preprocessing_version": "yolox_rgb_v1"
+    },
+    {
+      "id": "yolox_small_candidate", "display_name": "YOLOX-S candidate", "version": "0.3.0",
+      "description": "Fallback detector candidate with Apache-2.0 source code.",
+      "adapter_kind": "yolox",
+      "artifact": {"path": "model_artifacts/yolox_s.pth", "sha256": "0000000000000000000000000000000000000000000000000000000000000000"},
+      "devices": ["cpu", "cuda"], "input_shape": [3, 640, 640],
+      "provenance": {
+        "package_name": "yolox", "package_version": "0.3.0",
+        "source_url": "https://github.com/Megvii-BaseDetection/YOLOX",
+        "weights_url": "https://github.com/Megvii-BaseDetection/YOLOX/releases",
+        "license": "Apache-2.0", "approved_for_project": true,
+        "review_note": "Reconfirm the selected checkpoint provenance when its checksum is pinned."
+      },
+      "person_class_id": 0, "preprocessing_version": "yolox_rgb_v1"
+    }
   ],
   "trackers": [
-    {"id": "bytetrack", "name": "ByteTrack", "version": "1", "description": "Multi-object tracker", "meta": "", "available": false, "compatible_detectors": ["yolov8m"]}
+    {
+      "id": "bytetrack_candidate", "display_name": "ByteTrack candidate",
+      "version": "pin-before-use", "description": "Initial camera-local tracker without ReID.",
+      "adapter_kind": "bytetrack",
+      "artifact": {"path": "model_artifacts/bytetrack.json", "sha256": "0000000000000000000000000000000000000000000000000000000000000000"},
+      "devices": ["cpu", "cuda"], "input_shape": [6],
+      "provenance": {
+        "package_name": "bytetrack", "package_version": "pin-before-use",
+        "source_url": "https://github.com/FoundationVision/ByteTrack", "weights_url": null,
+        "license": "MIT", "approved_for_project": true,
+        "review_note": "Pin the adapter commit and local tracker config before enabling."
+      },
+      "compatible_detectors": ["yolo_nano_candidate", "yolo_small_candidate", "yolox_tiny_candidate", "yolox_small_candidate"]
+    },
+    {
+      "id": "botsort_candidate", "display_name": "BoT-SORT candidate",
+      "version": "pin-before-use",
+      "description": "Alternative tracker; ReID and camera-motion compensation disabled by default.",
+      "adapter_kind": "botsort",
+      "artifact": {"path": "model_artifacts/botsort.json", "sha256": "0000000000000000000000000000000000000000000000000000000000000000"},
+      "devices": ["cpu", "cuda"], "input_shape": [6],
+      "provenance": {
+        "package_name": "bot-sort", "package_version": "pin-before-use",
+        "source_url": "https://github.com/NirAharon/BoT-SORT", "weights_url": null,
+        "license": "MIT", "approved_for_project": true,
+        "review_note": "Pin the adapter commit and local tracker config before enabling."
+      },
+      "compatible_detectors": ["yolo_nano_candidate", "yolo_small_candidate", "yolox_tiny_candidate", "yolox_small_candidate"]
+    }
   ],
-  "encoder": null
+  "encoder": {
+    "id": "rasa_cuhk_pedes_v1", "display_name": "RaSa CUHK-PEDES v1",
+    "version": "rasa_cuhk_pedes_v1",
+    "description": "Fixed image/text embedding space for stored tracks and queries.",
+    "adapter_kind": "rasa",
+    "artifact": {"path": "model_artifacts/rasa_cuhk_pedes_v1.pth", "sha256": "0000000000000000000000000000000000000000000000000000000000000000"},
+    "devices": ["cpu", "cuda"], "input_shape": [3, 384, 128],
+    "provenance": {
+      "package_name": "rasa-person-retrieval", "package_version": "pin-before-use",
+      "source_url": "https://github.com/Flame-Chasers/RaSa", "weights_url": null,
+      "license": "UNRESOLVED", "approved_for_project": false,
+      "review_note": "Upstream has no clear license; obtain approval before enabling code or checkpoint."
+    },
+    "dimension": 256, "normalized": true,
+    "preprocessing_version": "rasa_cuhk_pedes_v1"
+  }
 }

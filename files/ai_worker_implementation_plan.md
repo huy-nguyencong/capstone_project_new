@@ -266,8 +266,8 @@ Quy trình cho mỗi task:
 | --- | --- | --- | --- |
 | AIW-00 | Baseline và ma trận truy vết | — | DONE |
 | AIW-01 | Inventory 7 video và bộ dữ liệu đánh giá | AIW-00 | DONE |
-| AIW-02 | Khóa contract và taxonomy lỗi AI | AIW-00 | REVIEW |
-| AIW-03 | Registry Detector/Tracker/Encoder và kiểm tra artifact | AIW-02 | TODO |
+| AIW-02 | Khóa contract và taxonomy lỗi AI | AIW-00 | DONE |
+| AIW-03 | Registry Detector/Tracker/Encoder và kiểm tra artifact | AIW-02 | REVIEW |
 | AIW-04 | Runtime/device preflight và giới hạn tài nguyên | AIW-03 | TODO |
 | AIW-05 | Fake adapters và fixtures chỉ dành cho test | AIW-02 | TODO |
 | AIW-06 | Interface nguồn frame dùng chung | AIW-02 | TODO |
@@ -996,6 +996,9 @@ Mỗi lần hoàn tất hoặc review task, thêm một dòng; không sửa lị
 | 2026-09-25 | AIW-01 | DONE | — | Không chạy lại; người thực hiện yêu cầu bắt đầu task kế tiếp | Kết quả AIW-01 được chấp thuận qua chỉ dẫn tiếp tục; khóa manifest, fixture policy và evaluation query set. |
 | 2026-09-25 | AIW-02 | IN_PROGRESS | — | Đang thực hiện | Bắt đầu tách contract AI khỏi pipeline, chuẩn hóa lifecycle và taxonomy lỗi retryable/terminal. |
 | 2026-09-26 | AIW-02 | REVIEW | — | `pytest -m unit`: 337 passed, 25 deselected; `ruff check .`; `compileall` | Đã thêm contract framework-neutral, 7 Protocol, lifecycle close idempotent, 10 error stage và public serialization an toàn; pipeline demo dùng SourceFrame/Detection chuẩn hóa. Chờ review trước khi chuyển `DONE`. |
+| 2026-09-26 | AIW-02 | DONE | — | Không chạy lại; người thực hiện yêu cầu bắt đầu task kế tiếp | Contract và taxonomy được chấp thuận qua chỉ dẫn tiếp tục; khóa boundary cho registry/adapters. |
+| 2026-09-26 | AIW-03 | IN_PROGRESS | — | Đang thực hiện | Bắt đầu registry typed, artifact checksum, compatibility, provenance/license và tách production/demo. |
+| 2026-09-26 | AIW-03 | REVIEW | — | `pytest -m unit`: 350 passed, 25 deselected; `ruff check .`; `compileall`; validate hai manifest bằng CLI | Registry fail-fast đã khóa adapter allowlist, local artifact/checksum, compatibility, preflight-derived availability và request chỉ nhận ID; chờ review trước khi chuyển `DONE`. |
 
 ## 13. Rủi ro cần theo dõi
 

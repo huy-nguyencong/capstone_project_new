@@ -247,6 +247,9 @@ lệnh `person-search-worker` không kèm `--demo` sẽ báo lỗi.
 
 Để thử pipeline video demo, đặt `PERSON_SEARCH_MODEL_REGISTRY` trong `backend/.env` thành
 **đường dẫn tuyệt đối** đến [config/models.demo.json](config/models.demo.json).
+Đặt thêm `PERSON_SEARCH_ALLOW_DEMO_MODELS=1`; nếu artifact nằm ngoài thư mục chứa manifest,
+đặt `PERSON_SEARCH_MODEL_ARTIFACT_ROOT` thành thư mục local đáng tin cậy. Demo registry bị từ
+chối khi thiếu opt-in này và không thể được dùng như registry production.
 API và worker cần cùng cấu hình `PERSON_SEARCH_VIDEO_STAGING`; nên dùng đường dẫn tuyệt đối
 đến một thư mục private dùng chung. Khởi động lại API sau khi đổi `.env`.
 
@@ -257,3 +260,6 @@ person-search-worker --demo
 ```
 
 Pipeline demo sinh dữ liệu giả lập để kiểm thử luồng, không thực hiện nhận diện người thực tế.
+Manifest production mẫu nằm tại [config/models.example.json](config/models.example.json).
+Các URL trong manifest chỉ là provenance; loader không tải artifact qua mạng. `available`
+được suy ra từ artifact local, checksum, phê duyệt license và kết quả preflight.

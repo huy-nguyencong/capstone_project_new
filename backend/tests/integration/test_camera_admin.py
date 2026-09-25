@@ -1,8 +1,11 @@
 """Phase 3 API tests. Use only an explicitly supplied, migrated disposable database."""
 
+import copy
+import json
 import os
 import uuid
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 
 import pytest
 from cryptography.fernet import Fernet
@@ -10,6 +13,7 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 
 from person_search import create_app
+from person_search.ai.registry import registry_from_dict
 from person_search.auth.passwords import PasswordHasher
 from person_search.dependencies import DependencyContainer
 from person_search.services.auth import AuthService
@@ -65,24 +69,13 @@ def world():
             work.session.add(row)
             users[role] = row
         work.commit()
-    registry = {
-        "detectors": [{"id": "yolov8m", "version": "1", "name": "YOLO", "available": True}],
-        "trackers": [
-            {
-                "id": "bytetrack",
-                "version": "1",
-                "name": "ByteTrack",
-                "available": True,
-                "compatible_detectors": ["yolov8m"],
-            }
-        ],
-        "encoder": {
-            "name": "RaSa",
-            "version": "rasa-v1",
-            "dimension": 256,
-            "checkpoint_sha256": "a" * 64,
-        },
-    }
+    config_root = Path(__file__).parents[2] / "config"
+    registry_payload = json.loads((config_root / "models.demo.json").read_text(encoding="utf-8"))
+    alternate = copy.deepcopy(registry_payload["detectors"][0])
+    alternate["id"] = "demo_detector_alt"
+    alternate["display_name"] = "Alternate synthetic detector"
+    registry_payload["detectors"].append(alternate)
+    registry = registry_from_dict(registry_payload, artifact_root=config_root, allow_demo=True)
     runtime = CameraRuntime(Fernet.generate_key().decode(), ["10.0.0.0/8"])
     service = CameraService(uow, runtime, registry)
     deps = DependencyContainer()
@@ -171,17 +164,20 @@ def test_config_rollback_versions_ai_idempotency_and_pagination(world):
     api = client(world)
     _, service, users, area, factory = world
     before = api.get("/api/v1/admin/ai/config").json
-    config = {"detector_id": "yolov8m", "tracker_id": "bytetrack", "version": before["version"]}
+    config = {
+        "detector_id": "demo_detector",
+        "tracker_id": "demo_tracker",
+        "version": before["version"],
+    }
     assert (
         api.put("/api/v1/admin/ai/config", json={**config, "detector_id": "unknown"}).status_code
         == 422
     )
-    service.registry["trackers"][0]["compatible_detectors"] = []
+    incompatible = {**config, "detector_id": "demo_detector_alt"}
     assert (
-        api.put("/api/v1/admin/ai/config", json=config).json["error"]["code"]
+        api.put("/api/v1/admin/ai/config", json=incompatible).json["error"]["code"]
         == "incompatible_model_pair"
     )
-    service.registry["trackers"][0]["compatible_detectors"] = ["yolov8m"]
     applied = api.put("/api/v1/admin/ai/config", json=config)
     assert applied.status_code == 200
     assert api.put("/api/v1/admin/ai/config", json=config).status_code == 409

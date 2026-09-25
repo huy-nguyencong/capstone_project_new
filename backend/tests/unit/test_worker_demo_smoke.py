@@ -17,7 +17,7 @@ from person_search.storage.postgres.models import (
     TrackIndexStatus,
 )
 from person_search.workers.contracts import SourceFrame
-from person_search.workers.pipeline import Pipeline
+from person_search.workers.pipeline import DEMO_ENCODER_SHA256, Pipeline
 from person_search.workers.runner import VideoWorker
 
 pytestmark = pytest.mark.unit
@@ -115,7 +115,7 @@ def test_demo_worker_smoke_uses_memory_only_and_completes_one_track():
         encoder_name="demo_encoder",
         encoder_version="fake_demo_v1",
         encoder_dimension=256,
-        checkpoint_sha256="0" * 64,
+        checkpoint_sha256=DEMO_ENCODER_SHA256,
     )
     job = SimpleNamespace(
         id=uuid.uuid4(),

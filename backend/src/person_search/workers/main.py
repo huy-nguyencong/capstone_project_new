@@ -9,6 +9,7 @@ import threading
 
 from dotenv import load_dotenv
 
+from person_search.ai.registry import RegistryMode, load_registry
 from person_search.config import StorageSettings
 from person_search.services.jobs import JobService
 from person_search.services.track_ingestion import TrackIngestionService
@@ -31,6 +32,16 @@ def main():
     args = parser.parse_args()
     if not args.demo:
         parser.error("No production AI adapter is configured. Use --demo with the demo registry.")
+    registry_path = os.getenv("PERSON_SEARCH_MODEL_REGISTRY")
+    if not registry_path:
+        parser.error("PERSON_SEARCH_MODEL_REGISTRY is required.")
+    registry = load_registry(
+        registry_path,
+        artifact_root=os.getenv("PERSON_SEARCH_MODEL_ARTIFACT_ROOT") or None,
+        allow_demo=args.demo,
+    )
+    if registry.mode is not RegistryMode.DEMO:
+        parser.error("--demo requires a registry whose mode is demo.")
     stopped = threading.Event()
     for name in (signal.SIGTERM, signal.SIGINT):
         signal.signal(name, lambda *_: stopped.set())
@@ -78,8 +89,16 @@ def main():
                 vectors,
             )
 
+        def pipeline(config):
+            registry.resolve_config(config)
+            return Pipeline.demo(config)
+
         worker = VideoWorker(
-            runtime.postgres.engine, jobs, Pipeline.demo, ingestion, stop=stopped.is_set
+            runtime.postgres.engine,
+            jobs,
+            pipeline,
+            ingestion,
+            stop=stopped.is_set,
         )
         worker.run_once()
     finally:
