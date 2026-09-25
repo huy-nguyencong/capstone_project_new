@@ -264,8 +264,8 @@ Quy trình cho mỗi task:
 
 | ID | Task | Phụ thuộc | Trạng thái |
 | --- | --- | --- | --- |
-| AIW-00 | Baseline và ma trận truy vết | — | REVIEW |
-| AIW-01 | Inventory 7 video và bộ dữ liệu đánh giá | AIW-00 | TODO |
+| AIW-00 | Baseline và ma trận truy vết | — | DONE |
+| AIW-01 | Inventory 7 video và bộ dữ liệu đánh giá | AIW-00 | REVIEW |
 | AIW-02 | Khóa contract và taxonomy lỗi AI | AIW-00 | TODO |
 | AIW-03 | Registry Detector/Tracker/Encoder và kiểm tra artifact | AIW-02 | TODO |
 | AIW-04 | Runtime/device preflight và giới hạn tài nguyên | AIW-03 | TODO |
@@ -990,6 +990,9 @@ Mỗi lần hoàn tất hoặc review task, thêm một dòng; không sửa lị
 | — | — | — | — | — | Chưa bắt đầu triển khai theo kế hoạch này. |
 | 2026-09-25 | AIW-00 | IN_PROGRESS | — | Đang thực hiện | Bắt đầu inventory worker/pipeline/adapter/job/ingestion/diagnostics và ma trận truy vết. |
 | 2026-09-25 | AIW-00 | REVIEW | — | `pytest -m unit`; smoke in-memory; `ruff check .`; `compileall` | Baseline report và ma trận truy vết hoàn tất; 324 unit test đạt, smoke worker không ghi production đạt. Chờ review trước khi chuyển `DONE`. |
+| 2026-09-25 | AIW-00 | DONE | — | Không chạy lại; người thực hiện yêu cầu bắt đầu task kế tiếp | Baseline được chấp thuận qua chỉ dẫn tiếp tục; khóa phạm vi AIW-00. |
+| 2026-09-25 | AIW-01 | IN_PROGRESS | — | Đang thực hiện | Bắt đầu inventory 7 video, annotation, checksum, fixture policy và evaluation query set. |
+| 2026-09-25 | AIW-01 | REVIEW | — | `pytest -m unit`: 326 passed, 25 deselected; `ruff check .`; `compileall`; `wildtrack_manifest.py verify`; `validate-queries` | Đã inventory 3.236 file/10,84 GiB, khóa manifest SHA-256 `b214b4dc…ae8f`, xác thực 7 video và 6 query. Dataset binary vẫn ignored; chờ review trước khi chuyển `DONE`. |
 
 ## 13. Rủi ro cần theo dõi
 

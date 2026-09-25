@@ -1,0 +1,122 @@
+{
+  "schema": "wildtrack-evaluation-queries/v1",
+  "dataset_tree_sha256": "ecdd328ca203770a143b951b56253e851cbfda4fb19b9b432e73d615f2b5a8f0",
+  "language": "en",
+  "label_status": "provisional_manual_review",
+  "ground_truth_policy": {
+    "identity_field": "personID",
+    "offline_evaluation_only": true,
+    "persist_identity_in_application": false,
+    "exclude_exact_query_observation": true,
+    "positive_match": "Any other valid observation with the same personID.",
+    "bbox_format": "inclusive xmin,ymin,xmax,ymax in the 1920x1080 source image"
+  },
+  "queries": [
+    {
+      "id": "WT-Q001",
+      "person_id": 115,
+      "image_query": {
+        "camera": "C7",
+        "frame": "00000410",
+        "path": "Image_subsets/C7/00000410.png",
+        "bbox": {"xmin": 1172, "ymin": 459, "xmax": 1407, "ymax": 1053}
+      },
+      "text_query": "A person wearing a dark jacket and light beige pants with a blue and black backpack.",
+      "attribute_query": {
+        "upper_color": "black",
+        "lower_color": "beige",
+        "upper_type": "jacket",
+        "has_backpack": true
+      },
+      "difficulty_tags": ["partial_occlusion", "distinctive_backpack"]
+    },
+    {
+      "id": "WT-Q002",
+      "person_id": 147,
+      "image_query": {
+        "camera": "C7",
+        "frame": "00000215",
+        "path": "Image_subsets/C7/00000215.png",
+        "bbox": {"xmin": 807, "ymin": 414, "xmax": 973, "ymax": 989}
+      },
+      "text_query": "A person in a black jacket and dark pants carrying a large brown backpack and pulling luggage.",
+      "attribute_query": {
+        "upper_color": "black",
+        "lower_color": "black",
+        "upper_type": "jacket",
+        "has_backpack": true
+      },
+      "difficulty_tags": ["distinctive_backpack", "carrying_luggage"]
+    },
+    {
+      "id": "WT-Q003",
+      "person_id": 196,
+      "image_query": {
+        "camera": "C5",
+        "frame": "00000640",
+        "path": "Image_subsets/C5/00000640.png",
+        "bbox": {"xmin": 213, "ymin": 141, "xmax": 396, "ymax": 845}
+      },
+      "text_query": "A person wearing a dark jacket, blue jeans and brown boots with a large yellow and black shoulder bag.",
+      "attribute_query": {
+        "upper_color": "black",
+        "lower_color": "blue",
+        "upper_type": "jacket",
+        "has_backpack": false
+      },
+      "difficulty_tags": ["distinctive_shoulder_bag", "side_view"]
+    },
+    {
+      "id": "WT-Q004",
+      "person_id": 559,
+      "image_query": {
+        "camera": "C3",
+        "frame": "00000615",
+        "path": "Image_subsets/C3/00000615.png",
+        "bbox": {"xmin": 569, "ymin": 342, "xmax": 752, "ymax": 929}
+      },
+      "text_query": "A person in a navy jacket and gray pants carrying a light shoulder bag and a dark duffel bag.",
+      "attribute_query": {
+        "upper_color": "blue",
+        "lower_color": "gray",
+        "upper_type": "jacket",
+        "has_backpack": false
+      },
+      "difficulty_tags": ["rear_view", "multiple_bags"]
+    },
+    {
+      "id": "WT-Q005",
+      "person_id": 563,
+      "image_query": {
+        "camera": "C3",
+        "frame": "00000575",
+        "path": "Image_subsets/C3/00000575.png",
+        "bbox": {"xmin": 122, "ymin": 276, "xmax": 268, "ymax": 695}
+      },
+      "text_query": "A person wearing glasses, a brown jacket and blue jeans while carrying a black bag.",
+      "attribute_query": {
+        "lower_color": "blue",
+        "upper_type": "jacket",
+        "has_backpack": false
+      },
+      "difficulty_tags": ["crowded", "partial_occlusion", "glasses"]
+    },
+    {
+      "id": "WT-Q006",
+      "person_id": 16,
+      "image_query": {
+        "camera": "C6",
+        "frame": "00001635",
+        "path": "Image_subsets/C6/00001635.png",
+        "bbox": {"xmin": 15, "ymin": 174, "xmax": 116, "ymax": 537}
+      },
+      "text_query": "A person wearing a dark cap, dark top, gray pants and white shoes with a patterned side bag.",
+      "attribute_query": {
+        "upper_color": "black",
+        "lower_color": "gray",
+        "has_backpack": false
+      },
+      "difficulty_tags": ["small_person", "side_view", "distinctive_white_shoes"]
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 # AIW-00 — Baseline AI Worker và ma trận truy vết
 
 > Ngày thực hiện: 2026-09-25  
-> Trạng thái: `REVIEW`  
+> Trạng thái: `DONE`
 > Phạm vi: inventory và phân loại hiện trạng; chưa tích hợp Detector, Tracker hoặc RaSa production.
 
 ## 1. Nguồn đối chiếu
@@ -226,6 +226,6 @@ Existing full worker integration coverage nằm ở `backend/tests/integration/t
 - [x] Có module đích dự kiến cho từng task tiếp theo.
 - [x] Unit baseline đạt.
 - [x] Smoke worker demo không ghi storage production đạt.
-- [ ] Review và chấp thuận để chuyển AIW-00 từ `REVIEW` sang `DONE`.
+- [x] Review và chấp thuận để chuyển AIW-00 từ `REVIEW` sang `DONE`.
 
 AIW-00 không triển khai AI production và không tự động bắt đầu AIW-01/AIW-02 trước khi được review.
