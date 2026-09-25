@@ -4,7 +4,17 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import Boolean, CheckConstraint, Enum, ForeignKey, String, event, inspect
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    Enum,
+    ForeignKey,
+    Index,
+    String,
+    event,
+    inspect,
+    text,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -26,6 +36,7 @@ class Camera(TimestampMixin, Base):
             "rtsp_url IS NULL OR rtsp_url !~ '^rtsps?://[^/]*@'",
             name="ck_cameras_rtsp_no_embedded_credentials",
         ),
+        Index("ix_cameras_active_area", "area_id", postgresql_where=text("status = 'ACTIVE'")),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

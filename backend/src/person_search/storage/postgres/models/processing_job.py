@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import CheckConstraint, DateTime, Enum, ForeignKey, String, Text
+from sqlalchemy import CheckConstraint, DateTime, Enum, ForeignKey, Index, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -29,6 +29,7 @@ class ProcessingJob(TimestampMixin, Base):
         CheckConstraint(
             "source_type <> 'FILE' OR source_ref IS NOT NULL", name="ck_jobs_file_source_ref"
         ),
+        Index("ix_processing_jobs_status", "status"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

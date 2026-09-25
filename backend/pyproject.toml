@@ -28,6 +28,7 @@ dev = [
 [project.scripts]
 person-search-api = "person_search.__main__:main"
 person-search-worker = "person_search.workers.main:main"
+person-search-seed = "person_search.storage.postgres.seed:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

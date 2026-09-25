@@ -116,9 +116,9 @@ Trạng thái hợp lệ:
 | STO-02 | Dựng hạ tầng Docker Compose | STO-01 | DONE | `aeb8203` |
 | STO-03 | Cấu hình ứng dụng, kết nối và health check | STO-02 | DONE | `df1456b` |
 | STO-04 | Schema PostgreSQL cho Area, User, Camera | STO-03 | DONE | `ba19a77` |
-| STO-05 | Schema PostgreSQL cho AI config, job và PersonTrack | STO-04 | READY_FOR_REVIEW | — |
-| STO-06 | Schema PostgreSQL cho Case, CaseResult và AuditLog | STO-05 | TODO | — |
-| STO-07 | Ràng buộc, index, seed và kiểm thử migration | STO-06 | TODO | — |
+| STO-05 | Schema PostgreSQL cho AI config, job và PersonTrack | STO-04 | DONE | `54f80d1` |
+| STO-06 | Schema PostgreSQL cho Case, CaseResult và AuditLog | STO-05 | READY_FOR_REVIEW | — |
+| STO-07 | Ràng buộc, index, seed và kiểm thử migration | STO-06 | READY_FOR_REVIEW | — |
 | STO-08 | Repository và transaction cho PostgreSQL | STO-07 | TODO | — |
 | STO-09 | Adapter lưu full frame trên MinIO | STO-03 | TODO | — |
 | STO-10 | Collection và adapter vector trên Milvus | STO-03 | TODO | — |
@@ -765,6 +765,28 @@ Mỗi lần làm task, thêm một mục theo mẫu:
 - Test đã chạy: Ruff; 85 unit test; migration integration trên database dùng một lần; `downgrade base → upgrade head → alembic check → constraint/state-transition tests → downgrade 0001 → downgrade base`.
 - Kết quả: unit và integration đều đạt; Alembic không phát hiện schema drift; PostgreSQL từ chối sampling interval không dương, bbox vượt frame, track khởi tạo ở `READY`, `READY` thiếu artifact và chuyển ngược `READY → FAILED`; rollback giữ schema STO-04 rồi xóa sạch về base.
 - Điểm cần người thực hiện review: bộ field lineage, quy tắc một AI config `ACTIVE`, state machine `PENDING → READY/FAILED`, retry `FAILED → PENDING`, `READY` là trạng thái cuối, payload JSONB và unique `(track_id, event_type)` của outbox.
+- Quyết định/chỉnh sửa sau review: người thực hiện đã chấp thuận, commit và yêu cầu triển khai STO-06 cùng STO-07.
+- Commit SHA: `54f80d1`.
+
+### 2026-09-25 — STO-06
+
+- Trạng thái: `READY_FOR_REVIEW`.
+- Thay đổi chính: thêm Case, CaseResult snapshot và AuditLog; owner Case được suy ra từ Operator đăng nhập và được trigger PostgreSQL kiểm tra; cho phép lưu cùng track nhiều lần; snapshot bất biến; audit append-only; không có status/area/Matching Score trong Case.
+- File quan trọng: `backend/migrations/versions/20260925_0003_cases_and_audit.py`, `backend/src/person_search/storage/postgres/models/case.py`, `case_result.py`, `audit_log.py`, `backend/src/person_search/services/case_policy.py`.
+- Test đã chạy: unit policy/schema; integration PostgreSQL cho owner role, duplicate result, delete độc lập, khóa Operator, snapshot và audit append-only.
+- Kết quả: test đạt; Viewer/Admin bị từ chối làm owner; khóa Operator không làm mất Case; xóa một CaseResult không xóa result còn lại hoặc PersonTrack.
+- Điểm cần người thực hiện review: CaseResult cascade theo Case nhưng `RESTRICT` về PersonTrack; actor audit được `SET NULL`; audit và snapshot là bất biến.
+- Quyết định/chỉnh sửa sau review: chờ review.
+- Commit SHA: —.
+
+### 2026-09-25 — STO-07
+
+- Trạng thái: `READY_FOR_REVIEW`.
+- Thay đổi chính: thêm index theo camera active, job status và timeline/status track; partial index cho track `READY`; seed Area development idempotent không chứa secret; xuất ER diagram và data dictionary; kiểm thử migration trên database đã có dữ liệu.
+- File quan trọng: `backend/migrations/versions/20260925_0004_schema_hardening.py`, `backend/src/person_search/storage/postgres/seed.py`, `backend/tests/integration/test_case_and_hardening_schema.py`, `docs/storage/postgres-er-and-data-dictionary.md`.
+- Test đã chạy: seed hai lần; migration `base → 0003` với dữ liệu → `head`; `alembic check`; kiểm tra index; `EXPLAIN`; downgrade `0003` rồi upgrade lại `head`; cuối cùng downgrade base.
+- Kết quả: test đạt; lần seed thứ hai thêm 0 row; database có dữ liệu nâng cấp thành công; query READY theo camera dùng partial index; upgrade/downgrade lặp lại không lệch schema.
+- Điểm cần người thực hiện review: danh sách Area mẫu, partial index `READY`, phạm vi seed chủ động ngoài production migration và sơ đồ ER/data dictionary.
 - Quyết định/chỉnh sửa sau review: chờ review.
 - Commit SHA: —.
 

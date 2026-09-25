@@ -11,10 +11,12 @@ from sqlalchemy import (
     DateTime,
     Enum,
     ForeignKey,
+    Index,
     String,
     Text,
     event,
     inspect,
+    text,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -64,6 +66,14 @@ class PersonTrack(TimestampMixin, Base):
             "index_status <> 'READY' OR (minio_object_key IS NOT NULL AND "
             "frame_sha256 IS NOT NULL AND frame_size_bytes > 0 AND vector_indexed_at IS NOT NULL)",
             name="ck_tracks_ready_artifacts",
+        ),
+        Index("ix_person_tracks_camera_appeared_at", "camera_id", "appeared_at_utc"),
+        Index("ix_person_tracks_index_status", "index_status"),
+        Index(
+            "ix_person_tracks_ready_camera_appeared_at",
+            "camera_id",
+            "appeared_at_utc",
+            postgresql_where=text("index_status = 'READY'"),
         ),
     )
 

@@ -59,3 +59,8 @@ class OutboxStatus(StrEnum):
     PROCESSING = "PROCESSING"
     COMPLETED = "COMPLETED"
     DEAD = "DEAD"
+
+
+class AuditResult(StrEnum):
+    SUCCESS = "SUCCESS"
+    FAILURE = "FAILURE"
