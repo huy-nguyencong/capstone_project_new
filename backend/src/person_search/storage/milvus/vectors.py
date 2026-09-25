@@ -136,7 +136,11 @@ class MilvusPersonTrackIndex:
                 },
             )
             self.client.create_collection(
-                self.collection_name, schema=schema, index_params=indexes, timeout=self.timeout
+                self.collection_name,
+                schema=schema,
+                index_params=indexes,
+                consistency_level="Strong",
+                timeout=self.timeout,
             )
         alias_response = self.client.list_aliases(self.collection_name)
         aliases = (
@@ -180,7 +184,15 @@ class MilvusPersonTrackIndex:
         rows = self.client.query(
             self.collection_name,
             filter=f'track_id == "{track_id}"',
-            output_fields=["track_id", "area_id", "camera_id", "appeared_at_epoch"],
+            output_fields=[
+                "track_id",
+                "area_id",
+                "camera_id",
+                "appeared_at_epoch",
+                "encoder_version",
+                "index_status",
+            ],
+            consistency_level="Strong",
             timeout=self.timeout,
         )
         return rows[0] if rows else None
@@ -191,6 +203,7 @@ class MilvusPersonTrackIndex:
             batch_size=batch_size,
             filter='track_id != ""',
             output_fields=["track_id"],
+            consistency_level="Strong",
             timeout=self.timeout,
         )
         try:
@@ -221,6 +234,7 @@ class MilvusPersonTrackIndex:
                 "metric_type": self.index_config.metric_type,
                 "params": {"ef": self.index_config.search_ef},
             },
+            consistency_level="Strong",
             timeout=self.timeout,
         )
         return [

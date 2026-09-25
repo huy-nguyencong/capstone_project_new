@@ -45,6 +45,10 @@ class TrackNotPublishableError(TrackIngestionError):
     pass
 
 
+class VectorNotVisibleError(ConnectionError):
+    """Raised while an acknowledged vector is not yet readable from Milvus."""
+
+
 class IngestionStep(StrEnum):
     FRAME_UPLOAD = "FRAME_UPLOAD"
     FRAME_VERIFY = "FRAME_VERIFY"
@@ -94,6 +98,8 @@ class VectorIndex(Protocol):
         camera_id: uuid.UUID,
         appeared_at: datetime,
     ) -> None: ...
+
+    def get(self, track_id: uuid.UUID) -> dict[str, Any] | None: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -169,6 +175,7 @@ class TrackIngestionService:
                 camera_id=request.camera_id,
                 appeared_at=request.appeared_at_utc,
             )
+            self._verify_vector(request.track_id, request.area_id, request.camera_id)
             step = IngestionStep.PUBLISH
             self._publish(request.track_id)
         except Exception as error:
@@ -214,6 +221,11 @@ class TrackIngestionService:
                 area_id=uuid.UUID(payload["area_id"]),
                 camera_id=uuid.UUID(payload["camera_id"]),
                 appeared_at=datetime.fromisoformat(payload["appeared_at_utc"]),
+            )
+            self._verify_vector(
+                track_id,
+                uuid.UUID(payload["area_id"]),
+                uuid.UUID(payload["camera_id"]),
             )
             step = IngestionStep.PUBLISH
             self._publish(track_id)
@@ -351,6 +363,21 @@ class TrackIngestionService:
             raise FrameConflictError("Stored frame key does not match the contract key.")
         if info.checksum_sha256 != request.frame_sha256:
             raise FrameConflictError("Stored frame checksum does not match the request.")
+
+    def _verify_vector(
+        self, track_id: uuid.UUID, area_id: uuid.UUID, camera_id: uuid.UUID
+    ) -> None:
+        row = self._vectors.get(track_id)
+        if row is None:
+            raise VectorNotVisibleError("Upserted vector is not readable yet.")
+        if (
+            row.get("track_id") != str(track_id)
+            or row.get("area_id") != str(area_id)
+            or row.get("camera_id") != str(camera_id)
+            or row.get("encoder_version") != self._vectors.encoder_version
+            or row.get("index_status") != "READY"
+        ):
+            raise TrackNotPublishableError("Milvus vector metadata does not match the track.")
 
     def _publish(self, track_id: uuid.UUID) -> None:
         with self._unit_of_work_factory() as work:

@@ -60,6 +60,9 @@ class FlakyVectors:
             raise TimeoutError("simulated Milvus outage")
         self.inner.upsert(**kwargs)  # type: ignore[arg-type]
 
+    def get(self, track_id: uuid.UUID) -> dict[str, object] | None:
+        return self.inner.get(track_id)
+
 
 def _jpeg() -> bytes:
     stream = io.BytesIO()

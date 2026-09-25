@@ -290,6 +290,7 @@ class FakeMilvusClient:
         self.rows: dict[str, dict[str, Any]] = {}
         self.upserts = 0
         self.failures: list[Exception] = []
+        self.query_misses = 0
 
     def upsert(self, collection_name: str, *, data: dict[str, Any], timeout: int) -> None:
         if self.failures:
@@ -298,8 +299,17 @@ class FakeMilvusClient:
         self.rows[data["track_id"]] = data
 
     def query(
-        self, collection_name: str, *, filter: str, output_fields: list[str], timeout: int
+        self,
+        collection_name: str,
+        *,
+        filter: str,
+        output_fields: list[str],
+        timeout: int,
+        consistency_level: str = "Strong",
     ) -> list[dict[str, Any]]:
+        if self.query_misses:
+            self.query_misses -= 1
+            return []
         track_id = filter.split('"')[1]
         return [self.rows[track_id]] if track_id in self.rows else []
 
@@ -311,6 +321,7 @@ class FakeMilvusClient:
         filter: str,
         output_fields: list[str],
         timeout: int,
+        consistency_level: str = "Strong",
     ) -> FakeQueryIterator:
         rows = [{"track_id": track_id} for track_id in sorted(self.rows)]
         return FakeQueryIterator(rows, batch_size)

@@ -92,6 +92,21 @@ def test_transient_failure_stays_pending_then_retry_converges(step: str) -> None
     harness.assert_converged(request)
 
 
+def test_vector_must_be_readable_before_track_is_published() -> None:
+    harness = Harness()
+    request = harness.request()
+    harness.milvus.query_misses = 1
+
+    first = harness.service.ingest_track(request)
+
+    assert first.status is TrackIndexStatus.PENDING
+    assert first.retryable is True
+    assert harness.database.tracks[request.track_id].index_status is TrackIndexStatus.PENDING
+    second = harness.service.ingest_track(request)
+    assert second.status is TrackIndexStatus.READY
+    harness.assert_converged(request)
+
+
 def test_non_retryable_frame_error_fails_without_vector() -> None:
     harness = Harness()
     request = harness.request(frame_width=FRAME_WIDTH + 1)
