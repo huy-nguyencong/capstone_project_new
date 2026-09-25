@@ -1,4 +1,5 @@
 import { ImageBrokenIcon } from '@phosphor-icons/react'
+import { useState } from 'react'
 import { cx } from '@/components/ui/cx'
 import { PersonFigure } from './PersonFigure'
 
@@ -44,12 +45,31 @@ export function BoundingBox({ box, label, dashed, className, children }) {
 }
 
 export function ResultScene({ result }) {
+  const [failedUrl, setFailedUrl] = useState(null)
+  const available = result.hasFrame && failedUrl !== result.frameUrl
   return (
     <SceneFrame osd={result.osd} className="rounded-md">
-      {result.hasFrame ? (
-        <BoundingBox box={result.bbox} label={`${result.track} · ${result.scoreText}`}>
-          <PersonFigure shirt={result.shirt} pants={result.pants} bag={result.bag} layout="scene" />
-        </BoundingBox>
+      {available ? (
+        result.frameUrl ? (
+          <>
+            <img
+              src={result.frameUrl}
+              alt={`Toàn cảnh track ${result.track}`}
+              className="absolute inset-0 h-full w-full object-fill"
+              onError={() => setFailedUrl(result.frameUrl)}
+            />
+            <BoundingBox box={result.bbox} label={`${result.track} · ${result.scoreText}`} />
+          </>
+        ) : (
+          <BoundingBox box={result.bbox} label={`${result.track} · ${result.scoreText}`}>
+            <PersonFigure
+              shirt={result.shirt}
+              pants={result.pants}
+              bag={result.bag}
+              layout="scene"
+            />
+          </BoundingBox>
+        )
       ) : (
         <div className="absolute inset-0 grid place-items-center p-4 text-center text-[13px] text-neutral-300">
           <div className="flex flex-col items-center gap-1">

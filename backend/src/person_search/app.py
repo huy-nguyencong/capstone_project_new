@@ -20,9 +20,12 @@ from person_search.services.auth import AuthService, SessionPolicy
 from person_search.services.camera_runtime import CameraRuntime
 from person_search.services.cameras import CameraService
 from person_search.services.jobs import JobService
+from person_search.services.searches import SearchService
+from person_search.services.track_imagery import TrackImageService
 from person_search.services.users import UserService
 from person_search.services.video_staging import VideoStaging
 from person_search.storage.health import StorageHealthService
+from person_search.storage.minio.frames import MinioFrameStore
 from person_search.storage.postgres.unit_of_work import UnitOfWork
 from person_search.storage.runtime import StorageRuntime
 
@@ -85,6 +88,17 @@ def create_app(
                     lambda: UnitOfWork(session_factory),
                     CameraRuntime.from_environment(),
                     CameraService.registry_from_environment(),
+                ),
+            )
+            container.register(
+                "searches.service",
+                SearchService(lambda: UnitOfWork(session_factory), runtime.milvus.client),
+            )
+            container.register(
+                "track_images.service",
+                TrackImageService(
+                    lambda: UnitOfWork(session_factory),
+                    MinioFrameStore(runtime.minio.client, settings.minio.bucket),
                 ),
             )
             app.extensions["person_search.storage_runtime"] = runtime

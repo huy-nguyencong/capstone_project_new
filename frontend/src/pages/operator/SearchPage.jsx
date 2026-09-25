@@ -1,35 +1,46 @@
 import { LockSimpleIcon } from '@phosphor-icons/react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { SearchForm } from '@/features/search/SearchForm'
 import { SearchResults } from '@/features/search/SearchResults'
-import { mockAreaIndex } from '@/mocks/areas'
+import { searchesApi } from '@/services/api/searches'
 import { useAppStore } from '@/store/hooks'
-import { wait } from '@/utils/format'
-import { runMockSearch, validateSearch } from '@/utils/search'
+import { attributesToPrompt, validateSearch } from '@/utils/search'
 
 const INITIAL = {
   method: 'text',
   imageUrl: null,
+  imageFile: null,
   imageName: '',
-  sample: false,
   text: 'người mặc áo đỏ, quần đen, mang ba lô',
   attrs: { shirt: null, pants: null, type: null, bag: null },
   cams: [],
   from: '2026-09-23',
   to: '2026-09-25',
-  topk: '24',
+  topk: '8',
   error: null,
 }
 
 export default function SearchPage() {
-  const { me, cameras } = useAppStore()
+  const { me } = useAppStore()
   const [form, setForm] = useState(INITIAL)
   const [outcome, setOutcome] = useState({ status: 'idle', runId: 0 })
+  const [areaCameras, setAreaCameras] = useState([])
 
-  const areaCameras = cameras.filter(
-    (c) => c.area === mockAreaIndex(me.area) && c.status !== 'retired',
-  )
+  useEffect(() => {
+    let active = true
+    searchesApi
+      .cameras()
+      .then(
+        (items) =>
+          active &&
+          setAreaCameras(items.map((c) => ({ ...c, ai: c.ai_enabled, status: 'online' }))),
+      )
+      .catch((error) => active && setForm((f) => ({ ...f, error: error.message })))
+    return () => {
+      active = false
+    }
+  }, [])
 
   const run = async () => {
     const error = validateSearch(form)
@@ -41,18 +52,25 @@ export default function SearchPage() {
       method: form.method,
       camCount: form.cams.length || areaCameras.length,
     })
-    await wait(900)
-    const ids = areaCameras
-      .filter((c) => !form.cams.length || form.cams.includes(c.id))
-      .map((c) => c.id)
-    const { results, label } = runMockSearch(form, ids)
-    setOutcome({
-      status: results ? 'done' : 'nodata',
-      runId,
-      results,
-      label,
-      topk: form.topk,
-    })
+    try {
+      const response = await searchesApi.run(form)
+      const label =
+        response.mode === 'IMAGE'
+          ? `Hình ảnh · ${form.imageName} · ${response.encoder_version}`
+          : response.mode === 'ATTRIBUTES'
+            ? `Thuộc tính · ${response.prompt || attributesToPrompt(form.attrs)} · ${response.encoder_version}`
+            : `Văn bản · “${response.prompt}” · ${response.encoder_version}`
+      setOutcome({
+        status: response.results.length ? 'done' : 'nodata',
+        runId,
+        results: response.results,
+        label,
+        topk: response.top_k,
+      })
+    } catch (apiError) {
+      setOutcome({ status: 'idle', runId })
+      setForm((f) => ({ ...f, error: apiError.message }))
+    }
   }
 
   const runningMessage = `Đang mã hóa truy vấn bằng ${outcome.method === 'image' ? 'Image Encoder' : 'Text Encoder'} và so khớp trong ${outcome.camCount} camera thuộc khu vực của bạn…`

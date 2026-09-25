@@ -6,9 +6,7 @@ import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { Spinner } from '@/components/ui/Spinner'
 import { ResultCard } from '@/components/person/ResultCard'
 import { ResultViewer } from '@/features/results/ResultViewer'
-import { findDetection } from '@/mocks/detections'
-import { useAppStore } from '@/store/hooks'
-import { describeResult } from '@/utils/results'
+import { describeSearchResult } from '@/utils/results'
 
 const SORTS = [
   { value: 'score', label: 'Điểm phù hợp' },
@@ -16,7 +14,6 @@ const SORTS = [
 ]
 
 export function SearchResults({ status, results, queryLabel, topk, runningMessage, areaCameras }) {
-  const { cameras } = useAppStore()
   const [camFilter, setCamFilter] = useState('all')
   const [sort, setSort] = useState('score')
   const [viewerIndex, setViewerIndex] = useState(null)
@@ -48,16 +45,19 @@ export function SearchResults({ status, results, queryLabel, topk, runningMessag
     )
   }
 
-  const rank = new Map(results.map((r, i) => [r.rid, i + 1]))
-  let list = results.map((r) => ({ ...r, det: findDetection(r.rid) }))
-  if (camFilter !== 'all') list = list.filter((r) => r.det.cam === camFilter)
-  if (sort === 'time') list = [...list].sort((a, b) => b.det.ts - a.det.ts)
-  const viewerItems = list.map(({ rid, score }) => ({ rid, score }))
+  const described = results.map(describeSearchResult)
+  const rank = new Map(described.map((r, i) => [r.id, i + 1]))
+  let list = described
+  if (camFilter !== 'all') list = list.filter((r) => r.camId === camFilter)
+  if (sort === 'time') {
+    list = [...list].sort((a, b) => b.appearedAt.localeCompare(a.appearedAt))
+  }
+  const viewerItems = list.map((result) => ({ rid: result.id, score: result.score, result }))
 
   const camOptions = [
     { value: 'all', label: 'Tất cả camera' },
     ...areaCameras
-      .filter((c) => results.some((r) => findDetection(r.rid).cam === c.id))
+      .filter((c) => described.some((r) => r.camId === c.id))
       .map((c) => ({ value: c.id, label: c.name })),
   ]
 
@@ -86,11 +86,11 @@ export function SearchResults({ status, results, queryLabel, topk, runningMessag
       </div>
 
       <div className="grid grid-cols-[repeat(auto-fill,minmax(148px,1fr))] gap-3">
-        {list.map((r, i) => (
+        {list.map((result, i) => (
           <ResultCard
-            key={r.rid}
-            result={describeResult(r.det, cameras, r.score)}
-            rank={rank.get(r.rid)}
+            key={result.id}
+            result={result}
+            rank={rank.get(result.id)}
             onOpen={() => setViewerIndex(i)}
           />
         ))}

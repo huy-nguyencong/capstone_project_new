@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from person_search.storage.postgres.errors import ConcurrentUpdateError
 from person_search.storage.postgres.models import (
+    AIConfigStatus,
     AIConfigVersion,
     Area,
     AuditLog,
@@ -421,6 +422,16 @@ class AuditLogRepository(Repository[AuditLog]):
         return list(self.session.scalars(statement.limit(limit)))
 
 
+class AIConfigRepository(Repository[AIConfigVersion]):
+    def __init__(self, session: Session) -> None:
+        super().__init__(session, AIConfigVersion)
+
+    def active(self) -> AIConfigVersion | None:
+        return self.session.scalars(
+            select(AIConfigVersion).where(AIConfigVersion.status == AIConfigStatus.ACTIVE)
+        ).one_or_none()
+
+
 class Repositories:
     """Repository registry used by one UnitOfWork transaction."""
 
@@ -429,7 +440,7 @@ class Repositories:
         self.users = UserRepository(session)
         self.auth_sessions = AuthSessionRepository(session)
         self.cameras = CameraRepository(session)
-        self.ai_configs = Repository(session, AIConfigVersion)
+        self.ai_configs = AIConfigRepository(session)
         self.jobs = Repository(session, ProcessingJob)
         self.tracks = PersonTrackRepository(session)
         self.outbox = StorageOutboxRepository(session)

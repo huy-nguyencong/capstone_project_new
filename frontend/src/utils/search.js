@@ -1,6 +1,4 @@
 import { COLORS } from '@/constants/status'
-import { DETECTIONS } from '@/mocks/detections'
-import { hashUnit } from './format'
 
 const COLOR_WORDS = {
   đỏ: 'red',
@@ -43,7 +41,7 @@ export const attributesToPrompt = (a) => {
 
 export const validateSearch = (s) => {
   const k = Number(s.topk)
-  if (s.method === 'image' && !s.imageUrl && !s.sample) {
+  if (s.method === 'image' && !s.imageFile) {
     return 'Vui lòng tải lên ảnh đã crop chứa người cần tìm.'
   }
   if (s.method === 'text' && s.text.trim().length < 4) {
@@ -52,45 +50,7 @@ export const validateSearch = (s) => {
   if (s.method === 'attr' && !Object.values(s.attrs).some((v) => v != null)) {
     return 'Chọn ít nhất một thuộc tính ngoại hình.'
   }
-  if (!Number.isInteger(k) || k < 1 || k > 100) return 'top_k phải là số nguyên dương, tối đa 100.'
+  if (![4, 8, 12, 16].includes(k)) return 'top_k phải là 4, 8, 12 hoặc 16.'
   if (s.from && s.to && s.from > s.to) return 'Ngày bắt đầu phải trước hoặc bằng ngày kết thúc.'
   return null
-}
-
-export const runMockSearch = (s, cameraIds) => {
-  const fromDay = s.from ? Number(s.from.slice(8, 10)) : 0
-  const toDay = s.to ? Number(s.to.slice(8, 10)) : 99
-  const pool = DETECTIONS.filter(
-    (r) => cameraIds.includes(r.cam) && r.day >= fromDay && r.day <= toDay,
-  )
-
-  let query
-  let label
-  if (s.method === 'image') {
-    query = { shirt: 'red', pants: 'black', bag: true }
-    label = `Hình ảnh · ${s.imageName || 'ảnh truy vấn'} · Image Encoder`
-  } else if (s.method === 'text') {
-    query = parseDescription(s.text)
-    label = `Văn bản · "${s.text.trim()}" · Text Encoder`
-  } else {
-    query = { ...s.attrs }
-    label = `Thuộc tính → "${attributesToPrompt(s.attrs)}" · Text Encoder`
-  }
-
-  if (!pool.length) return { results: null, label }
-
-  const seed = s.method + (s.text || '') + JSON.stringify(s.attrs)
-  const results = pool
-    .map((r) => {
-      let v = 0.38 + hashUnit(r.id + seed) * 0.22
-      if (query.shirt && r.shirt === query.shirt) v += 0.24
-      if (query.pants && r.pants === query.pants) v += 0.12
-      if (query.bag != null && r.bag === query.bag) v += 0.07
-      if (query.type && r.type === query.type) v += 0.05
-      return { rid: r.id, score: Math.min(0.96, v) }
-    })
-    .sort((a, b) => b.score - a.score)
-    .slice(0, Number(s.topk))
-
-  return { results, label }
 }

@@ -1,20 +1,6 @@
 import { ImageSquareIcon } from '@phosphor-icons/react'
-import { Button } from '@/components/ui/Button'
-import { PersonFigure } from '@/components/person/PersonFigure'
-import { COLORS } from '@/constants/status'
-
-function SampleCrop() {
-  return (
-    <div className="w-[72px]">
-      <div className="relative aspect-[3/5] overflow-hidden rounded-md bg-[linear-gradient(180deg,var(--color-neutral-800),var(--color-neutral-900))]">
-        <PersonFigure shirt={COLORS.red.swatch} pants={COLORS.black.swatch} bag />
-      </div>
-    </div>
-  )
-}
-
-export function ImageDropzone({ imageUrl, imageName, sample, onFile, onUseSample }) {
-  const hasImage = Boolean(imageUrl) || sample
+export function ImageDropzone({ imageUrl, imageName, onFile }) {
+  const hasImage = Boolean(imageUrl)
 
   const handleFiles = (files) => {
     const file = files?.[0]
@@ -38,7 +24,6 @@ export function ImageDropzone({ imageUrl, imageName, sample, onFile, onUseSample
           onChange={(e) => handleFiles(e.target.files)}
         />
         {imageUrl && <img src={imageUrl} alt="" className="max-h-40 rounded-md" />}
-        {!imageUrl && sample && <SampleCrop />}
         {hasImage ? (
           <span className="text-xs text-neutral-300">{imageName} · bấm để đổi ảnh</span>
         ) : (
@@ -49,9 +34,6 @@ export function ImageDropzone({ imageUrl, imageName, sample, onFile, onUseSample
           </>
         )}
       </label>
-      <Button variant="ghost" className="self-start text-xs" onClick={onUseSample}>
-        Dùng ảnh mẫu
-      </Button>
     </div>
   )
 }

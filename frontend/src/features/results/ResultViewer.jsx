@@ -28,9 +28,11 @@ export function ResultViewer({ items, index, context, onIndexChange, onClose }) 
   const { cameras } = useAppStore()
   const [dialog, setDialog] = useState(null)
   const item = items[index]
-  const result = describeResult(findDetection(item.rid), cameras, item.score, {
-    saved: item.saved ?? null,
-  })
+  const result =
+    item.result ||
+    describeResult(findDetection(item.rid), cameras, item.score, {
+      saved: item.saved ?? null,
+    })
   const hasPrev = index > 0
   const hasNext = index < items.length - 1
 

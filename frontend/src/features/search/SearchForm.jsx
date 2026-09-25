@@ -24,7 +24,7 @@ export function SearchForm({ state, onChange, areaCameras, running, onRun }) {
 
   const onFile = (file) => {
     if (!/^image\//.test(file.type)) return onChange({ error: 'Tệp không phải ảnh hợp lệ.' })
-    set({ imageUrl: URL.createObjectURL(file), imageName: file.name, sample: false })
+    set({ imageUrl: URL.createObjectURL(file), imageFile: file, imageName: file.name })
   }
 
   const toggleCam = (id) =>
@@ -42,13 +42,7 @@ export function SearchForm({ state, onChange, areaCameras, running, onRun }) {
       />
 
       {state.method === 'image' && (
-        <ImageDropzone
-          imageUrl={state.imageUrl}
-          imageName={state.imageName}
-          sample={state.sample}
-          onFile={onFile}
-          onUseSample={() => set({ imageUrl: null, sample: true, imageName: 'crop_mau_01.jpg' })}
-        />
+        <ImageDropzone imageUrl={state.imageUrl} imageName={state.imageName} onFile={onFile} />
       )}
 
       {state.method === 'text' && (
@@ -102,8 +96,9 @@ export function SearchForm({ state, onChange, areaCameras, running, onRun }) {
       <TextField
         label="Số kết quả tối đa (top_k)"
         type="number"
-        min={1}
-        max={100}
+        min={4}
+        max={16}
+        step={4}
         value={state.topk}
         onChange={(e) => set({ topk: e.target.value })}
       />

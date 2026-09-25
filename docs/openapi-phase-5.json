@@ -1,0 +1,134 @@
+{
+  "openapi": "3.0.3",
+  "info": { "title": "Person Search Phase 5 API", "version": "1.0.0" },
+  "servers": [{ "url": "/api/v1" }],
+  "security": [{ "session": [] }],
+  "paths": {
+    "/me/cameras": {
+      "get": {
+        "summary": "List active cameras in the Operator area",
+        "responses": { "200": { "description": "Camera list" }, "403": { "$ref": "#/components/responses/Forbidden" } }
+      }
+    },
+    "/searches/image": {
+      "post": {
+        "summary": "Search by person crop",
+        "parameters": [{ "$ref": "#/components/parameters/Csrf" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["image", "top_k"],
+                "properties": {
+                  "image": { "type": "string", "format": "binary" },
+                  "top_k": { "$ref": "#/components/schemas/TopK" },
+                  "camera_ids": { "type": "string", "description": "JSON array of UUIDs" },
+                  "appeared_from": { "type": "string", "format": "date-time" },
+                  "appeared_to": { "type": "string", "format": "date-time" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "$ref": "#/components/responses/Search" }, "422": { "$ref": "#/components/responses/Validation" }, "503": { "$ref": "#/components/responses/Unavailable" } }
+      }
+    },
+    "/searches/text": {
+      "post": {
+        "summary": "Search by text",
+        "parameters": [{ "$ref": "#/components/parameters/Csrf" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "allOf": [{ "$ref": "#/components/schemas/Filters" }, { "type": "object", "required": ["text"], "properties": { "text": { "type": "string", "minLength": 4, "maxLength": 1000 } } }] } } } },
+        "responses": { "200": { "$ref": "#/components/responses/Search" }, "422": { "$ref": "#/components/responses/Validation" }, "503": { "$ref": "#/components/responses/Unavailable" } }
+      }
+    },
+    "/searches/attributes": {
+      "post": {
+        "summary": "Search by structured appearance attributes",
+        "parameters": [{ "$ref": "#/components/parameters/Csrf" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "allOf": [{ "$ref": "#/components/schemas/Filters" }, { "type": "object", "required": ["attributes"], "properties": { "attributes": { "$ref": "#/components/schemas/Attributes" } } }] } } } },
+        "responses": { "200": { "$ref": "#/components/responses/Search" }, "422": { "$ref": "#/components/responses/Validation" }, "503": { "$ref": "#/components/responses/Unavailable" } }
+      }
+    },
+    "/search-results/{track_id}/crop": {
+      "get": {
+        "summary": "Render a search-result person crop",
+        "parameters": [{ "$ref": "#/components/parameters/TrackId" }],
+        "responses": { "200": { "$ref": "#/components/responses/Jpeg" }, "404": { "$ref": "#/components/responses/NotFound" }, "410": { "$ref": "#/components/responses/Gone" } }
+      }
+    },
+    "/search-results/{track_id}/frame": {
+      "get": {
+        "summary": "Render a search-result representative frame",
+        "parameters": [{ "$ref": "#/components/parameters/TrackId" }],
+        "responses": { "200": { "$ref": "#/components/responses/Jpeg" }, "404": { "$ref": "#/components/responses/NotFound" }, "410": { "$ref": "#/components/responses/Gone" } }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": { "session": { "type": "apiKey", "in": "cookie", "name": "person_search_session" } },
+    "parameters": {
+      "Csrf": { "name": "X-CSRF-Token", "in": "header", "required": true, "schema": { "type": "string" } },
+      "TrackId": { "name": "track_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+    },
+    "schemas": {
+      "TopK": { "type": "integer", "enum": [4, 8, 12, 16] },
+      "Filters": {
+        "type": "object",
+        "required": ["top_k"],
+        "properties": {
+          "top_k": { "$ref": "#/components/schemas/TopK" },
+          "camera_ids": { "type": "array", "items": { "type": "string", "format": "uuid" } },
+          "appeared_from": { "type": "string", "format": "date-time", "nullable": true },
+          "appeared_to": { "type": "string", "format": "date-time", "nullable": true }
+        },
+        "additionalProperties": false
+      },
+      "Attributes": {
+        "type": "object",
+        "properties": {
+          "upper_color": { "type": "string", "nullable": true },
+          "lower_color": { "type": "string", "nullable": true },
+          "upper_type": { "type": "string", "nullable": true },
+          "has_backpack": { "type": "boolean", "nullable": true }
+        },
+        "additionalProperties": false
+      },
+      "SearchResponse": {
+        "type": "object",
+        "required": ["mode", "encoder_version", "top_k", "results"],
+        "properties": {
+          "mode": { "type": "string", "enum": ["IMAGE", "TEXT", "ATTRIBUTES"] },
+          "prompt": { "type": "string", "nullable": true },
+          "encoder_version": { "type": "string" },
+          "top_k": { "$ref": "#/components/schemas/TopK" },
+          "results": { "type": "array", "items": { "$ref": "#/components/schemas/SearchResult" } }
+        }
+      },
+      "SearchResult": {
+        "type": "object",
+        "required": ["track_id", "matching_score", "camera", "area", "appeared_at", "bbox", "crop_url", "frame_url"],
+        "properties": {
+          "track_id": { "type": "string", "format": "uuid" },
+          "matching_score": { "type": "number" },
+          "camera": { "type": "object", "properties": { "id": { "type": "string", "format": "uuid" }, "name": { "type": "string" } } },
+          "area": { "type": "object", "properties": { "id": { "type": "string", "format": "uuid" }, "name": { "type": "string" } } },
+          "appeared_at": { "type": "string", "format": "date-time" },
+          "bbox": { "type": "object", "properties": { "x": { "type": "integer" }, "y": { "type": "integer" }, "width": { "type": "integer" }, "height": { "type": "integer" }, "frame_width": { "type": "integer" }, "frame_height": { "type": "integer" } } },
+          "crop_url": { "type": "string" },
+          "frame_url": { "type": "string" }
+        }
+      }
+    },
+    "responses": {
+      "Search": { "description": "Ranked results", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SearchResponse" } } } },
+      "Jpeg": { "description": "JPEG media", "headers": { "Cache-Control": { "schema": { "type": "string", "example": "private, no-store" } } }, "content": { "image/jpeg": { "schema": { "type": "string", "format": "binary" } } } },
+      "Validation": { "description": "invalid_top_k, invalid_image, text_too_short or invalid attributes" },
+      "Forbidden": { "description": "Forbidden or camera_out_of_scope" },
+      "Unavailable": { "description": "encoder_unavailable or vector_search_unavailable" },
+      "NotFound": { "description": "track_not_found" },
+      "Gone": { "description": "image_unavailable" }
+    }
+  }
+}

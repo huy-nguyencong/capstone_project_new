@@ -209,7 +209,9 @@ Camera item:
 - Lỗi: `413 file_too_large`, `415 unsupported_media`, `409 camera_ai_disabled`, `507 insufficient_storage`.
 - Worker chạy tuần tự (concurrency 1), không nằm trong request Flask.
 
-### Phase 5 — Tìm kiếm và media kết quả (BE-14, BE-15, BE-16)
+### Phase 5 — Tìm kiếm và media kết quả (BE-14, BE-15, BE-16) · ĐÃ TRIỂN KHAI
+
+Đã có API tìm kiếm ba mode, encoder gateway demo/HTTP, lọc camera theo area, ảnh crop/frame và giao diện Operator dùng dữ liệu thật. Fake encoder chỉ được dùng với config `fake_demo_v1`; model khác gọi `PERSON_SEARCH_ENCODER_URL`. Xem [thiết lập Phase 5](phase-5-setup.md) và [OpenAPI Phase 5](openapi-phase-5.json).
 
 | Method | Path | Role | BE sẵn có | FE dùng tại |
 | --- | --- | --- | --- | --- |
