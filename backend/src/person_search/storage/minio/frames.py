@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import io
 import uuid
+from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
@@ -139,6 +140,10 @@ class MinioFrameStore:
         if hashlib.sha256(data).hexdigest() != expected.checksum_sha256:
             raise InvalidFrameError("Stored frame checksum verification failed.")
         return data
+
+    def list_frame_keys(self, prefix: str = FRAME_OBJECT_PREFIX) -> Iterator[str]:
+        for item in self.client.list_objects(self.bucket, prefix=f"{prefix}/", recursive=True):
+            yield item.object_name
 
     def delete_frame(self, object_key: str) -> None:
         self.client.remove_object(self.bucket, object_key)

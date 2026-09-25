@@ -13,6 +13,8 @@ from person_search.storage.milvus.vectors import CollectionContractError, Invali
 from person_search.storage.minio.frames import FrameConflictError, FrameInfo, InvalidFrameError
 from person_search.storage.postgres.errors import DuplicateEntityError
 from person_search.storage.postgres.models import (
+    AuditLog,
+    AuditResult,
     OutboxStatus,
     PersonTrack,
     StorageOutboxEvent,
@@ -45,6 +47,7 @@ class TrackNotPublishableError(TrackIngestionError):
 
 class IngestionStep(StrEnum):
     FRAME_UPLOAD = "FRAME_UPLOAD"
+    FRAME_VERIFY = "FRAME_VERIFY"
     VECTOR_UPSERT = "VECTOR_UPSERT"
     PUBLISH = "PUBLISH"
 
@@ -75,6 +78,8 @@ class FrameStore(Protocol):
         width: int,
         height: int,
     ) -> FrameInfo: ...
+
+    def head_frame(self, object_key: str) -> FrameInfo: ...
 
 
 class VectorIndex(Protocol):
@@ -175,6 +180,102 @@ class TrackIngestionService:
         )
         return TrackIngestionResult(request.track_id, TrackIndexStatus.READY, correlation_id)
 
+    def resume(self, track_id: uuid.UUID) -> TrackIngestionResult:
+        with self._unit_of_work_factory() as work:
+            repositories = self._repositories(work)
+            track = repositories.tracks.get(track_id)
+            event = repositories.outbox.get_for_track(track_id, TRACK_INGEST_EVENT)
+            if track is None or event is None:
+                raise TrackIngestionError("Track or its ingestion event does not exist.")
+            status = track.index_status
+            object_key = track.minio_object_key
+            frame_sha256 = track.frame_sha256
+            payload = dict(event.payload)
+        correlation_id = str(payload.get("correlation_id") or uuid.uuid4().hex)
+
+        if status is TrackIndexStatus.READY:
+            self._publish(track_id)
+            return TrackIngestionResult(track_id, status, correlation_id)
+        if status is TrackIndexStatus.FAILED:
+            self._mark_dead(track_id)
+            return TrackIngestionResult(track_id, status, correlation_id)
+
+        step = IngestionStep.FRAME_VERIFY
+        try:
+            if payload.get("version") != OUTBOX_PAYLOAD_VERSION or not object_key:
+                raise TrackIngestionError("Outbox payload version is not supported.")
+            info = self._frames.head_frame(object_key)
+            if info.checksum_sha256 != frame_sha256:
+                raise FrameConflictError("Stored frame checksum does not match the track.")
+            step = IngestionStep.VECTOR_UPSERT
+            self._vectors.upsert(
+                track_id=track_id,
+                vector=payload["embedding"],
+                area_id=uuid.UUID(payload["area_id"]),
+                camera_id=uuid.UUID(payload["camera_id"]),
+                appeared_at=datetime.fromisoformat(payload["appeared_at_utc"]),
+            )
+            step = IngestionStep.PUBLISH
+            self._publish(track_id)
+        except Exception as error:
+            return self._record_failure(track_id, correlation_id, step, error)
+
+        logger.info(
+            "track ingestion resumed and published",
+            extra={"correlation_id": correlation_id, "track_id": str(track_id)},
+        )
+        return TrackIngestionResult(track_id, TrackIndexStatus.READY, correlation_id)
+
+    def requeue_failed(
+        self, track_id: uuid.UUID, *, actor_user_id: uuid.UUID | None = None
+    ) -> TrackIngestionResult:
+        with self._unit_of_work_factory() as work:
+            repositories = self._repositories(work)
+            track = repositories.tracks.get_for_update(track_id)
+            if track is None:
+                raise TrackIngestionError("Track does not exist.")
+            if track.index_status is not TrackIndexStatus.FAILED:
+                raise TrackIngestionError("Only a FAILED track can be requeued.")
+            event = repositories.outbox.get_for_track(
+                track_id, TRACK_INGEST_EVENT, for_update=True
+            )
+            if event is None:
+                raise TrackIngestionError("Track has no ingestion event to requeue.")
+            now = self._clock()
+            previous_failure = track.failure_code
+            track.index_status = TrackIndexStatus.PENDING
+            track.failure_code = None
+            track.failure_message = None
+            event.status = OutboxStatus.PENDING
+            event.attempts = 0
+            event.available_at = now
+            event.locked_at = None
+            event.last_error = None
+            repositories.audit_logs.add(
+                AuditLog(
+                    id=uuid.uuid4(),
+                    actor_user_id=actor_user_id,
+                    event_type="storage.track_requeued",
+                    target_type="person_track",
+                    target_id=track_id,
+                    result=AuditResult.SUCCESS,
+                    event_metadata={"previous_failure_code": previous_failure},
+                )
+            )
+            correlation_id = str(event.payload.get("correlation_id") or uuid.uuid4().hex)
+            work.commit()
+        return TrackIngestionResult(track_id, TrackIndexStatus.PENDING, correlation_id)
+
+    def _mark_dead(self, track_id: uuid.UUID) -> None:
+        with self._unit_of_work_factory() as work:
+            event = self._repositories(work).outbox.get_for_track(
+                track_id, TRACK_INGEST_EVENT, for_update=True
+            )
+            if event is not None and event.status is not OutboxStatus.DEAD:
+                event.status = OutboxStatus.DEAD
+                event.locked_at = None
+                work.commit()
+
     def _register(self, request: TrackIngestionRequest, correlation_id: str) -> TrackIndexStatus:
         try:
             with self._unit_of_work_factory() as work:
@@ -257,19 +358,18 @@ class TrackIngestionService:
             track = repositories.tracks.get_for_update(track_id)
             if track is None:
                 raise TrackNotPublishableError("Track disappeared before publishing.")
-            if track.index_status is TrackIndexStatus.READY:
-                return
-            if track.index_status is not TrackIndexStatus.PENDING:
-                raise TrackNotPublishableError("Only a PENDING track can be published.")
             now = self._clock()
-            track.vector_indexed_at = now
-            track.index_status = TrackIndexStatus.READY
-            track.failure_code = None
-            track.failure_message = None
+            if track.index_status is TrackIndexStatus.PENDING:
+                track.vector_indexed_at = now
+                track.index_status = TrackIndexStatus.READY
+                track.failure_code = None
+                track.failure_message = None
+            elif track.index_status is not TrackIndexStatus.READY:
+                raise TrackNotPublishableError("Only a PENDING track can be published.")
             event = repositories.outbox.get_for_track(
                 track_id, TRACK_INGEST_EVENT, for_update=True
             )
-            if event is not None:
+            if event is not None and event.status is not OutboxStatus.COMPLETED:
                 event.status = OutboxStatus.COMPLETED
                 event.processed_at = now
                 event.locked_at = None

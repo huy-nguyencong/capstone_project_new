@@ -5,9 +5,10 @@ from __future__ import annotations
 import uuid
 from collections.abc import Iterable
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Generic, TypeVar
 
-from sqlalchemy import Select, select, update
+from sqlalchemy import Select, and_, exists, or_, select, update
 from sqlalchemy.orm import Session
 
 from person_search.storage.postgres.errors import ConcurrentUpdateError
@@ -18,6 +19,7 @@ from person_search.storage.postgres.models import (
     Camera,
     Case,
     CaseResult,
+    OutboxStatus,
     PersonTrack,
     ProcessingJob,
     StorageOutboxEvent,
@@ -113,6 +115,61 @@ class PersonTrackRepository(Repository[PersonTrack]):
             )
         )
 
+    def existing_ids(self, track_ids: Iterable[uuid.UUID]) -> set[uuid.UUID]:
+        candidates = list(track_ids)
+        if not candidates:
+            return set()
+        return set(
+            self.session.scalars(select(PersonTrack.id).where(PersonTrack.id.in_(candidates)))
+        )
+
+    def with_location(
+        self, track_ids: Iterable[uuid.UUID]
+    ) -> list[tuple[PersonTrack, Camera, Area]]:
+        candidates = list(track_ids)
+        if not candidates:
+            return []
+        statement = (
+            select(PersonTrack, Camera, Area)
+            .join(Camera, Camera.id == PersonTrack.camera_id)
+            .join(Area, Area.id == Camera.area_id)
+            .where(PersonTrack.id.in_(candidates))
+        )
+        return [(track, camera, area) for track, camera, area in self.session.execute(statement)]
+
+    def page_by_status(
+        self,
+        status: TrackIndexStatus,
+        *,
+        limit: int = 100,
+        after_id: uuid.UUID | None = None,
+    ) -> list[PersonTrack]:
+        if limit < 1 or limit > 1000:
+            raise ValueError("limit must be between 1 and 1000")
+        statement = (
+            select(PersonTrack)
+            .where(PersonTrack.index_status == status)
+            .order_by(PersonTrack.id)
+            .limit(limit)
+        )
+        if after_id is not None:
+            statement = statement.where(PersonTrack.id > after_id)
+        return list(self.session.scalars(statement))
+
+    def stale_unready(self, *, updated_before: datetime, limit: int = 100) -> list[PersonTrack]:
+        statement = (
+            select(PersonTrack)
+            .where(
+                PersonTrack.index_status.in_(
+                    (TrackIndexStatus.PENDING, TrackIndexStatus.FAILED)
+                ),
+                PersonTrack.updated_at < updated_before,
+            )
+            .order_by(PersonTrack.updated_at, PersonTrack.id)
+            .limit(limit)
+        )
+        return list(self.session.scalars(statement))
+
 
 class StorageOutboxRepository(Repository[StorageOutboxEvent]):
     def __init__(self, session: Session) -> None:
@@ -129,6 +186,65 @@ class StorageOutboxRepository(Repository[StorageOutboxEvent]):
             statement = statement.with_for_update()
         return self.session.scalars(statement).one_or_none()
 
+    def claim_due(
+        self,
+        event_type: str,
+        *,
+        now: datetime,
+        lock_expired_before: datetime,
+        limit: int,
+    ) -> list[StorageOutboxEvent]:
+        statement = (
+            select(StorageOutboxEvent)
+            .where(
+                StorageOutboxEvent.event_type == event_type,
+                or_(
+                    and_(
+                        StorageOutboxEvent.status == OutboxStatus.PENDING,
+                        StorageOutboxEvent.available_at <= now,
+                    ),
+                    and_(
+                        StorageOutboxEvent.status == OutboxStatus.PROCESSING,
+                        StorageOutboxEvent.locked_at < lock_expired_before,
+                    ),
+                ),
+            )
+            .order_by(StorageOutboxEvent.available_at, StorageOutboxEvent.id)
+            .limit(limit)
+            .with_for_update(skip_locked=True)
+        )
+        events = list(self.session.scalars(statement))
+        for event in events:
+            event.status = OutboxStatus.PROCESSING
+            event.locked_at = now
+        return events
+
+
+class CaseResultRepository(Repository[CaseResult]):
+    def __init__(self, session: Session) -> None:
+        super().__init__(session, CaseResult)
+
+    def exists_for_case_track(self, case_id: uuid.UUID, track_id: uuid.UUID) -> bool:
+        return bool(
+            self.session.scalar(
+                select(
+                    exists().where(
+                        CaseResult.case_id == case_id, CaseResult.track_id == track_id
+                    )
+                )
+            )
+        )
+
+    def referenced_track_ids(self, track_ids: Iterable[uuid.UUID]) -> set[uuid.UUID]:
+        candidates = list(track_ids)
+        if not candidates:
+            return set()
+        return set(
+            self.session.scalars(
+                select(CaseResult.track_id).where(CaseResult.track_id.in_(candidates)).distinct()
+            )
+        )
+
 
 class Repositories:
     """Repository registry used by one UnitOfWork transaction."""
@@ -142,5 +258,5 @@ class Repositories:
         self.tracks = PersonTrackRepository(session)
         self.outbox = StorageOutboxRepository(session)
         self.cases = CaseRepository(session)
-        self.case_results = Repository(session, CaseResult)
+        self.case_results = CaseResultRepository(session)
         self.audit_logs = Repository(session, AuditLog)

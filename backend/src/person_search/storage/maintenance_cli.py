@@ -1,0 +1,86 @@
+from __future__ import annotations
+
+import argparse
+import json
+import logging
+import uuid
+from collections.abc import Sequence
+from dataclasses import asdict
+from datetime import timedelta
+
+from dotenv import load_dotenv
+
+from person_search.config import StorageSettings
+from person_search.services.storage_maintenance import OutboxRetryWorker, StorageReconciler
+from person_search.services.track_ingestion import TrackIngestionService
+from person_search.storage.contracts import RASA_EMBEDDING_DIMENSION, RASA_ENCODER_VERSION
+from person_search.storage.milvus.vectors import MilvusPersonTrackIndex
+from person_search.storage.minio.frames import MinioFrameStore
+from person_search.storage.postgres.unit_of_work import UnitOfWork
+from person_search.storage.runtime import StorageRuntime
+
+
+def _parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(prog="person-search-storage")
+    commands = parser.add_subparsers(dest="command", required=True)
+    retry = commands.add_parser("retry-outbox", help="Resume due track ingestion events.")
+    retry.add_argument("--limit", type=int, default=50)
+    reconcile = commands.add_parser(
+        "reconcile", help="Cross-check PostgreSQL, MinIO and Milvus (dry-run by default)."
+    )
+    reconcile.add_argument("--delete-orphans", action="store_true")
+    reconcile.add_argument("--stale-minutes", type=int, default=30)
+    reconcile.add_argument("--max-items", type=int, default=10_000)
+    reconcile.add_argument("--actor-user-id", type=uuid.UUID)
+    requeue = commands.add_parser("requeue-track", help="Move one FAILED track back to PENDING.")
+    requeue.add_argument("track_id", type=uuid.UUID)
+    requeue.add_argument("--actor-user-id", type=uuid.UUID)
+    return parser
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    arguments = _parser().parse_args(argv)
+    load_dotenv()
+    logging.basicConfig(level=logging.INFO)
+    settings = StorageSettings.from_environment()
+    runtime = StorageRuntime.from_settings(settings)
+    try:
+        frames = MinioFrameStore(runtime.minio.client, settings.minio.bucket)
+        vectors = MilvusPersonTrackIndex(
+            runtime.milvus.client,
+            encoder_version=RASA_ENCODER_VERSION,
+            dimension=RASA_EMBEDDING_DIMENSION,
+            timeout=settings.milvus.timeout_seconds,
+        )
+
+        def unit_of_work() -> UnitOfWork:
+            return UnitOfWork(runtime.postgres.session_factory)
+
+        ingestion = TrackIngestionService(unit_of_work, frames, vectors)
+        if arguments.command == "retry-outbox":
+            summary = OutboxRetryWorker(unit_of_work, ingestion).run_once(limit=arguments.limit)
+            print(json.dumps(asdict(summary)))
+            return 0 if summary.errors == 0 else 1
+        if arguments.command == "reconcile":
+            report = StorageReconciler(
+                unit_of_work,
+                frames,
+                vectors,
+                stale_after=timedelta(minutes=arguments.stale_minutes),
+                max_items=arguments.max_items,
+            ).run(delete_orphans=arguments.delete_orphans, actor_user_id=arguments.actor_user_id)
+            print(
+                json.dumps(
+                    {"dry_run": report.dry_run, "truncated": report.truncated, **report.counts()}
+                )
+            )
+            return 0 if report.clean else 2
+        result = ingestion.requeue_failed(arguments.track_id, actor_user_id=arguments.actor_user_id)
+        print(json.dumps({"track_id": str(result.track_id), "status": result.status.value}))
+        return 0
+    finally:
+        runtime.close()
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

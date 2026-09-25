@@ -26,7 +26,7 @@ Lỗi hạ tầng ở bước 1 được ném lại cho producer; delivery at-le
 | Không có | Chạy toàn bộ write flow. |
 | `PENDING` | Chạy lại bước 2-4; mọi bước đều idempotent. |
 | `READY` | No-op, trả `READY`. |
-| `FAILED` | Trả `FAILED`; đưa lại về `PENDING` thuộc STO-12. |
+| `FAILED` | Trả `FAILED`; đưa lại về `PENDING` bằng `requeue_failed` (STO-12). |
 | Khác identity (camera, job, config, thời gian, bbox, frame SHA-256, encoder) | `TrackIngestionConflictError`, không ghi đè. |
 
 ## Retry và phân loại lỗi
@@ -52,8 +52,8 @@ nếu MinIO lỗi, chỉ producer gửi lại mới khôi phục bước upload.
 ## Gate searchable
 
 Milvus upsert ghi `index_status="READY"` ngay, nên giữa bước 3 và 4 vector đã có trong Milvus
-trong khi PostgreSQL còn `PENDING`. Đường đọc (STO-13) bắt buộc lọc hit qua
-`PersonTrackRepository.ready_ids(...)`; PostgreSQL là nguồn sự thật về trạng thái searchable.
+trong khi PostgreSQL còn `PENDING`. Đường đọc (STO-13) bắt buộc hydrate hit từ
+PostgreSQL và chỉ giữ track `READY`; PostgreSQL là nguồn sự thật về trạng thái searchable.
 
 ## Logging
 

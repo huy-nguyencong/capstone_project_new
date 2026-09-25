@@ -123,9 +123,9 @@ Trạng thái hợp lệ:
 | STO-09 | Adapter lưu full frame trên MinIO | STO-03 | READY_FOR_REVIEW | — |
 | STO-10 | Collection và adapter vector trên Milvus | STO-03 | READY_FOR_REVIEW | — |
 | STO-11 | Điều phối ghi track xuyên ba kho dữ liệu | STO-08, STO-09, STO-10 | READY_FOR_REVIEW | — |
-| STO-12 | Retry, reconciliation và xử lý dữ liệu dở dang | STO-11 | TODO | — |
-| STO-13 | Truy vấn vector có lọc và kiểm tra quyền | STO-11 | TODO | — |
-| STO-14 | Đọc ảnh, crop động và kiểm tra quyền truy cập | STO-11 | TODO | — |
+| STO-12 | Retry, reconciliation và xử lý dữ liệu dở dang | STO-11 | IN_PROGRESS | — |
+| STO-13 | Truy vấn vector có lọc và kiểm tra quyền | STO-11 | IN_PROGRESS | — |
+| STO-14 | Đọc ảnh, crop động và kiểm tra quyền truy cập | STO-11 | IN_PROGRESS | — |
 | STO-15 | Lưu CaseResult và thống kê Viewer | STO-08, STO-14 | TODO | — |
 | STO-16 | Audit log và trạng thái vận hành lưu trữ | STO-08, STO-12 | TODO | — |
 | STO-17 | Kiểm thử tích hợp và E2E toàn luồng | STO-13 đến STO-16 | TODO | — |
@@ -825,6 +825,36 @@ Mỗi lần làm task, thêm một mục theo mẫu:
 - Test đã chạy: toàn bộ unit suite, Ruff, compile. Integration `tests/integration/test_track_ingestion_flow.py` chưa chạy vì máy thực hiện không có Docker.
 - Kết quả: 110 unit test đạt (12 test mới của STO-11); branch coverage tổng 84%, `track_ingestion.py` 84%; Ruff sạch; compile thành công; integration bị skip do chưa bật flag.
 - Điểm cần review: danh sách lỗi non-retryable, `RetryPolicy` mặc định, giữ embedding trong outbox sau khi `COMPLETED`.
+- Commit SHA: —.
+
+### 2026-09-25 — STO-12
+
+- Trạng thái: `IN_PROGRESS`.
+- Thay đổi chính: `OutboxRetryWorker` claim event đến hạn bằng `FOR UPDATE SKIP LOCKED` và thu hồi event `PROCESSING` quá `lock_timeout`; `TrackIngestionService.resume` kiểm tra frame MinIO, upsert vector từ embedding trong outbox rồi publish; `requeue_failed` đưa `FAILED → PENDING` kèm audit; `StorageReconciler` báo track treo, object/vector thiếu, checksum sai, orphan object/vector theo batch, mặc định dry-run; chế độ `--delete-orphans` kiểm tra lại PostgreSQL/CaseResult trước khi xóa và ghi audit; CLI `person-search-storage`.
+- Quyết định: track `READY` thiếu object/vector chỉ được báo cáo, không hạ trạng thái (vì `READY` không được chuyển ngược); frame thiếu là lỗi retryable nhưng worker không tự upload được.
+- Test đã chạy: toàn bộ unit suite (161 test đạt, branch coverage tổng 83%), Ruff, compile; SQL của repository mới được compile sang dialect PostgreSQL để soát. Integration `tests/integration/test_storage_read_paths.py` chưa chạy vì máy thực hiện không có Docker.
+- Kết quả: 11 unit test mới của STO-12 đạt (backoff, crash giữa bước, dead-letter, requeue, dry-run không đổi dữ liệu, delete chỉ xóa orphan không bị CaseResult tham chiếu).
+- Điểm cần review: `lock_timeout` 5 phút, `stale_after` 30 phút, giới hạn `max_items` 10.000, exit code CLI.
+- Commit SHA: —.
+
+### 2026-09-25 — STO-13
+
+- Trạng thái: `IN_PROGRESS`.
+- Thay đổi chính: `TrackSearchService.search` lấy area từ PostgreSQL, từ chối camera ngoài area trước khi gọi Milvus, gửi filter area/camera/time vào Milvus trước top-k, hydrate và recheck `READY`/area/camera/time ở PostgreSQL, bỏ hit stale kèm metric; `VectorFilter` hỗ trợ nhiều camera.
+- Quyết định: track của camera `INACTIVE`/`RETIRED` vẫn tìm được nếu thuộc area hiện tại; Operator không `ACTIVE` không được tìm kiếm.
+- Test đã chạy: toàn bộ unit suite (161 test đạt, branch coverage tổng 83%), Ruff, compile; SQL của repository mới được compile sang dialect PostgreSQL để soát. Integration `tests/integration/test_storage_read_paths.py` chưa chạy vì máy thực hiện không có Docker.
+- Kết quả: 20 unit test mới của STO-13 đạt.
+- Điểm cần review: policy camera ngừng hoạt động, việc trả ít hơn `top_k` khi có hit stale thay vì truy vấn bù.
+- Commit SHA: —.
+
+### 2026-09-25 — STO-14
+
+- Trạng thái: `IN_PROGRESS`.
+- Thay đổi chính: `TrackImageService` với hai context `search_result_image` (Operator, track `READY` trong area hiện tại) và `case_result_image` (owner Operator hoặc Viewer, theo `case_result_id`); crop động có clamp/padding, full frame có viền bbox, downscale, giới hạn kích thước, `Cache-Control: private, no-store`; lỗi ảnh có `reason` rõ ràng.
+- Quyết định: 403 cho sai vai trò/tài khoản không `ACTIVE`, 404 cho đối tượng không tồn tại hoặc không thuộc quyền; ảnh Case tra theo `case_result_id`; ảnh có kích thước khác metadata track được coi là hỏng.
+- Test đã chạy: toàn bộ unit suite (161 test đạt, branch coverage tổng 83%), Ruff, compile; SQL của repository mới được compile sang dialect PostgreSQL để soát. Integration `tests/integration/test_storage_read_paths.py` chưa chạy vì máy thực hiện không có Docker.
+- Kết quả: 20 unit test mới của STO-14 đạt, bao gồm bbox ở biên, ảnh thiếu/hỏng, Operator đổi area vẫn xem Case cũ, Viewer xem mọi Case.
+- Điểm cần review: màu/độ dày viền bbox, `max_edge` 1920, giới hạn 5 MiB, padding mặc định 0.
 - Commit SHA: —.
 
 ## 11. Các quyết định đã khóa ở STO-01

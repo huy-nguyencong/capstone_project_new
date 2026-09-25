@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 import uuid
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
@@ -28,12 +28,17 @@ class VectorFilter:
     camera_id: uuid.UUID | None = None
     appeared_from: datetime | None = None
     appeared_to: datetime | None = None
+    camera_ids: tuple[uuid.UUID, ...] = ()
 
     def __post_init__(self) -> None:
         if not isinstance(self.area_id, uuid.UUID):
             raise ValueError("area_id must be a UUID")
         if self.camera_id is not None and not isinstance(self.camera_id, uuid.UUID):
             raise ValueError("camera_id must be a UUID")
+        if not isinstance(self.camera_ids, tuple) or not all(
+            isinstance(value, uuid.UUID) for value in self.camera_ids
+        ):
+            raise ValueError("camera_ids must be a tuple of UUIDs")
         for value in (self.appeared_from, self.appeared_to):
             if value is not None and (value.tzinfo is None or value.utcoffset() is None):
                 raise ValueError("time filters must be timezone-aware")
@@ -48,6 +53,9 @@ class VectorFilter:
         parts = [f'area_id == "{self.area_id}"', 'index_status == "READY"']
         if self.camera_id is not None:
             parts.append(f'camera_id == "{self.camera_id}"')
+        if self.camera_ids:
+            quoted = ", ".join(f'"{value}"' for value in self.camera_ids)
+            parts.append(f"camera_id in [{quoted}]")
         if self.appeared_from is not None:
             parts.append(f"appeared_at_epoch >= {int(self.appeared_from.timestamp())}")
         if self.appeared_to is not None:
@@ -176,6 +184,24 @@ class MilvusPersonTrackIndex:
             timeout=self.timeout,
         )
         return rows[0] if rows else None
+
+    def iter_track_ids(self, *, batch_size: int = 1000) -> Iterator[uuid.UUID]:
+        iterator = self.client.query_iterator(
+            self.collection_name,
+            batch_size=batch_size,
+            filter='track_id != ""',
+            output_fields=["track_id"],
+            timeout=self.timeout,
+        )
+        try:
+            while True:
+                rows = iterator.next()
+                if not rows:
+                    return
+                for row in rows:
+                    yield uuid.UUID(row["track_id"])
+        finally:
+            iterator.close()
 
     def delete(self, track_id: uuid.UUID) -> None:
         self.client.delete(self.collection_name, ids=[str(track_id)], timeout=self.timeout)
