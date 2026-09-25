@@ -6,10 +6,19 @@ import signal
 import subprocess
 import sys
 import threading
+from pathlib import Path
 
 from dotenv import load_dotenv
 
-from person_search.ai.registry import RegistryMode, load_registry
+from person_search.ai.preflight import (
+    PreflightConfigurationError,
+    PreflightFailedError,
+    apply_resource_environment,
+    load_resource_settings,
+    require_ready,
+    run_preflight,
+)
+from person_search.ai.registry import RegistryMode, RegistryValidationError, load_registry
 from person_search.config import StorageSettings
 from person_search.services.jobs import JobService
 from person_search.services.track_ingestion import TrackIngestionService
@@ -18,7 +27,7 @@ from person_search.storage.milvus.vectors import MilvusPersonTrackIndex
 from person_search.storage.minio.frames import MinioFrameStore
 from person_search.storage.postgres.unit_of_work import UnitOfWork
 from person_search.storage.runtime import StorageRuntime
-from person_search.workers.pipeline import Pipeline
+from person_search.workers.pipeline import DemoDetector, DemoEncoder, DemoTracker, Pipeline
 from person_search.workers.runner import VideoWorker
 
 
@@ -35,13 +44,37 @@ def main():
     registry_path = os.getenv("PERSON_SEARCH_MODEL_REGISTRY")
     if not registry_path:
         parser.error("PERSON_SEARCH_MODEL_REGISTRY is required.")
-    registry = load_registry(
-        registry_path,
-        artifact_root=os.getenv("PERSON_SEARCH_MODEL_ARTIFACT_ROOT") or None,
-        allow_demo=args.demo,
-    )
+    try:
+        registry = load_registry(
+            registry_path,
+            artifact_root=os.getenv("PERSON_SEARCH_MODEL_ARTIFACT_ROOT") or None,
+            allow_demo=args.demo,
+        )
+    except RegistryValidationError as error:
+        parser.error(str(error))
     if registry.mode is not RegistryMode.DEMO:
         parser.error("--demo requires a registry whose mode is demo.")
+    resource_config = os.getenv("PERSON_SEARCH_AI_RESOURCE_CONFIG") or str(
+        Path(__file__).parents[3] / "config" / "ai_resources.json"
+    )
+    resource_profile = os.getenv("PERSON_SEARCH_AI_RESOURCE_PROFILE", "local_cpu")
+    try:
+        resource_settings = load_resource_settings(resource_config, resource_profile)
+        apply_resource_environment(resource_settings)
+        demo_loaders = {
+            "demo_detector": lambda *_: DemoDetector(),
+            "demo_tracker": lambda *_: DemoTracker(),
+            "demo_encoder": lambda *_: DemoEncoder(),
+        }
+        preflight = run_preflight(
+            resource_settings,
+            registry,
+            workspace=Path.cwd(),
+            model_loaders=demo_loaders,
+        )
+        require_ready(preflight)
+    except (PreflightConfigurationError, PreflightFailedError) as error:
+        parser.error(str(error))
     stopped = threading.Event()
     for name in (signal.SIGTERM, signal.SIGINT):
         signal.signal(name, lambda *_: stopped.set())

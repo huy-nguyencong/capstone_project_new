@@ -263,3 +263,17 @@ Pipeline demo sinh dữ liệu giả lập để kiểm thử luồng, không th
 Manifest production mẫu nằm tại [config/models.example.json](config/models.example.json).
 Các URL trong manifest chỉ là provenance; loader không tải artifact qua mạng. `available`
 được suy ra từ artifact local, checksum, phê duyệt license và kết quả preflight.
+
+Trước khi chạy worker, kiểm tra runtime/resource bằng:
+
+```powershell
+.\.venv\Scripts\python.exe tools\ai_preflight.py `
+  --registry config\models.demo.json `
+  --resource-config config\ai_resources.json `
+  --profile local_cpu `
+  --allow-demo
+```
+
+Worker chạy cùng preflight guard trước khi claim job. RAM/disk dưới ngưỡng, thiếu codec,
+device không phù hợp hoặc không có một pipeline model tương thích sẽ làm worker dừng với mã
+thành phần rõ ràng thay vì tiếp tục tới OOM/crash.

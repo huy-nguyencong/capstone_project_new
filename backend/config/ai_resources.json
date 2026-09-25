@@ -1,0 +1,35 @@
+{
+  "schema_version": "ai-resource-profiles/v1",
+  "profiles": {
+    "local_cpu": {
+      "device_preference": "cpu",
+      "require_cuda": false,
+      "min_free_ram_mb": 4096,
+      "min_free_disk_mb": 5120,
+      "worker_threads": 2,
+      "decode_threads": 1,
+      "inference_timeout_seconds": 120,
+      "source_timeout_seconds": 15,
+      "batch_size": 1,
+      "frame_queue_capacity": 4,
+      "max_active_tracks": 256,
+      "max_track_candidates": 3,
+      "max_frame_pixels": 8294400
+    },
+    "colab_t4": {
+      "device_preference": "cuda",
+      "require_cuda": true,
+      "min_free_ram_mb": 8192,
+      "min_free_disk_mb": 10240,
+      "worker_threads": 2,
+      "decode_threads": 1,
+      "inference_timeout_seconds": 180,
+      "source_timeout_seconds": 15,
+      "batch_size": 1,
+      "frame_queue_capacity": 4,
+      "max_active_tracks": 256,
+      "max_track_candidates": 3,
+      "max_frame_pixels": 8294400
+    }
+  }
+}

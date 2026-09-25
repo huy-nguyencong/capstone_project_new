@@ -267,8 +267,8 @@ Quy trình cho mỗi task:
 | AIW-00 | Baseline và ma trận truy vết | — | DONE |
 | AIW-01 | Inventory 7 video và bộ dữ liệu đánh giá | AIW-00 | DONE |
 | AIW-02 | Khóa contract và taxonomy lỗi AI | AIW-00 | DONE |
-| AIW-03 | Registry Detector/Tracker/Encoder và kiểm tra artifact | AIW-02 | REVIEW |
-| AIW-04 | Runtime/device preflight và giới hạn tài nguyên | AIW-03 | TODO |
+| AIW-03 | Registry Detector/Tracker/Encoder và kiểm tra artifact | AIW-02 | DONE |
+| AIW-04 | Runtime/device preflight và giới hạn tài nguyên | AIW-03 | REVIEW |
 | AIW-05 | Fake adapters và fixtures chỉ dành cho test | AIW-02 | TODO |
 | AIW-06 | Interface nguồn frame dùng chung | AIW-02 | TODO |
 | AIW-07 | File video source production | AIW-06 | TODO |
@@ -999,6 +999,9 @@ Mỗi lần hoàn tất hoặc review task, thêm một dòng; không sửa lị
 | 2026-09-26 | AIW-02 | DONE | — | Không chạy lại; người thực hiện yêu cầu bắt đầu task kế tiếp | Contract và taxonomy được chấp thuận qua chỉ dẫn tiếp tục; khóa boundary cho registry/adapters. |
 | 2026-09-26 | AIW-03 | IN_PROGRESS | — | Đang thực hiện | Bắt đầu registry typed, artifact checksum, compatibility, provenance/license và tách production/demo. |
 | 2026-09-26 | AIW-03 | REVIEW | — | `pytest -m unit`: 350 passed, 25 deselected; `ruff check .`; `compileall`; validate hai manifest bằng CLI | Registry fail-fast đã khóa adapter allowlist, local artifact/checksum, compatibility, preflight-derived availability và request chỉ nhận ID; chờ review trước khi chuyển `DONE`. |
+| 2026-09-26 | AIW-03 | DONE | — | Không chạy lại; người thực hiện yêu cầu bắt đầu task kế tiếp | Registry typed và policy artifact được chấp thuận qua chỉ dẫn tiếp tục. |
+| 2026-09-26 | AIW-04 | IN_PROGRESS | — | Đang thực hiện | Bắt đầu runtime/device/resource preflight, report local/Colab và worker readiness guard. |
+| 2026-09-26 | AIW-04 | REVIEW | — | `pytest -m unit`: 359 passed, 25 deselected; `ruff check .`; `compileall`; local preflight CLI; worker refusal smoke | Đã khóa profile local CPU/Colab T4, package/runtime/GPU/codec/resource/model-load report và readiness guard. Local hiện bị chặn đúng với `codec_unavailable`; notebook T4 chờ chạy trên Colab thật. |
 
 ## 13. Rủi ro cần theo dõi
 
