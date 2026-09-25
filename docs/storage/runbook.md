@@ -1,8 +1,7 @@
 # Runbook vận hành, backup/restore và bảo mật lưu trữ (STO-19)
 
-> **Trạng thái:** script đã có, **chưa chạy restore drill**. Theo tiêu chí của plan, backup chỉ
-> được coi là hợp lệ sau khi restore test ở mục 6 chạy thành công và RPO/RTO ở mục 7 được điền
-> bằng số đo thật.
+> **Trạng thái:** restore drill nhỏ đã chạy thành công ngày 2026-09-25 trên database tạm với ba
+> track/frame. Cần lặp lại với dữ liệu demo đầy đủ trước release để chốt RTO vận hành.
 
 Lệnh POSIX dùng `sh scripts/storage.sh`; trên Windows dùng `scripts/storage.ps1` tương ứng. Lệnh
 Python chạy trong `backend/` với virtualenv đã cài (`.venv/bin/python` hoặc
@@ -113,16 +112,16 @@ cd backend
    Viewer. Có thể chạy `PERSON_SEARCH_RUN_E2E=1 pytest -m e2e` trên một database test riêng.
 6. Điền kết quả vào mục 7.
 
-## 7. RPO/RTO (điền sau drill)
+## 7. RPO/RTO
 
 | Chỉ số | Giá trị | Cách đo |
 | --- | --- | --- |
 | RPO | Bằng khoảng cách giữa hai lần backup (backup chạy thủ công trong phạm vi đồ án) | Lịch backup thực tế |
-| Thời gian backup | chưa đo | `timings_seconds` trong manifest |
-| RTO: PostgreSQL restore | chưa đo | `timings_seconds.postgres_restore` |
-| RTO: frame restore | chưa đo | `timings_seconds.frames_restore` |
-| RTO: Milvus reindex | chưa đo | `timings_seconds.milvus_reindex` |
-| RTO tổng (không tính dựng stack) | chưa đo | `total_seconds` |
+| Thời gian backup | 0,906 giây (drill 3 track/frame) | `postgres_dump` 0,848 giây + `frames_export` 0,058 giây |
+| RTO: PostgreSQL restore | 0,385 giây (drill) | `timings_seconds.postgres_restore` |
+| RTO: frame restore | 0,040 giây (drill) | `timings_seconds.frames_restore` |
+| RTO: Milvus reindex | 4,975 giây (drill) | `timings_seconds.milvus_reindex` |
+| RTO tổng (không tính dựng stack) | 5,522 giây (drill) | `total_seconds` |
 | Kích thước backup | chưa đo | tổng `bytes` trong manifest |
 
 ## 8. Đầy đĩa

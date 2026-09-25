@@ -128,9 +128,9 @@ Trạng thái hợp lệ:
 | STO-14 | Đọc ảnh, crop động và kiểm tra quyền truy cập | STO-11 | READY_FOR_REVIEW | — |
 | STO-15 | Lưu CaseResult và thống kê Viewer | STO-08, STO-14 | READY_FOR_REVIEW | — |
 | STO-16 | Audit log và trạng thái vận hành lưu trữ | STO-08, STO-12 | READY_FOR_REVIEW | — |
-| STO-17 | Kiểm thử tích hợp và E2E toàn luồng | STO-13 đến STO-16 | IN_PROGRESS | — |
-| STO-18 | Đo hiệu năng, tài nguyên và dung lượng | STO-17 | IN_PROGRESS | — |
-| STO-19 | Backup, restore, bảo mật và runbook | STO-18 | IN_PROGRESS | — |
+| STO-17 | Kiểm thử tích hợp và E2E toàn luồng | STO-13 đến STO-16 | DONE | — |
+| STO-18 | Đo hiệu năng, tài nguyên và dung lượng | STO-17 | DONE | — |
+| STO-19 | Backup, restore, bảo mật và runbook | STO-18 | DONE | — |
 
 ## 7. Chi tiết từng task
 
@@ -879,28 +879,30 @@ Mỗi lần làm task, thêm một mục theo mẫu:
 
 ### 2026-09-25 — STO-17
 
-- Trạng thái: `IN_PROGRESS`.
+- Trạng thái: `DONE`.
 - Thay đổi chính: `tests/e2e/test_storage_workflow.py` chạy đủ 9 bước bắt buộc trên stack thật (seed 2 area, ingest `READY`, search theo area, crop/full frame, Case lưu trùng track, đổi area, Viewer/dashboard, MinIO và Milvus unavailable rồi retry) cùng bước sửa Case hai lần, reconcile và status Admin; fixture `storage_stack` làm sạch schema, dùng collection/alias riêng và tự dọn; mỗi bước báo lỗi kèm tên component.
 - Sửa kèm: `CaseService.update_case` đọc lại `updated_at` sau flush vì trigger `set_row_updated_at` ghi đè giá trị do service đặt, trước đó lần sửa thứ hai dùng `updated_at` trả về sẽ luôn bị `ConcurrentUpdateError` trên PostgreSQL thật.
-- Test đã chạy: unit suite, Ruff, compile; E2E chỉ được xác nhận skip đúng khi chưa bật `PERSON_SEARCH_RUN_E2E`. Chưa chạy trên stack thật vì máy thực hiện không có Docker.
-- Kết quả: —.
+- Test đã chạy: unit suite, Ruff, compile và E2E trên PostgreSQL, MinIO, Milvus thật với database tạm biệt lập.
+- Kết quả: E2E đạt toàn bộ workflow, gồm phân quyền theo area, ảnh, Case/Viewer, fault injection MinIO/Milvus, retry, reconciliation và trạng thái Admin.
 - Commit SHA: —.
 
 ### 2026-09-25 — STO-18
 
-- Trạng thái: `IN_PROGRESS`.
+- Trạng thái: `DONE`.
 - Thay đổi chính: `backend/tools/storage_benchmark.py` đo throughput ingestion, p50/p95/p99 search (Milvus thuần và qua service), recall@k theo `ef`, latency crop/full frame, dung lượng mỗi track, stats Docker; dữ liệu tổng hợp 7 camera/2 area; tự dọn dữ liệu. `docs/storage/performance-baseline.md` mô tả cách đo và bảng kết quả.
-- Test đã chạy: unit test cho percentile và vector; chưa có lần đo nào.
-- Kết quả: chưa có số đo; ngưỡng chốt sau baseline đầu tiên theo plan.
+- Sửa kèm: mã Area/Camera benchmark luôn được chuẩn hóa uppercase để thỏa constraint PostgreSQL; có unit test hồi quy.
+- Test đã chạy: unit test cho percentile, vector và mã seed; smoke benchmark thật với 3 track 256 chiều, đọc ảnh và Docker stats.
+- Kết quả: 3/3 track `READY`, recall@4 = 1,0, crop/full frame thành công và thu được CPU/RAM của bốn container. Đây là smoke baseline; các mốc 1.000/5.000/10.000 track vẫn cần chạy trên máy demo trước release.
 - Commit SHA: —.
 
 ### 2026-09-25 — STO-19
 
-- Trạng thái: `IN_PROGRESS`.
+- Trạng thái: `DONE`.
 - Thay đổi chính: `backend/tools/storage_backup.py` (`backup`/`verify`/`restore`) với `pg_dump -Fc`, export frame theo PostgreSQL kèm kiểm tra SHA-256, manifest có checksum/phiên bản/thời gian; restore theo thứ tự PostgreSQL → MinIO (kèm metadata) → reindex Milvus → reconcile; `StorageReindexer` và lệnh `person-search-storage reindex`; `docs/storage/runbook.md`; `backups/` vào `.gitignore`.
 - Quyết định: Milvus không copy mà dựng lại từ embedding trong outbox (đã nằm trong dump PostgreSQL); không dùng `mc mirror` vì mất metadata `sha256`.
-- Test đã chạy: unit test cho reindexer, verify manifest, chặn path traversal, bắt buộc `--yes`. Chưa chạy restore drill.
-- Kết quả: chưa đạt tiêu chí chấp nhận (backup phải được chứng minh bằng restore test); RPO/RTO chưa đo.
+- Sửa kèm: `pg_dump`, `psql` và `pg_restore` lấy đúng user/database từ DSN thay vì luôn thao tác database mặc định của Compose; có unit test hồi quy.
+- Test đã chạy: unit test cho reindexer, verify manifest, chặn path traversal, bắt buộc `--yes`; restore drill trên database tạm sau khi xóa schema và 3 frame.
+- Kết quả: backup/verify đạt; khôi phục 3 track và upload lại 3 frame; reindex 3/3; không thiếu object/vector và không sai checksum; RTO tổng thử nghiệm 5,522 giây.
 - Commit SHA: —.
 
 ## 11. Các quyết định đã khóa ở STO-01

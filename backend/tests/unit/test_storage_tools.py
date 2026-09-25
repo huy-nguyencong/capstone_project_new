@@ -108,3 +108,29 @@ def test_benchmark_vectors_are_unit_length() -> None:
 
     assert len(vector) == 256
     assert sum(value * value for value in vector) == pytest.approx(1.0)
+
+
+def test_benchmark_codes_satisfy_uppercase_constraint() -> None:
+    assert benchmark_tool.benchmark_code("BENCH", "a", "abc123") == "BENCH-A-ABC123"
+
+
+def test_backup_postgres_command_targets_dsn_database(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(backup_tool, "compose", lambda *arguments: list(arguments))
+
+    command = backup_tool.postgres_command(
+        "postgresql+psycopg://app_user:secret@localhost/disposable_db",
+        "pg_dump",
+        "-Fc",
+    )
+
+    assert command == [
+        "exec",
+        "-T",
+        "postgres",
+        "pg_dump",
+        "-U",
+        "app_user",
+        "-d",
+        "disposable_db",
+        "-Fc",
+    ]

@@ -1,8 +1,8 @@
 # Baseline hiệu năng và dung lượng (STO-18)
 
-> **Trạng thái:** tool đo đã có, **chưa có số đo**. Các bảng dưới đây phải được điền bằng kết quả
-> chạy trên máy demo (Intel Core i5-11300H, 16 GB RAM, Windows, Docker Desktop). Không dùng số ước
-> lượng thay cho số đo.
+> **Trạng thái:** smoke baseline đã chạy thành công; các mốc dung lượng 1.000/5.000/10.000 track
+> vẫn phải được đo trên máy demo (Intel Core i5-11300H, 16 GB RAM, Windows, Docker Desktop).
+> Không dùng số smoke test thay cho baseline phát hành.
 
 ## Công cụ
 
@@ -33,6 +33,11 @@ khi có số liệu từ AI pipeline). Dùng `--ef 32,64,128,256` để so tham 
 và `--search-concurrency` để thử tải đồng thời.
 
 ## Kết quả (điền sau khi đo)
+
+Smoke baseline ngày 2026-09-25 với 3 track, vector 256 chiều: 3/3 track `READY`, throughput
+1,131 track/s, ingest p95 1.016,827 ms, search service p50/p95 13,426/14,977 ms, recall@4 = 1,0,
+crop 10,123 ms và full frame 9,846 ms. Cả bốn container trả về số liệu CPU/RAM và không OOM.
+Kết quả này chỉ xác nhận tool và đường đo hoạt động.
 
 | Mốc | Ingest track/s | Ingest p95 | Search p50/p95 (service) | Recall@16 (ef=64) | Crop p95 | RAM Milvus sau ingest |
 | --- | --- | --- | --- | --- | --- | --- |

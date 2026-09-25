@@ -49,6 +49,11 @@ CAMERAS = (("A", 4), ("B", 3))
 FRAME_VARIANTS = 8
 
 
+def benchmark_code(*parts: str) -> str:
+    """Build identifiers that satisfy the uppercase database constraint."""
+    return "-".join(parts).upper()
+
+
 def percentile(values: Sequence[float], fraction: float) -> float:
     if not values:
         return 0.0
@@ -168,7 +173,7 @@ def seed(engine: sa.Engine, fixture: Fixture, encoder_version: str, dimension: i
             execute(
                 "INSERT INTO areas (id, code, name) VALUES (:id, :code, :name)",
                 id=area_id,
-                code=f"BENCH-{area_name}-{fixture.suffix}",
+                code=benchmark_code("BENCH", area_name, fixture.suffix),
                 name=f"Bench {area_name}",
             )
             for index in range(camera_count):
@@ -180,7 +185,7 @@ def seed(engine: sa.Engine, fixture: Fixture, encoder_version: str, dimension: i
                     "(:id, :area, :code, :name)",
                     id=camera_id,
                     area=area_id,
-                    code=f"BENCH-{area_name}{index}-{fixture.suffix}",
+                    code=benchmark_code("BENCH", f"{area_name}{index}", fixture.suffix),
                     name=f"Bench camera {area_name}{index}",
                 )
                 execute(

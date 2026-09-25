@@ -15,6 +15,7 @@ from typing import Any
 
 import sqlalchemy as sa
 from dotenv import load_dotenv
+from sqlalchemy.engine import make_url
 from sqlalchemy.orm import sessionmaker
 
 from person_search.config import StorageSettings
@@ -53,8 +54,26 @@ def compose(*arguments: str) -> list[str]:
     ]
 
 
-def postgres_shell(script: str) -> list[str]:
-    return compose("exec", "-T", "postgres", "sh", "-c", script)
+def postgres_connection(dsn: str) -> tuple[str, str]:
+    url = make_url(dsn)
+    if not url.username or not url.database:
+        raise BackupError("PostgreSQL DSN must include a username and database name.")
+    return url.username, url.database
+
+
+def postgres_command(dsn: str, command: str, *arguments: str) -> list[str]:
+    username, database = postgres_connection(dsn)
+    return compose(
+        "exec",
+        "-T",
+        "postgres",
+        command,
+        "-U",
+        username,
+        "-d",
+        database,
+        *arguments,
+    )
 
 
 def sha256_file(path: Path) -> str:
@@ -99,15 +118,17 @@ def backup(output_root: Path) -> Path:
         started = time.perf_counter()
         with (target / POSTGRES_DUMP).open("wb") as handle:
             subprocess.run(
-                postgres_shell('pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc'),
+                postgres_command(settings.postgres.dsn, "pg_dump", "-Fc"),
                 check=True,
                 stdout=handle,
             )
-        pg_dump_version = run_text(postgres_shell("pg_dump --version"))
+        pg_dump_version = run_text(compose("exec", "-T", "postgres", "pg_dump", "--version"))
         alembic_revision = run_text(
-            postgres_shell(
-                'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc '
-                '"SELECT version_num FROM alembic_version"'
+            postgres_command(
+                settings.postgres.dsn,
+                "psql",
+                "-tAc",
+                "SELECT version_num FROM alembic_version",
             )
         )
         phase(timings, "postgres_dump", started)
@@ -209,9 +230,13 @@ def restore(source: Path, *, confirmed: bool) -> int:
         started = time.perf_counter()
         with (source / POSTGRES_DUMP).open("rb") as handle:
             subprocess.run(
-                postgres_shell(
-                    'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" '
-                    "--clean --if-exists --no-owner --single-transaction"
+                postgres_command(
+                    settings.postgres.dsn,
+                    "pg_restore",
+                    "--clean",
+                    "--if-exists",
+                    "--no-owner",
+                    "--single-transaction",
                 ),
                 check=True,
                 stdin=handle,
