@@ -65,6 +65,16 @@ python -m pytest -m integration
 `GET /health/ready` trả HTTP 503 nếu bất kỳ kho bắt buộc nào lỗi và giữ riêng trạng thái
 `postgres`, `milvus`, `minio`; nội dung lỗi trả về không chứa credential.
 
+## Database migrations
+
+```powershell
+$env:PERSON_SEARCH_POSTGRES_DSN = "postgresql+psycopg://..."
+python -m alembic upgrade head
+python -m alembic current
+```
+
+Xem `migrations/README.md` và `../docs/storage/postgres-identity-schema.md` trước khi downgrade.
+
 Từ thư mục gốc repository, có thể chạy toàn bộ kiểm tra nhanh bằng một trong hai lệnh:
 
 ```powershell

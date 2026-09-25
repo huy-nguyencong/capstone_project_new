@@ -114,8 +114,8 @@ Trạng thái hợp lệ:
 | STO-00 | Khởi tạo skeleton và bộ lệnh kiểm thử | Không | DONE | `cc440d4` |
 | STO-01 | Chốt kiến trúc lưu trữ và hợp đồng dữ liệu | STO-00 | DONE | `222c0ad` |
 | STO-02 | Dựng hạ tầng Docker Compose | STO-01 | DONE | `aeb8203` |
-| STO-03 | Cấu hình ứng dụng, kết nối và health check | STO-02 | READY_FOR_REVIEW | — |
-| STO-04 | Schema PostgreSQL cho Area, User, Camera | STO-03 | TODO | — |
+| STO-03 | Cấu hình ứng dụng, kết nối và health check | STO-02 | DONE | `df1456b` |
+| STO-04 | Schema PostgreSQL cho Area, User, Camera | STO-03 | READY_FOR_REVIEW | — |
 | STO-05 | Schema PostgreSQL cho AI config, job và PersonTrack | STO-04 | TODO | — |
 | STO-06 | Schema PostgreSQL cho Case, CaseResult và AuditLog | STO-05 | TODO | — |
 | STO-07 | Ràng buộc, index, seed và kiểm thử migration | STO-06 | TODO | — |
@@ -737,12 +737,23 @@ Mỗi lần làm task, thêm một mục theo mẫu:
 
 ### 2026-09-25 — STO-03
 
-- Trạng thái: `READY_FOR_REVIEW`.
+- Trạng thái: `DONE`.
 - Thay đổi chính: bổ sung cấu hình typed và fail-fast cho PostgreSQL/Milvus/MinIO; SQLAlchemy engine/session factory với pool và timeout giới hạn; client wrapper Milvus/MinIO lazy, injectable và có lifecycle close; health aggregator cô lập lỗi từng kho, redaction secret, endpoint `/health/ready` và `/health/storage`; cấu hình development qua `.env` và integration test kết nối thật.
 - File quan trọng: `backend/src/person_search/config.py`, `backend/src/person_search/storage/runtime.py`, `backend/src/person_search/storage/health.py`, ba module `storage/*/client.py`, `backend/src/person_search/api/health.py`, `backend/tests/unit/test_storage_configuration.py`, `backend/tests/unit/test_storage_clients.py`, `backend/tests/integration/test_storage_connections.py`.
 - Test đã chạy: `scripts/check.ps1`; pytest unit; integration test với stack thật; failure injection lần lượt dừng/khởi động lại PostgreSQL, Milvus và MinIO; pytest branch coverage; Ruff; compileall; `git diff --check`.
 - Kết quả: 78 unit test đạt; 2 integration test healthy đạt; ba failure-injection test đều trả 503 và chỉ đánh dấu đúng component bị dừng; stack được phục hồi healthy; tổng 80 test đạt, 1 test failure-injection được skip trong lượt coverage chuẩn; branch coverage 92%; Ruff và compile sạch; không có secret trong response/log test.
 - Điểm cần người thực hiện review: tên biến môi trường, pool mặc định `5 + 5`, timeout kết nối 3 giây, việc client Milvus/MinIO khởi tạo lazy, schema JSON của hai health endpoint và lifecycle đóng bằng runtime/`atexit`.
+- Quyết định/chỉnh sửa sau review: người thực hiện đã chấp thuận và yêu cầu chuyển sang STO-04.
+- Commit SHA: `df1456b`.
+
+### 2026-09-25 — STO-04
+
+- Trạng thái: `READY_FOR_REVIEW`.
+- Thay đổi chính: thêm Alembic environment và migration đầu tiên; model SQLAlchemy cho Area/User/Camera với UUIDv4, enum trạng thái, timestamp UTC, role–area check constraint, foreign key `RESTRICT`, RTSP secret reference; trigger database và guard ORM khóa `Area.code`, `Camera.code` và `Camera.area_id`; trigger đồng bộ `updated_at` cho cả ORM/raw SQL.
+- File quan trọng: `backend/alembic.ini`, `backend/migrations/versions/20260925_0001_area_user_camera.py`, `backend/src/person_search/storage/postgres/models/`, `backend/tests/integration/test_identity_schema.py`, `docs/storage/postgres-identity-schema.md`.
+- Test đã chạy: `scripts/check.ps1`; 81 unit test; migration integration trên database dùng một lần; `downgrade base → upgrade head → alembic check → constraint tests → downgrade base`; Ruff; compileall; branch coverage; `git diff --check`.
+- Kết quả: 81 unit test đạt; migration integration đạt; Alembic không phát hiện schema drift; Operator thiếu area và Admin có area bị từ chối; Camera thiếu area hoặc RTSP nhúng credential bị từ chối; đổi Camera area bị chặn ở ORM lẫn raw SQL; đổi Area code bị chặn; xóa Area đang được User/Camera tham chiếu bị FK `RESTRICT` chặn; inactive row vẫn giữ area FK; downgrade xóa sạch ba bảng/type; unit branch coverage tổng 89%.
+- Điểm cần người thực hiện review: enum/status, quy tắc uppercase và bất biến của code, role–area constraint, việc chỉ lưu `rtsp_secret_ref`, trigger PostgreSQL, tên migration và giới hạn STO-04 chưa có repository nghiệp vụ đầy đủ.
 - Quyết định/chỉnh sửa sau review: chưa có.
 - Commit SHA: chưa commit; chờ người thực hiện review.
 

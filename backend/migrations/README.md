@@ -1,9 +1,12 @@
 # Database migrations
 
-Thư mục dành cho Alembic migrations của PostgreSQL.
+Alembic lấy URL PostgreSQL từ `PERSON_SEARCH_POSTGRES_DSN`. Từ thư mục `backend`:
 
-Ở task `STO-00` chưa có SQLAlchemy model, Alembic environment hoặc migration revision.
-Các thành phần đó được thêm từ `STO-04` và được kiểm tra đầy đủ ở `STO-07`.
+```powershell
+python -m alembic upgrade head
+python -m alembic current
+python -m alembic downgrade base
+```
 
-Không đặt migration thủ công hoặc schema SQL tạm thời tại đây trước khi hợp đồng dữ liệu
-được chốt ở `STO-01`.
+Migration `20260925_0001` tạo Area/User/Camera, enum, constraint và trigger bất biến. Không chạy
+downgrade trên database chứa dữ liệu cần giữ nếu chưa backup.
