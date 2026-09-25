@@ -11,6 +11,7 @@ from storage_fakes import FakeUnitOfWork
 from person_search.services.storage_maintenance import (
     OutboxRetryWorker,
     StorageReconciler,
+    StorageReindexer,
     track_id_from_frame_key,
 )
 from person_search.services.track_ingestion import (
@@ -269,3 +270,67 @@ def test_reconcile_clean_storage_reports_clean() -> None:
 
     assert report.clean is True
     assert report.truncated is False
+
+
+def _reindexer(harness: Harness, **options: object) -> StorageReindexer:
+    return StorageReindexer(
+        lambda: FakeUnitOfWork(harness.database),  # type: ignore[arg-type,return-value]
+        MilvusPersonTrackIndex(
+            harness.milvus, encoder_version=RASA_ENCODER_VERSION, dimension=RASA_EMBEDDING_DIMENSION
+        ),
+        batch_size=1,
+        **options,  # type: ignore[arg-type]
+    )
+
+
+def test_reindex_rebuilds_lost_milvus_vectors_from_outbox_payloads() -> None:
+    harness = Harness()
+    first, second = harness.request(), harness.request()
+    harness.service.ingest_track(first)
+    harness.service.ingest_track(second)
+    before = {key: dict(value) for key, value in harness.milvus.rows.items()}
+    harness.milvus.rows.clear()
+
+    report = _reindexer(harness).run()
+
+    assert report.clean is True
+    assert report.indexed == 2
+    assert harness.milvus.rows.keys() == before.keys()
+    for track_id, row in before.items():
+        assert harness.milvus.rows[track_id]["embedding"] == row["embedding"]
+        assert harness.milvus.rows[track_id]["area_id"] == row["area_id"]
+        assert harness.milvus.rows[track_id]["appeared_at_epoch"] == row["appeared_at_epoch"]
+
+
+def test_reindex_reports_missing_payloads_failures_and_unverified_rows() -> None:
+    harness = Harness()
+    requests = [harness.request() for _ in range(3)]
+    for request in requests:
+        harness.service.ingest_track(request)
+    harness.milvus.rows.clear()
+    harness.event(requests[0].track_id).payload = {"version": 1}
+    ordered = sorted(request.track_id for request in requests[1:])
+    harness.milvus.failures.append(TimeoutError("down"))
+
+    report = _reindexer(harness).run()
+
+    assert report.missing_payload == [requests[0].track_id]
+    assert report.failed == [ordered[0]]
+    assert report.indexed == 1
+    assert report.clean is False
+
+
+def test_reindex_skips_pending_tracks_and_honours_max_items() -> None:
+    harness = Harness()
+    ready = harness.request()
+    harness.service.ingest_track(ready)
+    harness.milvus.failures.append(TimeoutError("down"))
+    harness.service.ingest_track(harness.request())
+    harness.service.ingest_track(harness.request())
+    harness.milvus.rows.clear()
+
+    report = _reindexer(harness, max_items=1).run()
+
+    assert report.indexed == 1
+    assert report.truncated is True
+    assert list(harness.milvus.rows) != []

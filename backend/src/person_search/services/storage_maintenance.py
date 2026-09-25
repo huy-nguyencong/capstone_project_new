@@ -306,3 +306,114 @@ class StorageReconciler:
                 },
             )
             work.commit()
+
+
+class VectorRebuilder(Protocol):
+    def upsert(
+        self,
+        *,
+        track_id: uuid.UUID,
+        vector: Any,
+        area_id: uuid.UUID,
+        camera_id: uuid.UUID,
+        appeared_at: datetime,
+    ) -> None: ...
+
+    def get(self, track_id: uuid.UUID) -> dict[str, Any] | None: ...
+
+
+@dataclass(slots=True)
+class ReindexReport:
+    indexed: int = 0
+    missing_payload: list[uuid.UUID] = field(default_factory=list)
+    failed: list[uuid.UUID] = field(default_factory=list)
+    unverified: list[uuid.UUID] = field(default_factory=list)
+    truncated: bool = False
+
+    @property
+    def clean(self) -> bool:
+        return not (self.missing_payload or self.failed or self.unverified or self.truncated)
+
+    def counts(self) -> dict[str, int]:
+        return {
+            "indexed": self.indexed,
+            "missing_payload": len(self.missing_payload),
+            "failed": len(self.failed),
+            "unverified": len(self.unverified),
+        }
+
+
+class StorageReindexer:
+    def __init__(
+        self,
+        unit_of_work_factory: Callable[[], UnitOfWork],
+        vectors: VectorRebuilder,
+        *,
+        batch_size: int = 200,
+        max_items: int = 100_000,
+        verify: bool = True,
+    ) -> None:
+        if batch_size < 1 or batch_size > 1000:
+            raise ValueError("batch_size must be between 1 and 1000")
+        self._unit_of_work_factory = unit_of_work_factory
+        self._vectors = vectors
+        self._batch_size = batch_size
+        self._max_items = max_items
+        self._verify = verify
+
+    def run(self) -> ReindexReport:
+        report = ReindexReport()
+        after_id: uuid.UUID | None = None
+        processed = 0
+        while processed < self._max_items:
+            with self._unit_of_work_factory() as work:
+                repositories = _repositories(work)
+                tracks = repositories.tracks.page_by_status(
+                    TrackIndexStatus.READY, limit=self._batch_size, after_id=after_id
+                )
+                batch = []
+                for track in tracks:
+                    event = repositories.outbox.get_for_track(track.id, TRACK_INGEST_EVENT)
+                    payload = dict(event.payload) if event is not None else {}
+                    batch.append((track.id, track.camera_id, track.appeared_at_utc, payload))
+            if not batch:
+                return report
+            for track_id, camera_id, appeared_at, payload in batch:
+                self._reindex_one(report, track_id, camera_id, appeared_at, payload)
+            processed += len(batch)
+            after_id = batch[-1][0]
+        report.truncated = True
+        return report
+
+    def _reindex_one(
+        self,
+        report: ReindexReport,
+        track_id: uuid.UUID,
+        camera_id: uuid.UUID,
+        appeared_at: datetime,
+        payload: dict[str, Any],
+    ) -> None:
+        embedding = payload.get("embedding")
+        area_id = payload.get("area_id")
+        if not embedding or not area_id or payload.get("camera_id") != str(camera_id):
+            report.missing_payload.append(track_id)
+            return
+        try:
+            self._vectors.upsert(
+                track_id=track_id,
+                vector=embedding,
+                area_id=uuid.UUID(area_id),
+                camera_id=camera_id,
+                appeared_at=appeared_at,
+            )
+        except Exception as error:
+            report.failed.append(track_id)
+            logger.warning(
+                "vector reindex failed",
+                extra={"track_id": str(track_id), "error_type": type(error).__name__},
+            )
+            return
+        if self._verify and self._vectors.get(track_id) is None:
+            report.unverified.append(track_id)
+            return
+        report.indexed += 1

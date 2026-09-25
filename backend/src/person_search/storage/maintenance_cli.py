@@ -11,7 +11,11 @@ from datetime import timedelta
 from dotenv import load_dotenv
 
 from person_search.config import StorageSettings
-from person_search.services.storage_maintenance import OutboxRetryWorker, StorageReconciler
+from person_search.services.storage_maintenance import (
+    OutboxRetryWorker,
+    StorageReconciler,
+    StorageReindexer,
+)
 from person_search.services.track_ingestion import TrackIngestionService
 from person_search.storage.contracts import RASA_EMBEDDING_DIMENSION, RASA_ENCODER_VERSION
 from person_search.storage.milvus.vectors import MilvusPersonTrackIndex
@@ -32,6 +36,11 @@ def _parser() -> argparse.ArgumentParser:
     reconcile.add_argument("--stale-minutes", type=int, default=30)
     reconcile.add_argument("--max-items", type=int, default=10_000)
     reconcile.add_argument("--actor-user-id", type=uuid.UUID)
+    reindex = commands.add_parser(
+        "reindex", help="Rebuild Milvus vectors of READY tracks from PostgreSQL outbox payloads."
+    )
+    reindex.add_argument("--no-verify", action="store_true")
+    reindex.add_argument("--max-items", type=int, default=100_000)
     requeue = commands.add_parser("requeue-track", help="Move one FAILED track back to PENDING.")
     requeue.add_argument("track_id", type=uuid.UUID)
     requeue.add_argument("--actor-user-id", type=uuid.UUID)
@@ -75,6 +84,16 @@ def main(argv: Sequence[str] | None = None) -> int:
                 )
             )
             return 0 if report.clean else 2
+        if arguments.command == "reindex":
+            vectors.ensure_collection()
+            rebuilt = StorageReindexer(
+                unit_of_work,
+                vectors,
+                max_items=arguments.max_items,
+                verify=not arguments.no_verify,
+            ).run()
+            print(json.dumps({"truncated": rebuilt.truncated, **rebuilt.counts()}))
+            return 0 if rebuilt.clean else 2
         result = ingestion.requeue_failed(arguments.track_id, actor_user_id=arguments.actor_user_id)
         print(json.dumps({"track_id": str(result.track_id), "status": result.status.value}))
         return 0

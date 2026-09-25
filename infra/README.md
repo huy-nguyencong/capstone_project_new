@@ -58,7 +58,7 @@ scripts/storage.ps1 down
 Trên shell POSIX, thay bằng `sh scripts/storage.sh <action> [service]`. Lệnh `down` dừng container
 an toàn và **giữ nguyên** bốn named volume. `up` sau đó sử dụng lại dữ liệu. Không chạy
 `docker compose down --volumes` nếu chưa chủ động chấp nhận xóa toàn bộ dữ liệu local; backup và
-restore đầy đủ sẽ được bổ sung ở STO-19.
+restore xem `docs/storage/runbook.md` (STO-19).
 
 Bucket bootstrap có thể chạy lặp lại. Nếu đổi `MINIO_APP_SECRET_KEY` sau khi user đã được tạo,
 cần cập nhật credential user trong MinIO hoặc tạo lại môi trường local có chủ đích; chỉ sửa file

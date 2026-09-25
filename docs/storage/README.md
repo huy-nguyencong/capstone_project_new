@@ -29,3 +29,6 @@ Các quyết định ID, timestamp, bounding box, state machine và naming đư�
 - [Ảnh track có kiểm tra quyền](track-imagery.md): crop động và full frame có bbox (STO-14).
 - [Case và dashboard Viewer](cases.md): lưu CaseResult, quyền đọc/sửa Case (STO-15).
 - [Audit và trạng thái vận hành](audit-and-status.md): catalog audit, redaction, metric theo component (STO-16).
+- [E2E](../../backend/tests/e2e/README.md): kịch bản toàn luồng (STO-17).
+- [Baseline hiệu năng](performance-baseline.md): tool đo và bảng kết quả (STO-18).
+- [Runbook](runbook.md): vận hành, backup/restore, bảo mật, RPO/RTO (STO-19).

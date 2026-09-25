@@ -93,6 +93,9 @@ class CaseRepository(Repository[Case]):
         if result.rowcount != 1:
             raise ConcurrentUpdateError("Case was changed by another transaction.")
 
+    def refresh(self, case: Case) -> None:
+        self.session.refresh(case, ["updated_at"])
+
     def get_for_update(self, case_id: uuid.UUID) -> Case | None:
         return self.session.scalars(
             select(Case).where(Case.id == case_id).with_for_update()

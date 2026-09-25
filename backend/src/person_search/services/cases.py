@@ -256,6 +256,8 @@ class CaseService:
                 actor=actor,
                 metadata={"changed_fields": changed},
             )
+            work.flush()
+            repositories.cases.refresh(case)
             work.commit()
             return _summary(case, actor)
 

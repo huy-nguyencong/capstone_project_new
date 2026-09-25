@@ -186,6 +186,9 @@ class FakeCases(FakeLookup):
     def get_for_update(self, case_id: uuid.UUID) -> Any:
         return self.rows.get(case_id)
 
+    def refresh(self, case: Any) -> None:
+        pass
+
     def _with_owner(self, cases: Iterable[Any]) -> list[tuple[Any, Any]]:
         return [(case, self.database.users[case.owner_user_id]) for case in cases]
 

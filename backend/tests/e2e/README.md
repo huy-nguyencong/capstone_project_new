@@ -1,6 +1,20 @@
 # End-to-end tests
 
-Các test trong thư mục này kiểm tra luồng xuyên nhiều thành phần lưu trữ. Chúng được đánh
-dấu `pytest.mark.e2e` và chỉ chạy khi stack kiểm thử đã sẵn sàng.
+`test_storage_workflow.py` chạy kịch bản STO-17 trên PostgreSQL, MinIO và Milvus thật:
+seed hai area → ingest track `READY` → search theo area → crop/full frame → Case lưu cùng track
+hai lần → sửa Case hai lần liên tiếp → đổi area Operator → Viewer và dashboard → MinIO/Milvus
+unavailable rồi retry → reconciliation → status Admin.
 
-Kịch bản E2E hoàn chỉnh được hiện thực ở `STO-17`.
+Test bị skip nếu chưa đặt `PERSON_SEARCH_RUN_E2E=1`. Fixture `storage_stack` trong `conftest.py`
+chạy `alembic downgrade base → upgrade head` nên DSN phải trỏ tới database dùng một lần. Mỗi lần
+chạy dùng collection/alias Milvus riêng, camera UUID riêng và tự dọn object, collection, schema.
+
+```sh
+sh scripts/storage.sh up
+cd backend
+PERSON_SEARCH_RUN_E2E=1 .venv/bin/python -m pytest -m e2e -v
+```
+
+Khi một bước lỗi, thông báo có dạng `[minio] E2E step '...' failed: ...` để chỉ rõ component.
+MinIO unavailable dùng endpoint thật không tồn tại (`127.0.0.1:1`); Milvus unavailable dùng client
+giả ném `MilvusException` vì `MilvusClient` kết nối ngay khi khởi tạo.
