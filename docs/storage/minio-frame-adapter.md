@@ -1,7 +1,7 @@
 # Private MinIO frame adapter (STO-09)
 
 Objects use the deterministic key
-`tracks/{camera_id}/{yyyy}/{mm}/{dd}/{track_id}/representative.{jpg|png}`. The adapter validates the
+`tracks/v1/{camera_id}/{yyyy}/{mm}/{dd}/{track_id}/representative.{jpg|png}`. The adapter validates the
 declared MIME type against decoded image bytes, exact dimensions and a 20 MiB default size limit.
 
 Each object stores only track ID and SHA-256 metadata. Repeating a put with the same key and checksum

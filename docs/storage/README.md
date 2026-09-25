@@ -23,3 +23,4 @@ Các quyết định ID, timestamp, bounding box, state machine và naming đư�
 
 - [ADR-0001](adr/0001-storage-architecture-and-track-contract.md): kiến trúc ba kho dữ liệu và các quyết định nền tảng.
 - [Track ingestion contract](track-ingestion-contract.md): hợp đồng giữa AI worker và storage service.
+- [Track ingestion service](track-ingestion-service.md): điều phối ghi track xuyên ba kho dữ liệu (STO-11).

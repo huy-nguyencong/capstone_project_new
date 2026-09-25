@@ -35,6 +35,14 @@ class UnitOfWork:
         self.repositories = Repositories(self.session)
         return self
 
+    def flush(self) -> None:
+        assert self.session is not None
+        try:
+            self.session.flush()
+        except IntegrityError as error:
+            self.session.rollback()
+            raise map_integrity_error(error) from error
+
     def commit(self) -> None:
         assert self.session is not None
         try:

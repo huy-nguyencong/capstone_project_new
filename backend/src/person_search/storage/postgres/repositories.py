@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Generic, TypeVar
 
@@ -20,6 +21,7 @@ from person_search.storage.postgres.models import (
     PersonTrack,
     ProcessingJob,
     StorageOutboxEvent,
+    TrackIndexStatus,
     User,
     UserRole,
 )
@@ -89,6 +91,45 @@ class CaseRepository(Repository[Case]):
             raise ConcurrentUpdateError("Case was changed by another transaction.")
 
 
+class PersonTrackRepository(Repository[PersonTrack]):
+    def __init__(self, session: Session) -> None:
+        super().__init__(session, PersonTrack)
+
+    def get_for_update(self, track_id: uuid.UUID) -> PersonTrack | None:
+        return self.session.scalars(
+            select(PersonTrack).where(PersonTrack.id == track_id).with_for_update()
+        ).one_or_none()
+
+    def ready_ids(self, track_ids: Iterable[uuid.UUID]) -> set[uuid.UUID]:
+        candidates = list(track_ids)
+        if not candidates:
+            return set()
+        return set(
+            self.session.scalars(
+                select(PersonTrack.id).where(
+                    PersonTrack.id.in_(candidates),
+                    PersonTrack.index_status == TrackIndexStatus.READY,
+                )
+            )
+        )
+
+
+class StorageOutboxRepository(Repository[StorageOutboxEvent]):
+    def __init__(self, session: Session) -> None:
+        super().__init__(session, StorageOutboxEvent)
+
+    def get_for_track(
+        self, track_id: uuid.UUID, event_type: str, *, for_update: bool = False
+    ) -> StorageOutboxEvent | None:
+        statement = select(StorageOutboxEvent).where(
+            StorageOutboxEvent.track_id == track_id,
+            StorageOutboxEvent.event_type == event_type,
+        )
+        if for_update:
+            statement = statement.with_for_update()
+        return self.session.scalars(statement).one_or_none()
+
+
 class Repositories:
     """Repository registry used by one UnitOfWork transaction."""
 
@@ -98,8 +139,8 @@ class Repositories:
         self.cameras = CameraRepository(session)
         self.ai_configs = Repository(session, AIConfigVersion)
         self.jobs = Repository(session, ProcessingJob)
-        self.tracks = Repository(session, PersonTrack)
-        self.outbox = Repository(session, StorageOutboxEvent)
+        self.tracks = PersonTrackRepository(session)
+        self.outbox = StorageOutboxRepository(session)
         self.cases = CaseRepository(session)
         self.case_results = Repository(session, CaseResult)
         self.audit_logs = Repository(session, AuditLog)

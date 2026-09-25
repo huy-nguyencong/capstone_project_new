@@ -11,6 +11,8 @@ from typing import Any
 
 from PIL import Image, UnidentifiedImageError
 
+from person_search.storage.contracts import FRAME_OBJECT_PREFIX
+
 SUPPORTED_MEDIA_TYPES = {"image/jpeg": "JPEG", "image/png": "PNG"}
 
 
@@ -42,7 +44,10 @@ def frame_object_key(
 ) -> str:
     if captured_at.tzinfo is None:
         raise ValueError("captured_at must be timezone-aware")
-    return f"tracks/{camera_id}/{captured_at:%Y/%m/%d}/{track_id}/representative.{extension}"
+    return (
+        f"{FRAME_OBJECT_PREFIX}/{camera_id}/{captured_at:%Y/%m/%d}/{track_id}/"
+        f"representative.{extension}"
+    )
 
 
 class MinioFrameStore:

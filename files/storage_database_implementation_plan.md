@@ -122,7 +122,7 @@ Trạng thái hợp lệ:
 | STO-08 | Repository và transaction cho PostgreSQL | STO-07 | READY_FOR_REVIEW | — |
 | STO-09 | Adapter lưu full frame trên MinIO | STO-03 | READY_FOR_REVIEW | — |
 | STO-10 | Collection và adapter vector trên Milvus | STO-03 | READY_FOR_REVIEW | — |
-| STO-11 | Điều phối ghi track xuyên ba kho dữ liệu | STO-08, STO-09, STO-10 | TODO | — |
+| STO-11 | Điều phối ghi track xuyên ba kho dữ liệu | STO-08, STO-09, STO-10 | IN_PROGRESS | — |
 | STO-12 | Retry, reconciliation và xử lý dữ liệu dở dang | STO-11 | TODO | — |
 | STO-13 | Truy vấn vector có lọc và kiểm tra quyền | STO-11 | TODO | — |
 | STO-14 | Đọc ảnh, crop động và kiểm tra quyền truy cập | STO-11 | TODO | — |
@@ -815,6 +815,16 @@ Mỗi lần làm task, thêm một mục theo mẫu:
 - Test đã chạy: unit dimension/NaN/normalization/filter; integration Milvus thật cho ensure idempotent, upsert, filter trước top-k, get và delete.
 - Kết quả: unit và integration đạt; area filter loại track ngoài phạm vi dù vector giống hệt; collection test được dọn sạch.
 - Điểm cần review: HNSW `M=16`, `efConstruction=128`, search `ef=64`, tập top-k và collection/alias naming.
+- Commit SHA: —.
+
+### 2026-09-25 — STO-11
+
+- Trạng thái: `IN_PROGRESS`.
+- Thay đổi chính: `TrackIngestionService.ingest_track` với register `PENDING` + outbox trong một transaction, upload MinIO, upsert Milvus, publish `READY`; idempotency theo `track_id` và conflict khi identity khác; phân loại lỗi retryable/non-retryable, exponential backoff, `FAILED`/`DEAD` khi vượt giới hạn; `PersonTrackRepository.get_for_update/ready_ids`, `StorageOutboxRepository.get_for_track`, `UnitOfWork.flush`; object key MinIO đổi sang prefix `tracks/v1` theo contract.
+- Quyết định: đường đọc lọc hit Milvus qua `ready_ids` của PostgreSQL (phương án a); embedding lưu trong outbox payload để STO-12 retry bước Milvus, frame bytes không lưu.
+- Test đã chạy: toàn bộ unit suite, Ruff, compile. Integration `tests/integration/test_track_ingestion_flow.py` chưa chạy vì máy thực hiện không có Docker.
+- Kết quả: 110 unit test đạt (12 test mới của STO-11); branch coverage tổng 84%, `track_ingestion.py` 84%; Ruff sạch; compile thành công; integration bị skip do chưa bật flag.
+- Điểm cần review: danh sách lỗi non-retryable, `RetryPolicy` mặc định, giữ embedding trong outbox sau khi `COMPLETED`.
 - Commit SHA: —.
 
 ## 11. Các quyết định đã khóa ở STO-01
