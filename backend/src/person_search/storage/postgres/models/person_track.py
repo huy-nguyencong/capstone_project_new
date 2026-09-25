@@ -99,6 +99,7 @@ class PersonTrack(TimestampMixin, Base):
     appeared_at_utc: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, index=True
     )
+    source_frame_index: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     source_started_at_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
     source_ended_at_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
     representative_frame_timestamp_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)

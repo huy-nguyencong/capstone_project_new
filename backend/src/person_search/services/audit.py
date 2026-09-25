@@ -31,6 +31,9 @@ MAX_AUDIT_PAGE = 100
 
 
 class AuditEvent(StrEnum):
+    JOB_CREATED = "job.created"
+    JOB_CANCEL_REQUESTED = "job.cancel_requested"
+    JOB_FINISHED = "job.finished"
     AUTH_LOGIN = "auth.login"
     AUTH_LOGOUT = "auth.logout"
     AUTH_SESSION_EXPIRED = "auth.session_expired"

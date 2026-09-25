@@ -19,7 +19,9 @@ from person_search.dependencies import DependencyContainer
 from person_search.services.auth import AuthService, SessionPolicy
 from person_search.services.camera_runtime import CameraRuntime
 from person_search.services.cameras import CameraService
+from person_search.services.jobs import JobService
 from person_search.services.users import UserService
+from person_search.services.video_staging import VideoStaging
 from person_search.storage.health import StorageHealthService
 from person_search.storage.postgres.unit_of_work import UnitOfWork
 from person_search.storage.runtime import StorageRuntime
@@ -46,6 +48,10 @@ def create_app(
     if config:
         app.config.from_mapping(config)
 
+    staging = VideoStaging.from_environment()
+    app.config.setdefault("MAX_CONTENT_LENGTH", staging.max_bytes + 1024 * 1024)
+    if app.config["MAX_CONTENT_LENGTH"] is None:
+        app.config["MAX_CONTENT_LENGTH"] = staging.max_bytes + 1024 * 1024
     container = dependencies or DependencyContainer()
     if dependencies is None:
         if app.config["STORAGE_ENABLED"]:
@@ -57,6 +63,9 @@ def create_app(
             container.register("storage.minio", runtime.minio)
             container.register("storage.health", runtime.health)
             session_factory = runtime.postgres.session_factory
+            container.register(
+                "jobs.service", JobService(lambda: UnitOfWork(session_factory), staging)
+            )
             password_hasher = PasswordHasher()
             container.register(
                 "auth.service",

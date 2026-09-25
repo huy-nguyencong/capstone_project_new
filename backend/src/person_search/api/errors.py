@@ -73,6 +73,10 @@ def register_error_handlers(app: Flask) -> None:
     def handle_api_error(error: ApiError):  # type: ignore[no-untyped-def]
         return error_response(error.status, error.code, error.message, error.details)
 
+    @app.errorhandler(413)
+    def handle_upload_too_large(error):
+        return error_response(413, "file_too_large", "Video vượt giới hạn dung lượng.")
+
     @app.errorhandler(HTTPException)
     def handle_http_exception(error: HTTPException):  # type: ignore[no-untyped-def]
         if not _is_api_request():

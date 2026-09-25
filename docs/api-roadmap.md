@@ -191,7 +191,9 @@ Camera item:
 
 - `GET/PUT /admin/ai/config`: `{ "detector_id", "tracker_id", "version", "applied_at" }`. `PUT` lỗi `422 incompatible_model_pair`, `422 model_unavailable`, `409 version_conflict`; apply lỗi thì giữ config cũ.
 
-### Phase 4 — Upload video và processing job (BE-09, BE-10)
+### Phase 4 — Upload video và processing job (BE-09, BE-10) · ĐÃ TRIỂN KHAI
+
+Đã có API upload/job, worker tuần tự với fake AI opt-in và trang **Xử lý video**. Migration `20260925_0008`; [thiết lập và chính sách vận hành](phase-4-setup.md), [OpenAPI Phase 4](openapi-phase-4.json). Adapter Detector/Tracker/RaSa thật nối qua interface pipeline sau; demo dùng encoder/collection riêng.
 
 | Method | Path | Role | BE sẵn có | FE dùng tại |
 | --- | --- | --- | --- | --- |
@@ -459,7 +461,7 @@ Health (hạ tầng, đã có): `GET /health/live`, `GET /health/ready`, `GET /h
 - Q2: Giới hạn kích thước ảnh truy vấn, video upload, độ dài text; timeout encoder và RTSP test.
 - Q3: Có thêm mã Case dễ đọc (`CS-0142`) không, hay FE hiển thị UUID rút gọn.
 - Q4: Mô tả tiếng Việt ở `/searches/text` được dịch/tiền xử lý thế nào trước RaSa Text Encoder.
-- Q5: Tắt AI giữa job: hủy ngay (`CANCELLED`) hay chạy hết job hiện tại.
-- Q6: Staging video: filesystem private hay bucket riêng; xóa sau bao lâu.
-- Q7: Job `FAILED` có endpoint retry dùng lại file đã staging, hay Admin phải upload lại để tạo job mới.
+- Q5: **Đã chốt Phase 4:** tắt AI/cancel dừng ở checkpoint tiếp theo; ingestion đang chạy có thể hoàn tất, track đã lưu được giữ.
+- Q6: **Đã chốt Phase 4:** filesystem private; xóa khi job terminal, dọn file upload mồ côi sau 24 giờ.
+- Q7: **Đã chốt Phase 4:** job FAILED cần upload lại với Idempotency-Key mới; crash worker tự replay tối đa 3 lần trước khi FAILED.
 - Q8: Tài nguyên tồn tại nhưng không có quyền trả `403` hay `404` (đề xuất `404` cho Case/track/media, `403` cho route sai role).

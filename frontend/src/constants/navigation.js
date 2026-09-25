@@ -18,6 +18,7 @@ export const PATHS = {
   cameras: '/admin/cameras',
   ai: '/admin/ai',
   models: '/admin/models',
+  videos: '/admin/videos',
   status: '/monitor/status',
   diagnostics: '/monitor/diagnostics',
   audit: '/monitor/audit',
@@ -36,6 +37,7 @@ export const NAVIGATION = {
         { to: PATHS.cameras, label: 'Camera', icon: VideoCameraIcon },
         { to: PATHS.ai, label: 'Xử lý AI', icon: CpuIcon },
         { to: PATHS.models, label: 'Mô hình AI', icon: StackIcon },
+        { to: PATHS.videos, label: 'Xử lý video', icon: VideoCameraIcon },
       ],
     },
     {

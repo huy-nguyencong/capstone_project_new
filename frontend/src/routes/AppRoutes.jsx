@@ -3,6 +3,7 @@ import { AppLayout } from '@/components/layout/AppLayout'
 import { PATHS } from '@/constants/navigation'
 import AiProcessingPage from '@/pages/admin/AiProcessingPage'
 import CamerasPage from '@/pages/admin/CamerasPage'
+import VideoProcessingPage from '@/pages/admin/VideoProcessingPage'
 import ModelsPage from '@/pages/admin/ModelsPage'
 import UsersPage from '@/pages/admin/UsersPage'
 import CaseBrowserPage from '@/pages/cases/CaseBrowserPage'
@@ -25,6 +26,7 @@ export function AppRoutes() {
             <Route path={PATHS.cameras} element={<CamerasPage />} />
             <Route path={PATHS.ai} element={<AiProcessingPage />} />
             <Route path={PATHS.models} element={<ModelsPage />} />
+            <Route path={PATHS.videos} element={<VideoProcessingPage />} />
             <Route path={PATHS.status} element={<SystemStatusPage />} />
             <Route path={PATHS.diagnostics} element={<DiagnosticsPage />} />
             <Route path={PATHS.audit} element={<AuditLogPage />} />

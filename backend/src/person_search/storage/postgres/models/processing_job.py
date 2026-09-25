@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import CheckConstraint, DateTime, Enum, ForeignKey, Index, String, Text
+from sqlalchemy import Boolean, CheckConstraint, DateTime, Enum, ForeignKey, Index, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -30,9 +30,24 @@ class ProcessingJob(TimestampMixin, Base):
             "source_type <> 'FILE' OR source_ref IS NOT NULL", name="ck_jobs_file_source_ref"
         ),
         Index("ix_processing_jobs_status", "status"),
+        Index("uq_jobs_actor_idempotency", "requested_by", "idempotency_key", unique=True),
+        CheckConstraint("attempts >= 0 AND sampled_frames >= 0", name="ck_jobs_worker_counters"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    requested_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="RESTRICT")
+    )
+    idempotency_key: Mapped[str | None] = mapped_column(String(128))
+    request_digest: Mapped[str | None] = mapped_column(String(64))
+    cancel_requested: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
+    lease_token: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    heartbeat_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    attempts: Mapped[int] = mapped_column(nullable=False, default=0, server_default="0")
+    sampled_frames: Mapped[int] = mapped_column(nullable=False, default=0, server_default="0")
     camera_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("cameras.id", ondelete="RESTRICT"),

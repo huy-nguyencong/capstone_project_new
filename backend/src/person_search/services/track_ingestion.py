@@ -503,6 +503,7 @@ def _new_track(request: TrackIngestionRequest) -> PersonTrack:
         processing_job_id=request.processing_job_id,
         ai_config_version_id=request.ai_config_version_id,
         appeared_at_utc=request.appeared_at_utc,
+        source_frame_index=request.source_frame_index,
         source_started_at_ms=request.source_started_at_ms,
         source_ended_at_ms=request.source_ended_at_ms,
         representative_frame_timestamp_ms=request.representative_frame_timestamp_ms,

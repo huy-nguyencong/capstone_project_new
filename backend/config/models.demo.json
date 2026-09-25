@@ -1,0 +1,5 @@
+{
+  "detectors": [{"id": "demo_detector", "name": "Detector giả lập (demo)", "version": "1", "description": "Sinh bounding box tổng hợp, không nhận diện người.", "meta": "Chỉ kiểm thử luồng", "available": true}],
+  "trackers": [{"id": "demo_tracker", "name": "Tracker giả lập (demo)", "version": "1", "description": "Một track cho mỗi nhóm 5 frame lấy mẫu.", "meta": "Deterministic", "available": true, "compatible_detectors": ["demo_detector"]}],
+  "encoder": {"name": "Encoder giả lập (demo)", "version": "fake_demo_v1", "dimension": 256, "checkpoint_sha256": "0000000000000000000000000000000000000000000000000000000000000000"}
+}
