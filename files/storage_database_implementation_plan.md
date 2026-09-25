@@ -119,15 +119,15 @@ Trạng thái hợp lệ:
 | STO-05 | Schema PostgreSQL cho AI config, job và PersonTrack | STO-04 | DONE | `54f80d1` |
 | STO-06 | Schema PostgreSQL cho Case, CaseResult và AuditLog | STO-05 | DONE | `91e073c` |
 | STO-07 | Ràng buộc, index, seed và kiểm thử migration | STO-06 | DONE | `91e073c` |
-| STO-08 | Repository và transaction cho PostgreSQL | STO-07 | READY_FOR_REVIEW | — |
-| STO-09 | Adapter lưu full frame trên MinIO | STO-03 | READY_FOR_REVIEW | — |
-| STO-10 | Collection và adapter vector trên Milvus | STO-03 | READY_FOR_REVIEW | — |
-| STO-11 | Điều phối ghi track xuyên ba kho dữ liệu | STO-08, STO-09, STO-10 | READY_FOR_REVIEW | — |
-| STO-12 | Retry, reconciliation và xử lý dữ liệu dở dang | STO-11 | READY_FOR_REVIEW | — |
-| STO-13 | Truy vấn vector có lọc và kiểm tra quyền | STO-11 | READY_FOR_REVIEW | — |
-| STO-14 | Đọc ảnh, crop động và kiểm tra quyền truy cập | STO-11 | READY_FOR_REVIEW | — |
-| STO-15 | Lưu CaseResult và thống kê Viewer | STO-08, STO-14 | READY_FOR_REVIEW | — |
-| STO-16 | Audit log và trạng thái vận hành lưu trữ | STO-08, STO-12 | READY_FOR_REVIEW | — |
+| STO-08 | Repository và transaction cho PostgreSQL | STO-07 | DONE | — |
+| STO-09 | Adapter lưu full frame trên MinIO | STO-03 | DONE | — |
+| STO-10 | Collection và adapter vector trên Milvus | STO-03 | DONE | — |
+| STO-11 | Điều phối ghi track xuyên ba kho dữ liệu | STO-08, STO-09, STO-10 | DONE | — |
+| STO-12 | Retry, reconciliation và xử lý dữ liệu dở dang | STO-11 | DONE | — |
+| STO-13 | Truy vấn vector có lọc và kiểm tra quyền | STO-11 | DONE | — |
+| STO-14 | Đọc ảnh, crop động và kiểm tra quyền truy cập | STO-11 | DONE | — |
+| STO-15 | Lưu CaseResult và thống kê Viewer | STO-08, STO-14 | DONE | — |
+| STO-16 | Audit log và trạng thái vận hành lưu trữ | STO-08, STO-12 | DONE | — |
 | STO-17 | Kiểm thử tích hợp và E2E toàn luồng | STO-13 đến STO-16 | DONE | — |
 | STO-18 | Đo hiệu năng, tài nguyên và dung lượng | STO-17 | DONE | — |
 | STO-19 | Backup, restore, bảo mật và runbook | STO-18 | DONE | — |
@@ -792,7 +792,7 @@ Mỗi lần làm task, thêm một mục theo mẫu:
 
 ### 2026-09-25 — STO-08
 
-- Trạng thái: `READY_FOR_REVIEW`.
+- Trạng thái: `DONE`.
 - Thay đổi chính: repository cho toàn bộ model, actor-scoped query, cursor pagination, Unit of Work commit/rollback, mapping lỗi constraint và optimistic update bằng `updated_at`.
 - Test đã chạy: unit với mocked session; integration PostgreSQL thật cho commit, rollback, duplicate mapping, pagination và concurrent update.
 - Kết quả: test đạt; transaction lỗi không để lại row nửa chừng và writer dùng dữ liệu cũ bị từ chối.
@@ -801,7 +801,7 @@ Mỗi lần làm task, thêm một mục theo mẫu:
 
 ### 2026-09-25 — STO-09
 
-- Trạng thái: `READY_FOR_REVIEW`.
+- Trạng thái: `DONE`.
 - Thay đổi chính: adapter put/head/get/delete frame; key ổn định; kiểm tra MIME, decode, dimension, size và SHA-256; put idempotent và conflict khi checksum khác; không phát URL public.
 - Test đã chạy: fake MinIO cho idempotency/corruption/conflict; integration MinIO thật cho round-trip và anonymous access.
 - Kết quả: unit và integration đạt; checksum giữ nguyên và anonymous HTTP trả 403.
@@ -810,7 +810,7 @@ Mỗi lần làm task, thêm một mục theo mẫu:
 
 ### 2026-09-25 — STO-10
 
-- Trạng thái: `READY_FOR_REVIEW`.
+- Trạng thái: `DONE`.
 - Thay đổi chính: collection versioned, alias, HNSW/IP index, vector validation, typed filter builder, upsert/get/delete/search và DTO score tạm thời.
 - Test đã chạy: unit dimension/NaN/normalization/filter; integration Milvus thật cho ensure idempotent, upsert, filter trước top-k, get và delete.
 - Kết quả: unit và integration đạt; area filter loại track ngoài phạm vi dù vector giống hệt; collection test được dọn sạch.
@@ -819,7 +819,7 @@ Mỗi lần làm task, thêm một mục theo mẫu:
 
 ### 2026-09-25 — STO-11
 
-- Trạng thái: `READY_FOR_REVIEW`.
+- Trạng thái: `DONE`.
 - Thay đổi chính: `TrackIngestionService.ingest_track` với register `PENDING` + outbox trong một transaction, upload MinIO, upsert Milvus, publish `READY`; idempotency theo `track_id` và conflict khi identity khác; phân loại lỗi retryable/non-retryable, exponential backoff, `FAILED`/`DEAD` khi vượt giới hạn; `PersonTrackRepository.get_for_update/ready_ids`, `StorageOutboxRepository.get_for_track`, `UnitOfWork.flush`; object key MinIO đổi sang prefix `tracks/v1` theo contract.
 - Quyết định: đường đọc lọc hit Milvus qua `ready_ids` của PostgreSQL (phương án a); embedding lưu trong outbox payload để STO-12 retry bước Milvus, frame bytes không lưu.
 - Test đã chạy: toàn bộ unit suite, Ruff, compile và integration `tests/integration/test_track_ingestion_flow.py` trên PostgreSQL/MinIO/Milvus thật.
@@ -829,7 +829,7 @@ Mỗi lần làm task, thêm một mục theo mẫu:
 
 ### 2026-09-25 — STO-12
 
-- Trạng thái: `READY_FOR_REVIEW`.
+- Trạng thái: `DONE`.
 - Thay đổi chính: `OutboxRetryWorker` claim event đến hạn bằng `FOR UPDATE SKIP LOCKED` và thu hồi event `PROCESSING` quá `lock_timeout`; `TrackIngestionService.resume` kiểm tra frame MinIO, upsert vector từ embedding trong outbox rồi publish; `requeue_failed` đưa `FAILED → PENDING` kèm audit; `StorageReconciler` báo track treo, object/vector thiếu, checksum sai, orphan object/vector theo batch, mặc định dry-run; chế độ `--delete-orphans` kiểm tra lại PostgreSQL/CaseResult trước khi xóa và ghi audit; CLI `person-search-storage`.
 - Quyết định: track `READY` thiếu object/vector chỉ được báo cáo, không hạ trạng thái (vì `READY` không được chuyển ngược); frame thiếu là lỗi retryable nhưng worker không tự upload được.
 - Test đã chạy: toàn bộ unit suite, Ruff, compile và integration `tests/integration/test_storage_read_paths.py` trên PostgreSQL/MinIO/Milvus thật.
@@ -839,7 +839,7 @@ Mỗi lần làm task, thêm một mục theo mẫu:
 
 ### 2026-09-25 — STO-13
 
-- Trạng thái: `READY_FOR_REVIEW`.
+- Trạng thái: `DONE`.
 - Thay đổi chính: `TrackSearchService.search` lấy area từ PostgreSQL, từ chối camera ngoài area trước khi gọi Milvus, gửi filter area/camera/time vào Milvus trước top-k, hydrate và recheck `READY`/area/camera/time ở PostgreSQL, bỏ hit stale kèm metric; `VectorFilter` hỗ trợ nhiều camera.
 - Quyết định: track của camera `INACTIVE`/`RETIRED` vẫn tìm được nếu thuộc area hiện tại; Operator không `ACTIVE` không được tìm kiếm.
 - Test đã chạy: toàn bộ unit suite, Ruff, compile và integration search trên PostgreSQL/Milvus thật.
@@ -849,7 +849,7 @@ Mỗi lần làm task, thêm một mục theo mẫu:
 
 ### 2026-09-25 — STO-14
 
-- Trạng thái: `READY_FOR_REVIEW`.
+- Trạng thái: `DONE`.
 - Thay đổi chính: `TrackImageService` với hai context `search_result_image` (Operator, track `READY` trong area hiện tại) và `case_result_image` (owner Operator hoặc Viewer, theo `case_result_id`); crop động có clamp/padding, full frame có viền bbox, downscale, giới hạn kích thước, `Cache-Control: private, no-store`; lỗi ảnh có `reason` rõ ràng.
 - Quyết định: 403 cho sai vai trò/tài khoản không `ACTIVE`, 404 cho đối tượng không tồn tại hoặc không thuộc quyền; ảnh Case tra theo `case_result_id`; ảnh có kích thước khác metadata track được coi là hỏng.
 - Test đã chạy: toàn bộ unit suite, Ruff, compile và integration imagery trên PostgreSQL/MinIO thật.
@@ -859,7 +859,7 @@ Mỗi lần làm task, thêm một mục theo mẫu:
 
 ### 2026-09-25 — STO-15
 
-- Trạng thái: `READY_FOR_REVIEW`.
+- Trạng thái: `DONE`.
 - Thay đổi chính: `CaseService` tạo/sửa Case, thêm/xóa `CaseResult`, list/detail, dashboard Viewer; owner lấy từ actor đọc lại ở PostgreSQL; lưu track chỉ khi track `READY` thuộc area hiện tại; snapshot camera/area/thời gian phía server; không deduplicate; optimistic check bằng `expected_updated_at`; cursor keyset; audit `case.*` thành công trong cùng transaction và audit thất bại khi bị từ chối.
 - Quyết định: Case người khác trả 404, sai vai trò trả 403; thêm/xóa mục cập nhật `cases.updated_at`; list sắp xếp theo `created_at`, dashboard theo `updated_at`; title tối đa 200, note tối đa 5000 ký tự.
 - Test đã chạy: toàn bộ unit suite (194 test đạt), Ruff, compile và integration service trên PostgreSQL thật.
@@ -869,7 +869,7 @@ Mỗi lần làm task, thêm một mục theo mẫu:
 
 ### 2026-09-25 — STO-16
 
-- Trạng thái: `READY_FOR_REVIEW`.
+- Trạng thái: `DONE`.
 - Thay đổi chính: catalog `AuditEvent`, `redact_metadata`, `record_audit`/`AuditRecorder`, `AuditLogService` cho Admin với filter và cursor; audit `storage.track_failed`; hai audit storage cũ chuyển sang catalog; `StorageMetrics` theo component và thời gian ingestion; `StorageStatusService` tổng hợp track/outbox/health/cảnh báo.
 - Quyết định: metric in-memory theo tiến trình; search không tạo audit; audit thất bại không làm hỏng thao tác chính.
 - Test đã chạy: toàn bộ unit suite (194 test đạt), Ruff, compile và integration service trên PostgreSQL thật.
