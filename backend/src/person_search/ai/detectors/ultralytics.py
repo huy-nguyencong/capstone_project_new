@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 import math
 import multiprocessing
+import os
+import tempfile
 import time
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
@@ -111,6 +113,13 @@ def _ultralytics_child(
     """Own all model/tensor state so a timed-out inference can be terminated safely."""
 
     try:
+        image_open = Image.open
+        config_key = "YOLO_CONFIG_DIR"
+        previous_config_dir = os.environ.get(config_key)
+        if previous_config_dir is None:
+            config_dir = Path(tempfile.gettempdir()) / "person-search-ultralytics"
+            config_dir.mkdir(parents=True, exist_ok=True)
+            os.environ[config_key] = str(config_dir)
         from ultralytics import YOLO
 
         model = YOLO(artifact_path)
@@ -119,6 +128,10 @@ def _ultralytics_child(
         connection.send(("load_error", None))
         connection.close()
         return
+    finally:
+        Image.open = image_open
+        if previous_config_dir is None:
+            os.environ.pop(config_key, None)
     try:
         while True:
             command, payload = connection.recv()
