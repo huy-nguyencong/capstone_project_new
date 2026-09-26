@@ -3,7 +3,8 @@
 Flask API và background worker cho ứng dụng tìm kiếm người qua camera.
 
 Backend dùng PostgreSQL để lưu dữ liệu nghiệp vụ, Milvus để lưu vector và MinIO để lưu ảnh.
-API và database migrations đã có trong repository; pipeline AI hiện chỉ có adapter demo.
+AI worker production dùng YOLO11n + ByteTrack + RaSa từ registry allowlist; adapter demo chỉ dùng
+khi bật rõ ràng cho phát triển.
 
 ## Yêu cầu
 
@@ -302,8 +303,26 @@ Từ thư mục gốc repository, có thể chạy toàn bộ kiểm tra nhanh b
 
 ## Background worker
 
-Worker chạy riêng, không cần để khởi động API. Hiện chưa có adapter AI production;
-lệnh `person-search-worker` không kèm `--demo` sẽ báo lỗi.
+Worker chạy riêng, không cần để khởi động API.
+
+### Worker production
+
+```bash
+python -m pip install -e ".[dev,ai-ultralytics,ai-rasa]"
+python tools/ai_preflight.py --registry config/models.example.json \
+  --resource-config config/ai_resources.json --profile local_cpu
+person-search-production-worker
+```
+
+Đặt trong `backend/.env`: `PERSON_SEARCH_MODEL_REGISTRY` là đường dẫn tuyệt đối tới
+`config/models.example.json`, `PERSON_SEARCH_MODEL_ARTIFACT_ROOT` tới `config`, checkpoint RaSa theo
+README gốc. Supervisor chạy mỗi job trong process con, ghi heartbeat 10 giây/lần; `Ctrl+C` hoặc
+SIGTERM dừng nhận job mới và để lease của job đang chạy được worker sau phục hồi. Worker xử lý tuần
+tự cả job video upload và job RTSP có giới hạn frame.
+
+### Worker demo
+
+Lệnh `person-search-worker` chỉ dành cho pipeline demo và báo lỗi nếu không kèm `--demo`.
 
 Để thử pipeline video demo, đặt `PERSON_SEARCH_MODEL_REGISTRY` trong `backend/.env` thành
 **đường dẫn tuyệt đối** đến [config/models.demo.json](config/models.demo.json).
@@ -341,7 +360,7 @@ Worker chạy cùng preflight guard trước khi claim job. RAM/disk dưới ng�
 device không phù hợp hoặc không có một pipeline model tương thích sẽ làm worker dừng với mã
 thành phần rõ ràng thay vì tiếp tục tới OOM/crash.
 
-## RTSP fixture local (AIW-09)
+## RTSP giả lập tại nhà
 
 MediaMTX là service tùy chọn, không khởi động cùng storage stack mặc định:
 
@@ -370,3 +389,84 @@ Nếu camera có credential, ứng dụng phải nhận URL qua Camera Admin đ�
 ```powershell
 docker compose --env-file ../infra/.env -f ../infra/compose.yaml --profile rtsp stop mediamtx
 ```
+
+### Bằng chứng RTSP qua worker production
+
+1. Dựng MediaMTX như trên, bind vào IP LAN và đặt `PERSON_SEARCH_RTSP_NETWORKS` chứa IP đó.
+2. Trong Camera Admin, tạo camera, nhập URL RTSP (credential nếu có được mã hóa bằng
+   `PERSON_SEARCH_RTSP_KEY`), bật AI. Không để job video nào đang chờ.
+3. Phát video có người vào MediaMTX bằng lệnh `ffmpeg` ở trên, rồi chạy:
+
+```bash
+python tools/rtsp_evidence.py --camera-id <camera-id> --frames 1800 \
+  --search-text "A person walking." --operator-user-id <operator-id> \
+  --output var/evidence/rtsp-happy.json
+```
+
+4. Reconnect path: chạy lại lệnh với output khác, dừng `ffmpeg` khoảng 5 giây rồi phát lại trong lúc
+   job đang chạy. Report phải có `reconnects >= 1` và job `SUCCEEDED`.
+5. Dừng AI: tắt AI của camera trong lúc chạy; job phải `CANCELLED`, không có track dở dang.
+
+Report chứa URL đã redact, trạng thái job, metrics, số track `READY`, số lần reconnect, kết quả search
+và environment. Job RTSP không replay khi lỗi giữa phiên (`rtsp_session_interrupted`) vì stream đã
+trôi qua. Test tái lập tự động: đặt `PERSON_SEARCH_RTSP_TEST_PUBLISH_URL`
+(ví dụ `rtsp://127.0.0.1:8554/aiw28`), `PERSON_SEARCH_RTSP_TEST_READ_URL`
+(`rtsp://<IP LAN>:8554/aiw28`) và `PERSON_SEARCH_RTSP_NETWORKS`, rồi chạy
+`python -m pytest tests/integration/test_rtsp_mediamtx.py`.
+
+## Vận hành và trình diễn
+
+### Thứ tự khởi động
+
+1. Storage: `sh scripts/storage.sh up` (từ thư mục gốc).
+2. Migration: `python -m alembic upgrade head`; seed chỉ cho development.
+3. Preflight model: `python tools/ai_preflight.py ... --profile local_cpu` phải `ready=true`.
+4. Kiểm tra phát hành: `python tools/release_check.py --output var/release-check.json` phải
+   `ready=true` (môi trường production, secret không mặc định, registry production, license đã
+   duyệt, không track secret/dataset/checkpoint lớn trong Git, đủ đĩa).
+5. Worker: `person-search-production-worker`.
+6. API: `python -m person_search` là server development của Flask; khi triển khai ngoài máy demo cần
+   WSGI server riêng (chưa kèm trong repository).
+
+### Chuẩn bị dữ liệu 7 video trước buổi bảo vệ
+
+1. Tạo 7 camera logic C1..C7 trong đúng khu vực, bật AI, áp dụng YOLO11n + ByteTrack.
+2. Upload lần lượt `cam1.mp4`..`cam7.mp4` với profile sampling đã chọn; worker xử lý tuần tự,
+   theo dõi tại màn hình job hoặc `GET /api/v1/admin/processing-jobs`.
+3. Mỗi job phải `SUCCEEDED` và `published_tracks == completed_tracks`; job lỗi xem `error_code`
+   rồi upload lại với Idempotency-Key mới.
+4. Chạy `person-search-storage reconcile` (dry-run) phải sạch, rồi sao lưu:
+   `python tools/storage_backup.py backup` và `python tools/storage_backup.py verify <thư mục>`.
+5. Nếu xử lý trên Colab T4: dùng `notebooks/ai_worker_colab_batch.ipynb`, tải bundle và
+   `SHA256SUMS.json`, kiểm tra checksum rồi `person-search-storage import-bundle` từng file; import
+   lặp lại là idempotent.
+
+### Ngày trình diễn
+
+- Chỉ cần storage, API, frontend và worker local; dữ liệu 7 video đã index sẵn. Colab không nằm
+  trên đường chính.
+- Kiểm tra `/health/ready`, màn hình trạng thái hệ thống (worker `IDLE`, heartbeat mới) và chạy
+  kiểm tra Search Components trước khi mở demo.
+- Demo xử lý thật: upload một clip ngắn đã thử trước; nếu model chậm, dùng video màn hình quay sẵn
+  và nói rõ phần nào là tiền xử lý.
+
+### Sự cố thường gặp khi vận hành
+
+| Tình huống | Xử lý |
+| --- | --- |
+| Worker chết giữa job | Khởi động lại worker; lease hết hạn thì job được claim lại với token mới, track đã `READY` không nhân đôi. |
+| Cần hủy job | Admin bấm hủy (`POST /api/v1/admin/processing-jobs/<id>/cancel`); job đang chạy dừng ở safe point. |
+| Track kẹt `PENDING` hoặc outbox lỗi | `person-search-storage retry-outbox`, sau đó `person-search-storage reconcile`. |
+| Frame/vector bị mất sau sự cố | `person-search-storage reconcile --quarantine-corrupt`, `person-search-storage reindex`, `person-search-storage requeue-track <id>`. |
+| Cần khôi phục dữ liệu | `python tools/storage_backup.py restore <thư mục> --yes` trên stack đã dừng API/worker. |
+| Search báo encoder không khả dụng | Xem log JSON theo `request_id`; kiểm tra checkpoint RaSa và chạy Search Components diagnostic. |
+
+### Checklist trước demo
+
+- `tools/release_check.py` đạt; không còn `PERSON_SEARCH_ALLOW_DEMO_MODELS=1`.
+- License: YOLO11n/Ultralytics AGPL-3.0 đã được duyệt cho demo học thuật; RaSa MIT; giữ nguyên
+  LICENSE và provenance trong registry.
+- Secret chỉ nằm trong `.env`/secret manager; tài khoản seed `password` đã bị thay hoặc xóa.
+- Log dùng JSON có redaction; không chia sẻ log thô chứa đường dẫn nội bộ ra ngoài.
+- Dữ liệu riêng tư: chỉ dùng WILDTRACK và video được phép; không đưa ảnh người thật khác vào demo.
+- Đĩa trống đủ cho staging video và backup; đã có bản backup verify gần nhất.

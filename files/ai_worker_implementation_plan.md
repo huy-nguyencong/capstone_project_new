@@ -303,8 +303,8 @@ Quy trình cho mỗi task:
 | AIW-25 | E2E một video → search → Case → Viewer | AIW-18, AIW-22, AIW-24 | REVIEW |
 | AIW-26 | Đánh giá chất lượng trên 7 video | AIW-25 | BLOCKED |
 | AIW-27 | Benchmark `N=10`/`N=20` và tài nguyên máy demo | AIW-25 | BLOCKED |
-| AIW-28 | Bằng chứng xử lý RTSP giả lập | AIW-09, AIW-25 | TODO |
-| AIW-29 | Đóng gói, hướng dẫn vận hành và nghiệm thu AI worker | AIW-26 đến AIW-28 | TODO |
+| AIW-28 | Bằng chứng xử lý RTSP giả lập | AIW-09, AIW-25 | BLOCKED |
+| AIW-29 | Đóng gói, hướng dẫn vận hành và nghiệm thu AI worker | AIW-26 đến AIW-28 | REVIEW |
 
 Đường găng cho lát cắt đầu tiên:
 
@@ -1038,6 +1038,8 @@ Một task chỉ được đánh dấu `DONE` khi:
 | AIW-25 | `REVIEW` | `services/query_encoder.py` (`InProcessQueryEncoder`), wiring search production trong `app.py`, `tests/e2e/test_ai_worker_slice.py`, `tests/unit/test_query_encoder.py`, mục E2E AI trong `backend/README.md` | Search production dùng RaSa in-process từ registry (một gateway/process, khóa tuần tự, lỗi model → `encoder_unavailable` 503, input sai vẫn 422, gateway hỏng được dựng lại); `PERSON_SEARCH_ENCODER_URL` vẫn ưu tiên nếu đặt. E2E đi hết API thật: Admin áp dụng YOLO11n+ByteTrack qua `PUT /ai/config`, tạo camera, bật AI, upload video → worker production `run_once` → track READY có frame/bbox/vector → Operator tìm text/attribute/image (ảnh crop từ frame thật phải về lại trong top-4) → Operator vùng khác không thấy track và không mở được frame → lưu Case → Operator/Viewer xem crop/full frame, response và bảng Case không có Matching Score; Viewer không search được. Không seed track trực tiếp; chỉ seed area/user vì chưa có CRUD area | `test_query_encoder.py` 7 passed; E2E collect và skip đúng lý do offline (thiếu torch/ultralytics/transformers/checkpoint, cần `PERSON_SEARCH_RUN_E2E=1`); `pytest -m unit`/toàn bộ: 633 passed, 40 skipped | **Chưa chạy E2E thật** trên máy này. Lỗi storage/model của lát cắt được phủ ở failure injection AIW-24 và integration AIW-18/20, không lặp trong E2E. Cần clip ngắn có người qua `PERSON_SEARCH_E2E_VIDEO` |
 | AIW-26 | `BLOCKED` | `evaluation/metrics.py`, `evaluation/wildtrack_eval.py`, `evaluation/environment.py`, `tools/evaluate_wildtrack.py`, `tools/export_result_bundle.py`, lệnh `person-search-storage import-bundle`, `tests/unit/test_evaluation.py` | Đánh giá chạy pipeline production trên `Image_subsets/C1..C7` có annotation WILDTRACK: detection TP/FP/FN/duplicate/precision/recall (IoU 0.5, greedy 1-1), track đứt/identity switch/người bỏ sót/track không thuần; gallery gán nhãn bằng person chiếm đa số qua matching theo frame (chỉ offline, không persist identity); Recall@4/8/12/16 + MRR cho image/text/attribute, loại quan sát chính xác của query khỏi gallery, query không có positive được liệt kê riêng; ví dụ thành công/thất bại; lineage đầy đủ (commit, package, GPU, checksum model/settings, query set). Batch Colab xuất bundle + sidecar lineage và import qua `BundleImporter` | `test_evaluation.py` 8 passed (dataset WILDTRACK tổng hợp nhỏ + adapter giả); CLI `--help` đạt | **Chưa có số đo**: máy này không có dataset, torch, checkpoint. Query set đang `provisional_manual_review` (6 query). Detection/track dùng image subset 2 fps nên track đứt chưa phản ánh video 60 fps với `N=10/20`. Ngưỡng chấp nhận chờ người thực hiện duyệt sau khi có baseline |
 | AIW-27 | `BLOCKED` | `evaluation/benchmark.py`, `tools/benchmark_sampling.py`, `tests/unit/test_benchmark.py`, hướng dẫn trong `backend/README.md` | Benchmark chạy cùng video/config cho các `N` (bắt buộc có baseline `N=10`), lặp `--repeats`, xen kẽ N trong mỗi vòng, run đầu là cold; đo wall time, source/sampled FPS, latency trung bình từng stage (kể cả `load`), CPU self/child, peak RSS process và model child process, peak VRAM qua `nvidia-smi`, dung lượng JPEG đại diện, số track và số track ngắn (<2 s, proxy track đứt); tổng hợp mean/median/p95 và tỉ lệ so với N=10; `--profile` và environment snapshot phân biệt local CPU/Colab T4. Publication/search latency lấy từ report E2E | `test_benchmark.py` 6 passed; CLI `--help` đạt | **Chưa có số đo, chưa chọn N mặc định**: cần máy demo/Colab có model. Quyết định N và preset để người thực hiện review sau khi có số liệu; production vẫn không nhận raw N |
+| AIW-28 | `BLOCKED` | Job RTSP trong `services/jobs.py` (`create_rtsp_job`, claim theo `source_types`, timeline chốt lúc claim), `workers/durable.py` (`frame_budget`, `BudgetedSource`, `rtsp_source_factory`, `source_factory_by_type`, không replay RTSP), wiring trong `workers/production_main.py`, `tools/rtsp_evidence.py`, `tests/unit/test_rtsp_jobs.py`, `tests/integration/test_rtsp_mediamtx.py`, runbook trong `backend/README.md` | RTSP và file đi qua cùng `SequentialProductionWorker` → `ProductionPipeline` → `ProductionTrackPublisher`; chỉ khác source factory. Credential giải mã tạm qua `CameraRuntime.connection_url`, lỗi mở nguồn quy về `source_open_failed`; phiên RTSP giới hạn bằng số frame nguồn, lỗi giữa phiên kết thúc `FAILED` với mã thật thay vì replay stream đã trôi qua; tắt AI giữa phiên → `CANCELLED` như file. Tool bằng chứng ghi report JSON: URL redact, job/metrics, số track `READY`, số reconnect, kết quả search, environment | `test_rtsp_jobs.py` 10 passed; integration MediaMTX (happy path, restart publisher → reconnect với timeline đơn điệu, worker tiêu thụ job RTSP có budget) collect và skip đúng lý do; toàn bộ 656 passed, 43 skipped | **Chưa có bằng chứng thật**: máy này có `ffmpeg` nhưng không có MediaMTX/Docker, stack và model. Cần chạy integration test và `rtsp_evidence.py` (happy + reconnect + dừng AI) rồi ghi số đo vào đây |
+| AIW-29 | `REVIEW` | `requirements/colab-linux-x86_64-cp312.lock.txt` (75 package, hash SHA-256) sinh bằng `tools/lock_colab_requirements.py`; notebook `ai_worker_colab_batch.ipynb` mới và preflight notebook cài bằng `--require-hashes` + `--no-deps`; `person_search/release.py` + `tools/release_check.py`; `tests/unit/test_release_check.py`; README: worker production, thứ tự khởi động, chuẩn bị 7 video, ngày trình diễn, sự cố/restart/cancel/reconcile/backup, checklist trước demo, bundle Colab | Colab không còn phụ thuộc ngầm package có sẵn của runtime; lock cố định torch 2.14.0, torchvision 0.29.0, ultralytics 8.4.163, lap 0.5.12, transformers 4.49.0, timm 0.9.16, safetensors 0.4.5 và toàn bộ dependency bắc cầu cho Linux x86_64/cp312. Release check tự động chặn: môi trường không phải production, debug, demo adapter, secret mặc định/ngắn, registry không production hoặc artifact sai checksum, license chưa duyệt, secret/dataset/checkpoint lớn bị track, thiếu đĩa; cảnh báo thiếu `PERSON_SEARCH_RTSP_KEY` hoặc log không JSON. Report không in giá trị secret | `test_release_check.py` 12 passed; `release_check.py` trên máy dev trả `ready=false` đúng kỳ vọng (env development, secret mặc định, chưa đặt registry); `pytest -m unit` 656 passed, 5 skipped | Chưa dựng môi trường sạch, chưa chạy preflight/E2E/restart giữa job/search-Case trên stack thật. Gate D/E chưa đạt vì AIW-25..28 chưa có kết quả chạy thật; không có ngoại lệ nào được duyệt |
 
 ### 12.2. Lịch sử thay đổi trạng thái
 
@@ -1132,6 +1134,113 @@ Không sửa lịch sử cũ; nếu cách tổ chức thay đổi thì thêm dò
 | 2026-09-26 | AIW-25 | REVIEW | — | `test_query_encoder.py` 7 passed; `pytest` toàn bộ 633 passed, 40 skipped; E2E AI skip offline có lý do | Nối RaSa in-process vào search production và viết E2E lát cắt video → worker → search ba mode → Case → Viewer qua API thật. Chờ chạy trên máy có stack + model. |
 | 2026-09-26 | AIW-26 | BLOCKED | — | `test_evaluation.py` 8 passed | Công cụ đánh giá và đường bundle Colab sẵn sàng; thiếu dataset/checkpoint/torch trên máy này nên chưa có baseline. Không tự đặt ngưỡng. |
 | 2026-09-26 | AIW-27 | BLOCKED | — | `test_benchmark.py` 6 passed | Công cụ benchmark sẵn sàng; chưa có số đo local CPU/Colab T4 nên chưa khóa N mặc định. |
+| 2026-09-26 | AIW-28 | IN_PROGRESS | — | Bắt đầu từ `RtspFrameSource` và fixture MediaMTX | Worker production chỉ nhận job FILE nên RTSP chưa đi được tới publish. |
+| 2026-09-26 | AIW-28 | BLOCKED | — | `test_rtsp_jobs.py` 10 passed; integration MediaMTX skip (thiếu MediaMTX) | Worker nhận job RTSP có giới hạn frame qua cùng pipeline/publisher; tool và test bằng chứng sẵn sàng, chờ chạy trên máy có MediaMTX + stack + model. |
+| 2026-09-26 | AIW-29 | IN_PROGRESS | — | Bắt đầu từ README, notebook preflight và pyproject | Notebook Colab cài backend không kèm AI extra nên phụ thuộc ngầm torch của runtime; README còn ghi chưa có adapter production. |
+| 2026-09-26 | AIW-29 | REVIEW | — | `test_release_check.py` 12 passed; toàn bộ 656 passed, 43 skipped; lock resolve 75 package cho cp312 Linux x86_64 | Lock có hash, notebook batch, release check và runbook vận hành/demo hoàn tất. Nghiệm thu cuối chờ kết quả chạy thật của AIW-25 đến AIW-28. |
+
+### 12.3. Release checklist và tổng hợp nghiệm thu
+
+| Mục | Trạng thái 2026-09-26 | Bằng chứng / việc còn lại |
+| --- | --- | --- |
+| Gate A — nền tảng | Đạt | AIW-00 đến AIW-05 `DONE`. |
+| Gate B — pipeline một video | Đạt | AIW-06 đến AIW-18 `DONE`, smoke YOLO11n+ByteTrack+RaSa thật trên `cam1.mp4`. |
+| Gate C — vận hành an toàn | Chưa đạt | AIW-21 đến AIW-24 ở `REVIEW`: unit pass, còn integration PostgreSQL (migration `0012`, telemetry, diagnostics) và smoke diagnostics model thật. |
+| Gate D — nghiệp vụ E2E | Chưa đạt | `tests/e2e/test_ai_worker_slice.py` chưa chạy trên stack + model. |
+| Gate E — sẵn sàng demo | Chưa đạt | Chưa có số đo 7 video (`evaluate_wildtrack.py`), benchmark N (`benchmark_sampling.py`), bằng chứng RTSP (`rtsp_evidence.py`). |
+| Kết quả AIW-25 | Chưa chạy | Cần report `PERSON_SEARCH_E2E_REPORT` (thời gian job, search text/attribute/image). |
+| Kết quả AIW-26 | Chưa đo | Cần Recall@4/8/12/16 và MRR ba mode, detection/tracking theo camera. |
+| Kết quả AIW-27 | Chưa đo | Cần local CPU và Colab T4 cho N=10/N=20; sau đó chọn N mặc định. |
+| Kết quả AIW-28 | Chưa đo | Cần report happy path, reconnect, dừng AI. |
+| Dependency khóa | Đạt | Local: extra AI pin chính xác trong `pyproject.toml`; Colab: lock hash cp312. |
+| Model artifact/checksum | Đạt | Registry production kiểm checksum; RaSa checkpoint SHA-256 trong README gốc; YOLO11n được track (5,4 MB) có checksum. |
+| License | Đạt, cần giữ nghĩa vụ | Ultralytics AGPL-3.0 đã duyệt cho demo học thuật; RaSa MIT vendored kèm LICENSE. |
+| Secret/log/dữ liệu riêng tư | Có công cụ, chưa chạy trên máy demo | `release_check.py` + log JSON redact; chạy lại trên máy demo trước buổi bảo vệ. |
+| Không có fake adapter trên đường production | Đạt | Registry production từ chối demo; release check chặn `PERSON_SEARCH_ALLOW_DEMO_MODELS=1`; diagnostics/search không fallback. |
+| Runbook | Đạt | README backend: khởi động, 7 video, ngày demo, Colab bundle, sự cố/backup, checklist. |
+
+### 12.4. Bàn giao kiểm thử cho môi trường đầy đủ
+
+Mục này dành cho người hoặc AI agent chạy kiểm thử trên máy có đủ stack, model và dữ liệu. Các task
+AIW-21 đến AIW-29 được viết trên máy không chạy được backend đầy đủ: không có Docker/PostgreSQL
+server, MediaMTX, `torch`/`ultralytics`/`transformers`, checkpoint RaSa và dataset WILDTRACK. Vì vậy
+chỉ phần kiểm thử offline đã được xác minh; mọi tiêu chí phụ thuộc stack, model hoặc số đo đều
+đang chờ ở đây.
+
+**Đã xác minh trên máy phát triển (2026-09-26, commit chưa đẩy sau `d9b628a`):**
+
+| Kiểm tra | Kết quả |
+| --- | --- |
+| `python -m pytest -m unit` | 656 passed, 5 skipped (5 test `model_real` tự skip vì thiếu package/checkpoint) |
+| `python -m pytest` (toàn bộ collection) | 656 passed, 43 skipped (integration/E2E/model thiếu điều kiện môi trường) |
+| `ruff check .`, `python -m compileall src tools`, `git diff --check` | Đạt |
+| `PERSON_SEARCH_REQUIRE_MODEL_TESTS=1 pytest -m model_real` | 5 failed đúng kỳ vọng vì thiếu model; chứng minh cờ biến skip thành fail |
+| Frontend: `eslint` các file đã sửa, `npm run build` | Đạt (cảnh báo chunk size có từ trước) |
+| `tools/lock_colab_requirements.py` | Resolve 75 package có hash cho Linux x86_64/cp312 |
+| `tools/release_check.py` trên máy dev | `ready=false` đúng kỳ vọng (môi trường development, secret mặc định, chưa đặt registry) |
+
+**Điều kiện môi trường cần chuẩn bị:**
+
+- Python 3.11+ với `pip install -e ".[dev,ai-ultralytics,ai-rasa]"`; checkpoint
+  `backend/config/model_artifacts/rasa_cuhk_pedes_v1.pth` đúng SHA-256 trong README gốc.
+- Docker stack `sh scripts/storage.sh up`; `ffmpeg` trong PATH; MediaMTX qua
+  `docker compose --profile rtsp` hoặc binary riêng, bind vào IP LAN.
+- Một PostgreSQL database **dùng một lần** cho `PERSON_SEARCH_CAMERA_TEST_DSN`, đã
+  `alembic upgrade head`. Các test migration và E2E chạy `alembic downgrade base`; tuyệt đối không
+  trỏ chúng vào database có dữ liệu thật. MinIO/Milvus nên là stack dùng một lần vì E2E ghi vào
+  alias active rồi tự xóa object/vector của track do nó tạo.
+- Dataset WILDTRACK (video `cam1..7.mp4`, `Image_subsets`, `annotations_positions`).
+- `backend/.env` với `PERSON_SEARCH_MODEL_REGISTRY` tuyệt đối tới `config/models.example.json`,
+  `PERSON_SEARCH_MODEL_ARTIFACT_ROOT` tới `config`, `PERSON_SEARCH_RTSP_KEY` và
+  `PERSON_SEARCH_RTSP_NETWORKS` chứa IP LAN.
+
+**Thứ tự chạy đề xuất (dừng và ghi lại khi một bước lỗi):**
+
+| # | Task | Lệnh (từ `backend`) | Kỳ vọng / điểm cần soi |
+| --- | --- | --- | --- |
+| 1 | Nền | `python -m pytest -m unit` | 656 passed; với model đã cài, 5 test `model_real` phải pass thay vì skip. |
+| 2 | Model | `PERSON_SEARCH_REQUIRE_MODEL_TESTS=1 python -m pytest -m model_real` | 5 passed. |
+| 3 | AIW-21 | `alembic upgrade head` rồi `alembic check` | Head `20260926_0012`; không có drift (đặc biệt `metrics` JSONB `server_default` và index `ix_worker_heartbeats_heartbeat_at`). Thử `downgrade -1` rồi `upgrade head` trên DB dùng một lần. |
+| 4 | AIW-17..24 | `pytest tests/integration/test_camera_admin.py tests/integration/test_video_jobs.py tests/integration/test_durable_worker_postgres.py tests/integration/test_worker_telemetry_postgres.py tests/integration/test_diagnostics_postgres.py` với `PERSON_SEARCH_CAMERA_TEST_DSN` | Tất cả pass. Telemetry: metrics bị sanitize, claim reset metrics/`error_code`, heartbeat IDLE→QUEUED→RUNNING→ERROR→OFFLINE. Diagnostics không đổi số dòng track/job/outbox/audit. |
+| 5 | Lưu trữ | `PERSON_SEARCH_RUN_INTEGRATION=1 PERSON_SEARCH_RUN_ADAPTER_INTEGRATION=1 python -m pytest -m integration` | Ba kho thật pass; thêm `PERSON_SEARCH_RUN_MIGRATION_INTEGRATION=1` chỉ trên DB dùng một lần. |
+| 6 | AIW-22 | `python tools/production_diagnostics_smoke.py --registry <registry> --artifact-root config --config-root config --video <cam1 clip>` | Exit 0, cả Camera Pipeline và Search Components `SUCCESS` bằng adapter thật. Ghi latency từng bước. |
+| 7 | AIW-22 | Chạy API production, gọi `POST /api/v1/admin/diagnostics/search-components` và `camera-pipeline` | Trả kết quả trong thời gian timeout frontend 300 s; lượt thứ hai đồng thời bị 409 `diagnostics_busy`. |
+| 8 | AIW-23 | Chạy worker + API, xem log | Log JSON một dòng có `request_id`/`job_id`/`camera_id`; không có credential RTSP, signed URL, query thô, vector, bytes ảnh. Job lỗi tạo audit `ai.pipeline_failed`; diagnostics lỗi tạo `ai.diagnostic_failed`. |
+| 9 | AIW-25 | `PERSON_SEARCH_RUN_E2E=1 PERSON_SEARCH_E2E_VIDEO=<clip ngắn có người> PERSON_SEARCH_E2E_REPORT=var/e2e.json python -m pytest tests/e2e/test_ai_worker_slice.py` | Pass. Ghi `timings_ms` (activate_models, worker_job, search_text/attributes/image) vào plan. |
+| 10 | AIW-21 | Chạy `person-search-production-worker`, rồi kill process con giữa job | Màn hình trạng thái: worker RUNNING; process con chết và lease hết hạn → ERROR `worker_heartbeat_lost` (ưu tiên hơn OFFLINE); supervisor dừng hẳn và không còn job RUNNING hết lease → OFFLINE sau 45 s. Khởi động lại thì job được claim lại với token mới, không nhân đôi track. |
+| 11 | AIW-26 | `python tools/evaluate_wildtrack.py --dataset-root <dataset> --queries ../files/wildtrack_evaluation_queries.json --registry <registry> --artifact-root config --output var/evaluation/wildtrack.json` | Có Recall@4/8/12/16 + MRR cho image/text/attribute, detection/tracking theo camera. Chạy thử trước với `--cameras C1 --frame-limit 40`. |
+| 12 | AIW-27 | `python tools/benchmark_sampling.py --registry <registry> --artifact-root config --video <dataset>/cam1.mp4 --intervals 10,20 --repeats 3 --max-source-frames 18000 --profile local_cpu --output var/benchmark/local_cpu.json`; lặp trên Colab bằng `notebooks/ai_worker_colab_batch.ipynb` với `--device cuda --profile colab_t4` | Có cold/warm, FPS, latency stage, peak RSS/VRAM, số track cho cả hai N. Không tự chọn N: đưa số liệu để người thực hiện quyết định. |
+| 13 | AIW-28 | `PERSON_SEARCH_RTSP_TEST_PUBLISH_URL=rtsp://127.0.0.1:8554/aiw28 PERSON_SEARCH_RTSP_TEST_READ_URL=rtsp://<IP LAN>:8554/aiw28 python -m pytest tests/integration/test_rtsp_mediamtx.py` | 3 passed (happy path, reconnect sau khi dừng publisher, worker tiêu thụ job RTSP có budget). |
+| 14 | AIW-28 | `python tools/rtsp_evidence.py --camera-id <id> --frames 1800 --search-text "A person walking." --operator-user-id <id> --output var/evidence/rtsp-happy.json`; lặp khi dừng ffmpeg 5 s giữa phiên và khi tắt AI giữa phiên | Happy: `SUCCEEDED`, track `READY` > 0, có search. Reconnect: `reconnects >= 1`, `SUCCEEDED`. Tắt AI: `CANCELLED`, không có track `PENDING` còn lại. |
+| 15 | AIW-26 | Colab batch → `person-search-storage import-bundle <bundle> --config-id <id>` hai lần | Lần hai không tạo bản sao; checksum khớp `SHA256SUMS.json`. Lưu ý lock chỉ cho Python 3.12. |
+| 16 | AIW-29 | Trên máy demo: `python tools/release_check.py --output var/release-check.json` | `ready=true`, hoặc ghi rõ ngoại lệ để người thực hiện duyệt. |
+
+**Hạn chế đã biết cần để ý khi kiểm thử:**
+
+- Search production nạp RaSa trong process API (qua process con của encoder): cần đo RAM của API
+  cùng worker để chắc máy demo không OOM khi hai bên cùng nạp checkpoint 1,8 GB.
+- E2E khẳng định text search có kết quả, và ảnh crop từ frame của kết quả đầu phải nằm trong top-4
+  khi tìm bằng ảnh. Nếu lỗi, ghi lại số liệu thật; không nới assertion để test xanh.
+- Đánh giá WILDTRACK dùng `Image_subsets` 2 fps với `--sampling-interval 1`; số track đứt ở đây
+  chưa phản ánh video 60 fps với N=10/20. Query set mới có 6 query, đang `provisional_manual_review`.
+- Benchmark dùng số track ngắn (< 2 s) làm proxy track đứt vì video không có ground truth; RSS
+  process con là peak tích lũy theo `RUSAGE_CHILDREN`; VRAM chỉ đo được khi có `nvidia-smi`.
+- RSS worker trên macOS là peak (`ru_maxrss`), không phải giá trị hiện tại.
+- `RtspFrameSource` chặn loopback: URL đọc phải là IP LAN nằm trong `PERSON_SEARCH_RTSP_NETWORKS`.
+  Job RTSP không replay; lỗi giữa phiên kết thúc `FAILED` với mã thật.
+- `rtsp_evidence.py` từ chối chạy khi còn job `PENDING`/`RUNNING` khác vì worker claim job cũ nhất.
+- `test_diagnostics_postgres.py` đổi `rtsp_url` của camera test; chỉ chạy trên DB dùng một lần.
+- Chưa có WSGI server production trong repository; API demo chạy bằng server development của Flask.
+
+**Cách ghi kết quả vào plan:**
+
+1. Với mỗi bước, thêm một dòng vào 12.2 gồm lệnh, số passed/failed/skipped hoặc số đo, commit và
+   môi trường (CPU/GPU, RAM, OS, Python, phiên bản torch).
+2. Cập nhật cột "Test gần nhất" và "Giới hạn còn lại" của task tương ứng ở 12.1 và bảng 12.3.
+3. Khi lỗi: ghi dòng lỗi ngắn nhất quyết định và `request_id`/`job_id` liên quan, giữ nguyên trạng
+   thái task; không sửa code chỉ để test pass nếu chưa có người duyệt.
+4. Không chuyển task nào sang `DONE`; chỉ người thực hiện chuyển sau khi review kết quả.
+5. Không commit checkpoint, dataset, `.env`, report có đường dẫn nội bộ hoặc thư mục `var/`.
 
 ## 13. Rủi ro cần theo dõi
 

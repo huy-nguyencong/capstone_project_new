@@ -41,9 +41,19 @@ def failure_stage(error_code):
         return "WORKER"
 
 
+MAX_RTSP_SOURCE_FRAMES = 60 * 60 * 30
+
+
 class JobService:
-    def __init__(self, factory, staging, clock=lambda: datetime.now(UTC)):
+    def __init__(
+        self,
+        factory,
+        staging,
+        clock=lambda: datetime.now(UTC),
+        source_types=(JobSourceType.FILE,),
+    ):
         self.factory, self.staging, self.clock = factory, staging, clock
+        self.source_types = tuple(source_types)
 
     def row(self, work, job_id, lock=False):
         query = select(ProcessingJob).where(ProcessingJob.id == identifier(job_id))
@@ -201,6 +211,48 @@ class JobService:
             if not keep:
                 self.staging.remove(staged.name)
 
+    def create_rtsp_job(self, camera_id, actor_id, *, max_source_frames, sampling_profile=None):
+        if (
+            isinstance(max_source_frames, bool)
+            or not isinstance(max_source_frames, int)
+            or not 1 <= max_source_frames <= MAX_RTSP_SOURCE_FRAMES
+        ):
+            raise ApiError(
+                422, "invalid_frame_budget", "Số frame RTSP phải nằm trong giới hạn cho phép."
+            )
+        try:
+            sampling = sampling_interval_for_profile(sampling_profile)
+        except (ValueError, TypeError):
+            raise ApiError(
+                422, "invalid_sampling_profile", "Sampling profile không hợp lệ."
+            ) from None
+        with self.factory() as work:
+            camera, config = self.eligible(work, camera_id, lock=True)
+            if not camera.rtsp_url:
+                raise ApiError(409, "camera_has_no_rtsp", "Camera chưa cấu hình RTSP.")
+            job = ProcessingJob(
+                id=uuid.uuid4(),
+                camera_id=camera.id,
+                ai_config_version_id=config.id,
+                requested_by=actor_id,
+                source_type=JobSourceType.RTSP,
+                source_ref=None,
+                status=JobStatus.PENDING,
+                sampling_interval=sampling,
+                timeline_origin_utc=self.clock(),
+                processed_frames=0,
+                sampled_frames=0,
+                completed_tracks=0,
+                published_tracks=0,
+                total_frames=max_source_frames,
+                attempts=0,
+                cancel_requested=False,
+            )
+            work.session.add(job)
+            self.audit(work, AuditEvent.JOB_CREATED, job, actor_id)
+            work.commit()
+            return self.view(work, job)
+
     def get(self, job_id):
         with self.factory() as work:
             return self.view(work, self.row(work, job_id))
@@ -266,7 +318,7 @@ class JobService:
             job = work.session.scalar(
                 select(ProcessingJob)
                 .where(
-                    ProcessingJob.source_type == JobSourceType.FILE,
+                    ProcessingJob.source_type.in_(self.source_types),
                     or_(
                         ProcessingJob.status == JobStatus.PENDING,
                         (ProcessingJob.status == JobStatus.RUNNING)
@@ -285,6 +337,8 @@ class JobService:
             if job is None:
                 return None
             job.status, job.started_at = JobStatus.RUNNING, job.started_at or now
+            if job.source_type == JobSourceType.RTSP and job.attempts == 0:
+                job.timeline_origin_utc = now
             job.lease_token = uuid.uuid4()
             job.attempts += 1
             job.error_code, job.error_message = None, None

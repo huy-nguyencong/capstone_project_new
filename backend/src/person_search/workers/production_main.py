@@ -18,18 +18,21 @@ from person_search.ai.preflight import apply_resource_environment, load_resource
 from person_search.ai.registry import RegistryMode, load_registry
 from person_search.config import PostgresSettings, StorageSettings
 from person_search.observability import configure_logging, log_context
+from person_search.services.camera_runtime import CameraRuntime
 from person_search.services.jobs import JobService
 from person_search.services.track_ingestion import TrackIngestionService
 from person_search.services.video_staging import VideoStaging
 from person_search.storage.milvus.vectors import MilvusPersonTrackIndex
 from person_search.storage.minio.frames import MinioFrameStore
 from person_search.storage.postgres.client import PostgresStorage
-from person_search.storage.postgres.models import AIConfigVersion, Camera
+from person_search.storage.postgres.models import AIConfigVersion, Camera, JobSourceType
 from person_search.storage.postgres.unit_of_work import UnitOfWork
 from person_search.storage.runtime import StorageRuntime
 from person_search.workers.durable import (
     PostgresWorkerLock,
     SequentialProductionWorker,
+    rtsp_source_factory,
+    source_factory_by_type,
     staged_file_source_factory,
 )
 from person_search.workers.errors import AIErrorCode, AIWorkerError
@@ -68,7 +71,7 @@ def _positive_float(name: str, default: float) -> float:
     return value
 
 
-def build_worker(*, stopped, result_consumer=None):
+def build_worker(*, stopped, result_consumer=None, source_hook=None):
     project_config = Path(__file__).parents[3] / "config"
     registry_path = _required_path("PERSON_SEARCH_MODEL_REGISTRY")
     artifact_root = Path(
@@ -97,8 +100,17 @@ def build_worker(*, stopped, result_consumer=None):
     def unit_of_work():
         return UnitOfWork(storage.postgres.session_factory)
 
-    jobs = JobService(unit_of_work, staging)
+    jobs = JobService(
+        unit_of_work, staging, source_types=(JobSourceType.FILE, JobSourceType.RTSP)
+    )
     config_cache = VersionedAIConfigCache(registry)
+
+    def camera_stream(camera_id):
+        with unit_of_work() as work:
+            camera = work.session.get(Camera, camera_id)
+            if camera is None:
+                return None, None
+            return camera.rtsp_url, camera.rtsp_credentials
 
     def publish(snapshot, result):
         with unit_of_work() as work:
@@ -158,9 +170,21 @@ def build_worker(*, stopped, result_consumer=None):
     worker = SequentialProductionWorker(
         jobs,
         lock_factory=lambda: PostgresWorkerLock(storage.postgres.engine),
-        source_factory=staged_file_source_factory(
-            staging,
-            max_bytes=int(os.getenv("PERSON_SEARCH_VIDEO_MAX_BYTES", "524288000")),
+        source_factory=_observed(
+            source_factory_by_type(
+                staged_file_source_factory(
+                    staging,
+                    max_bytes=int(os.getenv("PERSON_SEARCH_VIDEO_MAX_BYTES", "524288000")),
+                ),
+                rtsp_source_factory(
+                    camera_stream,
+                    CameraRuntime.from_environment().connection_url,
+                    max_reconnects=int(os.getenv("PERSON_SEARCH_RTSP_MAX_RECONNECTS", "5")),
+                    connect_timeout=_positive_float("PERSON_SEARCH_RTSP_CONNECT_TIMEOUT", 8.0),
+                    read_timeout=_positive_float("PERSON_SEARCH_RTSP_READ_TIMEOUT", 8.0),
+                ),
+            ),
+            source_hook,
         ),
         pipeline_factory=pipeline_factory,
         result_consumer=result_consumer or publish,
@@ -174,6 +198,18 @@ def build_worker(*, stopped, result_consumer=None):
         ),
     )
     return worker, storage
+
+
+def _observed(factory, hook):
+    if hook is None:
+        return factory
+
+    def create(snapshot):
+        source = factory(snapshot)
+        hook(snapshot, source)
+        return source
+
+    return create
 
 
 def _heartbeat_loop(

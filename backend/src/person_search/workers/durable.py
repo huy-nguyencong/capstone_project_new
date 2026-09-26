@@ -35,11 +35,20 @@ class JobExecutionSnapshot:
     timeline_origin_utc: datetime
     attempts: int
     published_tracks: int = 0
+    frame_budget: int | None = None
 
     @classmethod
     def from_claimed(cls, job) -> JobExecutionSnapshot:
-        if job.source_type is not JobSourceType.FILE or not job.source_ref:
-            raise ValueError("Production file worker requires a staged FILE source.")
+        frame_budget = None
+        if job.source_type is JobSourceType.FILE:
+            if not job.source_ref:
+                raise ValueError("Production file worker requires a staged FILE source.")
+        elif job.source_type is JobSourceType.RTSP:
+            frame_budget = getattr(job, "total_frames", None)
+            if not isinstance(frame_budget, int) or frame_budget < 1:
+                raise ValueError("RTSP jobs require a positive source frame budget.")
+        else:
+            raise ValueError("Unsupported job source type.")
         if job.lease_token is None:
             raise ValueError("Claimed job must contain a lease token.")
         if job.sampling_interval < 1:
@@ -55,6 +64,7 @@ class JobExecutionSnapshot:
             job.timeline_origin_utc,
             job.attempts,
             getattr(job, "published_tracks", 0),
+            frame_budget,
         )
 
 
@@ -255,6 +265,14 @@ class SequentialProductionWorker:
         snapshot = None
         try:
             snapshot = JobExecutionSnapshot.from_claimed(job)
+            if snapshot.source_type is JobSourceType.RTSP and snapshot.attempts > 1:
+                self.jobs.finish(
+                    snapshot.job_id,
+                    snapshot.lease_token,
+                    JobStatus.FAILED,
+                    "rtsp_session_interrupted",
+                )
+                return
             if snapshot.attempts > self.max_attempts:
                 self.jobs.finish(
                     snapshot.job_id,
@@ -310,7 +328,12 @@ class SequentialProductionWorker:
             )
             if exc.code is AIErrorCode.CANCELLED:
                 self.jobs.finish(job.id, job.lease_token, JobStatus.CANCELLED)
-            elif exc.retryable and snapshot is not None and snapshot.attempts < self.max_attempts:
+            elif (
+                exc.retryable
+                and snapshot is not None
+                and snapshot.source_type is not JobSourceType.RTSP
+                and snapshot.attempts < self.max_attempts
+            ):
                 self.jobs.defer_retry(
                     job.id,
                     job.lease_token,
@@ -320,7 +343,9 @@ class SequentialProductionWorker:
             else:
                 error_code = (
                     "worker_retries_exhausted"
-                    if exc.retryable and snapshot is not None
+                    if exc.retryable
+                    and snapshot is not None
+                    and snapshot.source_type is not JobSourceType.RTSP
                     else exc.code.value
                 )
                 self.jobs.finish(job.id, job.lease_token, JobStatus.FAILED, error_code)
@@ -337,6 +362,65 @@ class SequentialProductionWorker:
                 }
                 for image in images.values():
                     image.close()
+
+
+class BudgetedSource:
+    def __init__(self, source, budget: int | None) -> None:
+        self.source = source
+        self.budget = budget
+
+    def __enter__(self):
+        self.source.__enter__()
+        return self
+
+    def __exit__(self, *args) -> None:
+        self.source.__exit__(*args)
+
+    @property
+    def reconnects(self) -> int:
+        return int(getattr(self.source, "reconnects", 0))
+
+    def __iter__(self):
+        for index, frame in enumerate(self.source):
+            if self.budget is not None and index >= self.budget:
+                frame.image.close()
+                return
+            yield frame
+
+
+def rtsp_source_factory(camera_loader, access_resolver, *, source_class=None, **options):
+    def create(snapshot: JobExecutionSnapshot):
+        url, secret = camera_loader(snapshot.camera_id)
+        if not url:
+            raise AIWorkerError(AIErrorCode.SOURCE_OPEN_FAILED)
+        if source_class is None:
+            from person_search.workers.sources import RtspFrameSource
+
+            factory = RtspFrameSource
+        else:
+            factory = source_class
+        try:
+            source = factory(
+                encrypted_secret=secret, access_resolver=access_resolver, **options
+            ).open(url, camera_id=snapshot.camera_id)
+        except AIWorkerError:
+            raise
+        except Exception as error:
+            raise AIWorkerError(AIErrorCode.SOURCE_OPEN_FAILED, cause=error) from error
+        return BudgetedSource(source, snapshot.frame_budget)
+
+    return create
+
+
+def source_factory_by_type(file_factory, rtsp_factory=None):
+    def create(snapshot: JobExecutionSnapshot):
+        if snapshot.source_type is JobSourceType.RTSP:
+            if rtsp_factory is None:
+                raise AIWorkerError(AIErrorCode.SOURCE_OPEN_FAILED)
+            return rtsp_factory(snapshot)
+        return file_factory(snapshot)
+
+    return create
 
 
 def staged_file_source_factory(staging, *, max_bytes: int):
