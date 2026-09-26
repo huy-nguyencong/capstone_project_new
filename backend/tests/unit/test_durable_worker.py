@@ -131,7 +131,32 @@ def test_seven_jobs_run_sequentially_with_snapshots_and_progress():
     assert all(item[1] is JobStatus.SUCCEEDED for item in jobs.finished)
     assert len(sources) == 7 and all(source.closed for source in sources)
     assert jobs.cleaned == 8  # One final idle poll is also reconciled.
-    assert (20, 2, 1, 0) in jobs.checkpoints
+    assert (20, 2, 1, None) in jobs.checkpoints
+
+
+def test_control_checkpoint_does_not_regress_publisher_progress():
+    claimed = job()
+
+    class PublicationAwareJobs(Jobs):
+        published = 0
+
+        def checkpoint(self, job_id, token, processed, sampled, completed, published):
+            self.checkpoints.append((processed, sampled, completed, published))
+            if published is not None and published < self.published:
+                return False
+            return True
+
+    jobs = PublicationAwareJobs([claimed])
+    subject, _ = worker(jobs)
+
+    def publish(snapshot, result):
+        del snapshot, result
+        jobs.published = 1
+
+    subject.result_consumer = publish
+    assert subject.run_once() is True
+    assert jobs.finished == [(claimed.id, JobStatus.SUCCEEDED, None)]
+    assert jobs.checkpoints[-1][3] is None
 
 
 def test_global_lock_prevents_claiming_a_second_worker():

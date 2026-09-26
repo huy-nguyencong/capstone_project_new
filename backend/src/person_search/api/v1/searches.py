@@ -22,6 +22,7 @@ from person_search.services.track_imagery import (
     TrackImageUnavailableError,
 )
 from person_search.services.track_search import (
+    CameraNotActiveError,
     CameraOutOfScopeError,
     InvalidSearchRequestError,
     SearchNotAllowedError,
@@ -124,6 +125,8 @@ def _run(operation):
         return _response(operation())
     except CameraOutOfScopeError as error:
         raise ApiError(403, "camera_out_of_scope", "Camera nằm ngoài khu vực của bạn.") from error
+    except CameraNotActiveError as error:
+        raise ApiError(422, "camera_not_active", "Camera đang ngừng vận hành.") from error
     except (InvalidSearchRequestError, TypeError) as error:
         code = "invalid_top_k" if "top_k" in str(error) else "invalid_filters"
         raise ApiError(422, code, str(error)) from error

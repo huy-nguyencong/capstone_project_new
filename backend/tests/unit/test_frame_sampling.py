@@ -58,13 +58,13 @@ def test_invalid_intervals_are_rejected(interval) -> None:
 
 
 def test_production_profiles_are_allowlisted_and_benchmark_override_is_isolated() -> None:
-    assert sampling_interval_for_profile(None) == 10
+    assert sampling_interval_for_profile(None) == 20
     assert sampling_interval_for_profile("baseline") == 10
     assert sampling_interval_for_profile("throughput") == 20
     assert sampling_profile_for_interval(10) == "baseline"
     assert sampling_profile_for_interval(20) == "throughput"
     assert sampling_profile_for_interval(3) is None
-    assert FrameSampler.from_production_profile().sampling_interval == 10
+    assert FrameSampler.from_production_profile().sampling_interval == 20
     assert FrameSampler.for_benchmark(3).sampling_interval == 3
     with pytest.raises(ValueError, match="Unknown production"):
         FrameSampler.from_production_profile("3")

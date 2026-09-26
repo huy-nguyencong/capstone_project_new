@@ -19,6 +19,7 @@ venv/
 # Local runtime data
 instance/
 var/
+.tmp/
 *.log
 
 # Editors and operating systems

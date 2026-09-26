@@ -2,7 +2,7 @@
   "schema": "wildtrack-evaluation-queries/v1",
   "dataset_tree_sha256": "ecdd328ca203770a143b951b56253e851cbfda4fb19b9b432e73d615f2b5a8f0",
   "language": "en",
-  "label_status": "provisional_manual_review",
+  "label_status": "reviewed_for_academic_demo_2026-09-27",
   "ground_truth_policy": {
     "identity_field": "personID",
     "offline_evaluation_only": true,

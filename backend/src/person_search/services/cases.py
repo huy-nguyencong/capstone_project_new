@@ -17,6 +17,7 @@ from person_search.storage.contracts import BoundingBoxPixels
 from person_search.storage.postgres.errors import ConcurrentUpdateError
 from person_search.storage.postgres.models import (
     AuditResult,
+    CameraStatus,
     Case,
     CaseResult,
     PersonTrack,
@@ -451,6 +452,7 @@ class CaseService:
         if (
             track.index_status is not TrackIndexStatus.READY
             or camera.area_id != actor.assigned_area_id
+            or camera.status is not CameraStatus.ACTIVE
         ):
             raise TrackNotSavableError("Track is not available to this Operator.")
         result = CaseResult(

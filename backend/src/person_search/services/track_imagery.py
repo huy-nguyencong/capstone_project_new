@@ -13,6 +13,7 @@ from PIL import Image, ImageDraw, UnidentifiedImageError
 from person_search.services.storage_status import StorageComponent, StorageMetrics
 from person_search.storage.minio.frames import FrameNotFoundError, InvalidFrameError
 from person_search.storage.postgres.models import (
+    CameraStatus,
     PersonTrack,
     TrackIndexStatus,
     User,
@@ -110,6 +111,7 @@ class TrackImageService:
             if (
                 track.index_status is not TrackIndexStatus.READY
                 or camera.area_id != user.assigned_area_id
+                or camera.status is not CameraStatus.ACTIVE
             ):
                 raise TrackImageNotFoundError("Track image was not found.")
             source = _source(track)

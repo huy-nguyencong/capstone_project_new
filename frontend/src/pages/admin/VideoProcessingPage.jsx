@@ -23,7 +23,7 @@ export default function VideoProcessingPage() {
   const [cameras, setCameras] = useState([])
   const [camera, setCamera] = useState('')
   const [recorded, setRecorded] = useState('')
-  const [samplingProfile, setSamplingProfile] = useState('baseline')
+  const [samplingProfile, setSamplingProfile] = useState('throughput')
   const [file, setFile] = useState(null)
   const [jobs, setJobs] = useState([])
   const [cursor, setCursor] = useState(null)

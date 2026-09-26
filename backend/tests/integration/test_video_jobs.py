@@ -7,7 +7,7 @@ from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 
 import pytest
-from sqlalchemy import select, text
+from sqlalchemy import select, text, update
 from test_camera_admin import client, create_camera
 from test_camera_admin import world as world
 
@@ -56,6 +56,17 @@ def video(tmp_path):
 @pytest.fixture
 def setup(world, tmp_path):
     app, cameras, users, area, factory = world
+    # The worker queue is global rather than camera-scoped.  These integration
+    # modules intentionally share one disposable database, so a job left by an
+    # earlier module can otherwise be claimed instead of the job created by
+    # this test.  Start each worker test with an idle queue.
+    with factory() as session:
+        session.execute(
+            update(ProcessingJob)
+            .where(ProcessingJob.status.in_((JobStatus.PENDING, JobStatus.RUNNING)))
+            .values(status=JobStatus.CANCELLED, cancel_requested=True)
+        )
+        session.commit()
     cameras.configure(
         {
             "detector_id": "demo_detector",

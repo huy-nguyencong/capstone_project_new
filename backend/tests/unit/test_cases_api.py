@@ -13,7 +13,12 @@ from person_search.dependencies import DependencyContainer
 from person_search.services.audit import AuditRecorder
 from person_search.services.cases import CaseService
 from person_search.services.track_imagery import TrackImage, TrackImageNotFoundError
-from person_search.storage.postgres.models import PersonTrack, TrackIndexStatus, UserRole
+from person_search.storage.postgres.models import (
+    CameraStatus,
+    PersonTrack,
+    TrackIndexStatus,
+    UserRole,
+)
 
 pytestmark = [pytest.mark.unit, pytest.mark.contract]
 
@@ -43,7 +48,10 @@ class Env:
         database.areas = self.world.database.areas
         self.camera_id = uuid.uuid4()
         database.cameras[self.camera_id] = SimpleNamespace(
-            id=self.camera_id, area_id=self.world.area.id, name="Cổng chính"
+            id=self.camera_id,
+            area_id=self.world.area.id,
+            name="Cổng chính",
+            status=CameraStatus.ACTIVE,
         )
         self.track_id = self._track()
         self.images = FakeImages(database)

@@ -8,7 +8,7 @@ from auth_fakes import PASSWORD, AuthWorld
 from person_search import create_app
 from person_search.dependencies import DependencyContainer
 from person_search.services.searches import OperatorCamera, SearchResponse
-from person_search.services.track_search import TrackSearchResult
+from person_search.services.track_search import CameraNotActiveError, TrackSearchResult
 from person_search.storage.contracts import BoundingBoxPixels
 from person_search.storage.postgres.models import UserRole
 
@@ -25,6 +25,8 @@ class FakeSearchService:
         return (OperatorCamera(self.camera_id, "A-01", "Cổng chính", True),)
 
     def search_text(self, actor_id, text, **filters):
+        if self.camera_id not in filters.get("camera_ids", ()) and filters.get("camera_ids"):
+            raise CameraNotActiveError("Camera is not in operation.")
         return SearchResponse(
             "TEXT",
             text,
@@ -103,3 +105,18 @@ def test_search_rejects_invalid_top_k_and_non_operator() -> None:
         headers={"X-CSRF-Token": viewer_csrf},
     )
     assert forbidden.status_code == 403
+
+
+def test_search_filter_on_inactive_camera_is_rejected() -> None:
+    app, _ = _app()
+    client = app.test_client()
+    csrf = _login(client)
+
+    response = client.post(
+        "/api/v1/searches/text",
+        json={"text": "person in red", "top_k": 8, "camera_ids": [str(uuid.uuid4())]},
+        headers={"X-CSRF-Token": csrf},
+    )
+
+    assert response.status_code == 422
+    assert response.get_json()["error"]["code"] == "camera_not_active"

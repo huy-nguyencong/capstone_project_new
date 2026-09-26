@@ -24,6 +24,7 @@ from person_search.storage.contracts import (
 from person_search.storage.milvus.vectors import MilvusPersonTrackIndex
 from person_search.storage.minio.frames import MinioFrameStore
 from person_search.storage.postgres.models import (
+    CameraStatus,
     OutboxStatus,
     StorageOutboxEvent,
     TrackIndexStatus,
@@ -47,7 +48,9 @@ class Harness:
         self.milvus = FakeMilvusClient()
         self.area_id, self.camera_id = uuid.uuid4(), uuid.uuid4()
         self.job_id, self.config_id = uuid.uuid4(), uuid.uuid4()
-        self.database.cameras[self.camera_id] = SimpleNamespace(area_id=self.area_id)
+        self.database.cameras[self.camera_id] = SimpleNamespace(
+            area_id=self.area_id, status=CameraStatus.ACTIVE
+        )
         self.database.jobs[self.job_id] = SimpleNamespace(
             camera_id=self.camera_id, ai_config_version_id=self.config_id
         )

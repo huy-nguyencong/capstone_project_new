@@ -74,7 +74,9 @@ def main() -> int:
             "steps": [step.as_dict() for step in search],
         },
     }
-    print(json.dumps(report, ensure_ascii=False, indent=2))
+    # Keep the CLI portable when Windows inherits a legacy console code page.
+    # The JSON remains lossless because non-ASCII text is emitted as escapes.
+    print(json.dumps(report, ensure_ascii=True, indent=2))
     passed = all(
         section["overall"] == "SUCCESS" for section in report.values()
     )

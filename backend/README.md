@@ -433,6 +433,8 @@ trôi qua. Test tái lập tự động: đặt `PERSON_SEARCH_RTSP_TEST_PUBLISH
 1. Tạo 7 camera logic C1..C7 trong đúng khu vực, bật AI, áp dụng YOLO11n + ByteTrack.
 2. Upload lần lượt `cam1.mp4`..`cam7.mp4` với profile sampling đã chọn; worker xử lý tuần tự,
    theo dõi tại màn hình job hoặc `GET /api/v1/admin/processing-jobs`.
+   Mặc định demo là `throughput` (`N=20`) theo benchmark local CPU ngày 2026-09-27;
+   dùng `baseline` (`N=10`) khi cần nhiều quan sát hơn cho người di chuyển nhanh.
 3. Mỗi job phải `SUCCEEDED` và `published_tracks == completed_tracks`; job lỗi xem `error_code`
    rồi upload lại với Idempotency-Key mới.
 4. Chạy `person-search-storage reconcile` (dry-run) phải sạch, rồi sao lưu:

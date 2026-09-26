@@ -22,6 +22,7 @@ from sqlalchemy.orm import sessionmaker
 from person_search import create_app
 from person_search.auth.passwords import PasswordHasher
 from person_search.config import PostgresSettings, StorageSettings
+from person_search.observability import configure_logging
 from person_search.storage.milvus.client import MilvusStorage
 from person_search.storage.milvus.vectors import MilvusPersonTrackIndex
 from person_search.storage.minio.client import MinioStorage
@@ -135,13 +136,18 @@ def _seed(factory) -> tuple[dict[str, User], dict[str, uuid.UUID]]:
 
 
 @pytest.fixture
-def ai_slice() -> Iterator[Slice]:
+def ai_slice(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[Slice]:
     video = _required_environment()
+    monkeypatch.setenv("PERSON_SEARCH_VIDEO_STAGING", str(tmp_path / "videos"))
+    monkeypatch.setenv("PERSON_SEARCH_VIDEO_RESERVE_BYTES", "0")
     engine = sa.create_engine(PostgresSettings.from_environment(os.environ).dsn)
     factory = sessionmaker(bind=engine, expire_on_commit=False)
     alembic_config = Config("alembic.ini")
     command.downgrade(alembic_config, "base")
     command.upgrade(alembic_config, "head")
+    # Alembic's logging configuration replaces root handlers; restore the
+    # application handler so an E2E failure retains its redacted traceback.
+    configure_logging(json_format=False)
     users, areas = _seed(factory)
     app = create_app(
         {
@@ -149,6 +155,7 @@ def ai_slice() -> Iterator[Slice]:
             "ENVIRONMENT": "production",
             "STORAGE_ENABLED": True,
             "AUTH_COOKIE_SECURE": False,
+            "PROPAGATE_EXCEPTIONS": True,
         }
     )
     state = Slice(app, factory, users, areas, video.read_bytes())

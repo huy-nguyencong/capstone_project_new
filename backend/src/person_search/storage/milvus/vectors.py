@@ -63,6 +63,9 @@ class VectorFilter:
         return " and ".join(parts)
 
 
+MAX_SEARCH_LIMIT = 1024
+
+
 @dataclass(frozen=True, slots=True)
 class VectorSearchHit:
     track_id: uuid.UUID
@@ -222,8 +225,9 @@ class MilvusPersonTrackIndex:
     def search(
         self, vector: Sequence[float], filters: VectorFilter, *, top_k: int
     ) -> list[VectorSearchHit]:
-        if top_k not in {4, 8, 12, 16}:
-            raise ValueError("top_k must be one of 4, 8, 12, or 16")
+        # The service validates the user-facing top_k; larger limits are refill rounds.
+        if isinstance(top_k, bool) or not 1 <= top_k <= MAX_SEARCH_LIMIT:
+            raise ValueError(f"top_k must be between 1 and {MAX_SEARCH_LIMIT}")
         results = self.client.search(
             self.collection_name,
             data=[self.validate_vector(vector)],

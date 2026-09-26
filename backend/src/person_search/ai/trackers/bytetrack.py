@@ -200,6 +200,7 @@ class UltralyticsByteTrackBackend:
 
 @dataclass(slots=True)
 class _TrackRecord:
+    local_track_id: str
     bbox: BoundingBoxPixels
     last_sample_sequence: int
     last_frame_index: int
@@ -220,6 +221,7 @@ class ByteTrackPersonTracker:
         self.lineage = lineage
         self.settings = settings
         self._records: dict[int, _TrackRecord] = {}
+        self._generations: dict[int, int] = {}
         self._camera_id: UUID | None = None
         self._last_sample_sequence: int | None = None
         self._opened = False
@@ -252,7 +254,10 @@ class ByteTrackPersonTracker:
             self.close()
             raise AIWorkerError(AIErrorCode.TRACKER_OUTPUT_INVALID, cause=exc) from exc
         updates = list(active)
-        active_ids = {int(item.local_track_id.removeprefix("bt-")) for item in active}
+        # Include unconfirmed backend tracks as active too.  Deriving this set
+        # from public local IDs is also unsafe once a backend numeric ID is
+        # reused and receives a generation suffix.
+        active_ids = {item.track_id for item in raw}
         for track_id, record in tuple(self._records.items()):
             if track_id in active_ids:
                 continue
@@ -312,7 +317,13 @@ class ByteTrackPersonTracker:
             bbox = BoundingBoxPixels(x1, y1, x2 - x1, y2 - y1, frame.width, frame.height)
             record = self._records.get(item.track_id)
             if record is None:
+                generation = self._generations.get(item.track_id, 0) + 1
+                self._generations[item.track_id] = generation
+                local_track_id = f"bt-{item.track_id}"
+                if generation > 1:
+                    local_track_id += f"-g{generation}"
                 record = _TrackRecord(
+                    local_track_id,
                     bbox,
                     frame.sample_sequence,
                     frame.source_frame_index,
@@ -335,7 +346,7 @@ class ByteTrackPersonTracker:
     ) -> TrackUpdate:
         assert self._camera_id is not None
         return TrackUpdate(
-            local_track_id=f"bt-{track_id}",
+            local_track_id=record.local_track_id,
             camera_id=self._camera_id,
             bbox=record.bbox,
             source_frame_index=record.last_frame_index,

@@ -1,6 +1,6 @@
 # Kế hoạch thiết kế và hiện thực Backend
 
-> Đây là **đặc tả triển khai backend chính thức đã được phê duyệt** cho Flask API và các tiến trình backend của ứng dụng tìm kiếm người qua camera. Tài liệu quy định những gì backend phải thực hiện. Mỗi task là một đơn vị triển khai, kiểm thử, review và commit độc lập. Sau khi hoàn thành một task, dừng để người thực hiện review; chỉ commit và chuyển task khi test đạt và review được chấp thuận. Các roadmap hoặc tài liệu theo dõi tiến độ bên ngoài thư mục `files/`, bao gồm `docs/api-roadmap.md`, không phải nguồn yêu cầu và không được ghi đè đặc tả này.
+> Đây là **kế hoạch thực thi chi tiết cho backend** (Flask API và các tiến trình backend) của ứng dụng tìm kiếm người qua camera, được xây dựng dựa trên ba tài liệu đặc tả nguồn `architect.md`, `project_requirements.md` và `usecase_detail.md`. Kế hoạch không được mở rộng hoặc thay đổi quyết định trong ba tài liệu nguồn. Mỗi task là một đơn vị triển khai, kiểm thử, review và commit độc lập. Sau khi hoàn thành một task, dừng để người thực hiện review; chỉ commit và chuyển task khi test đạt và review được chấp thuận. Các roadmap hoặc tài liệu theo dõi tiến độ bên ngoài thư mục `files/`, bao gồm `docs/api-roadmap.md`, không phải nguồn yêu cầu và không được ghi đè đặc tả này.
 
 ## 1. Mục tiêu Backend
 
@@ -45,13 +45,19 @@ Việc tích hợp model sẽ thông qua interface rõ ràng. Mã suy luận c�
 
 ## 3. Nguồn yêu cầu và quy tắc ưu tiên
 
-1. **`files/backend_implementation_plan.md` (tài liệu này)** là nguồn chính quy và có thẩm quyền cao nhất về phạm vi, hành vi và tiêu chí chấp nhận của backend.
-2. `files/architect.md` quy định kiến trúc và các quyết định kỹ thuật chính thức.
-3. `files/usecase_detail.md` mô tả luồng chính, ngoại lệ và hậu điều kiện của UC-01 đến UC-15.
-4. `files/project_requirements.md` mô tả phạm vi nghiệp vụ tổng quát.
-5. `files/storage_database_implementation_plan.md` là kế hoạch cấp dưới, quy định cách backend tương tác với ba kho dữ liệu và phải tuân theo tài liệu này.
+Ba tài liệu đặc tả nguồn có thẩm quyền cao nhất:
 
-Khi phát hiện mâu thuẫn giữa các tài liệu chính thức trong `files/`, phải dừng việc suy diễn, đối chiếu quyết định đã được phê duyệt và cập nhật đồng bộ tài liệu này. Không sử dụng roadmap, trạng thái triển khai hiện tại hoặc hành vi code hiện hữu để tự thay đổi yêu cầu.
+1. `files/architect.md` quy định kiến trúc chung và các quyết định kỹ thuật chính thức.
+2. `files/project_requirements.md` mô tả phạm vi nghiệp vụ.
+3. `files/usecase_detail.md` mô tả luồng chính, ngoại lệ và hậu điều kiện của UC-01 đến UC-15.
+
+Các kế hoạch thực thi dựa trên ba tài liệu nguồn:
+
+- `files/backend_implementation_plan.md` (tài liệu này): phạm vi task, hành vi và tiêu chí chấp nhận của backend.
+- `files/storage_database_implementation_plan.md`: cách backend tương tác với ba kho dữ liệu.
+- `files/ai_worker_implementation_plan.md`: AI worker và inference.
+
+Khi phát hiện mâu thuẫn giữa kế hoạch và tài liệu nguồn, tài liệu nguồn được ưu tiên; phải dừng việc suy diễn và sửa kế hoạch cho khớp. Nếu chính các tài liệu nguồn mâu thuẫn nhau, phải hỏi người thực hiện để chốt rồi cập nhật đồng bộ. Không sử dụng roadmap, trạng thái triển khai hiện tại hoặc hành vi code hiện hữu để tự thay đổi yêu cầu.
 
 Các quyết định bắt buộc phải được giữ xuyên suốt backend:
 
@@ -64,7 +70,8 @@ Các quyết định bắt buộc phải được giữ xuyên suốt backend:
 - Viewer xem mọi Case nhưng không được tìm kiếm hoặc sửa dữ liệu.
 - Admin quản trị kỹ thuật, không mặc nhiên có quyền tìm kiếm hoặc xem mọi Case.
 - Ảnh kết quả được tạo động từ full frame và bbox; MinIO không public.
-- Demo nhận file video và có thể xử lý tuần tự; RTSP là đường thử nghiệm tại nhà.
+- Nguồn chính là luồng RTSP giả lập từ 7 video WILDTRACK, xử lý tuần tự một camera tại một thời điểm; tải file video là đường dự phòng dùng cùng pipeline.
+- Camera ngừng vận hành dừng nhận luồng mới; track đã có được giữ nhưng tạm ẩn khỏi tìm kiếm, bộ lọc, media kết quả tìm kiếm và thao tác thêm vào Case cho đến khi camera vận hành trở lại; CaseResult đã lưu vẫn xem được.
 - Detector/Tracker là cấu hình chung toàn hệ thống; Image/Text Encoder cố định trong phiên bản đầu.
 - Text search chỉ nhận mô tả tiếng Anh; không hỗ trợ tiếng Việt và không dịch tự động.
 - Tên/giá trị bộ lọc thuộc tính dùng tiếng Anh; prompt builder sinh câu tiếng Anh deterministic.
@@ -149,8 +156,6 @@ Cấu trúc cuối cùng được chốt ở BE-00/BE-01. Không tạo module ch
 
 ## 6. Quy trình thực hiện một task
 
-> Thư mục làm việc chưa có metadata Git tại thời điểm lập kế hoạch. Trước commit đầu tiên phải xác nhận đúng repository và chỉ khởi tạo Git hoặc chuyển repository khi người thực hiện yêu cầu.
-
 1. Chọn đúng một task có dependency đã hoàn thành.
 2. Chuyển task sang `IN_PROGRESS` và chỉ sửa phạm vi task đó.
 3. Bổ sung/cập nhật test cùng lúc với code.
@@ -177,32 +182,34 @@ Trạng thái hợp lệ: `TODO`, `IN_PROGRESS`, `READY_FOR_REVIEW`, `DONE`, `BL
 
 | Task | Nội dung | Dependency chính | Trạng thái | Commit |
 | --- | --- | --- | --- | --- |
-| BE-00 | Khởi tạo backend application skeleton | Không; dùng chung nền với STO-00 | DONE | `first commit` |
-| BE-01 | Chốt API contract và quy ước HTTP | BE-00, STO-01 | TODO | — |
-| BE-02 | Nền tảng password, session và CSRF | BE-01, STO-04 | READY_FOR_REVIEW | — |
-| BE-03 | UC-01/UC-15: đăng nhập, phiên và đăng xuất | BE-02 | READY_FOR_REVIEW | — |
-| BE-04 | Policy phân quyền tập trung | BE-03 | TODO | — |
-| BE-05 | UC-02: quản lý Area tham chiếu và tài khoản | BE-04, STO-08 | READY_FOR_REVIEW | — |
-| BE-06 | UC-03: quản lý camera và kiểm tra RTSP | BE-04, STO-08 | TODO | — |
-| BE-07 | UC-05: registry và cấu hình Detector/Tracker | BE-04, STO-08 | TODO | — |
-| BE-08 | UC-04: bật/tắt AI theo camera | BE-06, BE-07 | TODO | — |
-| BE-09 | API upload video và quản lý processing job | BE-06, STO-05 | TODO | — |
-| BE-10 | Background worker và cổng tích hợp AI pipeline | BE-07 đến BE-09, STO-11 | TODO | — |
-| BE-11 | UC-06: trạng thái hệ thống và processing job | BE-08, BE-10 | TODO | — |
-| BE-12 | UC-07: chẩn đoán Camera Pipeline/Search Components | BE-10 | TODO | — |
-| BE-13 | UC-08: ghi và tra cứu audit log | BE-05 đến BE-12, STO-16 | TODO | — |
-| BE-14 | Chuẩn bị truy vấn ảnh/văn bản/thuộc tính | BE-04, BE-10 | TODO | — |
-| BE-15 | UC-09: tìm kiếm có lọc và phân quyền | BE-14, STO-13 | TODO | — |
-| BE-16 | UC-10: trình bày kết quả và media có quyền | BE-15, STO-14 | TODO | — |
-| BE-17 | UC-11: quản lý Case và CaseResult | BE-16, STO-15 | TODO | — |
-| BE-18 | UC-12, UC-13, UC-14: Viewer dashboard và xem Case | BE-17 | TODO | — |
-| BE-19 | Quy tắc lịch sử khi User/Camera thay đổi vòng đời | BE-05, BE-06, BE-17 | TODO | — |
-| BE-20 | Idempotency, concurrency và error handling | BE-03 đến BE-19 | TODO | — |
-| BE-21 | Hardening bảo mật API và upload | BE-20 | TODO | — |
-| BE-22 | Logging, metric, tracing và readiness | BE-11, BE-20 | TODO | — |
-| BE-23 | Test contract, integration, authorization và E2E | BE-03 đến BE-22, STO-17 | TODO | — |
+| BE-00 | Khởi tạo backend application skeleton | Không; dùng chung nền với STO-00 | DONE | `532f3e4` |
+| BE-01 | Chốt API contract và quy ước HTTP | BE-00, STO-01 | READY_FOR_REVIEW | quy ước ở mục 14; OpenAPI `docs/openapi-phase-3..8.json` |
+| BE-02 | Nền tảng password, session và CSRF | BE-01, STO-04 | READY_FOR_REVIEW | `51998f8`, `bf745c6` |
+| BE-03 | UC-01/UC-15: đăng nhập, phiên và đăng xuất | BE-02 | READY_FOR_REVIEW | `51998f8`, `bf745c6` |
+| BE-04 | Policy phân quyền tập trung | BE-03 | READY_FOR_REVIEW | `2483044` (test ma trận quyền mọi route) |
+| BE-05 | UC-02: quản lý Area tham chiếu và tài khoản | BE-04, STO-08 | READY_FOR_REVIEW | `64ea468` |
+| BE-06 | UC-03: quản lý camera và kiểm tra RTSP | BE-04, STO-08 | READY_FOR_REVIEW | `85de936` |
+| BE-07 | UC-05: registry và cấu hình Detector/Tracker | BE-04, STO-08 | READY_FOR_REVIEW | `85de936`, `e316055` (AIW-19) |
+| BE-08 | UC-04: bật/tắt AI theo camera | BE-06, BE-07 | READY_FOR_REVIEW | `85de936`, `e316055` (AIW-19) |
+| BE-09 | API upload video và quản lý processing job | BE-06, STO-05 | READY_FOR_REVIEW | `9676a48` |
+| BE-10 | Background worker và cổng tích hợp AI pipeline | BE-07 đến BE-09, STO-11 | READY_FOR_REVIEW | `9676a48`, `1cd222a` (AIW-17), `81df802` (phiên RTSP) |
+| BE-11 | UC-06: trạng thái hệ thống và processing job | BE-08, BE-10 | READY_FOR_REVIEW | `2483044`, `8515ba2` (AIW-21) |
+| BE-12 | UC-07: chẩn đoán Camera Pipeline/Search Components | BE-10 | READY_FOR_REVIEW | `2483044`, `6501787` (AIW-22) |
+| BE-13 | UC-08: ghi và tra cứu audit log | BE-05 đến BE-12, STO-16 | READY_FOR_REVIEW | `2483044` |
+| BE-14 | Chuẩn bị truy vấn ảnh/văn bản/thuộc tính | BE-04, BE-10 | READY_FOR_REVIEW | `35995fb`, `366239f` (AIW-15) |
+| BE-15 | UC-09: tìm kiếm có lọc và phân quyền | BE-14, STO-13 | READY_FOR_REVIEW | `35995fb`; bổ sung 2026-09-27 (chưa commit): chỉ tìm trên camera đang vận hành, truy vấn bù khi loại hit stale |
+| BE-16 | UC-10: trình bày kết quả và media có quyền | BE-15, STO-14 | READY_FOR_REVIEW | `35995fb` |
+| BE-17 | UC-11: quản lý Case và CaseResult | BE-16, STO-15 | READY_FOR_REVIEW | `2483044` |
+| BE-18 | UC-12, UC-13, UC-14: Viewer dashboard và xem Case | BE-17 | READY_FOR_REVIEW | `2483044` |
+| BE-19 | Quy tắc lịch sử khi User/Camera thay đổi vòng đời | BE-05, BE-06, BE-17 | READY_FOR_REVIEW | `2483044` |
+| BE-20 | Idempotency, concurrency và error handling | BE-03 đến BE-19 | READY_FOR_REVIEW | `9676a48`, `2483044` |
+| BE-21 | Hardening bảo mật API và upload | BE-20 | READY_FOR_REVIEW | `2483044` |
+| BE-22 | Logging, metric, tracing và readiness | BE-11, BE-20 | READY_FOR_REVIEW | `d9b628a` (AIW-23), `8515ba2` |
+| BE-23 | Test contract, integration, authorization và E2E | BE-03 đến BE-22, STO-17 | IN_PROGRESS | `e893093` (E2E AI slice); E2E thật trên stack Docker chưa chạy |
 | BE-24 | Đo hiệu năng và tài nguyên Backend | BE-23, STO-18 | TODO | — |
-| BE-25 | Đóng gói, cấu hình triển khai và runbook | BE-24, STO-19 | TODO | — |
+| BE-25 | Đóng gói, cấu hình triển khai và runbook | BE-24, STO-19 | IN_PROGRESS | `81df802` (release check, README); runbook RTSP 7 camera chưa có |
+
+> **Đồng bộ trạng thái 2026-09-27:** bảng trên được đối chiếu với lịch sử Git và `docs/api-roadmap.md`. Các task đã có code và commit nhưng chưa có ghi nhận review trong tài liệu này được để ở `READY_FOR_REVIEW`; người thực hiện xác nhận review thì chuyển sang `DONE`.
 
 ## 8. Bản đồ endpoint dự kiến
 
@@ -407,6 +414,7 @@ Không xây dựng “superuser bypass” ẩn. Nếu tương lai cần một va
 - Connection test chạy với timeout chặt, không giữ request vô hạn; trả trạng thái có cấu trúc.
 - Chặn SSRF: validate scheme `rtsp/rtsps`, host/port và policy mạng phù hợp môi trường.
 - Camera deactivated không nhận job/AI data mới nhưng lịch sử không bị xóa.
+- Đưa camera vận hành trở lại (UC-03 A5): chuyển về `ACTIVE` với `ai_enabled=false`, có audit; dữ liệu cũ tìm kiếm được lại. **Chưa hiện thực** (hiện chỉ có `POST /cameras/{id}/retire` một chiều).
 - Audit create/update/test/deactivate.
 
 **Kiểm thử:** camera không RTSP, RTSP unreachable, credential redaction, duplicate policy, area immutable, SSRF input và deactivate giữ track/Case.
@@ -463,13 +471,13 @@ Không xây dựng “superuser bypass” ẩn. Nếu tương lai cần một va
 
 ### BE-09 — API upload video và quản lý processing job
 
-**Mục tiêu:** nhận file video cho demo, tạo job gắn đúng camera và không xử lý trong request.
+**Mục tiêu:** nhận file video làm đường dự phòng bên cạnh nguồn RTSP giả lập, tạo job gắn đúng camera và không xử lý trong request.
 
 **Phạm vi:**
 
 - Multipart upload streaming, không đọc toàn file vào RAM.
 - Validate extension, MIME/container thực, size, camera active/AI enabled và dung lượng trống.
-- Tạo job `QUEUED`; response `202 Accepted` với job ID.
+- Tạo job `PENDING`; response `202 Accepted` với job ID.
 - Staging file private và ngoài Git. Không đưa toàn video vào bucket full-frame chỉ để tạo ảnh kết quả.
 - Chốt chính sách: filesystem staging mặc định cho demo hoặc bucket staging riêng; file được xóa sau xử lý theo retention.
 - List/detail job, progress, lỗi đã sanitize và nguồn `FILE`/`RTSP`.
@@ -491,7 +499,8 @@ Không xây dựng “superuser bypass” ẩn. Nếu tương lai cần một va
 **Phạm vi:**
 
 - DB-backed queue mặc định để tránh thêm Redis/Celery khi chưa cần; claim job bằng lock/lease an toàn.
-- State machine: `QUEUED`, `RUNNING`, `SUCCEEDED`, `FAILED`, và `CANCELLED` nếu đã chốt.
+- State machine job: `PENDING`, `RUNNING`, `SUCCEEDED`, `FAILED`, `CANCELLED` (thống nhất với AIW-17 và enum `JobStatus`). `QUEUED` chỉ là trạng thái hiển thị của worker/camera trong UC-06, không phải trạng thái job.
+- Nguồn RTSP giả lập là nguồn chính: tạo lần lượt job `RTSP` giới hạn số frame cho từng camera đang bật AI, xoay vòng tuần tự; job `FILE` từ upload là dự phòng.
 - Heartbeat/lease timeout để reclaim job khi worker chết.
 - Interface nguồn frame chung cho file và RTSP.
 - Frame sampling trước Detector/Tracker, lưu `source_frame_index` và timestamp nguồn.
@@ -515,7 +524,7 @@ Không xây dựng “superuser bypass” ẩn. Nếu tương lai cần một va
 **Phạm vi:**
 
 - Tổng hợp operational status, RTSP status, desired AI state, actual worker state và job progress.
-- Phân biệt `OFFLINE`, `UNVERIFIED`, `IDLE`, `QUEUED`, `RUNNING`, `ERROR`, `DISABLED` theo contract.
+- Phân biệt trạng thái hiển thị `OFFLINE`, `UNVERIFIED`, `IDLE`, `QUEUED` (camera có job `PENDING`), `RUNNING`, `ERROR`, `DISABLED` theo contract.
 - Health của PostgreSQL/Milvus/MinIO và encoder, nhưng không trả credential/stack trace.
 - Filter theo camera/trạng thái; timestamp lần cập nhật gần nhất để tránh hiểu nhầm dữ liệu stale.
 - Read-only; không gộp thao tác sửa lỗi vào endpoint status.
@@ -540,7 +549,7 @@ Không xây dựng “superuser bypass” ẩn. Nếu tương lai cần một va
 - Kết quả theo từng component: success/fail/skipped/inconclusive.
 - “Không có người trong frame” là inconclusive, không tự kết luận pipeline hỏng.
 - Không persist ảnh/vector diagnostic vào dữ liệu tìm kiếm thật.
-- Audit lần chạy và lỗi kỹ thuật quan trọng.
+- Audit lượt chẩn đoán `FAILED` như lỗi kỹ thuật quan trọng (UC-08); `PASSED`/`INCONCLUSIVE` không cần audit (thống nhất với AIW-23).
 
 **Kiểm thử:** no frame, no person, detector fail, tracker fail, từng encoder fail, timeout và fixture không làm ô nhiễm Milvus.
 
@@ -578,7 +587,7 @@ Không xây dựng “superuser bypass” ẩn. Nếu tương lai cần một va
 **Phạm vi:**
 
 - Image endpoint: validate ảnh crop, decode an toàn, orientation, kích thước, channel và preprocessing theo RaSa.
-- Text endpoint: chỉ nhận mô tả tiếng Anh, validate length/encoding và từ chối input không được hỗ trợ; không có bước dịch tự động.
+- Text endpoint: chỉ nhận mô tả tiếng Anh, validate length/encoding và từ chối input không được hỗ trợ; không có bước dịch tự động. Quy tắc ký tự: chỉ nhận chữ cái/chữ số ASCII, khoảng trắng và các dấu `. , ; : ' " ( ) / -` (whitelist trong `validate_english_description`), tối đa 500 ký tự; ký tự khác, kể cả chữ có dấu tiếng Việt, bị từ chối bằng `422` với thông báo rõ ràng. Không chuẩn hóa hay dịch nội dung.
 - Attribute endpoint: whitelist tên/giá trị thuộc tính tiếng Anh và prompt builder deterministic sang câu tiếng Anh có kiểm soát.
 - Gateway tới RaSa Image/Text Encoder, timeout và model version check.
 - Normalize/vector dimension theo cùng policy lúc lập chỉ mục.
@@ -601,13 +610,13 @@ Không xây dựng “superuser bypass” ẩn. Nếu tương lai cần một va
 
 - Chỉ Operator gọi được search.
 - Lấy area từ actor/session; không nhận area để mở rộng quyền.
-- Camera filter phải là tập con của camera active/hợp lệ thuộc area.
+- Camera filter phải là tập con của camera **đang vận hành** thuộc area; camera ngoài area trả `403 camera_out_of_scope`, camera đang ngừng vận hành trả `422 camera_not_active`. Không gửi bộ lọc camera thì backend tự giới hạn Milvus vào các camera đang vận hành của area; area không còn camera vận hành trả danh sách rỗng.
 - Validate time range, timezone và `top_k ∈ {4,8,12,16}`.
 - Filter area/camera/time trong Milvus **trước** top-k.
 - Hydrate metadata PostgreSQL, chỉ lấy track `READY` và recheck quyền.
 - Response sắp score giảm dần, có `track_id`, camera, area, appeared time, media link và Matching Score.
 - Không dùng threshold và không persist Matching Score.
-- Nếu ít hơn top-k, trả số thực có; stale vector bị loại và metric hóa.
+- Stale vector bị loại và metric hóa; khi loại hit stale làm kết quả ít hơn `top_k`, truy vấn bù Milvus (over-fetch có giới hạn, ví dụ tối đa 2 vòng với limit gấp đôi) để vẫn trả đủ `top_k` track hợp lệ điểm cao nhất nếu phạm vi còn dữ liệu. Chỉ trả ít hơn `top_k` khi phạm vi thực sự không đủ track.
 
 **Kiểm thử:** hai area với vector tương tự, camera ngoài quyền, time boundary, từng top-k hợp lệ/không hợp lệ, score ordering, zero results, stale Milvus ID và encoder version mismatch.
 
@@ -690,7 +699,7 @@ Không xây dựng “superuser bypass” ẩn. Nếu tương lai cần một va
 
 - Khóa/deactivate/delete mềm User revoke quyền request mới nhưng giữ owner/audit history.
 - Operator đổi area: search mới theo area mới, Case cũ vẫn theo owner.
-- Camera deactivate: không nhận job/track mới, nhưng CaseResult và media lịch sử còn xem được.
+- Camera deactivate: không nhận job/track mới; track cũ được giữ nhưng tạm ẩn khỏi tìm kiếm/media tìm kiếm/thêm vào Case; CaseResult và media trong Case vẫn xem được; camera vận hành trở lại thì track cũ tìm kiếm được lại.
 - Đổi tên camera/area không làm thay snapshot trong CaseResult nếu policy dùng snapshot.
 - Xóa CaseResult không làm thay dữ liệu track.
 - Tài nguyên được Case tham chiếu không được cleanup tự động.
@@ -842,8 +851,8 @@ python -m pytest -m e2e
 - Biến môi trường, secret injection, startup validation và migration command.
 - Thứ tự start: storage → migrate/seed → worker → API; readiness gate.
 - Graceful shutdown web/worker; job lease có thể phục hồi.
-- Runbook upload/xử lý tuần tự 7 video, chuẩn bị dữ liệu trước và trình diễn một video.
-- Runbook RTSP giả lập tại nhà, lưu log/số đo/bằng chứng.
+- Runbook dựng 7 luồng RTSP giả lập từ video WILDTRACK (FFmpeg + MediaMTX), xử lý tuần tự từng camera, chuẩn bị dữ liệu trước và trình diễn một phiên RTSP; lưu log/số đo/bằng chứng.
+- Runbook đường dự phòng: upload file video gắn camera.
 - Runbook backup/restore từ STO-19, retry/reconcile và xử lý disk đầy/model load fail.
 - Release checklist và rollback ứng dụng/migration phù hợp.
 
@@ -899,20 +908,22 @@ Thêm một mục cho mỗi vòng triển khai/review:
 - Commit SHA (chỉ điền sau khi DONE):
 ```
 
-## 14. Các quyết định cần khóa ở BE-01
+## 14. Các quyết định đã khóa ở BE-01
 
-- Server-side session lưu trong PostgreSQL hay một session store khác; mặc định PostgreSQL để không thêm Redis ở bản đầu.
-- CSRF strategy và CORS origin của frontend.
-- Pagination dùng cursor hay page/size cho từng danh sách.
-- Một endpoint search đa content type hay ba endpoint riêng; mặc định ba endpoint dùng chung service.
-- Video upload staging dùng filesystem private hay bucket riêng; retention sau khi job hoàn tất.
-- Giới hạn ảnh/video, text query, timeout encoder và timeout RTSP test.
-- Job cancel/graceful-stop semantics khi Admin tắt AI giữa lúc xử lý.
-- Quy tắc validate truy vấn tiếng Anh và thông báo lỗi cho ngôn ngữ không được hỗ trợ; backend không dịch tự động.
-- Policy 403/404 cho tài nguyên tồn tại nhưng không có quyền.
-- Có cần presigned URL hay luôn stream media qua Flask; mặc định stream qua backend.
+Các quyết định dưới đây đã được áp dụng trong code (đối chiếu ngày 2026-09-27); thay đổi phải cập nhật lại mục này.
 
-Các câu hỏi trên không ngăn BE-00, nhưng phải được quyết định và review trước khi các endpoint nghiệp vụ được triển khai.
+- **Session:** server-side, lưu PostgreSQL (bảng `auth_sessions`, SHA-256 token), hết hạn tuyệt đối 12 giờ, idle 30 phút; cookie `ps_session` `HttpOnly`/`SameSite=Lax`/`Secure` ngoài local; rotate khi login, revoke khi logout/khóa user.
+- **CSRF/CORS:** token dẫn xuất HMAC từ session, gửi qua header `X-CSRF-Token` cho mọi request thay đổi trạng thái; CORS allowlist qua `PERSON_SEARCH_CORS_ORIGINS` (để trống khi dùng proxy Vite).
+- **Quy ước JSON/HTTP:** `snake_case`, UUID string, thời gian ISO 8601 UTC; error envelope `{error: {code, message, details, request_id}}`; optimistic locking bằng `version` và `409 version_conflict`.
+- **Pagination:** cursor (`limit`, `cursor` → `items`, `next_cursor`), tối đa 100 mỗi trang.
+- **Search:** ba endpoint `/searches/image|text|attributes` dùng chung một service; `top_k ∈ {4, 8, 12, 16}`.
+- **Upload staging:** filesystem private ngoài Git; xóa khi job kết thúc, dọn file mồ côi sau 24 giờ; job `FAILED` cần upload lại với `Idempotency-Key` mới; worker crash tự replay tối đa 3 lần.
+- **Giới hạn:** text query tối đa 500 ký tự; timeout kiểm tra RTSP 10 giây; giới hạn ảnh/video và timeout encoder lấy từ cấu hình và được ghi trong OpenAPI.
+- **Tắt AI giữa phiên:** dừng ở checkpoint an toàn kế tiếp; track đã `READY` được giữ; job chuyển `CANCELLED`.
+- **Ngôn ngữ truy vấn:** chỉ tiếng Anh; chỉ nhận chữ cái/chữ số ASCII, khoảng trắng và các dấu `. , ; : ' " ( ) / -` (whitelist trong `validate_english_description`), tối đa 500 ký tự; ký tự khác, kể cả chữ có dấu tiếng Việt, bị từ chối bằng `422` với thông báo rõ ràng. Không chuẩn hóa hay dịch nội dung. Chọn whitelist thay vì chuẩn hóa dấu câu kiểu chữ để giữ hệ thống đơn giản (quyết định 2026-09-27).
+- **403/404:** sai vai trò hoặc tài khoản không `ACTIVE` trả `403`; tài nguyên không tồn tại hoặc không thuộc quyền (Case/track/media của người khác, ngoài area) trả `404`.
+- **Media:** luôn stream qua Flask, `Cache-Control: private, no-store`; không dùng presigned URL.
+- **Rate limit:** fixed-window trong bộ nhớ theo process: login 10/phút, search 30/phút, upload 10/phút, RTSP test 10/phút, diagnostics 6/phút.
 
 ## 15. Nhật ký đã thực hiện
 

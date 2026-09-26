@@ -113,5 +113,7 @@ def register_error_handlers(app: Flask) -> None:
     def handle_unexpected(error: Exception):  # type: ignore[no-untyped-def]
         if isinstance(error, HTTPException):
             return handle_http_exception(error)
+        if app.config.get("PROPAGATE_EXCEPTIONS"):
+            raise error
         logger.exception("unhandled api error", extra={"request_id": g.get("request_id")})
         return error_response(500, "internal_error", "Đã xảy ra lỗi hệ thống.")

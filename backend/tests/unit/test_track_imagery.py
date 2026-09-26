@@ -19,6 +19,7 @@ from person_search.services.track_imagery import (
 )
 from person_search.storage.minio.frames import MinioFrameStore
 from person_search.storage.postgres.models import (
+    CameraStatus,
     PersonTrack,
     TrackIndexStatus,
     UserRole,
@@ -47,7 +48,7 @@ class World:
         self.camera_a, self.camera_b = uuid.uuid4(), uuid.uuid4()
         for camera_id, area_id in ((self.camera_a, self.area_a), (self.camera_b, self.area_b)):
             database.cameras[camera_id] = SimpleNamespace(
-                id=camera_id, area_id=area_id, name="Camera"
+                id=camera_id, area_id=area_id, name="Camera", status=CameraStatus.ACTIVE
             )
         self.operator = self.user(UserRole.OPERATOR, self.area_a)
         self.service = TrackImageService(
@@ -235,6 +236,18 @@ def test_search_image_of_unready_or_unknown_track_is_not_found() -> None:
     for track_id in (pending, uuid.uuid4()):
         with pytest.raises(TrackImageNotFoundError):
             world.service.search_result_image(world.operator, track_id, ImageVariant.FULL_FRAME)
+
+
+def test_search_image_of_inactive_camera_is_hidden_but_case_image_stays() -> None:
+    world = World()
+    track_id = world.track(world.camera_a)
+    result_id = world.case_result(world.operator, track_id)
+    world.database.cameras[world.camera_a].status = CameraStatus.INACTIVE
+
+    with pytest.raises(TrackImageNotFoundError):
+        world.service.search_result_image(world.operator, track_id, ImageVariant.PERSON_CROP)
+    image = world.service.case_result_image(world.operator, result_id, ImageVariant.PERSON_CROP)
+    assert (image.width, image.height) == (20, 30)
 
 
 @pytest.mark.parametrize(

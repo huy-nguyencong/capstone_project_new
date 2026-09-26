@@ -9,6 +9,7 @@ from typing import Final
 from person_search.workers.contracts import SampledFrame, SourceFrame
 
 BASELINE_SAMPLING_PROFILE: Final = "baseline"
+DEFAULT_SAMPLING_PROFILE: Final = "throughput"
 PRODUCTION_SAMPLING_PROFILES: Final = MappingProxyType(
     {
         BASELINE_SAMPLING_PROFILE: 10,
@@ -20,7 +21,7 @@ PRODUCTION_SAMPLING_PROFILES: Final = MappingProxyType(
 def sampling_interval_for_profile(profile: str | None) -> int:
     """Resolve an Admin-facing allowlisted profile to its immutable interval."""
 
-    selected = BASELINE_SAMPLING_PROFILE if profile is None else profile
+    selected = DEFAULT_SAMPLING_PROFILE if profile is None else profile
     if not isinstance(selected, str) or selected not in PRODUCTION_SAMPLING_PROFILES:
         raise ValueError("Unknown production sampling profile.")
     return PRODUCTION_SAMPLING_PROFILES[selected]

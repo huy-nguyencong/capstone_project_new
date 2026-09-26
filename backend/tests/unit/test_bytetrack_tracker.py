@@ -142,6 +142,32 @@ def test_short_occlusion_preserves_track_and_timeout_ends_at_last_seen() -> None
     assert ended[0].source_timestamp_ms == frames[4].source_timestamp_ms
 
 
+def test_reused_backend_id_gets_a_new_stable_local_generation() -> None:
+    camera_id = uuid.uuid4()
+    backend = FakeBackend(
+        [
+            [RawTrack(7, 10, 10, 30, 50, 0)],
+            [],
+            [RawTrack(7, 40, 10, 60, 50, 0)],
+        ]
+    )
+    subject = tracker(
+        backend,
+        minimum_confirmed_samples=1,
+        maximum_lost_samples=1,
+        maximum_lost_milliseconds=500,
+    )
+    subject.open()
+    frames = [sample(index, camera_id) for index in (0, 2, 3)]
+
+    first = subject.update(frames[0], [detection(frames[0])])[0]
+    ended = subject.update(frames[1], [])
+    second = subject.update(frames[2], [detection(frames[2], 40)])[0]
+
+    assert ended[0].local_track_id == first.local_track_id == "bt-7"
+    assert second.local_track_id == "bt-7-g2"
+
+
 def test_camera_and_timeline_cannot_cross_one_tracker_instance() -> None:
     camera_id = uuid.uuid4()
     subject = tracker(FakeBackend([[], []]))

@@ -9,6 +9,8 @@ import pytest
 from storage_fakes import FakeDatabase, FakeUnitOfWork
 
 from person_search.services.track_search import (
+    MAX_SEARCH_ROUNDS,
+    CameraNotActiveError,
     CameraOutOfScopeError,
     InvalidSearchRequestError,
     SearchNotAllowedError,
@@ -42,7 +44,7 @@ class FakeSearcher:
         if self.error is not None:
             raise self.error
         self.calls.append((filters, top_k))
-        return list(self.hits)
+        return self.hits[:top_k]
 
 
 class World:
@@ -244,16 +246,88 @@ def test_camera_and_time_filters_are_sent_to_vector_search_and_rechecked() -> No
     assert "appeared_at_epoch >=" in expression and "appeared_at_epoch <=" in expression
 
 
-def test_tracks_from_retired_camera_remain_searchable_history() -> None:
+def test_inactive_camera_cannot_be_used_as_filter() -> None:
+    world = World()
+
+    with pytest.raises(CameraNotActiveError):
+        world.service.search(
+            world.operator, TrackSearchQuery(EMBEDDING, top_k=4, camera_ids=(world.camera_a2,))
+        )
+
+    assert world.searcher.calls == []
+
+
+def test_tracks_of_inactive_camera_are_kept_but_not_searchable() -> None:
     world = World()
     history = world.track(world.camera_a2)
-    world.hits((history, 0.6))
+    live = world.track(world.camera_a1)
+    world.hits((history, 0.9), (live, 0.6))
 
-    results = world.service.search(
-        world.operator, TrackSearchQuery(EMBEDDING, top_k=4, camera_ids=(world.camera_a2,))
-    )
+    results = world.service.search(world.operator, TrackSearchQuery(EMBEDDING, top_k=4))
+
+    assert [result.track_id for result in results] == [live]
+    assert history in world.database.tracks
+    filters = world.searcher.calls[0][0]
+    assert filters.camera_ids == (world.camera_a1,)
+
+
+def test_tracks_become_searchable_again_after_camera_is_reactivated() -> None:
+    world = World()
+    history = world.track(world.camera_a2)
+    world.hits((history, 0.9))
+    world.database.cameras[world.camera_a2].status = CameraStatus.ACTIVE
+
+    results = world.service.search(world.operator, TrackSearchQuery(EMBEDDING, top_k=4))
 
     assert [result.track_id for result in results] == [history]
+
+
+def test_area_without_active_camera_returns_empty_without_vector_search() -> None:
+    world = World()
+    world.database.cameras[world.camera_a1].status = CameraStatus.INACTIVE
+
+    assert world.service.search(world.operator, TrackSearchQuery(EMBEDDING, top_k=4)) == []
+    assert world.searcher.calls == []
+
+
+def test_stale_hits_are_refilled_to_reach_top_k() -> None:
+    world = World()
+    stale = [world.track(world.camera_a1, status=TrackIndexStatus.PENDING) for _ in range(4)]
+    ready = [world.track(world.camera_a1) for _ in range(6)]
+    world.hits(
+        *[(track_id, 0.99 - index * 0.01) for index, track_id in enumerate(stale)],
+        *[(track_id, 0.8 - index * 0.01) for index, track_id in enumerate(ready)],
+    )
+
+    results = world.service.search(world.operator, TrackSearchQuery(EMBEDDING, top_k=4))
+
+    assert [result.track_id for result in results] == ready[:4]
+    assert [limit for _, limit in world.searcher.calls] == [4, 8]
+    assert world.service.metrics.searches == 1
+    assert world.service.metrics.stale_hits == 4
+
+
+def test_refill_stops_when_scope_is_exhausted() -> None:
+    world = World()
+    stale = world.track(world.camera_a1, status=TrackIndexStatus.FAILED)
+    ready = world.track(world.camera_a1)
+    world.hits((stale, 0.9), (ready, 0.8))
+
+    results = world.service.search(world.operator, TrackSearchQuery(EMBEDDING, top_k=4))
+
+    assert [result.track_id for result in results] == [ready]
+    assert [limit for _, limit in world.searcher.calls] == [4]
+
+
+def test_refill_rounds_are_bounded() -> None:
+    world = World()
+    stale = [world.track(world.camera_a1, status=TrackIndexStatus.PENDING) for _ in range(40)]
+    world.hits(*[(track_id, 0.5) for track_id in stale])
+
+    results = world.service.search(world.operator, TrackSearchQuery(EMBEDDING, top_k=4))
+
+    assert results == []
+    assert [limit for _, limit in world.searcher.calls] == [4, 8, 16][:MAX_SEARCH_ROUNDS]
 
 
 def test_naive_time_filter_is_rejected() -> None:

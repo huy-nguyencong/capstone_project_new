@@ -13,6 +13,7 @@ import sqlalchemy as sa
 from person_search.storage.postgres.errors import DuplicateEntityError
 from person_search.storage.postgres.models import (
     AuditLog,
+    CameraStatus,
     OutboxStatus,
     PersonTrack,
     StorageOutboxEvent,
@@ -52,6 +53,16 @@ class FakeLookup:
 
     def get(self, entity_id: uuid.UUID) -> Any:
         return self.rows.get(entity_id)
+
+
+class FakeCameras(FakeLookup):
+    def active_ids_in_area(self, area_id: uuid.UUID) -> list[uuid.UUID]:
+        return sorted(
+            camera.id
+            for camera in self.rows.values()
+            if camera.area_id == area_id
+            and getattr(camera, "status", CameraStatus.ACTIVE) is CameraStatus.ACTIVE
+        )
 
 
 class FakeTracks(FakeLookup):
@@ -327,7 +338,7 @@ class FakeUnitOfWork:
         self.repositories = SimpleNamespace(
             users=FakeLookup(self.database.users),
             areas=FakeLookup(self.database.areas),
-            cameras=FakeLookup(self.database.cameras),
+            cameras=FakeCameras(self.database.cameras),
             jobs=FakeLookup(self.database.jobs),
             ai_configs=FakeLookup(self.database.configs),
             cases=FakeCases(self.cases, self.database),

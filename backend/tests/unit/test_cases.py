@@ -20,6 +20,7 @@ from person_search.services.cases import (
 from person_search.storage.postgres.errors import ConcurrentUpdateError
 from person_search.storage.postgres.models import (
     AuditResult,
+    CameraStatus,
     PersonTrack,
     TrackIndexStatus,
     UserRole,
@@ -41,10 +42,10 @@ class World:
         database.areas[self.area_b] = SimpleNamespace(id=self.area_b, name="Area B")
         self.camera_a, self.camera_b = uuid.uuid4(), uuid.uuid4()
         database.cameras[self.camera_a] = SimpleNamespace(
-            id=self.camera_a, area_id=self.area_a, name="Gate A"
+            id=self.camera_a, area_id=self.area_a, name="Gate A", status=CameraStatus.ACTIVE
         )
         database.cameras[self.camera_b] = SimpleNamespace(
-            id=self.camera_b, area_id=self.area_b, name="Gate B"
+            id=self.camera_b, area_id=self.area_b, name="Gate B", status=CameraStatus.ACTIVE
         )
         self.operator = self.user(UserRole.OPERATOR, self.area_a, "op-a")
         self.other_operator = self.user(UserRole.OPERATOR, self.area_a, "op-other")
@@ -210,6 +211,19 @@ def test_unready_or_foreign_track_cannot_be_saved() -> None:
     for track_id in (world.track_b, pending, uuid.uuid4()):
         with pytest.raises(TrackNotSavableError):
             world.service.add_result(world.operator, case_id, track_id)
+
+
+def test_track_of_inactive_camera_cannot_be_saved_but_saved_results_stay() -> None:
+    world = World()
+    case_id = world.service.create_case(
+        world.operator, title="Case", track_id=world.track_a
+    ).case.id
+    world.database.cameras[world.camera_a].status = CameraStatus.RETIRED
+
+    with pytest.raises(TrackNotSavableError):
+        world.service.add_result(world.operator, case_id, world.track_a)
+    detail = world.service.get_case(world.operator, case_id)
+    assert [result.track_id for result in detail.results] == [world.track_a]
 
 
 def test_operator_keeps_case_after_area_change_but_saves_only_new_area() -> None:

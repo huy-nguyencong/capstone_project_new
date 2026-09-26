@@ -1,6 +1,6 @@
 # Kế hoạch thiết kế và hiện thực tầng lưu trữ dữ liệu
 
-> Đây là kế hoạch triển khai tầng lưu trữ trực thuộc đặc tả backend chính thức `backend_implementation_plan.md`. Mỗi task bên dưới là một đơn vị triển khai, review, kiểm thử và commit độc lập. Không chuyển sang task kế tiếp khi task hiện tại chưa được người thực hiện review và chấp thuận. Các roadmap bên ngoài thư mục `files/`, bao gồm `docs/api-roadmap.md`, không phải nguồn yêu cầu và không được ghi đè kế hoạch chính thức này.
+> Đây là kế hoạch triển khai tầng lưu trữ, được xây dựng dựa trên ba tài liệu đặc tả nguồn `architect.md`, `project_requirements.md`, `usecase_detail.md` và phối hợp với `backend_implementation_plan.md`. Mỗi task bên dưới là một đơn vị triển khai, review, kiểm thử và commit độc lập. Không chuyển sang task kế tiếp khi task hiện tại chưa được người thực hiện review và chấp thuận. Các roadmap bên ngoài thư mục `files/`, bao gồm `docs/api-roadmap.md`, không phải nguồn yêu cầu và không được ghi đè kế hoạch chính thức này.
 
 ## 1. Mục tiêu
 
@@ -18,17 +18,20 @@ Tầng lưu trữ phải bảo đảm các quy tắc đã chốt trong `architec
 - `Matching Score` chỉ tồn tại trong response của lần tìm kiếm; không lưu vào `PersonTrack` hoặc `CaseResult`.
 - Mỗi lần bấm lưu tạo một `CaseResult` mới, kể cả khi cùng track đã có trong Case.
 - Case có đúng một Operator sở hữu, không gắn khu vực và không có trạng thái.
-- Tài khoản/camera ngừng hoạt động không làm mất dữ liệu lịch sử được Case tham chiếu.
+- Tài khoản/camera ngừng hoạt động không làm mất dữ liệu lịch sử được Case tham chiếu; track của camera ngừng vận hành được giữ nguyên nhưng tạm ẩn khỏi tìm kiếm cho đến khi camera vận hành trở lại.
 - Track chỉ được tìm kiếm khi metadata, full frame và vector đã được ghi hoàn chỉnh.
 
 ## 2. Nguồn yêu cầu và thứ tự ưu tiên
 
-1. `files/backend_implementation_plan.md` là đặc tả chính quy, có thẩm quyền cao nhất đối với hành vi backend.
-2. `files/architect.md` quy định kiến trúc và quyết định kỹ thuật chính thức.
-3. `files/usecase_detail.md` mô tả luồng chính, ngoại lệ và quyền của 15 use case.
-4. `files/project_requirements.md` mô tả phạm vi nghiệp vụ tổng quát.
+Ba tài liệu đặc tả nguồn (thẩm quyền cao nhất):
 
-Nếu các tài liệu chính thức mâu thuẫn, không lấy roadmap hoặc code hiện tại làm yêu cầu. Phải đối chiếu quyết định đã được phê duyệt, ưu tiên `backend_implementation_plan.md` cho hành vi backend và cập nhật đồng bộ tài liệu liên quan trước khi triển khai.
+1. `files/architect.md` quy định kiến trúc chung và quyết định kỹ thuật chính thức.
+2. `files/project_requirements.md` mô tả phạm vi nghiệp vụ.
+3. `files/usecase_detail.md` mô tả luồng chính, ngoại lệ và quyền của 15 use case.
+
+Kế hoạch thực thi dựa trên tài liệu nguồn: `files/backend_implementation_plan.md`, tài liệu này và `files/ai_worker_implementation_plan.md`.
+
+Nếu có mâu thuẫn, không lấy roadmap hoặc code hiện tại làm yêu cầu. Tài liệu nguồn được ưu tiên; kế hoạch phải được sửa cho khớp trước khi triển khai. Nếu chính các tài liệu nguồn mâu thuẫn nhau, hỏi người thực hiện để chốt rồi cập nhật đồng bộ.
 
 ## 3. Công nghệ mặc định để lập kế hoạch
 
@@ -80,7 +83,6 @@ Cấu trúc cuối cùng có thể được tinh chỉnh ở STO-00 nhưng phả
 
 Mỗi task tuân theo cùng một vòng lặp:
 
-> **Trạng thái repository khi lập kế hoạch:** thư mục làm việc hiện chưa có metadata Git (`.git`). Trước commit đầu tiên, cần xác nhận đây là đúng repository rồi khởi tạo Git hoặc mở đúng thư mục repository theo chỉ dẫn của người thực hiện. Không tự khởi tạo repository hay tạo commit khi chưa được yêu cầu.
 
 1. Chỉ triển khai đúng phạm vi task đang làm.
 2. Cập nhật checkbox trạng thái và ghi chú quyết định trong tài liệu này.
@@ -120,18 +122,18 @@ Trạng thái hợp lệ:
 | STO-05 | Schema PostgreSQL cho AI config, job và PersonTrack | STO-04 | DONE | `54f80d1` |
 | STO-06 | Schema PostgreSQL cho Case, CaseResult và AuditLog | STO-05 | DONE | `91e073c` |
 | STO-07 | Ràng buộc, index, seed và kiểm thử migration | STO-06 | DONE | `91e073c` |
-| STO-08 | Repository và transaction cho PostgreSQL | STO-07 | DONE | — |
-| STO-09 | Adapter lưu full frame trên MinIO | STO-03 | DONE | — |
-| STO-10 | Collection và adapter vector trên Milvus | STO-03 | DONE | — |
-| STO-11 | Điều phối ghi track xuyên ba kho dữ liệu | STO-08, STO-09, STO-10 | DONE | — |
-| STO-12 | Retry, reconciliation và xử lý dữ liệu dở dang | STO-11 | DONE | — |
-| STO-13 | Truy vấn vector có lọc và kiểm tra quyền | STO-11 | DONE | — |
-| STO-14 | Đọc ảnh, crop động và kiểm tra quyền truy cập | STO-11 | DONE | — |
-| STO-15 | Lưu CaseResult và thống kê Viewer | STO-08, STO-14 | DONE | — |
-| STO-16 | Audit log và trạng thái vận hành lưu trữ | STO-08, STO-12 | DONE | — |
-| STO-17 | Kiểm thử tích hợp và E2E toàn luồng | STO-13 đến STO-16 | DONE | — |
-| STO-18 | Đo hiệu năng, tài nguyên và dung lượng | STO-17 | DONE | — |
-| STO-19 | Backup, restore, bảo mật và runbook | STO-18 | DONE | — |
+| STO-08 | Repository và transaction cho PostgreSQL | STO-07 | DONE | `391acbb` |
+| STO-09 | Adapter lưu full frame trên MinIO | STO-03 | DONE | `391acbb` |
+| STO-10 | Collection và adapter vector trên Milvus | STO-03 | DONE | `391acbb` |
+| STO-11 | Điều phối ghi track xuyên ba kho dữ liệu | STO-08, STO-09, STO-10 | DONE | `fe441fa` |
+| STO-12 | Retry, reconciliation và xử lý dữ liệu dở dang | STO-11 | DONE | `8f0dd4f` |
+| STO-13 | Truy vấn vector có lọc và kiểm tra quyền | STO-11 | DONE | `8f0dd4f` |
+| STO-14 | Đọc ảnh, crop động và kiểm tra quyền truy cập | STO-11 | DONE | `8f0dd4f` |
+| STO-15 | Lưu CaseResult và thống kê Viewer | STO-08, STO-14 | DONE | `22f5f51` |
+| STO-16 | Audit log và trạng thái vận hành lưu trữ | STO-08, STO-12 | DONE | `22f5f51` |
+| STO-17 | Kiểm thử tích hợp và E2E toàn luồng | STO-13 đến STO-16 | DONE | `a99d48a` |
+| STO-18 | Đo hiệu năng, tài nguyên và dung lượng | STO-17 | DONE | `a99d48a` |
+| STO-19 | Backup, restore, bảo mật và runbook | STO-18 | DONE | `a99d48a` |
 
 ## 7. Chi tiết từng task
 
@@ -509,6 +511,7 @@ Sau khi các service healthy, chạy smoke check kết nối riêng cho PostgreS
 - Gửi filter area/camera/time sang Milvus trước vector search.
 - Hydrate kết quả từ PostgreSQL và chỉ giữ track `READY`.
 - Recheck quyền và metadata ở PostgreSQL trước response để phòng vector index cũ/sai.
+- Khi loại hit stale làm kết quả ít hơn `top_k`, truy vấn bù Milvus có giới hạn (over-fetch) để trả đủ `top_k` track hợp lệ nếu phạm vi còn dữ liệu (UC-09: trả tối đa `top_k` kết quả điểm cao nhất trong phạm vi hợp lệ).
 - Trả Matching Score trong DTO response; không persist score.
 
 **Kiểm thử:**
@@ -516,7 +519,7 @@ Sau khi các service healthy, chạy smoke check kết nối riêng cho PostgreS
 - Operator A không thể nhận track area B dù gửi camera ID trực tiếp.
 - Filter xảy ra trước top-k, không phải lấy top-k toàn cục rồi mới bỏ kết quả.
 - `top_k` ngoài tập cho phép bị từ chối.
-- Track bị disable camera nhưng thuộc lịch sử được xử lý theo policy đã chốt.
+- Track của camera đang ngừng vận hành không được trả về và camera đó không dùng được làm bộ lọc; khi camera vận hành trở lại thì track cũ được trả về bình thường.
 - Milvus trả ID stale/missing thì service bỏ qua và ghi metric cảnh báo.
 
 **Tiêu chí chấp nhận:** không có đường gọi public nào bỏ qua PostgreSQL authorization; score chỉ có trong response.
@@ -846,6 +849,7 @@ Mỗi lần làm task, thêm một mục theo mẫu:
 - Test đã chạy: toàn bộ unit suite, Ruff, compile và integration search trên PostgreSQL/Milvus thật.
 - Kết quả: 162 unit test đạt; filter Area được áp dụng trước top-k, camera ngoài quyền bị từ chối và PostgreSQL recheck chỉ giữ track `READY`.
 - Điểm cần review: policy camera ngừng hoạt động, việc trả ít hơn `top_k` khi có hit stale thay vì truy vấn bù.
+- Đính chính 2026-09-27 theo quyết định của người thực hiện: thay quyết định trên — track của camera `INACTIVE`/`RETIRED` được giữ nhưng **không** tìm được cho đến khi camera vận hành trở lại; filter Milvus giới hạn vào camera `ACTIVE` của area trước top-k. Bổ sung truy vấn bù khi hit stale làm kết quả ít hơn `top_k` (tối đa 3 vòng, limit `top_k`, `2×`, `4×`). Code: `services/track_search.py`, `track_imagery.py`, `cases.py`, `CameraRepository.active_ids_in_area`; unit test đạt.
 - Commit SHA: —.
 
 ### 2026-09-25 — STO-14

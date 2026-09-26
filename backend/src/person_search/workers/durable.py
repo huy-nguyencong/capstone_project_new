@@ -178,7 +178,7 @@ class _JobControl:
             self.source_frames,
             self.sampled_frames,
             self.completed_tracks,
-            0,
+            None,
             **extra,
         ):
             raise LeaseLost

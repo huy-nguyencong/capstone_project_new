@@ -20,6 +20,7 @@ from person_search.storage.postgres.models import (
     AuditResult,
     AuthSession,
     Camera,
+    CameraStatus,
     Case,
     CaseResult,
     OutboxStatus,
@@ -138,6 +139,14 @@ class CameraRepository(Repository[Camera]):
             if actor.area_id is None:
                 return []
             statement = statement.where(Camera.area_id == actor.area_id)
+        return list(self.session.scalars(statement))
+
+    def active_ids_in_area(self, area_id: uuid.UUID) -> list[uuid.UUID]:
+        statement = (
+            select(Camera.id)
+            .where(Camera.area_id == area_id, Camera.status == CameraStatus.ACTIVE)
+            .order_by(Camera.id)
+        )
         return list(self.session.scalars(statement))
 
 

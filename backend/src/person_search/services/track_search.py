@@ -13,6 +13,7 @@ from person_search.storage.milvus.vectors import InvalidVectorError, VectorFilte
 from person_search.storage.postgres.models import (
     Area,
     Camera,
+    CameraStatus,
     PersonTrack,
     TrackIndexStatus,
     UserRole,
@@ -24,6 +25,9 @@ from person_search.storage.postgres.unit_of_work import UnitOfWork
 logger = logging.getLogger(__name__)
 
 ALLOWED_TOP_K = frozenset({4, 8, 12, 16})
+# Stale or out-of-scope hits are dropped after hydration; when that leaves fewer than
+# top_k results, Milvus is queried again with a doubled limit (top_k, 2x, 4x).
+MAX_SEARCH_ROUNDS = 3
 
 
 class SearchNotAllowedError(PermissionError):
@@ -35,6 +39,10 @@ class CameraOutOfScopeError(PermissionError):
 
 
 class InvalidSearchRequestError(ValueError):
+    pass
+
+
+class CameraNotActiveError(InvalidSearchRequestError):
     pass
 
 
@@ -89,28 +97,59 @@ class TrackSearchService:
         if isinstance(query.top_k, bool) or query.top_k not in ALLOWED_TOP_K:
             raise InvalidSearchRequestError("top_k must be one of 4, 8, 12, or 16.")
         camera_ids = tuple(dict.fromkeys(query.camera_ids))
-        area_id = self._authorize(actor_user_id, camera_ids)
+        area_id, active_cameras = self._authorize(actor_user_id, camera_ids)
+        # Tracks of inactive/retired cameras are kept but not searchable until reactivated.
+        scope = camera_ids or active_cameras
+        if not scope:
+            return []
         try:
             filters = VectorFilter(
                 area_id=area_id,
                 appeared_from=query.appeared_from,
                 appeared_to=query.appeared_to,
-                camera_ids=camera_ids,
+                camera_ids=scope,
             )
         except ValueError as error:
             raise InvalidSearchRequestError(str(error)) from error
+
+        limit = query.top_k
+        for _ in range(MAX_SEARCH_ROUNDS):
+            hits = self._vector_search(query.embedding, filters, limit)
+            results, stale = self._hydrate(hits, area_id=area_id, query=query, cameras=scope)
+            if len(results) >= query.top_k or len(hits) < limit:
+                break
+            limit *= 2
+        self.metrics.searches += 1
+        if stale:
+            self.metrics.stale_hits += stale
+            logger.warning(
+                "vector search returned stale or out-of-scope hits",
+                extra={"stale_hits": stale, "actor_user_id": str(actor_user_id)},
+            )
+        return results[: query.top_k]
+
+    def _vector_search(
+        self, embedding: Sequence[float], filters: VectorFilter, limit: int
+    ) -> list[VectorSearchHit]:
         try:
-            hits = self._vectors.search(query.embedding, filters, top_k=query.top_k)
+            return self._vectors.search(embedding, filters, top_k=limit)
         except InvalidVectorError as error:
             raise InvalidSearchRequestError("Query embedding is invalid.") from error
         except Exception as error:
             if self._storage_metrics is not None:
                 self._storage_metrics.record_error(StorageComponent.MILVUS, error)
             raise
-        self.metrics.searches += 1
-        if not hits:
-            return []
 
+    def _hydrate(
+        self,
+        hits: list[VectorSearchHit],
+        *,
+        area_id: uuid.UUID,
+        query: TrackSearchQuery,
+        cameras: tuple[uuid.UUID, ...],
+    ) -> tuple[list[TrackSearchResult], int]:
+        if not hits:
+            return [], 0
         with self._unit_of_work_factory() as work:
             rows = {
                 track.id: (track, camera, area)
@@ -123,7 +162,7 @@ class TrackSearchService:
         stale = 0
         for hit in hits:
             row = rows.get(hit.track_id)
-            if row is None or not _in_scope(*row, area_id=area_id, query=query, cameras=camera_ids):
+            if row is None or not _in_scope(*row, area_id=area_id, query=query, cameras=cameras):
                 stale += 1
                 continue
             track, camera, area = row
@@ -146,15 +185,11 @@ class TrackSearchService:
                     ),
                 )
             )
-        if stale:
-            self.metrics.stale_hits += stale
-            logger.warning(
-                "vector search returned stale or out-of-scope hits",
-                extra={"stale_hits": stale, "actor_user_id": str(actor_user_id)},
-            )
-        return results
+        return results, stale
 
-    def _authorize(self, actor_user_id: uuid.UUID, camera_ids: tuple[uuid.UUID, ...]) -> uuid.UUID:
+    def _authorize(
+        self, actor_user_id: uuid.UUID, camera_ids: tuple[uuid.UUID, ...]
+    ) -> tuple[uuid.UUID, tuple[uuid.UUID, ...]]:
         with self._unit_of_work_factory() as work:
             repositories = self._repositories(work)
             user = repositories.users.get(actor_user_id)
@@ -170,7 +205,9 @@ class TrackSearchService:
                 camera = repositories.cameras.get(camera_id)
                 if camera is None or camera.area_id != area_id:
                     raise CameraOutOfScopeError("Camera is outside the Operator's current area.")
-            return area_id
+                if camera.status is not CameraStatus.ACTIVE:
+                    raise CameraNotActiveError("Camera is not in operation.")
+            return area_id, tuple(repositories.cameras.active_ids_in_area(area_id))
 
     @staticmethod
     def _repositories(work: UnitOfWork) -> Repositories:
@@ -190,6 +227,8 @@ def _in_scope(
     if track.index_status is not TrackIndexStatus.READY:
         return False
     if camera.area_id != area_id or area.id != area_id or track.camera_id != camera.id:
+        return False
+    if camera.status is not CameraStatus.ACTIVE:
         return False
     if cameras and camera.id not in cameras:
         return False
