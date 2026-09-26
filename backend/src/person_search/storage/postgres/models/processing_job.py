@@ -32,6 +32,11 @@ class ProcessingJob(TimestampMixin, Base):
         Index("ix_processing_jobs_status", "status"),
         Index("uq_jobs_actor_idempotency", "requested_by", "idempotency_key", unique=True),
         CheckConstraint("attempts >= 0 AND sampled_frames >= 0", name="ck_jobs_worker_counters"),
+        CheckConstraint(
+            "completed_tracks >= 0 AND published_tracks >= 0 "
+            "AND published_tracks <= completed_tracks",
+            name="ck_jobs_track_progress",
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -48,6 +53,8 @@ class ProcessingJob(TimestampMixin, Base):
     lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     attempts: Mapped[int] = mapped_column(nullable=False, default=0, server_default="0")
     sampled_frames: Mapped[int] = mapped_column(nullable=False, default=0, server_default="0")
+    completed_tracks: Mapped[int] = mapped_column(nullable=False, default=0, server_default="0")
+    published_tracks: Mapped[int] = mapped_column(nullable=False, default=0, server_default="0")
     camera_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("cameras.id", ondelete="RESTRICT"),

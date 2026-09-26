@@ -32,6 +32,12 @@ class Cancellable(Protocol):
     def __call__(self) -> bool: ...
 
 
+class ProgressObserver(Protocol):
+    def __call__(
+        self, source_frames: int, sampled_frames: int, completed_tracks: int
+    ) -> None: ...
+
+
 @dataclass(frozen=True, slots=True)
 class EncodedTrack:
     track: CompletedTrack
@@ -76,6 +82,7 @@ class ProductionPipeline:
         sampling_interval: int,
         job_timeout_seconds: float,
         cancelled: Cancellable = lambda: False,
+        progress: ProgressObserver = lambda *_: None,
         clock: Callable[[], float] = time.perf_counter,
     ) -> None:
         if isinstance(job_timeout_seconds, bool) or job_timeout_seconds <= 0:
@@ -88,6 +95,7 @@ class ProductionPipeline:
         self.sampler = FrameSampler(sampling_interval)
         self.job_timeout_seconds = float(job_timeout_seconds)
         self.cancelled = cancelled
+        self.progress = progress
         self.clock = clock
         self._timings: dict[str, list[float | int]] = {}
 
@@ -147,6 +155,7 @@ class ProductionPipeline:
                     self._check(started)
                 finally:
                     frame.image.close()
+                self.progress(source_count, sampled_count, len(encoded))
             ended = tuple(self._call("tracker", self.tracker.flush))
             update_count += len(ended)
             # ENDED updates do not inspect the supplied frame; they only finalize retained state.
@@ -162,6 +171,7 @@ class ProductionPipeline:
                 self._check(started)
                 embedding = self._call("image_encoder", self.track_encoder.encode, track)
                 encoded.append(EncodedTrack(track, embedding))
+                self.progress(source_count, sampled_count, len(encoded))
             succeeded = True
             return ProductionPipelineResult(
                 source_count,
@@ -217,6 +227,7 @@ def build_production_pipeline(
     job_timeout_seconds: float,
     device: str = "cpu",
     cancelled: Cancellable = lambda: False,
+    progress: ProgressObserver = lambda *_: None,
 ) -> ProductionPipeline:
     """Resolve immutable config through the registry; never substitute demo adapters."""
 
@@ -259,4 +270,5 @@ def build_production_pipeline(
         sampling_interval=sampling_interval,
         job_timeout_seconds=job_timeout_seconds,
         cancelled=cancelled,
+        progress=progress,
     )

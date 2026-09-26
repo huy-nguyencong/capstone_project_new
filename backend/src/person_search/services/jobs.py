@@ -61,6 +61,8 @@ class JobService:
             processed_frames=job.processed_frames,
             total_frames=job.total_frames,
             sampled_frames=job.sampled_frames,
+            completed_tracks=job.completed_tracks,
+            published_tracks=job.published_tracks,
             sampling_interval=job.sampling_interval,
             sampling_profile=sampling_profile_for_interval(job.sampling_interval),
             tracks_ready=counts.get(TrackIndexStatus.READY, 0),
@@ -173,6 +175,8 @@ class JobService:
                     timeline_origin_utc=origin,
                     processed_frames=0,
                     sampled_frames=0,
+                    completed_tracks=0,
+                    published_tracks=0,
                     total_frames=staged.total_frames,
                     attempts=0,
                     cancel_requested=False,
@@ -277,7 +281,15 @@ class JobService:
             work.session.expunge(job)
             return job
 
-    def checkpoint(self, job_id, token, processed=None, sampled=None):
+    def checkpoint(
+        self,
+        job_id,
+        token,
+        processed=None,
+        sampled=None,
+        completed=None,
+        published=None,
+    ):
         with self.factory() as work:
             job = self.row(work, job_id, lock=True)
             if job.status != JobStatus.RUNNING or job.lease_token != token:
@@ -293,6 +305,15 @@ class JobService:
                 job.processed_frames, job.sampled_frames = processed, sampled
                 if job.total_frames is not None and processed > job.total_frames:
                     job.total_frames = None  # Container frame count was only a hint.
+            if completed is not None:
+                if published is None:
+                    published = job.published_tracks
+                if completed < job.completed_tracks or published < job.published_tracks:
+                    return False
+                if published > completed:
+                    return False
+                job.completed_tracks = completed
+                job.published_tracks = published
             job.heartbeat_at = self.clock()
             job.lease_expires_at = self.clock() + timedelta(seconds=60)
             work.commit()
