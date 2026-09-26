@@ -10,7 +10,10 @@ from typing import Any
 
 from flask import Flask
 
-from person_search.ai.config_loader import ProductionModelCandidateLoader
+from person_search.ai.config_loader import (
+    ProductionComponentFactory,
+    ProductionModelCandidateLoader,
+)
 from person_search.ai.registry import RegistryMode
 from person_search.api import register_api
 from person_search.auth.passwords import PasswordHasher
@@ -25,6 +28,11 @@ from person_search.services.auth import AuthService, SessionPolicy
 from person_search.services.camera_runtime import CameraRuntime
 from person_search.services.cameras import CameraService
 from person_search.services.cases import CaseService
+from person_search.services.diagnostics import (
+    DiagnosticSettings,
+    ProductionDiagnostics,
+    camera_source_opener,
+)
 from person_search.services.jobs import JobService
 from person_search.services.monitoring import MonitoringService
 from person_search.services.searches import SearchService
@@ -99,10 +107,27 @@ def create_app(
                 app.config["ENVIRONMENT"]
             )
             candidate_loader = None
+            diagnostics = None
             if camera_registry is not None and camera_registry.mode is RegistryMode.PRODUCTION:
-                candidate_loader = ProductionModelCandidateLoader.from_environment(
+                config_root = Path(__file__).parents[2] / "config"
+                components = ProductionComponentFactory.from_environment(
                     artifact_root=camera_registry.artifact_root,
-                    config_root=Path(__file__).parents[2] / "config",
+                    config_root=config_root,
+                )
+                candidate_loader = ProductionModelCandidateLoader(
+                    (components.detector, components.tracker, components.image_encoder)
+                )
+                diagnostic_settings = DiagnosticSettings.from_environment()
+                sample_video = os.getenv("PERSON_SEARCH_DIAGNOSTIC_VIDEO", "").strip()
+                diagnostics = ProductionDiagnostics(
+                    camera_registry,
+                    components,
+                    camera_source_opener(
+                        camera_runtime,
+                        diagnostic_settings,
+                        sample_video=Path(sample_video).resolve() if sample_video else None,
+                    ),
+                    settings=diagnostic_settings,
                 )
             container.register(
                 "cameras.service",
@@ -132,6 +157,7 @@ def create_app(
                     health=runtime.health,
                     search=search_service,
                     runtime=camera_runtime,
+                    diagnostics=diagnostics,
                 ),
             )
             container.register(

@@ -1,11 +1,8 @@
 from __future__ import annotations
 
 import io
-import math
-import time
 import uuid
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 from typing import Any
@@ -14,6 +11,14 @@ from PIL import Image, ImageDraw
 from sqlalchemy import func, select
 
 from person_search.api.errors import ApiError
+from person_search.services.diagnostics import (
+    DiagnosticBusyError,
+    Outcome,
+    ProductionDiagnostics,
+    Step,
+    Timer,
+    check_embedding,
+)
 from person_search.services.searches import EncoderUnavailableError
 from person_search.storage.postgres.models import (
     Area,
@@ -48,13 +53,6 @@ CAMERA_METRIC_KEYS = (
 )
 
 
-class Outcome(StrEnum):
-    SUCCESS = "SUCCESS"
-    INCONCLUSIVE = "INCONCLUSIVE"
-    FAILED = "FAILED"
-    SKIPPED = "SKIPPED"
-
-
 class WorkerState(StrEnum):
     IDLE = "IDLE"
     QUEUED = "QUEUED"
@@ -62,24 +60,6 @@ class WorkerState(StrEnum):
     ERROR = "ERROR"
     DISABLED = "DISABLED"
     OFFLINE = "OFFLINE"
-
-
-@dataclass(frozen=True, slots=True)
-class Step:
-    component: str
-    label: str
-    outcome: Outcome
-    message: str | None = None
-    duration_ms: int | None = None
-
-    def as_dict(self) -> dict[str, Any]:
-        return {
-            "component": self.component,
-            "label": self.label,
-            "outcome": self.outcome.value,
-            "message": self.message,
-            "duration_ms": self.duration_ms,
-        }
 
 
 def _utc_now() -> datetime:
@@ -196,26 +176,6 @@ def synthetic_frame() -> SourceFrame:
     )
 
 
-def check_embedding(values: Sequence[float], dimension: int) -> str | None:
-    if len(values) != dimension:
-        return f"Embedding có {len(values)} chiều, cấu hình yêu cầu {dimension}."
-    if not all(math.isfinite(value) for value in values):
-        return "Embedding chứa giá trị không hợp lệ."
-    if not math.isclose(math.sqrt(sum(v * v for v in values)), 1.0, abs_tol=1e-3):
-        return "Embedding chưa được chuẩn hóa L2."
-    return None
-
-
-class _Timer:
-    def __enter__(self) -> _Timer:
-        self.start = time.perf_counter()
-        self.ms = 0
-        return self
-
-    def __exit__(self, *args: object) -> None:
-        self.ms = round((time.perf_counter() - self.start) * 1000)
-
-
 def run_pipeline_steps(
     camera: Any,
     config: Any | None,
@@ -256,7 +216,7 @@ def run_pipeline_steps(
         )
         return skip_rest("Bỏ qua vì camera chưa bật xử lý AI.")
     if camera.rtsp_url:
-        with _Timer() as timer:
+        with Timer() as timer:
             try:
                 status = probe(camera.rtsp_url, camera.rtsp_credentials)
                 message = {
@@ -310,7 +270,7 @@ def run_pipeline_steps(
     frame = synthetic_frame()
     sampled_frame = SampledFrame(frame, sampling_interval=10, sample_sequence=0)
     try:
-        with _Timer() as timer:
+        with Timer() as timer:
             try:
                 boxes = pipeline.detector.detect(sampled_frame)
             except Exception:
@@ -336,7 +296,7 @@ def run_pipeline_steps(
                 timer.ms,
             )
         )
-        with _Timer() as timer:
+        with Timer() as timer:
             try:
                 tracks = []
                 for index in range(TRACKER_WARMUP_FRAMES):
@@ -370,7 +330,7 @@ def run_pipeline_steps(
         )
         box = tracks[0].bbox
         crop = frame.image.crop((box.x, box.y, box.x + box.width, box.y + box.height))
-        with _Timer() as timer:
+        with Timer() as timer:
             try:
                 embedding = pipeline.encoder.encode(crop)
                 problem = check_embedding(embedding, config.encoder_dimension)
@@ -390,6 +350,14 @@ def run_pipeline_steps(
     return steps
 
 
+def _busy() -> ApiError:
+    return ApiError(
+        409,
+        "diagnostics_busy",
+        "Đang có một lượt kiểm tra AI khác chạy. Vui lòng thử lại sau.",
+    )
+
+
 def _probe_image() -> bytes:
     output = io.BytesIO()
     synthetic_frame().image.save(output, format="JPEG", quality=85)
@@ -405,6 +373,7 @@ class MonitoringService:
         search: Any,
         runtime: Any,
         pipeline_factory: Callable[[Any], Pipeline] | None = None,
+        diagnostics: ProductionDiagnostics | None = None,
         clock: Callable[[], datetime] = _utc_now,
     ) -> None:
         self._factory = unit_of_work_factory
@@ -412,6 +381,7 @@ class MonitoringService:
         self._search = search
         self._runtime = runtime
         self._pipeline_factory = pipeline_factory
+        self._diagnostics = diagnostics
         self._clock = clock
 
     def system_status(self) -> dict[str, Any]:
@@ -612,7 +582,15 @@ class MonitoringService:
             if camera is None:
                 raise ApiError(404, "camera_not_found", "Không tìm thấy camera.")
             config = work.repositories.ai_configs.active()
-        steps = run_pipeline_steps(camera, config, self._runtime.probe, self._pipeline_factory)
+        if self._diagnostics is not None:
+            try:
+                steps = self._diagnostics.camera_pipeline(camera, config)
+            except DiagnosticBusyError as error:
+                raise _busy() from error
+        else:
+            steps = run_pipeline_steps(
+                camera, config, self._runtime.probe, self._pipeline_factory
+            )
         return self._report(steps)
 
     def search_components(self) -> dict[str, Any]:
@@ -640,30 +618,36 @@ class MonitoringService:
                     f"{name} · {config.encoder_dimension} chiều.",
                 )
             )
-            steps.append(
-                self._encode_step(
-                    "TEXT_ENCODER",
-                    f"Text Encoder · {name}",
-                    config,
-                    lambda gateway: gateway.text(
-                        PROBE_TEXT,
-                        version=config.encoder_version,
-                        dimension=config.encoder_dimension,
-                    ),
+            if self._diagnostics is not None:
+                try:
+                    steps += self._diagnostics.search_components(config)
+                except DiagnosticBusyError as error:
+                    raise _busy() from error
+            else:
+                steps.append(
+                    self._encode_step(
+                        "TEXT_ENCODER",
+                        f"Text Encoder · {name}",
+                        config,
+                        lambda gateway: gateway.text(
+                            PROBE_TEXT,
+                            version=config.encoder_version,
+                            dimension=config.encoder_dimension,
+                        ),
+                    )
                 )
-            )
-            steps.append(
-                self._encode_step(
-                    "IMAGE_ENCODER",
-                    f"Image Encoder · {name}",
-                    config,
-                    lambda gateway: gateway.image(
-                        _probe_image(),
-                        version=config.encoder_version,
-                        dimension=config.encoder_dimension,
-                    ),
+                steps.append(
+                    self._encode_step(
+                        "IMAGE_ENCODER",
+                        f"Image Encoder · {name}",
+                        config,
+                        lambda gateway: gateway.image(
+                            _probe_image(),
+                            version=config.encoder_version,
+                            dimension=config.encoder_dimension,
+                        ),
+                    )
                 )
-            )
         labels = {"postgres": "PostgreSQL", "milvus": "Milvus", "minio": "MinIO"}
         for name, state in self._storage().items():
             steps.append(
@@ -677,7 +661,7 @@ class MonitoringService:
         return self._report(steps)
 
     def _encode_step(self, component: str, label: str, config: Any, call) -> Step:
-        with _Timer() as timer:
+        with Timer() as timer:
             try:
                 embedding = call(self._search.gateway(config.encoder_version))
                 problem = check_embedding(embedding, config.encoder_dimension)
