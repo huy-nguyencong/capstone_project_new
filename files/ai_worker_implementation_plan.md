@@ -2,6 +2,12 @@
 
 > Tài liệu này là kế hoạch chi tiết cho các thành phần AI worker và inference phục vụ ứng dụng tìm kiếm người qua camera. Yêu cầu cốt lõi được lấy trực tiếp từ `project_requirements.md`, `usecase_detail.md` và `architect.md`; các quyết định chi tiết về registry, sampling và best-shot được bổ sung sau khi người thực hiện xem xét khuyến nghị kỹ thuật. Đây là kế hoạch con; không được tự mở rộng phạm vi hoặc thay đổi quyết định trong ba tài liệu nguồn. Mỗi task phải được triển khai, kiểm thử và review độc lập trước khi chuyển sang task tiếp theo.
 
+> **Quy ước theo dõi:** đây là file duy nhất người thực hiện cần đọc để biết AI worker đã
+> thay đổi gì. Mọi task phải cập nhật trực tiếp trạng thái, module/file code đã đổi, hành vi
+> mới, test đã chạy, kết quả, giới hạn còn lại và quyết định review tại đây. Không tạo report
+> Markdown/JSON riêng chỉ để mô tả công việc; chỉ giữ artifact máy đọc được hoặc hướng dẫn
+> vận hành mà ứng dụng, test, benchmark hay deployment thực sự sử dụng.
+
 ## 1. Mục tiêu
 
 Xây dựng AI worker chạy tách khỏi Flask API, có khả năng:
@@ -15,7 +21,7 @@ Xây dựng AI worker chạy tách khỏi Flask API, có khả năng:
 - Công bố nhất quán full frame, metadata và embedding sang MinIO, PostgreSQL và Milvus.
 - Chỉ cho phép tìm kiếm track đã ở trạng thái sẵn sàng.
 - Hỗ trợ bật/tắt AI theo camera, cấu hình Detector/Tracker chung, trạng thái, diagnostics, audit và khả năng phục hồi lỗi.
-- Cung cấp bằng chứng chất lượng, hiệu năng và khả năng trình diễn trên 7 video.
+- Ghi trực tiếp trong plan các số đo chất lượng, hiệu năng và kết quả chạy trên 7 video.
 
 ## 2. Nguồn yêu cầu và truy vết
 
@@ -41,7 +47,7 @@ Ma trận truy vết chính:
 | Trạng thái và diagnostics theo thành phần | AIW-21, AIW-22 |
 | Track chỉ search được khi dữ liệu nhất quán | AIW-18, AIW-20 |
 | Demo tuần tự 7 video | AIW-26, AIW-27, AIW-29 |
-| RTSP giả lập có bằng chứng | AIW-09, AIW-28 |
+| RTSP giả lập có test và kết quả tái lập | AIW-09, AIW-28 |
 
 ## 3. Các quyết định đã khóa
 
@@ -62,7 +68,7 @@ Ma trận truy vết chính:
 15. Track chỉ được đánh dấu `READY` sau khi metadata, full frame và vector đã được công bố nhất quán.
 16. Lỗi áp dụng cấu hình mới không được phá cấu hình đang hoạt động hoặc dữ liệu lịch sử.
 17. Google Colab với T4 được dùng làm môi trường **batch inference, benchmark và chuẩn bị video demo**, không phải worker online bắt buộc phải kết nối liên tục với Flask trong buổi bảo vệ.
-18. Buổi bảo vệ ưu tiên chạy ứng dụng local với dữ liệu đã index trước. Nếu cần chứng minh xử lý thật, chỉ chạy thêm một clip ngắn; phần xử lý đủ 7 video được thực hiện trước và lưu bằng chứng tái lập.
+18. Buổi bảo vệ ưu tiên chạy ứng dụng local với dữ liệu đã index trước. Nếu cần chứng minh xử lý thật, chỉ chạy thêm một clip ngắn; phần xử lý đủ 7 video được thực hiện trước, lưu result bundle cần thiết và ghi số đo/lệnh tái lập trong plan.
 19. Cặp baseline ưu tiên để đưa ứng dụng chạy được là Detector YOLO cỡ nano/small đã pin phiên bản + ByteTrack. BoT-SORT là Tracker thay thế đầu tiên trong registry; YOLOX-S/YOLOX-Tiny + ByteTrack là đường dự phòng nếu dependency hoặc giấy phép Ultralytics không phù hợp. Không đổi model chỉ vì có phiên bản mới hơn khi chưa qua smoke test và benchmark.
 20. Track ID chỉ có ý nghĩa trong phạm vi camera/job. Một người xuất hiện lại sau khi track đã timeout tạo track mới; cùng một người ở camera khác cũng là track mới. Phiên bản đầu không thực hiện global identity hoặc cross-camera track merging.
 21. Khi EOF, worker flush và hoàn tất các track đã confirmed còn hoạt động. Khi cancel, chỉ các track đã hoàn tất và đã publish nhất quán được giữ; track đang active/chưa hoàn tất bị hủy và giải phóng buffer, không phát sinh kết quả dở dang.
@@ -125,7 +131,7 @@ Quy tắc thực hiện:
 ### 3.4. Chiến lược chạy local và Google Colab
 
 - **Local là system of record:** Flask API, PostgreSQL, MinIO và Milvus vẫn chạy trong môi trường ứng dụng; dữ liệu đã index local là nguồn dùng cho search/Case trong buổi bảo vệ.
-- **Colab T4 là batch runner:** notebook dùng cùng pipeline/contract với worker để xử lý tuần tự 7 video, benchmark Detector/Tracker/RaSa và tạo bằng chứng. Không để buổi bảo vệ phụ thuộc vào việc Colab còn phiên, còn T4 hoặc còn kết nối mạng.
+- **Colab T4 là batch runner:** notebook dùng cùng pipeline/contract với worker để xử lý tuần tự 7 video và benchmark Detector/Tracker/RaSa. Result bundle phục vụ import được giữ; số đo và kết luận được ghi trong plan. Không để buổi bảo vệ phụ thuộc vào việc Colab còn phiên, còn T4 hoặc còn kết nối mạng.
 - **Không cho Colab ghi thẳng vào database/storage local qua tunnel.** Batch runner xuất một result bundle có version; importer local kiểm tra bundle rồi gọi đường `TrackPublisher` chuẩn để đưa dữ liệu vào ba kho.
 - Result bundle tối thiểu gồm manifest schema version, checksum nguồn, model/config/checkpoint lineage, sampling interval, metadata track dạng JSONL, đúng một full frame+bbox cho mỗi track, embedding và checksum từng artifact. Bundle không chứa person crop, secret hoặc Matching Score.
 - `Latest` runtime không được xem là dependency ổn định. Notebook phải pin package/model commit, ghi Python/PyTorch/CUDA/GPU thực tế và chạy preflight. Do RaSa upstream dùng dependency cũ, AIW-04 phải chứng minh đường tương thích trên Colab trước khi xử lý toàn bộ dữ liệu.
@@ -249,16 +255,21 @@ Trạng thái hợp lệ:
 - `IN_PROGRESS`: đang triển khai; tại một thời điểm chỉ nên có một task trên đường găng ở trạng thái này.
 - `BLOCKED`: thiếu quyết định, dữ liệu, checkpoint hoặc môi trường.
 - `REVIEW`: code và test đã xong, đang chờ người thực hiện duyệt.
-- `DONE`: đã review, test đạt và tài liệu liên quan được cập nhật.
+- `DONE`: đã review, test đạt và plan/README vận hành liên quan được cập nhật.
 
 Quy trình cho mỗi task:
 
 1. Chuyển task sang `IN_PROGRESS` và ghi ngày bắt đầu.
 2. Chỉ sửa phạm vi đã nêu trong task; phát hiện thay đổi thiết kế phải ghi lại trước khi code.
 3. Chạy bộ test được yêu cầu và lưu lệnh/kết quả vào nhật ký thực hiện.
-4. Chuyển sang `REVIEW`, tóm tắt file thay đổi, rủi ro và bằng chứng test.
-5. Chỉ chuyển `DONE` sau khi được review chấp thuận.
-6. Không tự động bắt đầu task kế tiếp khi task hiện tại chưa được duyệt.
+4. Chuyển sang `REVIEW`, ghi ngay trong nhật ký: module/file code thay đổi, hành vi mới,
+   test và kết quả, rủi ro/giới hạn còn lại.
+5. Cập nhật bảng “Tóm tắt hiện trạng code” để người đọc thấy ngay kết quả mới nhất.
+6. Chỉ chuyển `DONE` sau khi được review chấp thuận.
+7. Không tự động bắt đầu task kế tiếp khi task hiện tại chưa được duyệt.
+8. `ai_worker_implementation_plan.md` là nhật ký triển khai duy nhất. Không tạo report riêng
+   cho từng task; chỉ giữ source code, test, config, manifest/dataset máy đọc được và hướng dẫn
+   vận hành thực sự cần để chạy ứng dụng. Kết quả test/benchmark/review được tóm tắt tại đây.
 
 ## 8. Bảng kế hoạch tổng thể
 
@@ -269,15 +280,15 @@ Quy trình cho mỗi task:
 | AIW-02 | Khóa contract và taxonomy lỗi AI | AIW-00 | DONE |
 | AIW-03 | Registry Detector/Tracker/Encoder và kiểm tra artifact | AIW-02 | DONE |
 | AIW-04 | Runtime/device preflight và giới hạn tài nguyên | AIW-03 | DONE |
-| AIW-05 | Fake adapters và fixtures chỉ dành cho test | AIW-02 | TODO |
-| AIW-06 | Interface nguồn frame dùng chung | AIW-02 | TODO |
-| AIW-07 | File video source production | AIW-06 | TODO |
-| AIW-08 | Frame sampling và timeline nguồn | AIW-07 | TODO |
-| AIW-09 | RTSP source, reconnect và thử MediaMTX | AIW-06, AIW-08 | TODO |
-| AIW-10 | Detector production adapter | AIW-03, AIW-04, AIW-08 | TODO |
-| AIW-11 | Tracker production adapter | AIW-03, AIW-10 | TODO |
-| AIW-12 | Track buffer và chọn frame đại diện | AIW-11 | TODO |
-| AIW-13 | Tích hợp checkpoint và preprocessing RaSa | AIW-03, AIW-04 | TODO |
+| AIW-05 | Fake adapters và fixtures chỉ dành cho test | AIW-02 | DONE |
+| AIW-06 | Interface nguồn frame dùng chung | AIW-02 | DONE |
+| AIW-07 | File video source production | AIW-06 | DONE |
+| AIW-08 | Frame sampling và timeline nguồn | AIW-07 | DONE |
+| AIW-09 | RTSP source, reconnect và thử MediaMTX | AIW-06, AIW-08 | DONE |
+| AIW-10 | Detector production adapter | AIW-03, AIW-04, AIW-08 | DONE |
+| AIW-11 | Tracker production adapter | AIW-03, AIW-10 | DONE |
+| AIW-12 | Track buffer và chọn frame đại diện | AIW-11 | DONE |
+| AIW-13 | Tích hợp checkpoint và preprocessing RaSa | AIW-03, AIW-04 | REVIEW |
 | AIW-14 | RaSa Image Encoder | AIW-12, AIW-13 | TODO |
 | AIW-15 | RaSa query inference: image/text/attribute tiếng Anh | AIW-13 | TODO |
 | AIW-16 | Ghép pipeline production hoàn chỉnh | AIW-08, AIW-10 đến AIW-15 | TODO |
@@ -293,7 +304,7 @@ Quy trình cho mỗi task:
 | AIW-26 | Đánh giá chất lượng trên 7 video | AIW-25 | TODO |
 | AIW-27 | Benchmark `N=10`/`N=20` và tài nguyên máy demo | AIW-25 | TODO |
 | AIW-28 | Bằng chứng xử lý RTSP giả lập | AIW-09, AIW-25 | TODO |
-| AIW-29 | Đóng gói, runbook và nghiệm thu AI worker | AIW-26 đến AIW-28 | TODO |
+| AIW-29 | Đóng gói, hướng dẫn vận hành và nghiệm thu AI worker | AIW-26 đến AIW-28 | TODO |
 
 Đường găng cho lát cắt đầu tiên:
 
@@ -315,9 +326,9 @@ AIW-12 + AIW-14 → AIW-16 → AIW-17 → AIW-18 → AIW-25
 - Inventory worker entrypoint, pipeline, adapter, job service, ingestion service và diagnostics hiện có.
 - Phân loại code thành production-ready, scaffolding, fake/demo và chưa có.
 - Xác định các đường chạy có thể vô tình dùng adapter demo.
-- Lập ma trận requirement → module → test → bằng chứng.
+- Lập ma trận requirement → module → test và ghi kết luận trong plan.
 
-**Đầu ra:** baseline report, sơ đồ module hiện tại và danh sách gap có mức ưu tiên.
+**Đầu ra:** inventory, sơ đồ module và danh sách gap được ghi trong nhật ký của plan này.
 
 **Kiểm thử/xác minh:** chạy unit test hiện có và một smoke worker demo không ghi dữ liệu production.
 
@@ -339,7 +350,8 @@ AIW-12 + AIW-14 → AIW-16 → AIW-17 → AIW-18 → AIW-25
 - Xây ground-truth tối thiểu cho người/track/query dùng đánh giá.
 - Chuẩn bị tập truy vấn ảnh, câu tiếng Anh và thuộc tính tiếng Anh.
 
-**Đầu ra:** dataset manifest, fixture policy và evaluation query set.
+**Đầu ra:** dataset manifest và evaluation query set máy đọc được; chính sách fixture được ghi
+trực tiếp trong plan hoặc code test, không tạo report riêng.
 
 **Kiểm thử/xác minh:** script đọc được đủ manifest và xác nhận checksum/metadata.
 
@@ -361,7 +373,7 @@ AIW-12 + AIW-14 → AIW-16 → AIW-17 → AIW-18 → AIW-25
 - Định nghĩa mã lỗi theo stage: source, sampling, detector, tracker, selector, encoder, storage, cancellation và resource exhaustion.
 - Phân biệt lỗi retryable và terminal; message public không chứa secret.
 
-**Đầu ra:** module contract, error model và tài liệu sequence.
+**Đầu ra:** module contract, error model, contract tests và quyết định sequence ghi trong plan.
 
 **Kiểm thử:** contract tests cho bbox, timestamp, vector dimension, `NaN`/`Inf`, close idempotent và error serialization.
 
@@ -385,7 +397,8 @@ AIW-12 + AIW-14 → AIW-16 → AIW-17 → AIW-18 → AIW-25
 - API chỉ nhận ID allowlisted; từ chối adapter class, URL và filesystem path do client cung cấp.
 - Preflight tính `available`; Admin không thể tự sửa trạng thái này hoặc thêm registry entry từ UI.
 
-**Đầu ra:** registry schema, loader và manifest production mẫu không chứa secret/artifact lớn.
+**Đầu ra:** registry schema, loader, manifest production mẫu không chứa secret/artifact lớn;
+module và quyết định triển khai được ghi trong nhật ký plan.
 
 **Kiểm thử:** artifact thiếu/sai checksum, ID trùng, adapter lạ, dimension sai, cặp Detector/Tracker không tương thích và request cố inject URL/path/class.
 
@@ -403,11 +416,13 @@ AIW-12 + AIW-14 → AIW-16 → AIW-17 → AIW-18 → AIW-25
 - Kiểm tra RAM/disk trống, model artifact, codec và thư viện native.
 - Đo RAM khi idle và sau khi nạp từng model.
 - Có compatibility spike cho RaSa trên Colab vì upstream khai báo PyTorch 1.9.1, torchvision 0.10.1, Transformers 4.8.1 và timm 0.4.9, không mặc định tương thích với runtime `Latest`.
-- Ghi chính xác Python, PyTorch, CUDA, GPU, package lock, model checksum và kết quả `nvidia-smi` trong report; notebook setup phải idempotent sau khi runtime reset.
+- Ghi chính xác Python, PyTorch, CUDA, GPU, package lock, model checksum và kết quả
+  `nvidia-smi` trong output preflight sinh khi chạy; notebook setup phải idempotent sau khi
+  runtime reset. Không commit report theo từng lần chạy.
 - Cấu hình thread, timeout, batch size và giới hạn buffer an toàn.
 - Chỉ đánh giá OpenVINO sau khi baseline đúng; không tối ưu trước khi có số đo.
 
-**Đầu ra:** preflight command/report và cấu hình tài nguyên mặc định.
+**Đầu ra:** preflight command, cấu hình tài nguyên mặc định và kết quả tóm tắt trong nhật ký plan.
 
 **Kiểm thử:** thiếu artifact, thiếu codec, RAM/disk dưới ngưỡng cấu hình và runtime không hỗ trợ.
 
@@ -426,7 +441,8 @@ AIW-12 + AIW-14 → AIW-16 → AIW-17 → AIW-18 → AIW-25
 - Cấm production manifest tham chiếu fake adapter.
 - Tạo fixture có bbox/track/vector đã biết để test orchestration và storage.
 
-**Đầu ra:** test adapter package và guard chống bật nhầm production.
+**Đầu ra:** test/demo adapter package, fixture deterministic và guard chống bật nhầm production;
+không tạo tài liệu task riêng.
 
 **Kiểm thử:** production startup với fake registry phải fail; test profile vẫn chạy được offline.
 
@@ -593,7 +609,7 @@ AIW-12 + AIW-14 → AIW-16 → AIW-17 → AIW-18 → AIW-25
 - Xác định API feature extraction cho image/text và khả năng image–text matching/rerank.
 - Không cho trộn vector từ encoder version khác trong cùng truy vấn.
 
-**Đầu ra:** RaSa runtime factory, preprocessing module và model card nội bộ.
+**Đầu ra:** RaSa runtime factory, preprocessing module và metadata model/checkpoint trong registry.
 
 **Kiểm thử:** checkpoint thiếu/sai checksum, preprocess snapshot, dimension, vector finite, deterministic tolerance và version mismatch.
 
@@ -633,7 +649,7 @@ AIW-12 + AIW-14 → AIW-16 → AIW-17 → AIW-18 → AIW-25
 - Text Encoder chỉ nhận mô tả tiếng Anh theo contract; không dịch tự động.
 - Attribute schema có tên/giá trị tiếng Anh và prompt builder deterministic bằng tiếng Anh.
 - Cùng checkpoint/version/dimension với vector đã index.
-- Đánh giá tùy chọn rerank image–text; chỉ bật nếu có bằng chứng cải thiện và đủ tài nguyên.
+- Đánh giá tùy chọn rerank image–text; chỉ bật nếu số đo ghi trong plan cho thấy cải thiện và đủ tài nguyên.
 - Matching Score chỉ được trả cho lượt search, không persist.
 
 **Đầu ra:** query inference gateway, English prompt builder và version checks.
@@ -740,7 +756,7 @@ AIW-12 + AIW-14 → AIW-16 → AIW-17 → AIW-18 → AIW-25
 - Job lease hết hạn được reclaim an toàn.
 - Publication dùng stable identity/idempotency key để tránh nhân đôi.
 - Reconciliation cho track `PENDING`, outbox lỗi, object/vector thiếu.
-- Dead-letter/report cho lỗi cần can thiệp.
+- Trạng thái dead-letter và mã lỗi rõ ràng cho trường hợp cần can thiệp.
 
 **Đầu ra:** recovery policy, retry coordinator và reconciliation command.
 
@@ -844,7 +860,7 @@ AIW-12 + AIW-14 → AIW-16 → AIW-17 → AIW-18 → AIW-25
 6. Operator lưu track vào Case.
 7. Operator/Viewer xem crop/full frame+bbox nhưng không thấy Matching Score trong Case.
 
-**Đầu ra:** E2E test/runbook và bộ bằng chứng kết quả.
+**Đầu ra:** E2E test; cách chạy được cập nhật trong README hiện hữu và kết quả ghi vào plan.
 
 **Kiểm thử:** happy path, area isolation, storage/model failure và score non-persistence.
 
@@ -858,14 +874,15 @@ AIW-12 + AIW-14 → AIW-16 → AIW-17 → AIW-18 → AIW-25
 
 **Phạm vi:**
 
-- Chạy pipeline tuần tự trên đủ 7 video theo manifest; có thể chạy trên Colab T4 nhưng kết quả phải xuất bundle/report tái lập và import local bằng đường chuẩn.
+- Chạy pipeline tuần tự trên đủ 7 video theo manifest; có thể chạy trên Colab T4 nhưng kết quả
+  phải xuất result bundle tái lập và import local bằng đường chuẩn. Số đo được tóm tắt trong plan.
 - Tận dụng annotation WILDTRACK hiện có để tạo ground-truth/evaluation subset; không giả định annotation identity đồng nghĩa với track identity nghiệp vụ xuyên camera.
 - Đếm detection/track, track đứt, track trùng và trường hợp bỏ sót trên ground-truth mẫu.
 - Đánh giá image→image, English text→image và English attribute→image.
 - Báo Recall@4/8/12/16 hoặc metric phù hợp cùng ví dụ thành công/thất bại.
 - So sánh có/không rerank nếu AIW-15 triển khai thử.
 
-**Đầu ra:** quality report, query set version và artifact bằng chứng.
+**Đầu ra:** query set version, result bundle cần cho ứng dụng và bảng số đo tóm tắt trong plan.
 
 **Kiểm thử/xác minh:** phép đo có script tái lập, seed/config/checkpoint/version được ghi đầy đủ.
 
@@ -875,7 +892,7 @@ AIW-12 + AIW-14 → AIW-16 → AIW-17 → AIW-18 → AIW-25
 
 ### AIW-27 — Benchmark `N=10`/`N=20` và tài nguyên máy demo
 
-**Mục tiêu:** chọn sampling/config có bằng chứng trên máy demo.
+**Mục tiêu:** chọn sampling/config dựa trên số đo trên máy demo được ghi trong plan.
 
 **Phạm vi:**
 
@@ -889,7 +906,7 @@ AIW-12 + AIW-14 → AIW-16 → AIW-17 → AIW-18 → AIW-25
 - Nếu FPS nguồn khác nhau đáng kể, đo thêm profile theo target processed FPS và quyết định dùng fixed N hay mapping theo FPS.
 - Nếu cần nhiều chế độ vận hành, chỉ đề xuất preset khi mỗi preset có kết quả chất lượng/tài nguyên và phạm vi dùng rõ ràng.
 
-**Đầu ra:** benchmark report, config mặc định được đề xuất và bảng preset allowlist nếu thực sự cần nhiều profile.
+**Đầu ra:** config mặc định, preset allowlist nếu cần và số đo benchmark tóm tắt trong plan.
 
 **Kiểm thử/xác minh:** chạy lặp, ghi warm-up/cold-start và phiên bản môi trường.
 
@@ -908,15 +925,16 @@ AIW-12 + AIW-14 → AIW-16 → AIW-17 → AIW-18 → AIW-25
 - Thử mất kết nối/reconnect và dừng AI.
 - Lưu cấu hình đã redact, log, metric, ảnh chụp/video màn hình và kết quả tìm kiếm.
 
-**Đầu ra:** RTSP experiment report và evidence manifest.
+**Đầu ra:** test/fixture RTSP tái lập; kết quả happy path/reconnect được ghi trong plan.
 
 **Kiểm thử/xác minh:** ít nhất một happy path và một reconnect path tái lập được.
 
-**Tiêu chí hoàn thành:** bằng chứng cho thấy RTSP và file dùng chung pipeline; không cần chứng minh 7 luồng đồng thời.
+**Tiêu chí hoàn thành:** test và số đo trong plan cho thấy RTSP và file dùng chung pipeline;
+không cần chứng minh 7 luồng đồng thời.
 
 ---
 
-### AIW-29 — Đóng gói, runbook và nghiệm thu AI worker
+### AIW-29 — Đóng gói, hướng dẫn vận hành và nghiệm thu AI worker
 
 **Mục tiêu:** bảo đảm có thể dựng lại và trình diễn ổn định.
 
@@ -930,13 +948,14 @@ AIW-12 + AIW-14 → AIW-16 → AIW-17 → AIW-18 → AIW-25
 - Runbook export result bundle trên Colab, kiểm tra checksum, tải về và import local idempotent.
 - Runbook restart/cancel/reconcile/backup và xử lý lỗi thường gặp.
 - Checklist dung lượng, model license, secret, log và dữ liệu riêng tư trước demo.
-- Tổng hợp bằng chứng AIW-25 đến AIW-28.
+- Tổng hợp kết quả test/số đo AIW-25 đến AIW-28 ngay trong plan.
 
-**Đầu ra:** deployment/runbook, acceptance report và release checklist.
+**Đầu ra:** hướng dẫn deployment trong README hiện hữu và release checklist trong plan.
 
 **Kiểm thử:** dựng môi trường sạch, chạy preflight, E2E smoke, restart giữa job và chạy lại search/Case.
 
-**Tiêu chí hoàn thành:** người khác có thể làm theo runbook để chạy demo; không còn adapter fake trên đường production; mọi tiêu chí nghiệm thu bên dưới đạt hoặc được ghi ngoại lệ đã duyệt.
+**Tiêu chí hoàn thành:** người khác có thể làm theo README để chạy demo; không còn adapter fake
+trên đường production; mọi tiêu chí nghiệm thu bên dưới đạt hoặc được ghi ngoại lệ đã duyệt trong plan.
 
 ## 10. Definition of Done chung
 
@@ -949,7 +968,7 @@ Một task chỉ được đánh dấu `DONE` khi:
 - Không thêm đường production fallback sang fake adapter.
 - Error có mã/stage rõ ràng và không làm lộ secret.
 - Resource được đóng khi success, failure, timeout và cancellation.
-- Tài liệu, registry, cấu hình mẫu và runbook liên quan được cập nhật.
+- Plan, README vận hành, registry và cấu hình mẫu liên quan được cập nhật; không tạo report task riêng.
 - Diff đã được người thực hiện review và chấp thuận trước task tiếp theo.
 
 ## 11. Cổng nghiệm thu theo giai đoạn
@@ -981,17 +1000,42 @@ Một task chỉ được đánh dấu `DONE` khi:
 ### Gate E — Sẵn sàng demo
 
 - AIW-26 đến AIW-29 `DONE`.
-- Có báo cáo 7 video, benchmark N, bằng chứng RTSP và runbook tái lập.
+- Có số đo 7 video/benchmark N trong plan, test RTSP tái lập và hướng dẫn chạy trong README.
 
 ## 12. Nhật ký thực hiện
 
-Mỗi lần hoàn tất hoặc review task, thêm một dòng; không sửa lịch sử cũ.
+### 12.1. Tóm tắt hiện trạng code
+
+Đây là phần đọc nhanh để biết ứng dụng hiện đã có gì mà không cần mở report khác.
+
+| Task | Trạng thái | Code/artifact đang có | Hành vi đã khóa | Test gần nhất | Giới hạn còn lại |
+| --- | --- | --- | --- | --- | --- |
+| AIW-00 | `DONE` | `workers/main.py`, `runner.py`, `pipeline.py`, services job/ingestion/monitoring; `test_worker_demo_smoke.py` | Xác định worker tách tiến trình, storage core dùng được và đường AI hiện tại chỉ là demo | Baseline 324 unit + smoke in-memory | Không có AI production tại thời điểm baseline |
+| AIW-01 | `DONE` | `datasets/wildtrack.py`, `tools/wildtrack_manifest.py`, `wildtrack_dataset_manifest.json`, `wildtrack_evaluation_queries.json`, dataset tests | Khóa inventory/checksum 7 video, 6 query; binary dataset bị ignore | Manifest verify + query validation; 326 unit | Mapping video–annotation và nhãn query cần kiểm tra lại ở AIW-26 |
+| AIW-02 | `DONE` | `workers/contracts.py`, `workers/errors.py`, contract tests | 7 Protocol framework-neutral, 10 error stage, lifecycle/close idempotent; bundle khóa config ID và track IDs | 11 contract tests; suite lúc vá: 359 unit | Adapter production sẽ implement contract ở AIW-06 đến AIW-18 |
+| AIW-03 | `DONE` | `ai/registry.py`, `config/models.example.json`, `config/models.demo.json`, registry CLI/tests, API ID guard | Registry allowlist typed, artifact/checksum/license/compatibility guard; production không nhận fake adapter | Suite lúc hoàn tất: 350 unit; hai manifest validate | Artifact/checkpoint production vẫn chưa có, thuộc AIW-10 đến AIW-15 |
+| AIW-04 | `DONE` | `ai/preflight.py`, `config/ai_resources.json`, preflight CLI/tests, Colab notebook, worker readiness gate | Kiểm tra resource/device/codec/package/model load trước claim job; lỗi thì fail-closed | 9 preflight tests; suite lúc hoàn tất: 359 unit | Production models chưa sẵn sàng; local còn phụ thuộc RAM/FFmpeg thực tế |
+| AIW-05 | `DONE` | `person_search/demo/`, worker/search/monitoring wiring và guard tests | Fake Detector/Tracker/Image/Query Encoder tách khỏi production; synthetic marker; không silent fallback | 365 unit, 25 deselected; Ruff/compileall/diff-check đạt | Đã review chấp thuận; sẵn sàng bắt đầu AIW-06 |
+| AIW-06 | `DONE` | `workers/contracts.py`, `workers/sources/base.py`, `workers/sources/__init__.py`, `test_frame_source_contract.py` | FILE/RTSP dùng chung pull iterator/context manager; RGB + EXIF orientation; index tăng tuần tự, timestamp không giảm; EOF ổn định; cancel/error đóng resource; source one-shot và close idempotent | 7 source-contract tests; toàn suite 372 unit, 25 deselected; Ruff/compileall đạt | Đã review chấp thuận; File decoder triển khai ở AIW-07, RTSP triển khai ở AIW-09 |
+| AIW-07 | `DONE` | `workers/sources/file.py`, compatibility facade trong `workers/pipeline.py`, `test_file_frame_source.py` | PyAV decode pull-based; kiểm tra path/signature/byte/codec/kích thước; probe FPS/time base/frame count/duration; timestamp ưu tiên PTS và fallback FPS có đếm; progress theo frame/time; phát hiện file đổi; EOF và decoder failure tách biệt; mọi đường lỗi/cancel đóng container | 7 file-source tests (gồm MPEG-4 thật) và 7 contract tests; toàn suite 379 unit, 25 deselected; Ruff/compileall/diff-check đạt | Đã review chấp thuận; sampling đã được tách ở AIW-08, RTSP thuộc AIW-09 |
+| AIW-08 | `DONE` | `workers/sampling.py`, `workers/contracts.py`, `workers/runner.py`, JobService/API/UI profile sampling, diagnostics/demo adapters và sampling tests | Quy tắc 0-based chọn index `0,N,2N...`; `SampledFrame` giữ index/timestamp nguồn, sample sequence và N; Detector/Tracker chỉ nhận frame đã sample; production allowlist `baseline=10`, `throughput=20`; raw Admin override bị từ chối, benchmark override tách riêng; job lưu snapshot N | 11 sampler tests và worker cancellation/dispatch tests; toàn suite lúc review 391 unit, 25 deselected; Ruff/compileall/diff-check đạt; frontend lint/build đạt; OpenAPI JSON hợp lệ | Đã chấp thuận chuyển task; 7 integration test DB/FFmpeg vẫn phải chạy lại trước demo/release khi có test DSN |
+| AIW-09 | `DONE` | `workers/sources/rtsp.py`, `services/camera_runtime.py`, error taxonomy, `tools/rtsp_smoke.py`, MediaMTX Compose profile, README và RTSP tests | RTSP PyAV streaming dùng capture clock; URL credential-free + IP/CIDR allowlist; credential chỉ materialize lúc open; connect/read timeout và auth/stream-ended có mã riêng; reconnect exponential hữu hạn, cancel ngắt backoff, socket/container luôn đóng; frame đi qua cùng sampler/Detector/Tracker | 9 RTSP adapter tests; toàn suite 401 unit, 25 deselected; Ruff/compileall/diff-check đạt; MediaMTX + FFmpeg 9.0.2 smoke đọc thật 30 frame H.264 320×240 đạt | Đã review chấp thuận; smoke loopback không nới production SSRF policy; worker durable wiring RTSP job thuộc orchestration sau |
+| AIW-10 | `DONE` | `ai/detectors/ultralytics.py`, `ai/detectors/__init__.py`, `config/ultralytics_yolo_detector.json`, `config/model_artifacts/yolo11n.pt`, `tools/yolo_detector_smoke.py`, dependency và detector tests | YOLO11n COCO được duyệt cho demo học thuật phi thương mại; package/model/checksum được pin; adapter production nhận `SampledFrame`; inference/NMS chạy trong child process kill được khi timeout; chỉ xuất person, bbox pixel frame gốc; registry/checksum/device/preprocessing fail-closed; có latency metrics | 20 detector tests; toàn suite 421 unit, 25 deselected; Ruff/compileall/diff-check đạt; smoke Wildtrack thật phát hiện 13 người trên frame 1920×1080, CPU 1825 ms | Đã review chấp thuận; AGPL-3.0 phải tiếp tục được tuân thủ nếu phân phối hoặc triển khai qua mạng; preflight toàn pipeline vẫn chờ tracker và encoder ở các task sau |
+| AIW-11 | `DONE` | `ai/trackers/bytetrack.py`, `ai/trackers/__init__.py`, `config/bytetrack_tracker.json`, registry/dependency, `test_bytetrack_tracker.py`, `tools/detector_tracker_smoke.py` | ByteTrack nhận detection chuẩn hóa và xuất `TrackUpdate`; ID/state cô lập theo camera/job; confirmation hữu hạn; occlusion ngắn; timeout theo sample count và source time; EOF flush confirmed track; cancel chỉ cleanup; bbox/output/checksum fail-closed; import tracker không được phép monkey-patch PIL toàn ứng dụng | 12 tracker tests; targeted 41 passed; toàn suite 433 passed, 25 deselected; Ruff/compileall/diff-check đạt; smoke YOLO11n→ByteTrack thật trên 8 frame Wildtrack có 119 detection, 15 active ID và 12 track flush EOF | Đã review chấp thuận; BoT-SORT chưa triển khai vì ByteTrack baseline đã chạy end-to-end; tuning/benchmark toàn bộ 7 video thuộc AIW-26/AIW-27 |
+| AIW-12 | `DONE` | `ai/selectors/representative.py`, `ai/selectors/__init__.py`, `config/representative_selector.json`, `test_representative_selector.py`, smoke pipeline được mở rộng | Buffer giữ tối đa K=3/track; hard filter kích thước/blur/cắt biên/bbox biến động; quality đúng trọng số mục 3.3 với temporal và occlusion; tie-break deterministic; shared full-frame reference; global byte budget + eviction/fail rõ; fallback `LOW_QUALITY`; crop clamp/padding chỉ tạm thời; EOF hoàn tất và cancel cleanup không phát kết quả | 11 selector tests; selector+tracker targeted 23 passed; toàn suite 444 passed, 25 deselected; Ruff/compileall/diff-check đạt; smoke YOLO11n→ByteTrack→Selector thật trên 8 frame Wildtrack tạo 15 representative track, 0 fallback thấp | Đã review chấp thuận; trọng số/threshold sẽ được benchmark trên 7 video ở AIW-26/AIW-27; representative full-frame được chuyển ownership cho bước encoder/publisher, không persist crop |
+| AIW-13 | `REVIEW` | `ai/encoders/rasa.py`, source MIT vendored tại `ai/encoders/rasa_vendor/`, `config/rasa_cuhk_pedes_runtime.json`, checkpoint/vocab artifacts, registry/dependency, `test_rasa_runtime.py`, `tools/rasa_runtime_smoke.py` | Pin upstream commit `bd16aa1…7c66`, checkpoint CUHK-PEDES chính thức và SHA-256; image RGB/EXIF→bicubic 384×384→CLIP mean/std; tokenizer BERT uncased offline, max 50 token; image/text projection chung 256 chiều + L2; checkpoint architecture guard 849 key; version/preprocessing/checksum fail-closed; ITM rerank capability/top-k được khóa metadata; runtime tương thích Torch/Transformers hiện đại | 7 RaSa tests; targeted registry/preflight/RaSa 31 passed; toàn suite 451 passed, 25 deselected; Ruff/compileall/diff-check đạt; CPU smoke thật tạo image/text vector norm≈1, repeat max delta=0 | Chờ review để chuyển `DONE`; AIW-14 sẽ bọc image runtime vào contract/timeout/process lifecycle, AIW-15 sẽ bọc text/attribute và quyết định bật ITM rerank; checkpoint 1,816,575,847 byte cần được quản lý như model artifact, không phải source code |
+
+### 12.2. Lịch sử thay đổi trạng thái
+
+Mỗi lần bắt đầu, hoàn tất hoặc review task, thêm một dòng. Dòng mới phải đủ thông tin để hiểu
+thay đổi mà không cần report ngoài: module/file chính, hành vi, test/kết quả và giới hạn còn lại.
+Không sửa lịch sử cũ; nếu cách tổ chức thay đổi thì thêm dòng hợp nhất/đính chính.
 
 | Ngày | Task | Trạng thái mới | Commit/PR | Test đã chạy | Kết quả và ghi chú review |
 | --- | --- | --- | --- | --- | --- |
 | — | — | — | — | — | Chưa bắt đầu triển khai theo kế hoạch này. |
 | 2026-09-25 | AIW-00 | IN_PROGRESS | — | Đang thực hiện | Bắt đầu inventory worker/pipeline/adapter/job/ingestion/diagnostics và ma trận truy vết. |
-| 2026-09-25 | AIW-00 | REVIEW | — | `pytest -m unit`; smoke in-memory; `ruff check .`; `compileall` | Baseline report và ma trận truy vết hoàn tất; 324 unit test đạt, smoke worker không ghi production đạt. Chờ review trước khi chuyển `DONE`. |
+| 2026-09-25 | AIW-00 | REVIEW | — | `pytest -m unit`; smoke in-memory; `ruff check .`; `compileall` | Baseline inventory và ma trận truy vết hoàn tất; 324 unit test đạt, smoke worker không ghi production đạt. Chờ review trước khi chuyển `DONE`. |
 | 2026-09-25 | AIW-00 | DONE | — | Không chạy lại; người thực hiện yêu cầu bắt đầu task kế tiếp | Baseline được chấp thuận qua chỉ dẫn tiếp tục; khóa phạm vi AIW-00. |
 | 2026-09-25 | AIW-01 | IN_PROGRESS | — | Đang thực hiện | Bắt đầu inventory 7 video, annotation, checksum, fixture policy và evaluation query set. |
 | 2026-09-25 | AIW-01 | REVIEW | — | `pytest -m unit`: 326 passed, 25 deselected; `ruff check .`; `compileall`; `wildtrack_manifest.py verify`; `validate-queries` | Đã inventory 3.236 file/10,84 GiB, khóa manifest SHA-256 `b214b4dc…ae8f`, xác thực 7 video và 6 query. Dataset binary vẫn ignored; chờ review trước khi chuyển `DONE`. |
@@ -1000,12 +1044,43 @@ Mỗi lần hoàn tất hoặc review task, thêm một dòng; không sửa lị
 | 2026-09-26 | AIW-02 | REVIEW | — | `pytest -m unit`: 337 passed, 25 deselected; `ruff check .`; `compileall` | Đã thêm contract framework-neutral, 7 Protocol, lifecycle close idempotent, 10 error stage và public serialization an toàn; pipeline demo dùng SourceFrame/Detection chuẩn hóa. Chờ review trước khi chuyển `DONE`. |
 | 2026-09-26 | AIW-02 | DONE | — | Không chạy lại; người thực hiện yêu cầu bắt đầu task kế tiếp | Contract và taxonomy được chấp thuận qua chỉ dẫn tiếp tục; khóa boundary cho registry/adapters. |
 | 2026-09-26 | AIW-02 | DONE | — | `test_ai_worker_contracts.py`: 11 passed; `pytest -m unit`: 359 passed, 25 deselected; `ruff check .`; `compileall` | Vá contract sau review: `ResultBundleManifest` bổ sung `ai_config_version_id` và danh sách `track_ids` duy nhất; làm rõ `flush` chỉ bắt buộc cho component stateful. |
+| 2026-09-26 | AIW-02 | DONE | — | Không chạy lại; người thực hiện xác nhận review | Bản vá contract và tài liệu AIW-02 được review chấp thuận; cho phép bắt đầu AIW-05. |
 | 2026-09-26 | AIW-03 | IN_PROGRESS | — | Đang thực hiện | Bắt đầu registry typed, artifact checksum, compatibility, provenance/license và tách production/demo. |
 | 2026-09-26 | AIW-03 | REVIEW | — | `pytest -m unit`: 350 passed, 25 deselected; `ruff check .`; `compileall`; validate hai manifest bằng CLI | Registry fail-fast đã khóa adapter allowlist, local artifact/checksum, compatibility, preflight-derived availability và request chỉ nhận ID; chờ review trước khi chuyển `DONE`. |
 | 2026-09-26 | AIW-03 | DONE | — | Không chạy lại; người thực hiện yêu cầu bắt đầu task kế tiếp | Registry typed và policy artifact được chấp thuận qua chỉ dẫn tiếp tục. |
-| 2026-09-26 | AIW-04 | IN_PROGRESS | — | Đang thực hiện | Bắt đầu runtime/device/resource preflight, report local/Colab và worker readiness guard. |
-| 2026-09-26 | AIW-04 | REVIEW | — | `pytest -m unit`: 359 passed, 25 deselected; `ruff check .`; `compileall`; local preflight CLI; worker refusal smoke | Đã khóa profile local CPU/Colab T4, package/runtime/GPU/codec/resource/model-load report và readiness guard. Local hiện bị chặn đúng với `codec_unavailable`; notebook T4 chờ chạy trên Colab thật. |
+| 2026-09-26 | AIW-04 | IN_PROGRESS | — | Đang thực hiện | Bắt đầu runtime/device/resource preflight, output local/Colab và worker readiness guard. |
+| 2026-09-26 | AIW-04 | REVIEW | — | `pytest -m unit`: 359 passed, 25 deselected; `ruff check .`; `compileall`; local preflight CLI; worker refusal smoke | Đã khóa profile local CPU/Colab T4, package/runtime/GPU/codec/resource/model-load output và readiness guard. Local hiện bị chặn đúng với `codec_unavailable`; notebook T4 chờ chạy trên Colab thật. |
 | 2026-09-26 | AIW-04 | DONE | — | Colab T4 preflight thực tế; `test_ai_preflight.py`: 9 passed | Colab nhận Tesla T4, CUDA 12.8, FFmpeg/PyAV H.264 và MPEG-4; disk đạt. Preflight phát hiện đúng RAM khả dụng biến động dưới ngưỡng 8 GiB và chặn pipeline production chưa có artifact/checkpoint. `pipeline_models_unavailable` và cảnh báo lệch phiên bản RaSa được chuyển tiếp cho AIW-10–AIW-15; không hạ ngưỡng chỉ để đạt `ready=true`. Chốt phương án local chạy ứng dụng/storage, Colab T4 phục vụ AI batch và video demo dự phòng. |
+| 2026-09-26 | AIW-00–AIW-04 | DONE | — | Kiểm tra tham chiếu bằng `rg`; không có runtime/test phụ thuộc | Hợp nhất tài liệu theo yêu cầu: xóa các report task riêng và preflight report đã commit; giữ plan làm nhật ký duy nhất, giữ manifest/query/config/notebook cần cho ứng dụng và benchmark. |
+| 2026-09-26 | AIW-05 | IN_PROGRESS | — | Đang thực hiện | Bắt đầu tách fake adapter sang namespace demo, thêm synthetic marker, production guard và fixture deterministic. |
+| 2026-09-26 | AIW-05 | REVIEW | — | `pytest -m unit`: 365 passed, 25 deselected; `ruff check .`; `compileall`; `git diff --check` | Fake Detector/Tracker/Image/Query Encoder đã nằm trong `person_search.demo`; production registry/startup, search và diagnostics không còn fallback sang demo; fixture offline và worker smoke đạt. Chờ review trước khi chuyển `DONE`. |
+| 2026-09-26 | AIW-05 | DONE | — | Không chạy lại; người thực hiện xác nhận hoàn thành | AIW-05 được review chấp thuận; khóa namespace demo, synthetic marker và production guards. Task kế tiếp theo thứ tự là AIW-06. |
+| 2026-09-26 | AIW-06 | IN_PROGRESS | — | Đang thực hiện | Bắt đầu interface nguồn frame dùng chung, lifecycle streaming, chính sách RGB/orientation/timeline/EOF và cleanup khi cancel/lỗi. |
+| 2026-09-26 | AIW-06 | REVIEW | — | `test_frame_source_contract.py`: 7 passed; `pytest -m unit`: 372 passed, 25 deselected; `ruff check .`; `compileall` | Thêm `FrameSourceMetadata`, `SourceKind`, Protocol iterator/context manager và `BaseFrameSource` pull-based. FILE/RTSP test doubles dùng cùng consumer; nguồn rỗng, frame sai, timestamp giảm, cancellation, open/read failure và close lặp đều được khóa. Chưa triển khai decoder cụ thể theo đúng phạm vi AIW-07/AIW-09. |
+| 2026-09-26 | AIW-06 | DONE | — | Không chạy lại; người thực hiện xác nhận đạt | AIW-06 được review chấp thuận; contract nguồn frame dùng chung được khóa để triển khai adapter production. |
+| 2026-09-26 | AIW-07 | IN_PROGRESS | — | Đang thực hiện | Bắt đầu `FileFrameSource` streaming bằng PyAV, probe metadata, kiểm tra file/codec/kích thước, PTS có fallback, progress và cleanup. |
+| 2026-09-26 | AIW-07 | REVIEW | — | `test_frame_source_contract.py` + `test_file_frame_source.py`: 14 passed; `pytest -m unit`: 379 passed, 25 deselected; `ruff check`; `compileall`; `git diff --check` | Thêm file decoder production dùng lifecycle AIW-06 và nối vào worker qua facade tương thích. Đã khóa MPEG-4 decode thật, codec H.264/MPEG-4, PTS biến thiên, fallback FPS, metadata thiếu, corrupt giữa luồng, source mutation, giới hạn/signature và cancellation. Không tạo report riêng. |
+| 2026-09-26 | AIW-07 | DONE | — | Không chạy lại riêng; người thực hiện xác nhận đạt trước khi bắt đầu AIW-08 | AIW-07 được review chấp thuận; `FileFrameSource` production là nguồn file chính thức cho các task sau. |
+| 2026-09-26 | AIW-08 | IN_PROGRESS | — | Triển khai tiếp từ phiên làm việc trước | Tách `FrameSampler`, truyền `SampledFrame` vào Detector/Tracker, khóa production profile và loại raw Admin override. |
+| 2026-09-26 | AIW-08 | REVIEW | — | Sampling/worker targeted: 26 passed; `pytest -m unit`: 391 passed, 25 deselected; `ruff check`; `compileall`; `git diff --check`; frontend lint/build; OpenAPI parse | AIW-08 đã đủ code và kiểm thử trong phạm vi local: boundary/short video/timestamp biến thiên/N=10/N=20/config mapping/invalid N/cancel đều được khóa. 7 integration test video được collect nhưng skip vì không có `PERSON_SEARCH_CAMERA_TEST_DSN`; không tạo report riêng. |
+| 2026-09-26 | AIW-08 | DONE | — | Không chạy lại riêng; người thực hiện chấp thuận tiếp tục AIW-09 | Khóa sampling deterministic và profile production. Integration DB/FFmpeg không chặn task kế tiếp nhưng vẫn là gate trước demo/release. |
+| 2026-09-26 | AIW-09 | IN_PROGRESS | — | Đang thực hiện | Bắt đầu RTSP production adapter trên contract AIW-06, tái sử dụng credential/SSRF policy của CameraRuntime và chuẩn bị MediaMTX harness. |
+| 2026-09-26 | AIW-09 | REVIEW | — | `test_rtsp_frame_source.py`: 9 passed; `pytest -m unit`: 401 passed, 25 deselected; `ruff check`; `compileall`; `git diff --check`; Compose config | Thêm RTSP streaming/reconnect/cancel/error taxonomy và credential-safe access. Test khóa good stream, pipeline chung, host cấm, credential mã hóa, auth/connect/read timeout, stream mất, reconnect và leak. MediaMTX/FFmpeg recipe + smoke CLI đã có; smoke mạng thật chờ môi trường có FFmpeg/image. Không tạo report riêng. |
+| 2026-09-26 | AIW-09 | REVIEW | — | FFmpeg/ffprobe 9.0.2; MediaMTX 1.12.3; H.264 320×240; `RtspFrameSource` đọc 30 frame, index cuối 29 | Hoàn tất smoke RTSP thật sau khi FFmpeg được cài. Publisher dùng RTSP-over-TCP; ffprobe và PyAV decoder đều đọc thành công. Harness loopback inject resolver có chủ đích, không nới production SSRF policy. Publisher/MediaMTX đã dừng và fixture tạm đã xóa. |
+| 2026-09-26 | AIW-09 | DONE | — | Không chạy lại riêng; người thực hiện yêu cầu tiếp tục AIW-10 sau smoke thật đạt | AIW-09 được review chấp thuận; RTSP adapter, reconnect policy và MediaMTX harness được khóa. |
+| 2026-09-26 | AIW-10 | IN_PROGRESS | — | Đang thực hiện | Bắt đầu detector production adapter theo registry; giữ YOLOX làm fallback và không tự tải/bật model candidate chưa duyệt. |
+| 2026-09-26 | AIW-10 | BLOCKED | — | `test_yolo_detector.py`: 20 passed; targeted detector/contract: 31 passed; `pytest -m unit`: 421 passed, 25 deselected; `ruff check`; `compileall`; `git diff --check` | Hoàn tất code adapter, config, process timeout isolation, person filtering, bbox mapping, output validation và latency metrics. Không thể đạt acceptance fixture thật vì thiếu quyết định/checkpoint production: Ultralytics license chưa duyệt, version/checksum chưa pin, artifact và torch/ultralytics chưa có. Không tạo report riêng và không tự tải model ngoài registry. |
+| 2026-09-26 | AIW-10 | IN_PROGRESS | — | Cài `ultralytics==8.4.163`, `torch==2.14.0`, `torchvision==0.29.0`; tải checkpoint chính thức | Chủ dự án xác nhận ứng dụng phi thương mại chỉ dùng thử nghiệm/demo, vì vậy chọn YOLO11n thay vì phát triển thêm adapter YOLOX. Ghi rõ AGPL-3.0 trong provenance và pin URL/checksum; không cho runtime tự tải model. |
+| 2026-09-26 | AIW-10 | REVIEW | — | `yolo_detector_smoke.py` trên `wildtrack-dataset/cam1.mp4`: 13 person, 1920×1080, CPU 1825 ms; `pytest -m unit`: 421 passed, 25 deselected; `ruff check .`; `compileall`; `git diff --check` | Checkpoint `yolo11n.pt` SHA-256 `0ebbc80d4a7680d14987a577cd21342b65ecfd94632bd9a8da63ae6417644ee1` đã qua registry/checksum guard và inference thật. Vá class ID float từ Ultralytics thành int ở boundary. Acceptance AIW-10 đã đạt; chờ người thực hiện review/chấp thuận trước khi chuyển `DONE` và bắt đầu AIW-11. |
+| 2026-09-26 | AIW-10 | DONE | — | Không chạy lại riêng; người thực hiện yêu cầu cập nhật plan và tiếp tục AIW-11 | AIW-10 được review chấp thuận; khóa YOLO11n production baseline, checkpoint/checksum và dependency đã kiểm chứng. |
+| 2026-09-26 | AIW-11 | IN_PROGRESS | — | Đang thực hiện | Bắt đầu ByteTrack production adapter. Dùng implementation ByteTrack từ Ultralytics đã pin, dependency LAP pin riêng; state chỉ tồn tại trong một camera/job, có timeout sample/thời gian và flush EOF. |
+| 2026-09-26 | AIW-11 | REVIEW | — | `test_bytetrack_tracker.py`: 12 passed; regression ảnh + tracker: 41 passed; `pytest -m unit`: 433 passed, 25 deselected; YOLO11n→ByteTrack smoke thật: 8 frame/119 detection/15 active ID/12 ended; `ruff check .`; `compileall`; `git diff --check` | Hoàn tất adapter/config/factory/checksum và lifecycle ByteTrack. Test khóa vào/ra, xác nhận track, occlusion ngắn, nhiều người, sample gap, timeout, EOF, reset giữa job/camera, output sai và cleanup khi cancel. Khôi phục `PIL.Image.open` sau delayed import để vô hiệu side effect toàn tiến trình của Ultralytics. AIW-11 đạt acceptance, chờ người thực hiện review/chấp thuận trước khi chuyển `DONE`. |
+| 2026-09-26 | AIW-11 | DONE | — | Không chạy lại riêng; người thực hiện yêu cầu cập nhật plan và tiếp tục AIW-12 | AIW-11 được review chấp thuận; khóa ByteTrack baseline và lifecycle track production. |
+| 2026-09-26 | AIW-12 | IN_PROGRESS | — | Đang thực hiện | Bắt đầu bounded `TrackBuffer` và `RepresentativeFrameSelector`: tối đa K=3 ứng viên/track, shared frame reference, hard filter, quality ranking deterministic, fallback `LOW_QUALITY`, memory budget và cleanup. |
+| 2026-09-26 | AIW-12 | REVIEW | — | `test_representative_selector.py`: 11 passed; selector+tracker: 23 passed; `pytest -m unit`: 444 passed, 25 deselected; YOLO11n→ByteTrack→Selector smoke thật: 8 frame/119 detection/15 representative/0 low quality; `ruff check .`; `compileall`; `git diff --check` | Hoàn tất bounded buffer và best-shot policy mục 3.3. Test khóa top-3 replacement, blur/bbox nhỏ/cắt biên/bbox biến động fallback, occlusion penalty không phụ thuộc thứ tự finalize, tie-break, shared reference, memory eviction/exhaustion, crop clamp, EOF/cancel cleanup. Full frame được copy một lần khi nhận ownership và dùng chung giữa nhiều track; crop chỉ sinh tạm. Đồng thời tracker tự dùng thư mục cấu hình Ultralytics ghi được khi biến môi trường chưa đặt, không phụ thuộc home directory. AIW-12 đạt acceptance, chờ người thực hiện review/chấp thuận trước khi chuyển `DONE`. |
+| 2026-09-26 | AIW-12 | DONE | — | Không chạy lại riêng; người thực hiện yêu cầu cập nhật plan và tiếp tục AIW-13 | AIW-12 được review chấp thuận; khóa bounded buffer, quality policy và ownership/cleanup của representative frame. |
+| 2026-09-26 | AIW-13 | IN_PROGRESS | — | Đang thực hiện | Bắt đầu xác minh và tích hợp RaSa CUHK-PEDES. Repo chính thức có MIT license; checkpoint CUHK-PEDES chính thức được chọn thay vì checkpoint ALBEF pretrain chung. |
+| 2026-09-26 | AIW-13 | REVIEW | — | `test_rasa_runtime.py`: 7 passed; RaSa+registry+preflight targeted: 31 passed; `pytest -m unit`: 451 passed, 25 deselected; CPU smoke crop Wildtrack + câu tiếng Anh: image/text 256 chiều, norm `0.99999994`/`1.0`, repeat max delta `0.0`; `ruff check .`; `compileall`; `git diff --check` | Checkpoint chính thức 1,816,575,847 byte SHA-256 `bc85da09c2991d5de503c2c2ac4f032e20cc536fec5094f0acff45e93d0104d2`; vocab SHA-256 `07eced375cec144d27c900241f3e339478dec958f92fddbc551f295c992038a3`. Pin source MIT commit `bd16aa1a15f149548a90d196fcf10a27d7ab7c66`, vendor model code kèm LICENSE và vá tương thích có giới hạn cho Transformers 4.49/Torch 2.14. Preprocess/tokenizer/projection/L2/version guard và ITM capability được khóa. AIW-13 đạt acceptance, chờ review/chấp thuận trước khi chuyển `DONE`. |
 
 ## 13. Rủi ro cần theo dõi
 
@@ -1040,7 +1115,7 @@ Mỗi lần hoàn tất hoặc review task, thêm một dòng; không sửa lị
 5. AIW-15 + AIW-25: query inference thật và E2E nghiệp vụ.
 6. AIW-19 → AIW-24: vận hành, recovery, trạng thái, diagnostics và hardening.
 7. AIW-26 → AIW-27: chất lượng 7 video và benchmark sampling.
-8. AIW-09 + AIW-28: RTSP giả lập và bằng chứng tại nhà.
+8. AIW-09 + AIW-28: RTSP giả lập, test reconnect và số đo ghi trong plan.
 9. AIW-29: đóng gói và nghiệm thu.
 
 RTSP có thể được phát triển sau khi đường file hoàn chỉnh vì đây không phải điều kiện bắt buộc của buổi demo, nhưng interface nguồn frame AIW-06 phải được thiết kế từ đầu để không khóa pipeline vào file video.

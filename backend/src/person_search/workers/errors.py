@@ -23,11 +23,16 @@ class AIStage(StrEnum):
 
 class AIErrorCode(StrEnum):
     SOURCE_OPEN_FAILED = "source_open_failed"
+    SOURCE_CONNECT_TIMEOUT = "source_connect_timeout"
+    SOURCE_AUTH_FAILED = "source_auth_failed"
     SOURCE_READ_FAILED = "source_read_failed"
+    SOURCE_READ_TIMEOUT = "source_read_timeout"
+    SOURCE_STREAM_ENDED = "source_stream_ended"
     SOURCE_INVALID_FRAME = "source_invalid_frame"
     SAMPLING_INVALID_CONFIG = "sampling_invalid_config"
     SAMPLING_TIMELINE_INVALID = "sampling_timeline_invalid"
     DETECTOR_UNAVAILABLE = "detector_unavailable"
+    DETECTOR_TIMEOUT = "detector_timeout"
     DETECTOR_INFERENCE_FAILED = "detector_inference_failed"
     DETECTOR_OUTPUT_INVALID = "detector_output_invalid"
     TRACKER_INFERENCE_FAILED = "tracker_inference_failed"
@@ -60,8 +65,20 @@ _POLICIES: Final = MappingProxyType(
         AIErrorCode.SOURCE_OPEN_FAILED: ErrorPolicy(
             AIStage.SOURCE, True, "The frame source could not be opened."
         ),
+        AIErrorCode.SOURCE_CONNECT_TIMEOUT: ErrorPolicy(
+            AIStage.SOURCE, True, "The frame source connection timed out."
+        ),
+        AIErrorCode.SOURCE_AUTH_FAILED: ErrorPolicy(
+            AIStage.SOURCE, False, "The frame source rejected its credentials."
+        ),
         AIErrorCode.SOURCE_READ_FAILED: ErrorPolicy(
             AIStage.SOURCE, True, "The frame source could not be read."
+        ),
+        AIErrorCode.SOURCE_READ_TIMEOUT: ErrorPolicy(
+            AIStage.SOURCE, True, "The frame source read timed out."
+        ),
+        AIErrorCode.SOURCE_STREAM_ENDED: ErrorPolicy(
+            AIStage.SOURCE, True, "The live frame source ended unexpectedly."
         ),
         AIErrorCode.SOURCE_INVALID_FRAME: ErrorPolicy(
             AIStage.SOURCE, False, "The frame source returned invalid data."
@@ -74,6 +91,9 @@ _POLICIES: Final = MappingProxyType(
         ),
         AIErrorCode.DETECTOR_UNAVAILABLE: ErrorPolicy(
             AIStage.DETECTOR, True, "The detector is temporarily unavailable."
+        ),
+        AIErrorCode.DETECTOR_TIMEOUT: ErrorPolicy(
+            AIStage.DETECTOR, True, "Person detection timed out."
         ),
         AIErrorCode.DETECTOR_INFERENCE_FAILED: ErrorPolicy(
             AIStage.DETECTOR, True, "Person detection failed."

@@ -232,6 +232,23 @@ def test_demo_registry_is_separate_and_requires_explicit_opt_in() -> None:
     assert registry.resolve("demo_detector", "demo_tracker").encoder.available
 
 
+def test_production_mode_rejects_demo_adapter_even_with_valid_artifact(tmp_path: Path) -> None:
+    payload = manifest(tmp_path)
+    payload["detectors"][0]["adapter_kind"] = "demo_detector"
+
+    with pytest.raises(RegistryValidationError, match="not supported in production mode"):
+        registry_from_dict(payload, artifact_root=tmp_path)
+
+
+def test_production_startup_cannot_opt_into_demo_registry(monkeypatch) -> None:
+    path = Path(__file__).parents[2] / "config" / "models.demo.json"
+    monkeypatch.setenv("PERSON_SEARCH_MODEL_REGISTRY", str(path))
+    monkeypatch.setenv("PERSON_SEARCH_ALLOW_DEMO_MODELS", "1")
+
+    with pytest.raises(RegistryValidationError, match="explicit allow_demo"):
+        CameraService.registry_from_environment("production")
+
+
 def test_production_example_is_valid_but_has_no_claimed_availability() -> None:
     path = Path(__file__).parents[2] / "config" / "models.example.json"
     registry = load_registry(path)

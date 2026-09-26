@@ -176,11 +176,14 @@
                     "type": "string",
                     "format": "date-time"
                   },
-                  "sampling_interval": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 1000,
-                    "default": 10
+                  "sampling_profile": {
+                    "type": "string",
+                    "enum": [
+                      "baseline",
+                      "throughput"
+                    ],
+                    "default": "baseline",
+                    "description": "Allowlisted profile; stored snapshot is 10 or 20 frames."
                   }
                 },
                 "required": [
@@ -686,6 +689,14 @@
             "minimum": 1,
             "maximum": 1000
           },
+          "sampling_profile": {
+            "type": "string",
+            "enum": [
+              "baseline",
+              "throughput"
+            ],
+            "nullable": true
+          },
           "tracks_ready": {
             "type": "integer",
             "minimum": 0
@@ -746,6 +757,7 @@
           "total_frames",
           "sampled_frames",
           "sampling_interval",
+          "sampling_profile",
           "tracks_ready",
           "tracks_failed",
           "tracks_pending",

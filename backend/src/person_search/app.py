@@ -97,11 +97,16 @@ def create_app(
                 CameraService(
                     lambda: UnitOfWork(session_factory),
                     camera_runtime,
-                    CameraService.registry_from_environment(),
+                    CameraService.registry_from_environment(app.config["ENVIRONMENT"]),
                 ),
             )
             search_service = SearchService(
-                lambda: UnitOfWork(session_factory), runtime.milvus.client
+                lambda: UnitOfWork(session_factory),
+                runtime.milvus.client,
+                allow_demo=(
+                    app.config["ENVIRONMENT"] != "production"
+                    and parse_boolean_environment("PERSON_SEARCH_ALLOW_DEMO_MODELS")
+                ),
             )
             container.register("searches.service", search_service)
             container.register(

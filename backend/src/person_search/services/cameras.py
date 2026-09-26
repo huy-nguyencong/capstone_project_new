@@ -62,12 +62,20 @@ class CameraService:
         self.apply_config = apply_config or (lambda config: None)
 
     @staticmethod
-    def registry_from_environment() -> ModelRegistry | None:
+    def registry_from_environment(
+        deployment_environment: str | None = None,
+    ) -> ModelRegistry | None:
         path = os.getenv("PERSON_SEARCH_MODEL_REGISTRY")
         if not path:
             return None
         artifact_root = os.getenv("PERSON_SEARCH_MODEL_ARTIFACT_ROOT")
-        allow_demo = os.getenv("PERSON_SEARCH_ALLOW_DEMO_MODELS") == "1"
+        environment = (
+            deployment_environment or os.getenv("PERSON_SEARCH_ENV", "development")
+        ).lower()
+        allow_demo = (
+            environment in {"development", "testing"}
+            and os.getenv("PERSON_SEARCH_ALLOW_DEMO_MODELS") == "1"
+        )
         return load_registry(
             path,
             artifact_root=artifact_root or Path(path).resolve().parent,

@@ -249,7 +249,8 @@ lệnh `person-search-worker` không kèm `--demo` sẽ báo lỗi.
 **đường dẫn tuyệt đối** đến [config/models.demo.json](config/models.demo.json).
 Đặt thêm `PERSON_SEARCH_ALLOW_DEMO_MODELS=1`; nếu artifact nằm ngoài thư mục chứa manifest,
 đặt `PERSON_SEARCH_MODEL_ARTIFACT_ROOT` thành thư mục local đáng tin cậy. Demo registry bị từ
-chối khi thiếu opt-in này và không thể được dùng như registry production.
+chối khi thiếu opt-in này và không thể được dùng như registry production. Khi
+`PERSON_SEARCH_ENV=production`, demo registry vẫn bị từ chối kể cả khi flag opt-in bị đặt nhầm.
 API và worker cần cùng cấu hình `PERSON_SEARCH_VIDEO_STAGING`; nên dùng đường dẫn tuyệt đối
 đến một thư mục private dùng chung. Khởi động lại API sau khi đổi `.env`.
 
@@ -259,7 +260,9 @@ Mở terminal riêng tại `backend`, kích hoạt `.venv` như trên, rồi ch�
 person-search-worker --demo
 ```
 
-Pipeline demo sinh dữ liệu giả lập để kiểm thử luồng, không thực hiện nhận diện người thực tế.
+Pipeline demo trong package `person_search.demo` sinh dữ liệu giả lập có marker
+`synthetic=true` để kiểm thử luồng, không thực hiện nhận diện người thực tế. Search và
+diagnostics không tự fallback sang adapter demo; đường demo phải được bật/inject rõ ràng.
 Manifest production mẫu nằm tại [config/models.example.json](config/models.example.json).
 Các URL trong manifest chỉ là provenance; loader không tải artifact qua mạng. `available`
 được suy ra từ artifact local, checksum, phê duyệt license và kết quả preflight.
@@ -277,3 +280,33 @@ Trước khi chạy worker, kiểm tra runtime/resource bằng:
 Worker chạy cùng preflight guard trước khi claim job. RAM/disk dưới ngưỡng, thiếu codec,
 device không phù hợp hoặc không có một pipeline model tương thích sẽ làm worker dừng với mã
 thành phần rõ ràng thay vì tiếp tục tới OOM/crash.
+
+## RTSP fixture local (AIW-09)
+
+MediaMTX là service tùy chọn, không khởi động cùng storage stack mặc định:
+
+```powershell
+docker compose --env-file ../infra/.env -f ../infra/compose.yaml --profile rtsp up -d mediamtx
+```
+
+Phát lặp một video fixture từ terminal khác (thay đường dẫn video và địa chỉ host nếu cần):
+
+```powershell
+ffmpeg -re -stream_loop -1 -i .\fixture.mp4 -an -c:v copy -rtsp_transport tcp -f rtsp rtsp://127.0.0.1:8554/demo
+```
+
+`RtspFrameSource` cố ý chặn loopback, hostname và IP ngoài allowlist. Để smoke chính adapter thay vì
+chỉ kiểm tra MediaMTX, đặt `MEDIAMTX_BIND_ADDRESS` trong `infra/.env` thành IP LAN của máy (ví dụ
+`192.168.1.20`), đặt `PERSON_SEARCH_RTSP_NETWORKS` trong `backend/.env` thành CIDR camera tương ứng
+(ví dụ `192.168.1.0/24`), rồi dùng URL không chứa credential:
+
+```powershell
+.\.venv\Scripts\python.exe tools\rtsp_smoke.py --url rtsp://192.168.1.20:8554/demo --frames 30
+```
+
+Nếu camera có credential, ứng dụng phải nhận URL qua Camera Admin để mã hóa riêng; không truyền
+`user:password@...` cho smoke CLI hoặc ghi URL đó vào log. Dừng fixture bằng:
+
+```powershell
+docker compose --env-file ../infra/.env -f ../infra/compose.yaml --profile rtsp stop mediamtx
+```

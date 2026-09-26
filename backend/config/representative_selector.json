@@ -1,0 +1,15 @@
+{
+  "schema_version": "representative-selector/v1",
+  "max_candidates_per_track": 3,
+  "max_buffer_bytes": 268435456,
+  "minimum_bbox_width": 24,
+  "minimum_bbox_height": 48,
+  "minimum_sharpness_variance": 15.0,
+  "sharpness_reference_variance": 250.0,
+  "severe_border_contacts": 2,
+  "maximum_area_change_ratio": 4.0,
+  "maximum_aspect_change_ratio": 2.5,
+  "border_penalty_per_contact": 0.1,
+  "maximum_occlusion_penalty": 0.2,
+  "crop_padding_ratio": 0.05
+}

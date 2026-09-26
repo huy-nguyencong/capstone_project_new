@@ -24,6 +24,10 @@ from person_search.storage.postgres.models import (
     ProcessingJob,
     TrackIndexStatus,
 )
+from person_search.workers.sampling import (
+    sampling_interval_for_profile,
+    sampling_profile_for_interval,
+)
 
 TERMINAL = {JobStatus.SUCCEEDED, JobStatus.FAILED, JobStatus.CANCELLED}
 
@@ -58,6 +62,7 @@ class JobService:
             total_frames=job.total_frames,
             sampled_frames=job.sampled_frames,
             sampling_interval=job.sampling_interval,
+            sampling_profile=sampling_profile_for_interval(job.sampling_interval),
             tracks_ready=counts.get(TrackIndexStatus.READY, 0),
             tracks_failed=counts.get(TrackIndexStatus.FAILED, 0),
             tracks_pending=counts.get(TrackIndexStatus.PENDING, 0),
@@ -101,7 +106,7 @@ class JobService:
     def upload(self, camera_id, actor_id, key, form, upload):
         if not key or not re.fullmatch(r"[A-Za-z0-9._:-]{8,128}", key):
             raise ApiError(422, "invalid_idempotency_key", "Cần Idempotency-Key dài 8–128 ký tự.")
-        if set(form) - {"recorded_started_at", "sampling_interval"}:
+        if set(form) - {"recorded_started_at", "sampling_profile"}:
             raise ApiError(422, "invalid_fields", "Có trường upload không hợp lệ.")
         try:
             origin = datetime.fromisoformat(
@@ -110,12 +115,13 @@ class JobService:
             if origin.tzinfo is None:
                 raise ValueError
             origin = origin.astimezone(UTC)
-            sampling = int(form.get("sampling_interval", "10"))
-            if not 1 <= sampling <= 1000:
-                raise ValueError
+            sampling_profile = form.get("sampling_profile")
+            sampling = sampling_interval_for_profile(sampling_profile)
         except (ValueError, TypeError):
             raise ApiError(
-                422, "invalid_video_metadata", "Cần thời điểm có múi giờ và sampling 1–1000."
+                422,
+                "invalid_video_metadata",
+                "Cần thời điểm có múi giờ và sampling profile hợp lệ.",
             ) from None
         if upload is None:
             raise ApiError(422, "file_required", "Vui lòng chọn video.")

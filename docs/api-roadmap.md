@@ -203,7 +203,7 @@ Camera item:
 | GET | `/admin/processing-jobs/{id}` | Admin | mới | Trang mới (poll tiến độ) |
 | POST | `/admin/processing-jobs/{id}/cancel` | Admin | mới | Trang mới |
 
-- `POST` multipart: `file` (mp4/mkv/avi, giới hạn chốt ở BE-01), `recorded_started_at` (mốc thời gian gốc của video, map vào `timeline_origin_utc`), `sampling_interval` (tùy chọn). Header `Idempotency-Key` để retry không tạo job trùng. Trả `202` với job.
+- `POST` multipart: `file` (mp4/mkv/avi, giới hạn chốt ở BE-01), `recorded_started_at` (mốc thời gian gốc của video, map vào `timeline_origin_utc`), `sampling_profile` allowlist (`baseline`/`throughput`, tùy chọn). Header `Idempotency-Key` để retry không tạo job trùng. Trả `202` với job và snapshot `sampling_interval` thực tế.
 - FE dùng `apiService.upload(..., { onProgress })` sẵn có cho thanh tiến trình upload.
 - Job item: `id`, `camera` (`id`, `name`), `source_type` (`FILE`|`RTSP`), `status` (`PENDING`|`RUNNING`|`SUCCEEDED`|`FAILED`|`CANCELLED`), `processed_frames`, `total_frames`, `tracks_ready`, `tracks_failed`, `started_at`, `ended_at`, `error_code`, `error_message`.
 - FE poll `GET /admin/processing-jobs/{id}` mỗi 3s khi job `PENDING`/`RUNNING`.

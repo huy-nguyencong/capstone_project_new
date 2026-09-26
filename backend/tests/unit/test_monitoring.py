@@ -7,6 +7,11 @@ from types import SimpleNamespace
 import pytest
 
 from person_search.api.errors import ApiError
+from person_search.demo import (
+    DEMO_ENCODER_SHA256,
+    DemoEncoderGateway,
+    build_demo_pipeline,
+)
 from person_search.services.monitoring import (
     MonitoringService,
     Outcome,
@@ -17,9 +22,8 @@ from person_search.services.monitoring import (
     run_pipeline_steps,
     worker_state,
 )
-from person_search.services.searches import DemoEncoderGateway, EncoderUnavailableError
+from person_search.services.searches import EncoderUnavailableError
 from person_search.storage.postgres.models import CameraStatus, JobStatus, RtspStatus
-from person_search.workers.pipeline import DEMO_ENCODER_SHA256, Pipeline
 
 pytestmark = pytest.mark.unit
 
@@ -89,7 +93,7 @@ def test_camera_category_matches_status_table() -> None:
 
 
 def test_demo_pipeline_on_upload_camera_succeeds() -> None:
-    steps = run_pipeline_steps(camera(), DEMO_CONFIG, lambda *_: "ONLINE", Pipeline.demo)
+    steps = run_pipeline_steps(camera(), DEMO_CONFIG, lambda *_: "ONLINE", build_demo_pipeline)
 
     assert outcomes(steps) == [
         ("FRAME_SOURCE", Outcome.SKIPPED),
@@ -101,9 +105,21 @@ def test_demo_pipeline_on_upload_camera_succeeds() -> None:
     assert "256" in steps[-1].message
 
 
+def test_pipeline_diagnostic_does_not_fallback_to_demo() -> None:
+    steps = run_pipeline_steps(camera(), DEMO_CONFIG, lambda *_: "ONLINE", None)
+
+    assert outcomes(steps) == [
+        ("FRAME_SOURCE", Outcome.SKIPPED),
+        ("DETECTOR", Outcome.FAILED),
+        ("TRACKER", Outcome.SKIPPED),
+        ("IMAGE_ENCODER", Outcome.SKIPPED),
+    ]
+    assert "chưa cấu hình pipeline diagnostics" in (steps[1].message or "")
+
+
 def test_offline_rtsp_fails_and_skips_models() -> None:
     rtsp = camera(rtsp_url="rtsp://10.0.0.5/s")
-    steps = run_pipeline_steps(rtsp, DEMO_CONFIG, lambda *_: "OFFLINE", Pipeline.demo)
+    steps = run_pipeline_steps(rtsp, DEMO_CONFIG, lambda *_: "OFFLINE", build_demo_pipeline)
 
     assert outcomes(steps)[0] == ("FRAME_SOURCE", Outcome.FAILED)
     assert {step.outcome for step in steps[1:]} == {Outcome.SKIPPED}
@@ -115,7 +131,7 @@ def test_forbidden_rtsp_host_is_reported_not_raised() -> None:
         raise ApiError(422, "rtsp_host_forbidden", "Host bị chặn.")
 
     steps = run_pipeline_steps(
-        camera(rtsp_url="rtsp://127.0.0.1/s"), DEMO_CONFIG, probe, Pipeline.demo
+        camera(rtsp_url="rtsp://127.0.0.1/s"), DEMO_CONFIG, probe, build_demo_pipeline
     )
 
     assert steps[0].outcome is Outcome.FAILED and steps[0].message == "Host bị chặn."
@@ -123,11 +139,11 @@ def test_forbidden_rtsp_host_is_reported_not_raised() -> None:
 
 def test_unsupported_config_and_ai_disabled_fail() -> None:
     other = SimpleNamespace(**{**vars(DEMO_CONFIG), "detector_name": "yolov8m"})
-    steps = run_pipeline_steps(camera(), other, lambda *_: "ONLINE", Pipeline.demo)
+    steps = run_pipeline_steps(camera(), other, lambda *_: "ONLINE", build_demo_pipeline)
     assert outcomes(steps)[1] == ("DETECTOR", Outcome.FAILED)
 
     disabled = run_pipeline_steps(
-        camera(ai_enabled=False), DEMO_CONFIG, lambda *_: "ONLINE", Pipeline.demo
+        camera(ai_enabled=False), DEMO_CONFIG, lambda *_: "ONLINE", build_demo_pipeline
     )
     assert disabled[0].outcome is Outcome.FAILED
     assert overall(disabled) is Outcome.FAILED
@@ -139,7 +155,7 @@ def test_empty_detection_is_inconclusive() -> None:
             return []
 
     def factory(config):
-        pipeline = Pipeline.demo(config)
+        pipeline = build_demo_pipeline(config)
         pipeline.detector = NoPeople()
         return pipeline
 

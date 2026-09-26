@@ -1,0 +1,16 @@
+{
+  "schema_version": "rasa-runtime/v1",
+  "upstream_commit": "bd16aa1a15f149548a90d196fcf10a27d7ab7c66",
+  "image_size": 384,
+  "image_mean": [0.48145466, 0.4578275, 0.40821073],
+  "image_std": [0.26862954, 0.26130258, 0.27577711],
+  "resize_interpolation": "bicubic",
+  "tokenizer": "bert-base-uncased",
+  "tokenizer_vocab_path": "model_artifacts/bert-base-uncased-vocab.txt",
+  "tokenizer_vocab_sha256": "07eced375cec144d27c900241f3e339478dec958f92fddbc551f295c992038a3",
+  "maximum_text_tokens": 50,
+  "embedding_dimension": 256,
+  "l2_normalized": true,
+  "itm_rerank_supported": true,
+  "itm_rerank_top_k": 128
+}

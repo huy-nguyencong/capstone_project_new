@@ -62,3 +62,9 @@ def test_missing_key_fails_closed():
     with pytest.raises(ApiError) as error:
         CameraRuntime().split_url("rtsp://admin:secret@10.0.0.1/live")
     assert error.value.code == "secret_store_unavailable"
+
+
+def test_connection_url_rejects_embedded_credentials_before_network(runtime):
+    with pytest.raises(ApiError) as error:
+        runtime.connection_url("rtsp://admin:secret@10.0.0.1/live", None)
+    assert error.value.code == "invalid_rtsp_url"

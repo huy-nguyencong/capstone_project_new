@@ -8,12 +8,12 @@ orchestration code can rely on one set of invariants.
 from __future__ import annotations
 
 import math
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, Protocol, runtime_checkable
+from typing import Any, Protocol, Self, runtime_checkable
 from uuid import UUID
 
 from PIL import Image
@@ -83,6 +83,34 @@ class ModelLineage:
         )
 
 
+class SourceKind(StrEnum):
+    FILE = "FILE"
+    RTSP = "RTSP"
+
+
+class PixelColorSpace(StrEnum):
+    RGB = "RGB"
+
+
+@dataclass(frozen=True, slots=True)
+class FrameSourceMetadata:
+    """Non-secret source properties exposed uniformly after a source is opened."""
+
+    kind: SourceKind
+    camera_id: UUID
+    color_space: PixelColorSpace = PixelColorSpace.RGB
+    orientation_normalized: bool = True
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.kind, SourceKind):
+            raise ValueError("kind must be a SourceKind value.")
+        _require_uuid(self.camera_id, "camera_id")
+        if self.color_space is not PixelColorSpace.RGB:
+            raise ValueError("Frame sources must expose RGB pixels.")
+        if self.orientation_normalized is not True:
+            raise ValueError("Frame sources must normalize image orientation.")
+
+
 @dataclass(frozen=True, slots=True)
 class SourceFrame:
     """One decoded source frame with source-derived position and timestamp."""
@@ -102,6 +130,8 @@ class SourceFrame:
         _require_int(self.height, "height", minimum=1)
         if not isinstance(self.image, Image.Image):
             raise ValueError("image must be a PIL image.")
+        if self.image.mode != PixelColorSpace.RGB.value:
+            raise ValueError("image must use RGB color space.")
         if self.image.size != (self.width, self.height):
             raise ValueError("width and height must match the decoded image dimensions.")
 
@@ -131,10 +161,41 @@ class SampledFrame:
             raise ValueError("source must be a SourceFrame value.")
         _require_int(self.sampling_interval, "sampling_interval", minimum=1)
         _require_int(self.sample_sequence, "sample_sequence")
+        expected_index = self.sample_sequence * self.sampling_interval
+        if self.source.source_frame_index != expected_index:
+            raise ValueError("Sample sequence must map exactly to the source frame index.")
 
     @property
     def image(self) -> Image.Image:
         return self.source.image
+
+    @property
+    def camera_id(self) -> UUID:
+        return self.source.camera_id
+
+    @property
+    def source_frame_index(self) -> int:
+        return self.source.source_frame_index
+
+    @property
+    def source_timestamp_ms(self) -> int:
+        return self.source.source_timestamp_ms
+
+    @property
+    def index(self) -> int:
+        return self.source_frame_index
+
+    @property
+    def timestamp_ms(self) -> int:
+        return self.source_timestamp_ms
+
+    @property
+    def width(self) -> int:
+        return self.source.width
+
+    @property
+    def height(self) -> int:
+        return self.source.height
 
 
 @dataclass(frozen=True, slots=True)
@@ -438,11 +499,20 @@ class IdempotentCloseMixin:
 
 @runtime_checkable
 class FrameSource(Protocol):
-    def open(self, source: str | Path, *, camera_id: UUID) -> None: ...
+    @property
+    def metadata(self) -> FrameSourceMetadata: ...
+
+    def open(self, source: str | Path, *, camera_id: UUID) -> Self: ...
 
     def read(self) -> SourceFrame | None: ...
 
     def close(self) -> None: ...
+
+    def __iter__(self) -> Iterator[SourceFrame]: ...
+
+    def __enter__(self) -> Self: ...
+
+    def __exit__(self, exc_type: object, exc: object, traceback: object) -> None: ...
 
 
 @runtime_checkable

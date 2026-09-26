@@ -177,7 +177,30 @@ def test_missing_production_artifacts_and_model_probe_block_pipeline(tmp_path: P
     )
 
     assert report.ready is False
-    assert all("artifact_missing" in result.blockers for result in report.model_results)
+    results = {result.model_id: result for result in report.model_results}
+    assert "artifact_missing" not in results["yolo11n_coco"].blockers
+    assert set(results["yolo11n_coco"].blockers) == {
+        "package_missing:torch",
+        "package_missing:torchvision",
+        "package_missing:ultralytics",
+    }
+    assert "artifact_missing" not in results["bytetrack_v1"].blockers
+    assert set(results["bytetrack_v1"].blockers) == {
+        "package_missing:lap",
+        "package_missing:ultralytics",
+    }
+    assert "artifact_missing" not in results["rasa_cuhk_pedes_v1"].blockers
+    assert set(results["rasa_cuhk_pedes_v1"].blockers) == {
+        "package_missing:timm",
+        "package_missing:torch",
+        "package_missing:torchvision",
+        "package_missing:transformers",
+    }
+    assert all(
+        "artifact_missing" in result.blockers
+        for model_id, result in results.items()
+        if model_id not in {"yolo11n_coco", "bytetrack_v1", "rasa_cuhk_pedes_v1"}
+    )
     assert report.preflight_available_ids == ()
 
 

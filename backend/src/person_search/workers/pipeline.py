@@ -2,151 +2,35 @@
 
 import hashlib
 import io
-import math
 import uuid
-from dataclasses import dataclass
 from datetime import UTC
 
-import av
-
-from person_search.storage.contracts import (
-    BoundingBoxPixels,
-    EncoderManifest,
-    TrackIngestionRequest,
-)
-from person_search.workers.contracts import Detection, ModelLineage, SourceFrame
-
-DEMO_ENCODER_SHA256 = "eed9d600efbe54cebfb11d6bc78260fd41e2d7b652ce1ed389600fade8b6cf83"
+from person_search.storage.contracts import TrackIngestionRequest
+from person_search.workers.sources import FileFrameSource
 
 
 class VideoFrameSource:
+    """Compatibility facade while the worker migrates to the FrameSource lifecycle."""
+
+    def __init__(self, **source_options):
+        self.source_options = source_options
+
     def frames(self, source, sampling, camera_id):
-        # Upload source is always a private local file, never a client supplied URL.
-        with av.open(str(source), options={"protocol_whitelist": "file"}) as container:
-            stream = container.streams.video[0]
-            first_pts = None
-            previous_ms = 0
-            for index, frame in enumerate(container.decode(stream)):
-                if frame.pts is None or frame.time_base is None:
-                    raise ValueError("Video frame is missing timestamps")
-                pts = frame.pts * frame.time_base
-                if first_pts is None:
-                    first_pts = pts
-                timestamp = round(float(pts - first_pts) * 1000)
-                if timestamp < previous_ms or frame.width * frame.height > 3840 * 2160:
-                    raise ValueError("Invalid video frame metadata")
-                previous_ms = timestamp
-                yield SourceFrame(
-                    camera_id=camera_id,
-                    source_frame_index=index,
-                    source_timestamp_ms=timestamp,
-                    image=frame.to_image(),
-                    width=frame.width,
-                    height=frame.height,
-                )
-
-
-@dataclass(frozen=True)
-class _DemoCompletedTrack:
-    """Legacy demo output kept private until AIW-16 replaces orchestration."""
-
-    key: str
-    started_ms: int
-    ended_ms: int
-    representative: SourceFrame
-    bbox: BoundingBoxPixels
-
-
-class DemoDetector:
-    """Synthetic central box; deliberately NOT a person detector."""
-
-    lineage = ModelLineage("demo_detector", "1", "0" * 64)
-
-    def detect(self, frame):
-        width, height = frame.image.size
-        return [
-            Detection(
-                bbox=BoundingBoxPixels(
-                    width // 4,
-                    height // 4,
-                    max(1, width // 2),
-                    max(1, height // 2),
-                    width,
-                    height,
-                ),
-                class_id=0,
-                class_name="person",
-                confidence=1.0,
-                detector=self.lineage,
-            )
-        ]
-
-
-class DemoTracker:
-    """One synthetic track per five sampled frames; keeps only one representative."""
-
-    def __init__(self):
-        self.first = None
-        self.count = 0
-        self.last_ms = 0
-
-    def update(self, frame, boxes):
-        if not boxes:
-            return []
-        if self.first is None:
-            self.first = (frame, boxes[0].bbox)
-        self.last_ms = frame.timestamp_ms
-        self.count += 1
-        return self.finish() if self.count == 5 else []
-
-    def finish(self):
-        if self.first is None:
-            return []
-        frame, bbox = self.first
-        result = _DemoCompletedTrack(
-            str(frame.index), frame.timestamp_ms, self.last_ms, frame, bbox
-        )
-        self.close()
-        return [result]
-
-    def close(self):
-        self.first, self.count, self.last_ms = None, 0, 0
-
-
-class DemoEncoder:
-    def encode(self, crop):
-        digest = hashlib.sha256(crop.resize((16, 16)).tobytes()).digest()
-        values = [float(digest[index % 32] + 1) for index in range(256)]
-        norm = math.sqrt(sum(value * value for value in values))
-        return [value / norm for value in values]
+        del sampling  # Sampling remains a downstream concern until AIW-08.
+        opened = FileFrameSource(**self.source_options).open(source, camera_id=camera_id)
+        with opened:
+            yield from opened
 
 
 class Pipeline:
+    request_type = TrackIngestionRequest
+
     def __init__(self, detector, tracker, encoder, manifest):
         self.detector, self.tracker, self.encoder, self.manifest = (
             detector,
             tracker,
             encoder,
             manifest,
-        )
-
-    @classmethod
-    def demo(cls, config):
-        if (
-            config.detector_name != "demo_detector"
-            or config.detector_version != "1"
-            or config.tracker_version != "1"
-            or config.tracker_name != "demo_tracker"
-            or config.encoder_version != "fake_demo_v1"
-            or config.encoder_dimension != 256
-            or config.checkpoint_sha256 != DEMO_ENCODER_SHA256
-        ):
-            raise ValueError("Demo worker requires the isolated demo model configuration")
-        return cls(
-            DemoDetector(),
-            DemoTracker(),
-            DemoEncoder(),
-            EncoderManifest("fake_demo_v1", 256, DEMO_ENCODER_SHA256),
         )
 
     def request(self, job, area_id, track):
@@ -159,7 +43,7 @@ class Pipeline:
         track_id = uuid.UUID(
             bytes=hashlib.sha256(f"{job.id}:{track.key}".encode()).digest()[:16], version=4
         )
-        return TrackIngestionRequest(
+        return self.request_type(
             track_id=track_id,
             camera_id=job.camera_id,
             area_id=area_id,

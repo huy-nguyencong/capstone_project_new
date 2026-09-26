@@ -27,7 +27,6 @@ from person_search.storage.milvus.vectors import MilvusPersonTrackIndex
 from person_search.storage.minio.frames import MinioFrameStore
 from person_search.storage.postgres.unit_of_work import UnitOfWork
 from person_search.storage.runtime import StorageRuntime
-from person_search.workers.pipeline import DemoDetector, DemoEncoder, DemoTracker, Pipeline
 from person_search.workers.runner import VideoWorker
 
 
@@ -54,6 +53,14 @@ def main():
         parser.error(str(error))
     if registry.mode is not RegistryMode.DEMO:
         parser.error("--demo requires a registry whose mode is demo.")
+    # Import synthetic implementations only after the explicit demo guards pass.
+    from person_search.demo import (
+        DemoDetector,
+        DemoEncoder,
+        DemoTracker,
+        build_demo_pipeline,
+    )
+
     resource_config = os.getenv("PERSON_SEARCH_AI_RESOURCE_CONFIG") or str(
         Path(__file__).parents[3] / "config" / "ai_resources.json"
     )
@@ -124,7 +131,7 @@ def main():
 
         def pipeline(config):
             registry.resolve_config(config)
-            return Pipeline.demo(config)
+            return build_demo_pipeline(config)
 
         worker = VideoWorker(
             runtime.postgres.engine,

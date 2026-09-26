@@ -9,6 +9,7 @@ from person_search.storage.postgres.models import (
     TrackIndexStatus,
 )
 from person_search.workers.pipeline import VideoFrameSource
+from person_search.workers.sampling import FrameSampler
 
 WORKER_LOCK = 734202
 
@@ -61,6 +62,7 @@ class VideoWorker:
                 ingestion = self.ingestion_factory(config)
             sampled = 0
             processed = 0
+            sampler = FrameSampler(job.sampling_interval)
 
             def checkpoint():
                 # Confirm the connection owning our global lock is alive before side effects.
@@ -89,12 +91,13 @@ class VideoWorker:
             ):
                 processed = frame.index + 1
                 checkpoint()
-                if frame.index % job.sampling_interval == 0:
-                    sampled += 1
+                sampled_frame = sampler.sample(frame)
+                if sampled_frame is not None:
+                    sampled = sampled_frame.sample_sequence + 1
                     stage = "detector_failed"
-                    boxes = pipeline.detector.detect(frame)
+                    boxes = pipeline.detector.detect(sampled_frame)
                     stage = "tracker_failed"
-                    for track in pipeline.tracker.update(frame, boxes):
+                    for track in pipeline.tracker.update(sampled_frame, boxes):
                         publish(track)
                 stage = "video_decode_failed"
             stage = "tracker_failed"

@@ -3,18 +3,18 @@
   "mode": "production",
   "detectors": [
     {
-      "id": "yolo_nano_candidate", "display_name": "Ultralytics YOLO nano candidate",
-      "version": "pin-before-use",
-      "description": "Functional baseline candidate; disabled until artifact, license and preflight are approved.",
+      "id": "yolo11n_coco", "display_name": "Ultralytics YOLO11n COCO",
+      "version": "11n-coco-640",
+      "description": "Approved detector baseline for the non-commercial academic demo.",
       "adapter_kind": "ultralytics_yolo",
-      "artifact": {"path": "model_artifacts/yolo_nano.pt", "sha256": "0000000000000000000000000000000000000000000000000000000000000000"},
+      "artifact": {"path": "model_artifacts/yolo11n.pt", "sha256": "0ebbc80d4a7680d14987a577cd21342b65ecfd94632bd9a8da63ae6417644ee1"},
       "devices": ["cpu", "cuda"], "input_shape": [3, 640, 640],
       "provenance": {
-        "package_name": "ultralytics", "package_version": "pin-before-use",
+        "package_name": "ultralytics", "package_version": "8.4.163",
         "source_url": "https://github.com/ultralytics/ultralytics",
-        "weights_url": "https://github.com/ultralytics/assets/releases",
-        "license": "AGPL-3.0-or-commercial", "approved_for_project": false,
-        "review_note": "Confirm AGPL compliance or an Enterprise license before enabling."
+        "weights_url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo11n.pt",
+        "license": "AGPL-3.0", "approved_for_project": true,
+        "review_note": "Approved by the project owner on 2026-09-26 for this non-commercial academic demo; preserve AGPL source and license obligations for any distribution or network deployment."
       },
       "person_class_id": 0, "preprocessing_version": "letterbox_rgb_v1"
     },
@@ -67,18 +67,18 @@
   ],
   "trackers": [
     {
-      "id": "bytetrack_candidate", "display_name": "ByteTrack candidate",
-      "version": "pin-before-use", "description": "Initial camera-local tracker without ReID.",
+      "id": "bytetrack_v1", "display_name": "ByteTrack baseline",
+      "version": "ultralytics-8.4.163", "description": "Approved camera/job-local tracker baseline without ReID.",
       "adapter_kind": "bytetrack",
-      "artifact": {"path": "model_artifacts/bytetrack.json", "sha256": "0000000000000000000000000000000000000000000000000000000000000000"},
+      "artifact": {"path": "bytetrack_tracker.json", "sha256": "4b26862c41061fa9bef945224fc616ee0f9608c8f3fc91d8c221c14cddaac6b6"},
       "devices": ["cpu", "cuda"], "input_shape": [6],
       "provenance": {
-        "package_name": "bytetrack", "package_version": "pin-before-use",
-        "source_url": "https://github.com/FoundationVision/ByteTrack", "weights_url": null,
-        "license": "MIT", "approved_for_project": true,
-        "review_note": "Pin the adapter commit and local tracker config before enabling."
+        "package_name": "ultralytics", "package_version": "8.4.163",
+        "source_url": "https://github.com/ultralytics/ultralytics", "weights_url": null,
+        "license": "AGPL-3.0", "approved_for_project": true,
+        "review_note": "Ultralytics ByteTrack implementation approved with the YOLO11n non-commercial academic demo baseline on 2026-09-26; LAP is pinned separately."
       },
-      "compatible_detectors": ["yolo_nano_candidate", "yolo_small_candidate", "yolox_tiny_candidate", "yolox_small_candidate"]
+      "compatible_detectors": ["yolo11n_coco", "yolo_small_candidate", "yolox_tiny_candidate", "yolox_small_candidate"]
     },
     {
       "id": "botsort_candidate", "display_name": "BoT-SORT candidate",
@@ -93,23 +93,24 @@
         "license": "MIT", "approved_for_project": true,
         "review_note": "Pin the adapter commit and local tracker config before enabling."
       },
-      "compatible_detectors": ["yolo_nano_candidate", "yolo_small_candidate", "yolox_tiny_candidate", "yolox_small_candidate"]
+      "compatible_detectors": ["yolo11n_coco", "yolo_small_candidate", "yolox_tiny_candidate", "yolox_small_candidate"]
     }
   ],
   "encoder": {
     "id": "rasa_cuhk_pedes_v1", "display_name": "RaSa CUHK-PEDES v1",
     "version": "rasa_cuhk_pedes_v1",
-    "description": "Fixed image/text embedding space for stored tracks and queries.",
+    "description": "Official CUHK-PEDES text-image retrieval checkpoint with a fixed normalized embedding space.",
     "adapter_kind": "rasa",
-    "artifact": {"path": "model_artifacts/rasa_cuhk_pedes_v1.pth", "sha256": "0000000000000000000000000000000000000000000000000000000000000000"},
+    "artifact": {"path": "model_artifacts/rasa_cuhk_pedes_v1.pth", "sha256": "bc85da09c2991d5de503c2c2ac4f032e20cc536fec5094f0acff45e93d0104d2"},
     "devices": ["cpu", "cuda"], "input_shape": [3, 384, 128],
     "provenance": {
-      "package_name": "rasa-person-retrieval", "package_version": "pin-before-use",
-      "source_url": "https://github.com/Flame-Chasers/RaSa", "weights_url": null,
-      "license": "UNRESOLVED", "approved_for_project": false,
-      "review_note": "Upstream has no clear license; obtain approval before enabling code or checkpoint."
+      "package_name": "rasa-person-retrieval", "package_version": "bd16aa1a15f149548a90d196fcf10a27d7ab7c66",
+      "source_url": "https://github.com/Flame-Chasers/RaSa/tree/bd16aa1a15f149548a90d196fcf10a27d7ab7c66",
+      "weights_url": "https://drive.google.com/file/d/1BC1L-5JuIXHt6NR_l2ENHG3NZhncU91s/view",
+      "license": "MIT", "approved_for_project": true,
+      "review_note": "Official CUHK-PEDES checkpoint and MIT-licensed source pinned on 2026-09-26; vendored compatibility changes retain the upstream license."
     },
     "dimension": 256, "normalized": true,
-    "preprocessing_version": "rasa_cuhk_pedes_v1"
+    "preprocessing_version": "rasa_cuhk_pedes_384_clip_v1"
   }
 }

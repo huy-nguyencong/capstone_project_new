@@ -23,7 +23,7 @@ export default function VideoProcessingPage() {
   const [cameras, setCameras] = useState([])
   const [camera, setCamera] = useState('')
   const [recorded, setRecorded] = useState('')
-  const [sampling, setSampling] = useState('10')
+  const [samplingProfile, setSamplingProfile] = useState('baseline')
   const [file, setFile] = useState(null)
   const [jobs, setJobs] = useState([])
   const [cursor, setCursor] = useState(null)
@@ -136,7 +136,7 @@ export default function VideoProcessingPage() {
     const data = new FormData()
     data.append('file', file)
     data.append('recorded_started_at', new Date(recorded).toISOString())
-    data.append('sampling_interval', sampling)
+    data.append('sampling_profile', samplingProfile)
     setUploading(true)
     setProgress(0)
     setError(null)
@@ -251,15 +251,15 @@ export default function VideoProcessingPage() {
             onChange={changed(setRecorded)}
             disabled={uploading}
           />
-          <TextField
-            label="Lấy mẫu mỗi N khung hình"
-            type="number"
-            min="1"
-            max="1000"
-            required
-            value={sampling}
-            onChange={changed(setSampling)}
+          <SelectField
+            label="Chế độ lấy mẫu"
+            value={samplingProfile}
+            onChange={changed(setSamplingProfile)}
             disabled={uploading}
+            options={[
+              { value: 'baseline', label: 'Cân bằng · mỗi 10 khung hình' },
+              { value: 'throughput', label: 'Nhanh · mỗi 20 khung hình' },
+            ]}
           />
         </div>
         <label className="text-sm">

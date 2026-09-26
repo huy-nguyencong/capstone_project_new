@@ -42,9 +42,9 @@ def lineage(name: str = "component") -> ModelLineage:
     return ModelLineage(name, "1.0.0", SHA)
 
 
-def source_frame(*, timestamp_ms: int = 200) -> SourceFrame:
+def source_frame(*, timestamp_ms: int = 200, index: int = 5) -> SourceFrame:
     image = Image.new("RGB", (64, 48), "navy")
-    return SourceFrame(uuid.uuid4(), 5, timestamp_ms, image, 64, 48)
+    return SourceFrame(uuid.uuid4(), index, timestamp_ms, image, 64, 48)
 
 
 def bbox() -> BoundingBoxPixels:
@@ -61,7 +61,7 @@ def candidate(*, timestamp_ms: int = 200) -> RepresentativeCandidate:
 
 
 def test_frame_detection_and_track_update_validate_boundaries() -> None:
-    frame = source_frame()
+    frame = source_frame(index=20)
     sampled = SampledFrame(frame, sampling_interval=10, sample_sequence=2)
     detection = Detection(bbox(), 0, "person", 0.75, lineage("detector"))
     update = TrackUpdate(

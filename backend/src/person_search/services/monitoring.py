@@ -14,7 +14,7 @@ from PIL import Image, ImageDraw
 from sqlalchemy import func, select
 
 from person_search.api.errors import ApiError
-from person_search.services.searches import DemoEncoderGateway, EncoderUnavailableError
+from person_search.services.searches import EncoderUnavailableError
 from person_search.storage.postgres.models import (
     Area,
     Camera,
@@ -23,7 +23,7 @@ from person_search.storage.postgres.models import (
     ProcessingJob,
     RtspStatus,
 )
-from person_search.workers.contracts import SourceFrame
+from person_search.workers.contracts import SampledFrame, SourceFrame
 from person_search.workers.pipeline import Pipeline
 
 TERMINAL_JOBS = (JobStatus.SUCCEEDED, JobStatus.FAILED, JobStatus.CANCELLED)
@@ -154,7 +154,7 @@ def run_pipeline_steps(
     camera: Any,
     config: Any | None,
     probe: Callable[[str, str | None], str],
-    pipeline_factory: Callable[[Any], Pipeline],
+    pipeline_factory: Callable[[Any], Pipeline] | None,
 ) -> list[Step]:
     steps: list[Step] = []
     detector_label = (
@@ -218,6 +218,16 @@ def run_pipeline_steps(
             Step("DETECTOR", detector_label, Outcome.FAILED, "Chưa có cấu hình AI đang áp dụng.")
         )
         return skip_rest("Bỏ qua vì chưa có cấu hình AI.", 1)
+    if pipeline_factory is None:
+        steps.append(
+            Step(
+                "DETECTOR",
+                detector_label,
+                Outcome.FAILED,
+                "Máy chủ chưa cấu hình pipeline diagnostics.",
+            )
+        )
+        return skip_rest("Bỏ qua vì chưa có pipeline diagnostics.", 1)
     try:
         pipeline = pipeline_factory(config)
     except ValueError:
@@ -232,10 +242,11 @@ def run_pipeline_steps(
         return skip_rest("Bỏ qua vì không nạp được mô hình.", 1)
 
     frame = synthetic_frame()
+    sampled_frame = SampledFrame(frame, sampling_interval=10, sample_sequence=0)
     try:
         with _Timer() as timer:
             try:
-                boxes = pipeline.detector.detect(frame)
+                boxes = pipeline.detector.detect(sampled_frame)
             except Exception:
                 steps.append(Step("DETECTOR", detector_label, Outcome.FAILED, "Detector lỗi."))
                 return skip_rest("Bỏ qua vì Detector lỗi.", 1)
@@ -263,17 +274,16 @@ def run_pipeline_steps(
             try:
                 tracks = []
                 for index in range(TRACKER_WARMUP_FRAMES):
-                    warmup = SourceFrame(
+                    warmup_source = SourceFrame(
                         camera_id=frame.camera_id,
-                        source_frame_index=index,
-                        source_timestamp_ms=index * 40,
+                        source_frame_index=index * 10,
+                        source_timestamp_ms=index * 400,
                         image=frame.image,
                         width=frame.width,
                         height=frame.height,
                     )
-                    tracks += pipeline.tracker.update(
-                        warmup, boxes
-                    )
+                    warmup = SampledFrame(warmup_source, 10, index)
+                    tracks += pipeline.tracker.update(warmup, boxes)
                 tracks += pipeline.tracker.finish()
             except Exception:
                 steps.append(Step("TRACKER", tracker_label, Outcome.FAILED, "Tracker lỗi."))
@@ -328,7 +338,7 @@ class MonitoringService:
         health: Any,
         search: Any,
         runtime: Any,
-        pipeline_factory: Callable[[Any], Pipeline] = Pipeline.demo,
+        pipeline_factory: Callable[[Any], Pipeline] | None = None,
         clock: Callable[[], datetime] = _utc_now,
     ) -> None:
         self._factory = unit_of_work_factory
@@ -435,7 +445,7 @@ class MonitoringService:
         try:
             config = self._search.active_config()
             gateway = self._search.gateway(config.encoder_version)
-            if isinstance(gateway, DemoEncoderGateway):
+            if getattr(gateway, "synthetic_metadata", None) is not None:
                 return "UP"
             gateway.text(
                 PROBE_TEXT, version=config.encoder_version, dimension=config.encoder_dimension

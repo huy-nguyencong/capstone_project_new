@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import base64
-import hashlib
 import io
 import json
 import math
@@ -30,8 +29,6 @@ from person_search.storage.postgres.unit_of_work import UnitOfWork
 MAX_QUERY_IMAGE_BYTES = 10 * 1024 * 1024
 MAX_QUERY_IMAGE_PIXELS = 24_000_000
 DEMO_ENCODER_VERSION = "fake_demo_v1"
-
-
 class EncoderUnavailableError(RuntimeError):
     pass
 
@@ -60,23 +57,6 @@ class OperatorCamera:
     code: str
     name: str
     ai_enabled: bool
-
-
-class DemoEncoderGateway:
-    """Deterministic adapter for the isolated demo pipeline."""
-
-    def image(self, content: bytes, *, version: str, dimension: int) -> Sequence[float]:
-        if version != DEMO_ENCODER_VERSION or dimension != 256:
-            raise EncoderUnavailableError("Demo encoder cannot serve the active model.")
-        image = decode_query_image(content)
-        digest = hashlib.sha256(image.resize((16, 16)).tobytes()).digest()
-        return _normalized([float(digest[index % len(digest)] + 1) for index in range(dimension)])
-
-    def text(self, text: str, *, version: str, dimension: int) -> Sequence[float]:
-        if version != DEMO_ENCODER_VERSION or dimension != 256:
-            raise EncoderUnavailableError("Demo encoder cannot serve the active model.")
-        digest = hashlib.sha256(text.encode("utf-8")).digest()
-        return _normalized([float(digest[index % len(digest)] + 1) for index in range(dimension)])
 
 
 class HttpEncoderGateway:
@@ -138,10 +118,12 @@ class SearchService:
         milvus_client: object,
         *,
         encoder: EncoderGateway | None = None,
+        allow_demo: bool = False,
     ) -> None:
         self._unit_of_work_factory = unit_of_work_factory
         self._milvus_client = milvus_client
         self._encoder = encoder
+        self._allow_demo = allow_demo
 
     def cameras(self, actor_user_id: uuid.UUID) -> tuple[OperatorCamera, ...]:
         with self._unit_of_work_factory() as work:
@@ -216,6 +198,10 @@ class SearchService:
         if self._encoder is not None:
             return self._encoder
         if version == DEMO_ENCODER_VERSION:
+            if not self._allow_demo:
+                raise EncoderUnavailableError("Demo encoder is not enabled.")
+            from person_search.demo import DemoEncoderGateway
+
             return DemoEncoderGateway()
         url = os.environ.get("PERSON_SEARCH_ENCODER_URL", "").strip()
         if not url:
@@ -278,11 +264,6 @@ def attributes_prompt(attributes: Mapping[str, object]) -> str:
     if not parts:
         raise ValueError("At least one attribute is required.")
     return "A person " + ", ".join(parts) + "."
-
-
-def _normalized(values: Sequence[float]) -> list[float]:
-    norm = math.sqrt(sum(value * value for value in values))
-    return [value / norm for value in values]
 
 
 def _repositories(work: UnitOfWork) -> Repositories:

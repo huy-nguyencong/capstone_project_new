@@ -73,6 +73,7 @@ cần cập nhật credential user trong MinIO hoặc tạo lại môi trường
 | etcd | `quay.io/coreos/etcd:v3.5.25` |
 | MinIO server | `minio/minio:RELEASE.2024-12-18T13-15-44Z` |
 | MinIO client/bootstrap | `minio/minio:RELEASE.2024-12-18T13-15-44Z` |
+| MediaMTX (profile `rtsp`) | `bluenviron/mediamtx:1.12.3` |
 
 Ba image Milvus/etcd/MinIO bám theo manifest standalone chính thức của Milvus 2.6.24. Container
 bootstrap tái sử dụng lệnh `mc` có sẵn trong image MinIO để không phụ thuộc một image client

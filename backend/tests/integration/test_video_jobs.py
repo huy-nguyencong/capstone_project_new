@@ -11,6 +11,7 @@ from sqlalchemy import select, text
 from test_camera_admin import client, create_camera
 from test_camera_admin import world as world
 
+from person_search.demo import build_demo_pipeline
 from person_search.services.jobs import JobService
 from person_search.services.track_ingestion import TrackIngestionService
 from person_search.services.video_staging import VideoStaging
@@ -18,7 +19,7 @@ from person_search.storage.contracts import frame_object_key
 from person_search.storage.minio.frames import FrameInfo
 from person_search.storage.postgres.models import JobStatus, PersonTrack, ProcessingJob, UserRole
 from person_search.storage.postgres.unit_of_work import UnitOfWork
-from person_search.workers.pipeline import Pipeline, VideoFrameSource
+from person_search.workers.pipeline import VideoFrameSource
 from person_search.workers.runner import WORKER_LOCK, VideoWorker
 
 pytestmark = [
@@ -81,13 +82,14 @@ def setup(world, tmp_path):
 
 
 def upload(setup, video, key=None, sampling=10):
+    profile = {10: "baseline", 20: "throughput"}[sampling]
     return setup.api.post(
         f"/api/v1/admin/cameras/{setup.camera['id']}/processing-jobs",
         headers={"Idempotency-Key": key or str(uuid.uuid4())},
         data={
             "file": (io.BytesIO(video), "clip.mp4"),
             "recorded_started_at": "2026-09-25T08:00:00+07:00",
-            "sampling_interval": str(sampling),
+            "sampling_profile": profile,
         },
     )
 
@@ -131,16 +133,29 @@ def worker(setup, **kwargs):
     frames, vectors = MemoryFrames(), MemoryVectors()
     ingestion = TrackIngestionService(setup.jobs.factory, frames, vectors)
     return VideoWorker(
-        setup.factory.kw["bind"], setup.jobs, Pipeline.demo, lambda _: ingestion, **kwargs
+        setup.factory.kw["bind"], setup.jobs, build_demo_pipeline, lambda _: ingestion, **kwargs
     )
 
 
 def test_upload_idempotency_validation_permissions_and_cancel(setup, video):
+    raw_sampling = setup.api.post(
+        f"/api/v1/admin/cameras/{setup.camera['id']}/processing-jobs",
+        headers={"Idempotency-Key": str(uuid.uuid4())},
+        data={
+            "file": (io.BytesIO(video), "clip.mp4"),
+            "recorded_started_at": "2026-09-25T08:00:00+07:00",
+            "sampling_interval": "10",
+        },
+    )
+    assert raw_sampling.status_code == 422
+    assert raw_sampling.json["code"] == "invalid_fields"
+
     key = str(uuid.uuid4())
     created = upload(setup, video, key)
     assert created.status_code == 202, created.json
     job = created.json
     assert job["status"] == "PENDING" and job["processed_frames"] == 0
+    assert job["sampling_profile"] == "baseline" and job["sampling_interval"] == 10
     assert "source_ref" not in job and "lease_token" not in job
     assert upload(setup, video, key).json["id"] == job["id"]
     assert upload(setup, video, key, sampling=20).status_code == 409
@@ -260,7 +275,7 @@ def test_disable_ai_and_component_failure_keep_sanitized_status(setup, video):
     running = worker(setup)
 
     def broken(config):
-        pipeline = Pipeline.demo(config)
+        pipeline = build_demo_pipeline(config)
 
         def detect(frame):
             raise RuntimeError("private path rtsp://admin:password@camera")

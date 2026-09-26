@@ -52,33 +52,8 @@ class CameraRuntime:
         return public, secret
 
     def probe(self, url, secret):
-        parsed = urlsplit(url)
-        try:
-            address = ipaddress.ip_address(parsed.hostname)
-            if (
-                address.is_loopback
-                or address.is_link_local
-                or address.is_multicast
-                or address.is_unspecified
-                or not any(address in n for n in self.networks)
-            ):
-                raise ValueError
-        except ValueError:
-            raise ApiError(
-                422,
-                "rtsp_host_forbidden",
-                "RTSP test cần địa chỉ IP thuộc mạng camera được cho phép.",
-            ) from None
-        if secret:
-            try:
-                credentials = self.cipher.decrypt(secret.encode()).decode() if self.cipher else None
-                if credentials is None:
-                    raise ValueError
-                url = urlunsplit(parsed._replace(netloc=credentials + "@" + parsed.netloc))
-            except (InvalidToken, ValueError):
-                raise ApiError(
-                    503, "secret_store_unavailable", "Không đọc được cấu hình RTSP."
-                ) from None
+        url = self.connection_url(url, secret)
+
         try:
             result = subprocess.run(
                 [
@@ -108,3 +83,46 @@ class CameraRuntime:
             return "OFFLINE"
         except OSError:
             return "ERROR"
+
+    def connection_url(self, url, secret):
+        """Authorize a stored credential-free URL and materialize credentials transiently."""
+
+        if not isinstance(url, str):
+            raise ApiError(422, "invalid_rtsp_url", "Địa chỉ RTSP không hợp lệ.")
+        parsed = urlsplit(url)
+        if (
+            parsed.scheme not in {"rtsp", "rtsps"}
+            or not parsed.hostname
+            or "@" in parsed.netloc
+            or parsed.query
+            or parsed.fragment
+            or any(character.isspace() for character in url)
+        ):
+            raise ApiError(422, "invalid_rtsp_url", "Địa chỉ RTSP không hợp lệ.")
+        try:
+            address = ipaddress.ip_address(parsed.hostname)
+            if (
+                address.is_loopback
+                or address.is_link_local
+                or address.is_multicast
+                or address.is_unspecified
+                or not any(address in n for n in self.networks)
+            ):
+                raise ValueError
+        except ValueError:
+            raise ApiError(
+                422,
+                "rtsp_host_forbidden",
+                "RTSP test cần địa chỉ IP thuộc mạng camera được cho phép.",
+            ) from None
+        if secret:
+            try:
+                credentials = self.cipher.decrypt(secret.encode()).decode() if self.cipher else None
+                if credentials is None:
+                    raise ValueError
+                url = urlunsplit(parsed._replace(netloc=credentials + "@" + parsed.netloc))
+            except (InvalidToken, ValueError):
+                raise ApiError(
+                    503, "secret_store_unavailable", "Không đọc được cấu hình RTSP."
+                ) from None
+        return url

@@ -23,6 +23,17 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+ai-ultralytics = [
+    "lap==0.5.12",
+    "torch==2.14.0",
+    "torchvision==0.29.0",
+    "ultralytics==8.4.163",
+]
+ai-rasa = [
+    "safetensors==0.4.5",
+    "timm==0.9.16",
+    "transformers==4.49.0",
+]
 dev = [
     "pytest>=8",
     "pytest-cov>=6",
@@ -61,6 +72,7 @@ skip_covered = true
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+extend-exclude = ["src/person_search/ai/encoders/rasa_vendor"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]

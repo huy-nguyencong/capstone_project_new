@@ -6,13 +6,14 @@ import math
 import pytest
 from PIL import Image
 
+from person_search.demo import DemoEncoder, DemoEncoderGateway
 from person_search.services.searches import (
-    DemoEncoderGateway,
+    EncoderUnavailableError,
     InvalidQueryImageError,
+    SearchService,
     attributes_prompt,
     decode_query_image,
 )
-from person_search.workers.pipeline import DemoEncoder
 
 pytestmark = pytest.mark.unit
 
@@ -21,6 +22,15 @@ def _image_bytes(*, format: str = "JPEG") -> bytes:
     stream = io.BytesIO()
     Image.new("RGB", (32, 48), (150, 20, 30)).save(stream, format=format)
     return stream.getvalue()
+
+
+def test_demo_query_encoder_requires_explicit_opt_in() -> None:
+    production = SearchService(lambda: None, object())
+    with pytest.raises(EncoderUnavailableError, match="not enabled"):
+        production.gateway("fake_demo_v1")
+
+    demo = SearchService(lambda: None, object(), allow_demo=True)
+    assert isinstance(demo.gateway("fake_demo_v1"), DemoEncoderGateway)
 
 
 def test_demo_query_image_uses_the_same_vector_space_as_worker() -> None:

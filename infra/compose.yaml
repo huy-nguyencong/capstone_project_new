@@ -123,6 +123,15 @@ services:
     networks:
       - storage
 
+  mediamtx:
+    image: bluenviron/mediamtx:1.12.3
+    profiles: ["rtsp"]
+    ports:
+      - "${MEDIAMTX_BIND_ADDRESS:-127.0.0.1}:${MEDIAMTX_RTSP_PORT:-8554}:8554"
+    restart: unless-stopped
+    networks:
+      - storage
+
 volumes:
   postgres_data:
   etcd_data:
