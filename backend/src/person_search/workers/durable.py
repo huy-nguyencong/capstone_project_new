@@ -30,6 +30,7 @@ class JobExecutionSnapshot:
     sampling_interval: int
     timeline_origin_utc: datetime
     attempts: int
+    published_tracks: int = 0
 
     @classmethod
     def from_claimed(cls, job) -> JobExecutionSnapshot:
@@ -49,6 +50,7 @@ class JobExecutionSnapshot:
             job.sampling_interval,
             job.timeline_origin_utc,
             job.attempts,
+            getattr(job, "published_tracks", 0),
         )
 
 

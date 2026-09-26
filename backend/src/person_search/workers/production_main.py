@@ -1,4 +1,4 @@
-"""Fail-closed production worker entrypoint; publication is enabled by AIW-18."""
+"""Production worker entrypoint with durable three-store track publication."""
 
 from __future__ import annotations
 
@@ -16,8 +16,11 @@ from person_search.ai.preflight import apply_resource_environment, load_resource
 from person_search.ai.registry import RegistryMode, load_registry
 from person_search.config import StorageSettings
 from person_search.services.jobs import JobService
+from person_search.services.track_ingestion import TrackIngestionService
 from person_search.services.video_staging import VideoStaging
-from person_search.storage.postgres.models import AIConfigVersion
+from person_search.storage.milvus.vectors import MilvusPersonTrackIndex
+from person_search.storage.minio.frames import MinioFrameStore
+from person_search.storage.postgres.models import AIConfigVersion, Camera
 from person_search.storage.postgres.unit_of_work import UnitOfWork
 from person_search.storage.runtime import StorageRuntime
 from person_search.workers.durable import (
@@ -27,17 +30,15 @@ from person_search.workers.durable import (
 )
 from person_search.workers.errors import AIErrorCode, AIWorkerError
 from person_search.workers.production import build_production_pipeline
+from person_search.workers.publication import ProductionTrackPublisher
 
 
 class PublisherNotConfigured:
-    """Prevent false SUCCEEDED state until AIW-18 supplies atomic publication."""
+    """Compatibility fail-closed consumer used by focused orchestration tests."""
 
     def __call__(self, snapshot, result) -> None:
         del snapshot, result
-        raise AIWorkerError(
-            AIErrorCode.STORAGE_UNAVAILABLE,
-            internal_detail="AIW-18 track publisher is not configured.",
-        )
+        raise AIWorkerError(AIErrorCode.STORAGE_UNAVAILABLE)
 
 
 def _required_path(name: str, default: Path | None = None) -> Path:
@@ -79,6 +80,28 @@ def build_worker(*, stopped, result_consumer=None):
 
     jobs = JobService(unit_of_work, staging)
 
+    def publish(snapshot, result):
+        with unit_of_work() as work:
+            config = work.session.get(AIConfigVersion, snapshot.ai_config_version_id)
+            camera = work.session.get(Camera, snapshot.camera_id)
+            if config is None or camera is None:
+                raise ValueError("Job publication lineage no longer exists.")
+            area_id = camera.area_id
+            encoder_version = config.encoder_version
+            encoder_dimension = config.encoder_dimension
+        vectors = MilvusPersonTrackIndex(
+            storage.milvus.client,
+            encoder_version=encoder_version,
+            dimension=encoder_dimension,
+        )
+        vectors.ensure_collection()
+        ingestion = TrackIngestionService(
+            unit_of_work,
+            MinioFrameStore(storage.minio.client, storage.settings.minio.bucket),
+            vectors,
+        )
+        ProductionTrackPublisher(ingestion, area_id, jobs)(snapshot, result)
+
     def pipeline_factory(snapshot, cancelled, progress):
         with unit_of_work() as work:
             config = work.session.get(AIConfigVersion, snapshot.ai_config_version_id)
@@ -118,7 +141,7 @@ def build_worker(*, stopped, result_consumer=None):
             max_bytes=int(os.getenv("PERSON_SEARCH_VIDEO_MAX_BYTES", "524288000")),
         ),
         pipeline_factory=pipeline_factory,
-        result_consumer=result_consumer or PublisherNotConfigured(),
+        result_consumer=result_consumer or publish,
         stop=stopped,
     )
     return worker, storage

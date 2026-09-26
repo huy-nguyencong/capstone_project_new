@@ -25,8 +25,25 @@ from person_search.storage.milvus.client import MilvusStorage
 from person_search.storage.milvus.vectors import MilvusPersonTrackIndex, VectorFilter
 from person_search.storage.minio.client import MinioStorage
 from person_search.storage.minio.frames import MinioFrameStore
-from person_search.storage.postgres.models import OutboxStatus, TrackIndexStatus
+from person_search.storage.postgres.models import JobSourceType, OutboxStatus, TrackIndexStatus
 from person_search.storage.postgres.unit_of_work import UnitOfWork
+from person_search.workers.contracts import (
+    CompletedTrack,
+    EmbeddingVector,
+    ModelLineage,
+    QualityComponent,
+    QualityFlag,
+    RepresentativeCandidate,
+    SourceFrame,
+)
+from person_search.workers.durable import JobExecutionSnapshot
+from person_search.workers.production import EncodedTrack, ProductionPipelineResult
+from person_search.workers.publication import (
+    BundleImporter,
+    BundlePublisher,
+    ProductionTrackPublisher,
+    stable_track_id,
+)
 
 load_dotenv()
 pytestmark = [
@@ -54,13 +71,29 @@ class FlakyFrameStore:
         return self.inner.put_frame(**kwargs)
 
 
+class FlakyVectorIndex:
+    def __init__(self, inner: MilvusPersonTrackIndex) -> None:
+        self.inner = inner
+        self.encoder_version = inner.encoder_version
+        self.failures = 1
+
+    def upsert(self, **kwargs: Any) -> Any:
+        if self.failures:
+            self.failures -= 1
+            raise ConnectionError("simulated Milvus outage")
+        return self.inner.upsert(**kwargs)
+
+    def get(self, track_id: uuid.UUID) -> Any:
+        return self.inner.get(track_id)
+
+
 def _jpeg() -> bytes:
     stream = io.BytesIO()
     Image.new("RGB", (64, 48), "green").save(stream, format="JPEG")
     return stream.getvalue()
 
 
-def test_ingest_track_converges_across_postgres_minio_and_milvus() -> None:
+def test_ingest_track_converges_across_postgres_minio_and_milvus(tmp_path) -> None:
     engine = sa.create_engine(PostgresSettings.from_environment(os.environ).dsn)
     factory = sessionmaker(bind=engine, expire_on_commit=False)
     alembic_config = Config("alembic.ini")
@@ -150,7 +183,7 @@ def test_ingest_track_converges_across_postgres_minio_and_milvus() -> None:
 
         flaky = FlakyFrameStore(frames)
         service = TrackIngestionService(lambda: UnitOfWork(factory), flaky, index)
-        ready_request, pending_request = request(), request()
+        ready_request, pending_request, vector_retry_request = request(), request(), request()
 
         assert service.ingest_track(ready_request).status is TrackIndexStatus.PENDING
         assert service.ingest_track(ready_request).status is TrackIndexStatus.READY
@@ -189,6 +222,93 @@ def test_ingest_track_converges_across_postgres_minio_and_milvus() -> None:
             assert work.repositories is not None
             ready = work.repositories.tracks.ready_ids(hit.track_id for hit in hits)
         assert ready == {ready_request.track_id}
+
+        flaky_vectors = FlakyVectorIndex(index)
+        vector_service = TrackIngestionService(
+            lambda: UnitOfWork(factory), frames, flaky_vectors
+        )
+        first = vector_service.ingest_track(vector_retry_request)
+        assert first.status is TrackIndexStatus.PENDING and first.retryable
+        assert index.get(vector_retry_request.track_id) is None
+        with UnitOfWork(factory) as work:
+            assert work.repositories is not None
+            partial = work.repositories.tracks.get(vector_retry_request.track_id)
+            assert partial is not None and partial.index_status is TrackIndexStatus.PENDING
+            assert partial.minio_object_key is not None
+            created_keys.append(partial.minio_object_key)
+        assert (
+            frames.head_frame(created_keys[-1]).checksum_sha256
+            == vector_retry_request.frame_sha256
+        )
+
+        assert vector_service.ingest_track(vector_retry_request).status is TrackIndexStatus.READY
+        assert vector_service.ingest_track(vector_retry_request).status is TrackIndexStatus.READY
+        assert index.get(vector_retry_request.track_id) is not None
+
+        image = Image.new("RGB", (64, 48), "blue")
+        lineage = ModelLineage("rasa", encoder_version, CHECKPOINT)
+        completed = CompletedTrack(
+            ids["camera"],
+            ids["job"],
+            ids["config"],
+            "integration-local-1",
+            1_000,
+            2_000,
+            RepresentativeCandidate(
+                SourceFrame(ids["camera"], 30, 1_500, image, 64, 48),
+                BoundingBoxPixels(4, 2, 20, 40, 64, 48),
+                (QualityComponent("sharpness", 1.0),),
+                1.0,
+            ),
+            QualityFlag.ACCEPTED,
+            5,
+            ModelLineage("yolo", "1", "cd" * 32),
+            ModelLineage("bytetrack", "1", "ef" * 32),
+            lineage,
+        )
+        encoded = EncodedTrack(completed, EmbeddingVector(tuple(VECTOR), 4, True, lineage))
+        snapshot = JobExecutionSnapshot(
+            ids["job"],
+            uuid.uuid4(),
+            ids["camera"],
+            ids["config"],
+            JobSourceType.FILE,
+            "clip.mp4",
+            5,
+            now,
+            1,
+        )
+        result = ProductionPipelineResult(40, 8, 1, 1, (encoded,), ())
+
+        class Jobs:
+            calls: list[tuple[Any, ...]] = []
+
+            def checkpoint(self, *args: Any) -> bool:
+                self.calls.append(args)
+                return True
+
+        jobs = Jobs()
+        ProductionTrackPublisher(service, ids["area"], jobs)(snapshot, result)
+        assert jobs.calls[-1][-2:] == (1, 1)
+        published_id = stable_track_id(ids["job"], "integration-local-1")
+        with UnitOfWork(factory) as work:
+            assert work.repositories is not None
+            published = work.repositories.tracks.get(published_id)
+            assert published is not None and published.index_status is TrackIndexStatus.READY
+            assert published.minio_object_key is not None
+            created_keys.append(published.minio_object_key)
+
+        bundle_path = tmp_path / "aiw18-bundle.json"
+        BundlePublisher().write(bundle_path, snapshot, ids["area"], result)
+        importer = BundleImporter(
+            service,
+            ids["config"],
+            EncoderManifest(encoder_version, len(VECTOR), CHECKPOINT),
+        )
+        assert importer.import_file(bundle_path) == 1
+        assert importer.import_file(bundle_path) == 1
+        assert index.get(published_id) is not None
+        image.close()
     finally:
         for key in created_keys:
             frames.delete_frame(key)
