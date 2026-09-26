@@ -12,6 +12,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from person_search.ai.configuration import VersionedAIConfigCache
 from person_search.ai.preflight import apply_resource_environment, load_resource_settings
 from person_search.ai.registry import RegistryMode, load_registry
 from person_search.config import StorageSettings
@@ -79,6 +80,7 @@ def build_worker(*, stopped, result_consumer=None):
         return UnitOfWork(storage.postgres.session_factory)
 
     jobs = JobService(unit_of_work, staging)
+    config_cache = VersionedAIConfigCache(registry)
 
     def publish(snapshot, result):
         with unit_of_work() as work:
@@ -108,6 +110,7 @@ def build_worker(*, stopped, result_consumer=None):
             if config is None:
                 raise ValueError("Job AI configuration no longer exists.")
             work.session.expunge(config)
+        selection = config_cache.resolve(config)
         return build_production_pipeline(
             registry,
             config,
@@ -131,6 +134,7 @@ def build_worker(*, stopped, result_consumer=None):
             device=device,
             cancelled=cancelled,
             progress=progress,
+            selection=selection,
         )
 
     worker = SequentialProductionWorker(

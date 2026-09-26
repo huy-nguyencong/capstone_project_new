@@ -148,7 +148,7 @@ def test_upload_idempotency_validation_permissions_and_cancel(setup, video):
         },
     )
     assert raw_sampling.status_code == 422
-    assert raw_sampling.json["code"] == "invalid_fields"
+    assert raw_sampling.json["error"]["code"] == "invalid_fields"
 
     key = str(uuid.uuid4())
     created = upload(setup, video, key)
@@ -267,7 +267,7 @@ def test_crash_after_track_ingestion_replays_without_duplicates(setup, video):
 def test_disable_ai_and_component_failure_keep_sanitized_status(setup, video):
     job_id = upload(setup, video).json["id"]
     setup.api.put(f"/api/v1/admin/cameras/{setup.camera['id']}/ai-state", json={"enabled": False})
-    assert worker(setup).run_once()
+    assert not worker(setup).run_once()
     assert setup.jobs.get(job_id)["status"] == "CANCELLED"
     assert upload(setup, video).status_code == 409
     setup.api.put(f"/api/v1/admin/cameras/{setup.camera['id']}/ai-state", json={"enabled": True})

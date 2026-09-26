@@ -5,6 +5,7 @@ import json
 import os
 import uuid
 from concurrent.futures import ThreadPoolExecutor
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -25,6 +26,9 @@ from person_search.storage.postgres.models import (
     Area,
     AuditLog,
     Camera,
+    JobSourceType,
+    JobStatus,
+    ProcessingJob,
     User,
     UserRole,
     UserStatus,
@@ -209,7 +213,38 @@ def test_config_rollback_versions_ai_idempotency_and_pagination(world):
     assert "worker_state" not in enabled.json
     assert api.put(path, json={"enabled": True}).json["version"] == enabled.json["version"]
     assert api.put(path, json={"enabled": "true"}).status_code == 422
+    with factory() as session:
+        active = session.scalar(
+            select(AIConfigVersion).where(AIConfigVersion.status == AIConfigStatus.ACTIVE)
+        )
+        pending = ProcessingJob(
+            id=uuid.uuid4(),
+            camera_id=uuid.UUID(row["id"]),
+            ai_config_version_id=active.id,
+            source_type=JobSourceType.FILE,
+            source_ref="pending.mp4",
+            status=JobStatus.PENDING,
+            sampling_interval=10,
+            timeline_origin_utc=datetime.now(UTC),
+        )
+        running = ProcessingJob(
+            id=uuid.uuid4(),
+            camera_id=uuid.UUID(row["id"]),
+            ai_config_version_id=active.id,
+            source_type=JobSourceType.FILE,
+            source_ref="running.mp4",
+            status=JobStatus.RUNNING,
+            sampling_interval=10,
+            timeline_origin_utc=datetime.now(UTC),
+        )
+        session.add_all((pending, running))
+        session.commit()
     assert not api.put(path, json={"enabled": False}).json["ai_enabled"]
+    with factory() as session:
+        assert session.get(ProcessingJob, pending.id).status is JobStatus.CANCELLED
+        stored_running = session.get(ProcessingJob, running.id)
+        assert stored_running.status is JobStatus.RUNNING
+        assert stored_running.cancel_requested
     create_camera(api, area)
     page = api.get("/api/v1/admin/cameras", query_string={"area_id": str(area), "limit": 1}).json
     next_page = api.get(

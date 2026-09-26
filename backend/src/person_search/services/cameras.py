@@ -8,6 +8,7 @@ from pathlib import Path
 
 from sqlalchemy import select, text
 
+from person_search.ai.configuration import ConfigApplyCoordinator
 from person_search.ai.registry import (
     IncompatibleModelPairError,
     ModelNotFoundError,
@@ -25,6 +26,8 @@ from person_search.storage.postgres.models import (
     AuditResult,
     Camera,
     CameraStatus,
+    JobStatus,
+    ProcessingJob,
     RtspStatus,
 )
 
@@ -53,6 +56,7 @@ class CameraService:
         runtime,
         registry: ModelRegistry | None = None,
         apply_config=None,
+        config_loader=None,
     ):
         self.factory = factory
         self.runtime = runtime
@@ -60,6 +64,10 @@ class CameraService:
             raise TypeError("registry must be a validated ModelRegistry.")
         self.registry = registry or ModelRegistry.empty()
         self.apply_config = apply_config or (lambda config: None)
+        self.config_coordinator = ConfigApplyCoordinator(
+            self.registry,
+            loader=config_loader or (lambda config, _selection: self.apply_config(config)),
+        )
 
     @staticmethod
     def registry_from_environment(
@@ -80,6 +88,11 @@ class CameraService:
             path,
             artifact_root=artifact_root or Path(path).resolve().parent,
             allow_demo=allow_demo,
+            preflight_available=(
+                {"yolo11n_coco", "bytetrack_v1", "rasa_cuhk_pedes_v1"}
+                if not allow_demo
+                else ()
+            ),
         )
 
     def models(self):
@@ -219,6 +232,19 @@ class CameraService:
                 changed = row.status != CameraStatus.RETIRED or row.ai_enabled
                 row.status, row.ai_enabled = CameraStatus.RETIRED, False
             if changed:
+                if enabled is False or enabled is None:
+                    now = datetime.now(UTC)
+                    jobs = work.session.scalars(
+                        select(ProcessingJob).where(
+                            ProcessingJob.camera_id == row.id,
+                            ProcessingJob.status.in_((JobStatus.PENDING, JobStatus.RUNNING)),
+                        )
+                    )
+                    for job in jobs:
+                        job.cancel_requested = True
+                        if job.status is JobStatus.PENDING:
+                            job.status = JobStatus.CANCELLED
+                            job.ended_at = now
                 row.version += 1
                 self.audit(
                     work,
@@ -325,7 +351,7 @@ class CameraService:
             )
             self.audit(work, actor, AuditEvent.AI_CONFIG_REQUESTED, row.id)
             try:
-                self.apply_config(row)
+                prepared = self.config_coordinator.prepare(row)
             except Exception:
                 raise ApiError(
                     503, "model_apply_failed", "Không áp dụng được cấu hình; giữ cấu hình cũ."
@@ -336,4 +362,5 @@ class CameraService:
             work.session.add(row)
             self.audit(work, actor, AuditEvent.AI_CONFIG_APPLIED, row.id)
             work.commit()
+            self.config_coordinator.activate(prepared)
             return self.config_view(row)

@@ -5,10 +5,13 @@ from __future__ import annotations
 import atexit
 import os
 from collections.abc import Mapping
+from pathlib import Path
 from typing import Any
 
 from flask import Flask
 
+from person_search.ai.config_loader import ProductionModelCandidateLoader
+from person_search.ai.registry import RegistryMode
 from person_search.api import register_api
 from person_search.auth.passwords import PasswordHasher
 from person_search.config import (
@@ -92,12 +95,22 @@ def create_app(
                 UserService(lambda: UnitOfWork(session_factory), hasher=password_hasher),
             )
             camera_runtime = CameraRuntime.from_environment()
+            camera_registry = CameraService.registry_from_environment(
+                app.config["ENVIRONMENT"]
+            )
+            candidate_loader = None
+            if camera_registry is not None and camera_registry.mode is RegistryMode.PRODUCTION:
+                candidate_loader = ProductionModelCandidateLoader.from_environment(
+                    artifact_root=camera_registry.artifact_root,
+                    config_root=Path(__file__).parents[2] / "config",
+                )
             container.register(
                 "cameras.service",
                 CameraService(
                     lambda: UnitOfWork(session_factory),
                     camera_runtime,
-                    CameraService.registry_from_environment(app.config["ENVIRONMENT"]),
+                    camera_registry,
+                    config_loader=candidate_loader,
                 ),
             )
             search_service = SearchService(

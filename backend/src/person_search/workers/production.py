@@ -228,10 +228,11 @@ def build_production_pipeline(
     device: str = "cpu",
     cancelled: Cancellable = lambda: False,
     progress: ProgressObserver = lambda *_: None,
+    selection=None,
 ) -> ProductionPipeline:
     """Resolve immutable config through the registry; never substitute demo adapters."""
 
-    selection = registry.resolve_config(config)
+    selection = selection or registry.resolve_config(config)
     detector = build_yolo_detector(
         selection.detector,
         artifact_root=artifact_root,
