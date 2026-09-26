@@ -134,3 +134,19 @@ def test_backup_postgres_command_targets_dsn_database(monkeypatch: pytest.Monkey
         "disposable_db",
         "-Fc",
     ]
+
+
+def test_import_bundle_command_requires_bundle_path_and_config_id() -> None:
+    import uuid
+
+    from person_search.storage.maintenance_cli import _parser
+
+    config_id = uuid.uuid4()
+    arguments = _parser().parse_args(
+        ["import-bundle", "bundle.json", "--config-id", str(config_id)]
+    )
+    assert arguments.command == "import-bundle"
+    assert arguments.path == Path("bundle.json")
+    assert arguments.config_id == config_id
+    with pytest.raises(SystemExit):
+        _parser().parse_args(["import-bundle", "bundle.json"])

@@ -220,9 +220,52 @@ python -m ruff check .
 | Ba kho thật | `python -m pytest -m integration` | `PERSON_SEARCH_RUN_INTEGRATION=1`, `PERSON_SEARCH_RUN_ADAPTER_INTEGRATION=1` và stack Docker Compose | Chưa đo |
 | Migration | `python -m pytest -m integration` | Thêm `PERSON_SEARCH_RUN_MIGRATION_INTEGRATION=1`; test chạy `downgrade base`, chỉ dùng database dùng một lần | Chưa đo |
 | E2E | `python -m pytest -m e2e` | `PERSON_SEARCH_RUN_E2E=1` và stack local | Chưa đo |
+| E2E AI thật (AIW-25) | `python -m pytest tests/e2e/test_ai_worker_slice.py` | Như E2E cộng nhóm model thật, `PERSON_SEARCH_MODEL_REGISTRY` production, `PERSON_SEARCH_E2E_VIDEO` là clip ngắn có người; `PERSON_SEARCH_E2E_REPORT=<file.json>` để lưu thời gian job/search | Chưa đo |
 
 Đầy đủ trước khi nghiệm thu: chạy lần lượt nhóm nhanh, model thật, PostgreSQL worker, ba kho thật,
 migration và E2E trên cùng commit.
+
+### Đánh giá chất lượng và benchmark AI (AIW-26, AIW-27)
+
+Hai công cụ dưới đây cần nhóm model thật; kết quả là JSON máy đọc được, kèm commit, phiên bản
+package, GPU, checksum model/config và checksum video để tái lập. Tóm tắt số đo ghi vào
+`files/ai_worker_implementation_plan.md`, không tạo report Markdown riêng.
+
+```bash
+python tools/evaluate_wildtrack.py \
+  --dataset-root <wildtrack-dataset> \
+  --queries ../files/wildtrack_evaluation_queries.json \
+  --registry <registry production> --artifact-root <artifact root> \
+  --output var/evaluation/wildtrack.json
+
+python tools/benchmark_sampling.py \
+  --registry <registry production> --artifact-root <artifact root> \
+  --video <wildtrack-dataset>/cam1.mp4 --intervals 10,20 --repeats 3 \
+  --max-source-frames 18000 --profile local_cpu --output var/benchmark/local_cpu.json
+```
+
+- `evaluate_wildtrack.py` chạy pipeline production trên `Image_subsets/C1..C7` (frame có
+  annotation, mặc định `--sampling-interval 1` vì subset đã được lấy mẫu sẵn) và đo detection
+  precision/recall, track đứt, identity switch, người bị bỏ sót, cùng Recall@4/8/12/16 và MRR cho
+  image/text/attribute. Quan sát chính xác của query bị loại khỏi gallery; rerank giữ tắt.
+- `benchmark_sampling.py` đo wall time cold/warm, source/sampled FPS, latency từng stage, CPU,
+  peak RSS của process và model child process, peak VRAM qua `nvidia-smi`, dung lượng JPEG
+  đại diện và số track ngắn. `--profile` ghi nhãn môi trường (`local_cpu`, `colab_t4`...).
+  Chạy lại với `--device cuda` trên Colab T4.
+- Thời gian publication và search latency sau khi index lấy từ `PERSON_SEARCH_E2E_REPORT`.
+
+Batch ngoài máy local (ví dụ Colab T4) xuất result bundle rồi import qua đúng invariant ingestion:
+
+```bash
+python tools/export_result_bundle.py --registry <registry> --artifact-root <root> \
+  --video cam1.mp4 --camera-id <id> --area-id <id> --job-id <id> --config-id <id> \
+  --timeline-origin 2026-09-26T08:00:00+07:00 --sampling-interval 10 --device cuda \
+  --output var/bundles/cam1.json
+person-search-storage import-bundle var/bundles/cam1.json --config-id <id>
+```
+
+`camera-id`, `area-id`, `job-id`, `config-id` phải là bản ghi đã có trong PostgreSQL local; bundle
+không chứa crop, secret hay Matching Score.
 
 Xem điều kiện chạy test trong [integration README](tests/integration/README.md)
 và [e2e README](tests/e2e/README.md).

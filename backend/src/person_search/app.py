@@ -35,6 +35,7 @@ from person_search.services.diagnostics import (
 )
 from person_search.services.jobs import JobService
 from person_search.services.monitoring import MonitoringService
+from person_search.services.query_encoder import InProcessQueryEncoder
 from person_search.services.searches import SearchService
 from person_search.services.track_imagery import TrackImageService
 from person_search.services.users import UserService
@@ -108,6 +109,7 @@ def create_app(
             )
             candidate_loader = None
             diagnostics = None
+            query_encoder = None
             if camera_registry is not None and camera_registry.mode is RegistryMode.PRODUCTION:
                 config_root = Path(__file__).parents[2] / "config"
                 components = ProductionComponentFactory.from_environment(
@@ -129,6 +131,11 @@ def create_app(
                     ),
                     settings=diagnostic_settings,
                 )
+                if not os.getenv("PERSON_SEARCH_ENCODER_URL", "").strip():
+                    query_encoder = InProcessQueryEncoder(
+                        camera_registry, components.query_gateway
+                    )
+                    atexit.register(query_encoder.close)
             container.register(
                 "cameras.service",
                 CameraService(
@@ -141,6 +148,7 @@ def create_app(
             search_service = SearchService(
                 lambda: UnitOfWork(session_factory),
                 runtime.milvus.client,
+                encoder=query_encoder,
                 allow_demo=(
                     app.config["ENVIRONMENT"] != "production"
                     and parse_boolean_environment("PERSON_SEARCH_ALLOW_DEMO_MODELS")

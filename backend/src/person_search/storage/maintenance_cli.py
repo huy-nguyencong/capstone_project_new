@@ -7,6 +7,7 @@ import uuid
 from collections.abc import Sequence
 from dataclasses import asdict
 from datetime import timedelta
+from pathlib import Path
 
 from dotenv import load_dotenv
 
@@ -52,6 +53,12 @@ def _parser() -> argparse.ArgumentParser:
     requeue = commands.add_parser("requeue-track", help="Move one FAILED track back to PENDING.")
     requeue.add_argument("track_id", type=uuid.UUID)
     requeue.add_argument("--actor-user-id", type=uuid.UUID)
+    bundle = commands.add_parser(
+        "import-bundle",
+        help="Verify a batch result bundle and publish it through the ingestion invariant.",
+    )
+    bundle.add_argument("path", type=Path)
+    bundle.add_argument("--config-id", type=uuid.UUID, required=True)
     return parser
 
 
@@ -74,6 +81,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         def unit_of_work() -> UnitOfWork:
             return UnitOfWork(runtime.postgres.session_factory)
 
+        if arguments.command == "import-bundle":
+            return _import_bundle(arguments, runtime, settings, frames, unit_of_work)
         ingestion = TrackIngestionService(unit_of_work, frames, vectors)
         if arguments.command == "retry-outbox":
             summary = OutboxRetryWorker(unit_of_work, ingestion).run_once(limit=arguments.limit)
@@ -112,6 +121,35 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
     finally:
         runtime.close()
+
+
+def _import_bundle(arguments, runtime, settings, frames, unit_of_work) -> int:
+    from person_search.storage.contracts import EncoderManifest
+    from person_search.storage.postgres.models import AIConfigVersion
+    from person_search.workers.publication import BundleImporter
+
+    with unit_of_work() as work:
+        config = work.session.get(AIConfigVersion, arguments.config_id)
+        if config is None:
+            print(json.dumps({"error": "ai_config_not_found"}))
+            return 2
+        manifest = EncoderManifest(
+            version=config.encoder_version,
+            embedding_dimension=config.encoder_dimension,
+            checkpoint_sha256=config.checkpoint_sha256,
+        )
+    vectors = MilvusPersonTrackIndex(
+        runtime.milvus.client,
+        encoder_version=manifest.version,
+        dimension=manifest.embedding_dimension,
+        timeout=settings.milvus.timeout_seconds,
+        alias=arguments.alias,
+    )
+    vectors.ensure_collection()
+    ingestion = TrackIngestionService(unit_of_work, frames, vectors)
+    ready = BundleImporter(ingestion, arguments.config_id, manifest).import_file(arguments.path)
+    print(json.dumps({"imported_ready_tracks": ready}))
+    return 0
 
 
 if __name__ == "__main__":
