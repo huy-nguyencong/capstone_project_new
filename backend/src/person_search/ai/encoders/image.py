@@ -53,6 +53,8 @@ class ImageEncoderBackend(Protocol):
 
     def encode(self, image: Image.Image, *, timeout_seconds: float) -> Sequence[float]: ...
 
+    def encode_text(self, text: str, *, timeout_seconds: float) -> Sequence[float]: ...
+
     def close(self) -> None: ...
 
 
@@ -80,6 +82,13 @@ def _rasa_image_child(
             command, payload = connection.recv()
             if command == "close":
                 return
+            if command == "encode_text" and isinstance(payload, str):
+                try:
+                    tensor = runtime.text_embedding(payload)
+                    connection.send(("ok", tensor.detach().cpu().reshape(-1).tolist()))
+                except BaseException:
+                    connection.send(("inference_error", None))
+                continue
             if command != "encode" or not isinstance(payload, Image.Image):
                 connection.send(("inference_error", None))
                 continue
@@ -155,6 +164,18 @@ class RasaImageProcessBackend:
         status, payload = self._connection.recv()
         if status != "ok" or not isinstance(payload, list):
             raise RuntimeError("RaSa image inference failed.")
+        return payload
+
+    def encode_text(self, text: str, *, timeout_seconds: float) -> Sequence[float]:
+        if self._connection is None or self._process is None or not self._process.is_alive():
+            raise RuntimeError("RaSa encoder backend is unavailable.")
+        self._connection.send(("encode_text", text))
+        if not self._connection.poll(timeout_seconds):
+            self.close()
+            raise TimeoutError("RaSa text inference timed out.")
+        status, payload = self._connection.recv()
+        if status != "ok" or not isinstance(payload, list):
+            raise RuntimeError("RaSa text inference failed.")
         return payload
 
     def close(self) -> None:

@@ -71,3 +71,5 @@ def test_attribute_prompt_requires_supported_non_empty_attributes() -> None:
         attributes_prompt({"hat": "red"})
     with pytest.raises(ValueError):
         attributes_prompt({"upper_color": "purple"})
+    with pytest.raises(ValueError):
+        attributes_prompt({"upper_type": "dress", "lower_color": "black"})

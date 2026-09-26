@@ -245,6 +245,8 @@ def attributes_prompt(attributes: Mapping[str, object]) -> str:
         raise ValueError("lower_color is not supported.")
     if upper_type is not None and upper_type not in clothing:
         raise ValueError("upper_type is not supported.")
+    if upper_type == "dress" and lower_color is not None:
+        raise ValueError("A dress cannot be combined with lower_color.")
     if backpack is not None and type(backpack) is not bool:
         raise ValueError("has_backpack must be boolean.")
 

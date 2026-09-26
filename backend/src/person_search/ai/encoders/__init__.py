@@ -9,6 +9,12 @@ from person_search.ai.encoders.image import (
     RasaTrackImageEncoder,
     build_rasa_image_encoder,
 )
+from person_search.ai.encoders.query import (
+    MAX_QUERY_TEXT_CHARACTERS,
+    RasaQueryInferenceGateway,
+    build_rasa_query_gateway,
+    validate_english_description,
+)
 from person_search.ai.encoders.rasa import (
     RasaCheckpointMetadata,
     RasaPreprocessor,
@@ -21,6 +27,7 @@ from person_search.ai.encoders.rasa import (
 __all__ = [
     "ImageEncoderMetrics",
     "ImageEncoderSettings",
+    "MAX_QUERY_TEXT_CHARACTERS",
     "RasaCheckpointMetadata",
     "RasaPreprocessor",
     "RasaRuntime",
@@ -29,7 +36,10 @@ __all__ = [
     "RasaImageEncoder",
     "RasaImageProcessBackend",
     "RasaImageQueryGateway",
+    "RasaQueryInferenceGateway",
     "RasaTrackImageEncoder",
     "build_rasa_image_encoder",
+    "build_rasa_query_gateway",
     "load_rasa_settings",
+    "validate_english_description",
 ]
