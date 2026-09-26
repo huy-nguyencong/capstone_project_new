@@ -165,6 +165,7 @@ def test_required_cuda_fails_when_runtime_does_not_support_it(tmp_path: Path) ->
     assert report.ready is False
 
 
+@pytest.mark.model_real(artifacts=("rasa_checkpoint",))
 def test_missing_production_artifacts_and_model_probe_block_pipeline(tmp_path: Path) -> None:
     path = Path(__file__).parents[2] / "config" / "models.example.json"
     registry = load_registry(path)

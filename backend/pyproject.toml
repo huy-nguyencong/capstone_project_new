@@ -60,6 +60,8 @@ markers = [
     "integration: tests requiring external storage services",
     "security: authentication and authorization security tests",
     "e2e: end-to-end workflow tests",
+    "model_real(modules, artifacts): requires optional AI packages or local model artifacts",
+    "failure_injection: fault injection across worker, pipeline and storage boundaries",
 ]
 
 [tool.coverage.run]

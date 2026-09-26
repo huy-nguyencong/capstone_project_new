@@ -17,6 +17,7 @@ from person_search.ai.configuration import VersionedAIConfigCache
 from person_search.ai.preflight import apply_resource_environment, load_resource_settings
 from person_search.ai.registry import RegistryMode, load_registry
 from person_search.config import PostgresSettings, StorageSettings
+from person_search.observability import configure_logging, log_context
 from person_search.services.jobs import JobService
 from person_search.services.track_ingestion import TrackIngestionService
 from person_search.services.video_staging import VideoStaging
@@ -239,6 +240,7 @@ def _supervise_child(
 
 def main() -> int:
     load_dotenv()
+    configure_logging()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--once", action="store_true")
     args = parser.parse_args()
@@ -256,11 +258,12 @@ def main() -> int:
             heartbeat.safe_beat(WorkerRunState.STOPPED, None)
             heartbeat_storage.close()
         return 0
-    worker, storage = build_worker(stopped=stopped.is_set)
-    try:
-        worker.run_once()
-    finally:
-        storage.close()
+    with log_context(worker_id=default_worker_id()):
+        worker, storage = build_worker(stopped=stopped.is_set)
+        try:
+            worker.run_once()
+        finally:
+            storage.close()
     return 0
 
 

@@ -11,6 +11,7 @@ from PIL import Image, ImageDraw
 from sqlalchemy import func, select
 
 from person_search.api.errors import ApiError
+from person_search.services.audit import AuditEvent
 from person_search.services.diagnostics import (
     DiagnosticBusyError,
     Outcome,
@@ -22,6 +23,7 @@ from person_search.services.diagnostics import (
 from person_search.services.searches import EncoderUnavailableError
 from person_search.storage.postgres.models import (
     Area,
+    AuditResult,
     Camera,
     CameraStatus,
     JobStatus,
@@ -374,6 +376,7 @@ class MonitoringService:
         runtime: Any,
         pipeline_factory: Callable[[Any], Pipeline] | None = None,
         diagnostics: ProductionDiagnostics | None = None,
+        audit: Any | None = None,
         clock: Callable[[], datetime] = _utc_now,
     ) -> None:
         self._factory = unit_of_work_factory
@@ -382,6 +385,7 @@ class MonitoringService:
         self._runtime = runtime
         self._pipeline_factory = pipeline_factory
         self._diagnostics = diagnostics
+        self._audit = audit
         self._clock = clock
 
     def system_status(self) -> dict[str, Any]:
@@ -576,7 +580,9 @@ class MonitoringService:
         except EncoderUnavailableError:
             return "DOWN"
 
-    def camera_pipeline(self, camera_id: uuid.UUID) -> dict[str, Any]:
+    def camera_pipeline(
+        self, camera_id: uuid.UUID, actor_id: uuid.UUID | None = None
+    ) -> dict[str, Any]:
         with self._factory() as work:
             camera = work.repositories.cameras.get(camera_id)
             if camera is None:
@@ -591,9 +597,19 @@ class MonitoringService:
             steps = run_pipeline_steps(
                 camera, config, self._runtime.probe, self._pipeline_factory
             )
-        return self._report(steps)
+        report = self._report(steps)
+        self._audit_failure(
+            report,
+            steps,
+            actor_id,
+            group="camera_pipeline",
+            target_type="camera",
+            target_id=camera.id,
+            rtsp=bool(camera.rtsp_url),
+        )
+        return report
 
-    def search_components(self) -> dict[str, Any]:
+    def search_components(self, actor_id: uuid.UUID | None = None) -> dict[str, Any]:
         steps: list[Step] = []
         try:
             config = self._search.active_config()
@@ -658,7 +674,40 @@ class MonitoringService:
                     "Kết nối được." if state == "UP" else "Không kết nối được.",
                 )
             )
-        return self._report(steps)
+        report = self._report(steps)
+        self._audit_failure(
+            report, steps, actor_id, group="search_components", target_type="ai_search"
+        )
+        return report
+
+    def _audit_failure(
+        self,
+        report: dict[str, Any],
+        steps: list[Step],
+        actor_id: uuid.UUID | None,
+        *,
+        group: str,
+        target_type: str,
+        target_id: uuid.UUID | None = None,
+        rtsp: bool = False,
+    ) -> None:
+        if self._audit is None or report["overall"] != Outcome.FAILED.value:
+            return
+        failed = [step for step in steps if step.outcome is Outcome.FAILED]
+        self._audit.record_standalone(
+            event_type=AuditEvent.AI_DIAGNOSTIC_FAILED,
+            result=AuditResult.FAILURE,
+            target_type=target_type,
+            target_id=target_id,
+            actor_user_id=actor_id,
+            metadata={
+                "group": group,
+                "rtsp_source": rtsp,
+                "failed_components": [
+                    {"component": step.component, "code": step.code} for step in failed
+                ],
+            },
+        )
 
     def _encode_step(self, component: str, label: str, config: Any, call) -> Step:
         with Timer() as timer:

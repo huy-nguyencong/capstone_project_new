@@ -207,6 +207,23 @@ python -m compileall src
 python -m ruff check .
 ```
 
+### Test matrix AI worker
+
+| Nhóm | Lệnh | Môi trường cần | Thời gian đo |
+| --- | --- | --- | --- |
+| Nhanh, offline | `python -m pytest -m unit` | Chỉ `pip install -e ".[dev]"`; không cần storage, torch hay checkpoint. Test `model_real` tự skip và in lý do | 612 passed, 5 skipped, ~2 s (macOS, CPU) |
+| Contract API | `python -m pytest -m "unit and contract"` | Như nhóm nhanh | 66 passed, ~1 s |
+| Failure injection | `python -m pytest -m "unit and failure_injection"` | Như nhóm nhanh; lỗi decoder, từng model, storage, lease, cancel, graceful stop và 25 job lặp kiểm tra rò frame/adapter | 21 passed, ~1 s |
+| Model thật | `PERSON_SEARCH_REQUIRE_MODEL_TESTS=1 python -m pytest -m model_real` | `pip install -e ".[ai-ultralytics,ai-rasa]"` và checkpoint `config/model_artifacts/rasa_cuhk_pedes_v1.pth` đúng SHA-256. Cờ `REQUIRE` biến skip thành fail | Chưa đo |
+| Smoke model thật | `python tools/production_pipeline_smoke.py ...`, `python tools/production_diagnostics_smoke.py --registry <registry> --artifact-root <root> --config-root config --video <clip.mp4>` | Như nhóm model thật cộng video Wildtrack | Chưa đo |
+| PostgreSQL worker | `alembic upgrade head` rồi `python -m pytest tests/integration/test_camera_admin.py tests/integration/test_video_jobs.py tests/integration/test_durable_worker_postgres.py tests/integration/test_worker_telemetry_postgres.py tests/integration/test_diagnostics_postgres.py` | `PERSON_SEARCH_CAMERA_TEST_DSN` trỏ database dùng một lần ở migration head; `ffmpeg` trong PATH | Chưa đo |
+| Ba kho thật | `python -m pytest -m integration` | `PERSON_SEARCH_RUN_INTEGRATION=1`, `PERSON_SEARCH_RUN_ADAPTER_INTEGRATION=1` và stack Docker Compose | Chưa đo |
+| Migration | `python -m pytest -m integration` | Thêm `PERSON_SEARCH_RUN_MIGRATION_INTEGRATION=1`; test chạy `downgrade base`, chỉ dùng database dùng một lần | Chưa đo |
+| E2E | `python -m pytest -m e2e` | `PERSON_SEARCH_RUN_E2E=1` và stack local | Chưa đo |
+
+Đầy đủ trước khi nghiệm thu: chạy lần lượt nhóm nhanh, model thật, PostgreSQL worker, ba kho thật,
+migration và E2E trên cùng commit.
+
 Xem điều kiện chạy test trong [integration README](tests/integration/README.md)
 và [e2e README](tests/e2e/README.md).
 

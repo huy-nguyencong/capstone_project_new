@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import io
 import json
+import logging
 import uuid
 from base64 import b64decode, b64encode
 from dataclasses import dataclass
@@ -12,6 +13,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Protocol
 
+from person_search.observability import log_context
 from person_search.services.track_ingestion import TrackIngestionConflictError
 from person_search.storage.contracts import (
     BoundingBoxPixels,
@@ -22,6 +24,8 @@ from person_search.storage.postgres.models import TrackIndexStatus
 from person_search.workers.durable import JobExecutionSnapshot
 from person_search.workers.errors import AIErrorCode, AIWorkerError
 from person_search.workers.production import EncodedTrack, ProductionPipelineResult
+
+logger = logging.getLogger(__name__)
 
 
 class TrackPublisher(Protocol):
@@ -92,14 +96,21 @@ class ProductionTrackPublisher:
         published = snapshot.published_tracks
         for ordinal, encoded in enumerate(result.encoded_tracks, start=1):
             request = ingestion_request(snapshot, self.area_id, encoded)
-            try:
-                outcome = self.ingestion.ingest_track(
-                    request, correlation_id=f"job-{snapshot.job_id.hex}"
-                )
-            except TrackIngestionConflictError as error:
-                raise AIWorkerError(AIErrorCode.STORAGE_CONFLICT, cause=error) from error
-            except Exception as error:
-                raise AIWorkerError(AIErrorCode.STORAGE_UNAVAILABLE, cause=error) from error
+            with log_context(track_id=request.track_id):
+                try:
+                    outcome = self.ingestion.ingest_track(
+                        request, correlation_id=f"job-{snapshot.job_id.hex}"
+                    )
+                except TrackIngestionConflictError as error:
+                    logger.warning(
+                        "track publication conflict", extra={"error_type": type(error).__name__}
+                    )
+                    raise AIWorkerError(AIErrorCode.STORAGE_CONFLICT, cause=error) from error
+                except Exception as error:
+                    logger.warning(
+                        "track publication failed", extra={"error_type": type(error).__name__}
+                    )
+                    raise AIWorkerError(AIErrorCode.STORAGE_UNAVAILABLE, cause=error) from error
             if outcome.status is not TrackIndexStatus.READY:
                 raise AIWorkerError(
                     AIErrorCode.STORAGE_PUBLISH_FAILED,

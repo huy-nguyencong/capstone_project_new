@@ -77,6 +77,8 @@ export const AUDIT_EVENTS = {
   'ai.config_requested': 'Yêu cầu đổi mô hình',
   'ai.config_applied': 'Áp dụng mô hình',
   'ai.config_failed': 'Áp dụng mô hình thất bại',
+  'ai.pipeline_failed': 'Pipeline AI lỗi',
+  'ai.diagnostic_failed': 'Kiểm tra AI phát hiện lỗi',
   'case.created': 'Tạo Case',
   'case.updated': 'Cập nhật Case',
   'case.result_added': 'Thêm kết quả vào Case',

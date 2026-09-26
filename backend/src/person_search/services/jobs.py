@@ -24,6 +24,7 @@ from person_search.storage.postgres.models import (
     ProcessingJob,
     TrackIndexStatus,
 )
+from person_search.workers.errors import AIErrorCode, error_policy
 from person_search.workers.sampling import (
     sampling_interval_for_profile,
     sampling_profile_for_interval,
@@ -31,6 +32,13 @@ from person_search.workers.sampling import (
 from person_search.workers.telemetry import sanitize_metrics
 
 TERMINAL = {JobStatus.SUCCEEDED, JobStatus.FAILED, JobStatus.CANCELLED}
+
+
+def failure_stage(error_code):
+    try:
+        return error_policy(AIErrorCode(error_code)).stage.value
+    except ValueError:
+        return "WORKER"
 
 
 class JobService:
@@ -89,7 +97,7 @@ class JobService:
             target_type="processing_job",
             target_id=job.id,
             actor_user_id=actor,
-            metadata={"status": job.status.value},
+            metadata={"status": job.status.value, "error_code": job.error_code},
         )
 
     def eligible(self, work, camera_id, lock=False):
@@ -353,6 +361,21 @@ class JobService:
             if status == JobStatus.SUCCEEDED:
                 job.total_frames = job.processed_frames
             self.audit(work, AuditEvent.JOB_FINISHED, job)
+            if job.status == JobStatus.FAILED:
+                record_audit(
+                    work.repositories,
+                    event_type=AuditEvent.AI_PIPELINE_FAILED,
+                    result=AuditResult.FAILURE,
+                    target_type="processing_job",
+                    target_id=job.id,
+                    metadata={
+                        "error_code": job.error_code,
+                        "stage": failure_stage(job.error_code),
+                        "camera_id": job.camera_id,
+                        "ai_config_version_id": job.ai_config_version_id,
+                        "attempts": job.attempts,
+                    },
+                )
             source = job.source_ref
             work.commit()
         if source:

@@ -141,11 +141,11 @@ class ProductionPipeline:
                 self._call("load", component.open)
                 opened.append(component)
             for frame in frames:
-                self._check(started)
                 if not isinstance(frame, SourceFrame):
                     raise AIWorkerError(AIErrorCode.SOURCE_INVALID_FRAME)
-                source_count += 1
                 try:
+                    self._check(started)
+                    source_count += 1
                     sampled = self._call("sampling", self.sampler.sample, frame)
                     if sampled is None:
                         continue

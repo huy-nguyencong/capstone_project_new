@@ -67,6 +67,7 @@ def test_runtime_settings_lock_upstream_vector_space() -> None:
     assert value.itm_rerank_supported and value.itm_rerank_top_k == 128
 
 
+@pytest.mark.model_real(modules=("torch", "torchvision"))
 def test_image_preprocessing_is_deterministic_rgb_bicubic_snapshot() -> None:
     value = settings()
     from person_search.ai.encoders.rasa import RasaPreprocessor
@@ -91,6 +92,7 @@ def test_image_preprocessing_is_deterministic_rgb_bicubic_snapshot() -> None:
     )
 
 
+@pytest.mark.model_real(modules=("transformers",))
 def test_tokenizer_is_offline_uncased_padded_and_truncated() -> None:
     from person_search.ai.encoders.rasa import RasaPreprocessor
 
@@ -173,6 +175,7 @@ def test_factory_rejects_vector_or_preprocessing_version_mismatch(tmp_path: Path
         )
 
 
+@pytest.mark.model_real(modules=("torch",), artifacts=("rasa_checkpoint",))
 def test_official_checkpoint_architecture_metadata() -> None:
     digest = "bc85da09c2991d5de503c2c2ac4f032e20cc536fec5094f0acff45e93d0104d2"
     factory = RasaRuntimeFactory(

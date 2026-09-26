@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable
 from contextlib import AbstractContextManager
 from dataclasses import dataclass
@@ -12,12 +13,14 @@ from uuid import UUID
 
 from sqlalchemy import text
 
+from person_search.observability import log_context
 from person_search.storage.postgres.models import JobSourceType, JobStatus
 from person_search.workers.errors import AIErrorCode, AIWorkerError
 from person_search.workers.production import ProductionPipelineResult
 from person_search.workers.telemetry import JobMetricsCollector, WorkerHeartbeatReporter
 
 WORKER_LOCK = 734202
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -239,6 +242,15 @@ class SequentialProductionWorker:
             return None
 
     def _execute(self, job) -> None:
+        with log_context(
+            job_id=getattr(job, "id", None),
+            camera_id=getattr(job, "camera_id", None),
+            ai_config_version_id=getattr(job, "ai_config_version_id", None),
+        ):
+            logger.info("job claimed", extra={"attempt": getattr(job, "attempts", None)})
+            self._execute_job(job)
+
+    def _execute_job(self, job) -> None:
         result = None
         snapshot = None
         try:
@@ -271,12 +283,31 @@ class SequentialProductionWorker:
             self.jobs.finish(
                 snapshot.job_id, snapshot.lease_token, JobStatus.SUCCEEDED
             )
+            logger.info(
+                "job succeeded",
+                extra={
+                    "source_frames": result.source_frames,
+                    "sampled_frames": result.sampled_frames,
+                    "completed_tracks": len(result.encoded_tracks),
+                },
+            )
         except GracefulStop:
+            logger.info("job left running for lease recovery after graceful stop")
             # Leave RUNNING + lease for deterministic recovery by a later worker.
             return
         except LeaseLost:
+            logger.warning("job lease lost or cancellation requested")
             self.jobs.finish(job.id, job.lease_token, JobStatus.CANCELLED)
         except AIWorkerError as exc:
+            logger.warning(
+                "job stage failed",
+                exc_info=exc.code is not AIErrorCode.CANCELLED,
+                extra={
+                    "error_code": exc.code.value,
+                    "stage": exc.stage.value,
+                    "retryable": exc.retryable,
+                },
+            )
             if exc.code is AIErrorCode.CANCELLED:
                 self.jobs.finish(job.id, job.lease_token, JobStatus.CANCELLED)
             elif exc.retryable and snapshot is not None and snapshot.attempts < self.max_attempts:
@@ -294,6 +325,9 @@ class SequentialProductionWorker:
                 )
                 self.jobs.finish(job.id, job.lease_token, JobStatus.FAILED, error_code)
         except Exception:
+            logger.exception(
+                "job execution failed", extra={"error_code": "worker_execution_failed"}
+            )
             self.jobs.finish(job.id, job.lease_token, JobStatus.FAILED, "worker_execution_failed")
         finally:
             if result is not None:

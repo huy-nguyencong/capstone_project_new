@@ -20,6 +20,7 @@ from person_search.ai.preflight import (
 )
 from person_search.ai.registry import RegistryMode, RegistryValidationError, load_registry
 from person_search.config import StorageSettings
+from person_search.observability import configure_logging
 from person_search.services.jobs import JobService
 from person_search.services.track_ingestion import TrackIngestionService
 from person_search.services.video_staging import VideoStaging
@@ -32,6 +33,7 @@ from person_search.workers.runner import VideoWorker
 
 def main():
     load_dotenv()
+    configure_logging()
     parser = argparse.ArgumentParser(
         description="Sequential video worker; demo adapters are opt-in"
     )

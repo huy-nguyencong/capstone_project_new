@@ -10,6 +10,7 @@ from sqlalchemy.exc import OperationalError
 from werkzeug.exceptions import HTTPException
 
 from person_search.dependencies import DependencyNotConfiguredError
+from person_search.observability import bind_context, reset_context
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +62,16 @@ def register_error_handlers(app: Flask) -> None:
     def assign_request_id() -> None:
         incoming = request.headers.get(REQUEST_ID_HEADER, "")
         g.request_id = incoming if _REQUEST_ID_PATTERN.match(incoming) else str(uuid.uuid4())
+        g.log_context_token = bind_context(request_id=g.request_id)
+
+    @app.teardown_request
+    def release_log_context(error: BaseException | None) -> None:
+        token = g.pop("log_context_token", None)
+        if token is not None:
+            try:
+                reset_context(token)
+            except ValueError:
+                pass
 
     @app.after_request
     def expose_request_id(response: Response) -> Response:

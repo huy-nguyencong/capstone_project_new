@@ -265,6 +265,7 @@ def test_factory_verifies_registry_artifact_and_checksum(tmp_path: Path) -> None
         build_bytetrack(entry, artifact_root=tmp_path)
 
 
+@pytest.mark.model_real(modules=("ultralytics", "lap"))
 def test_real_backend_tracks_multiple_people_and_resets_between_jobs() -> None:
     camera_id = uuid.uuid4()
     subject = tracker(UltralyticsByteTrackBackend(ByteTrackSettings()))

@@ -262,3 +262,28 @@ def test_job_deadline_fails_closed_and_cleans_up():
         subject.run(frames(1))
     assert caught.value.code is AIErrorCode.RESOURCE_EXHAUSTED
     assert_closed(components)
+
+
+@pytest.mark.parametrize("cancel_at", [1, 2, 3])
+def test_cancel_before_processing_a_frame_still_closes_that_frame(cancel_at):
+    calls = {"count": 0}
+
+    def cancelled():
+        calls["count"] += 1
+        return calls["count"] >= cancel_at
+
+    subject, components = pipeline(cancelled=cancelled)
+    source = frames(3)
+    with pytest.raises(AIWorkerError) as caught:
+        subject.run(iter(source))
+    assert caught.value.code is AIErrorCode.CANCELLED
+    opened = []
+    for frame in source:
+        try:
+            frame.image.getpixel((0, 0))
+        except ValueError:
+            continue
+        opened.append(frame.source_frame_index)
+    consumed = (cancel_at + 1) // 2
+    assert [index for index in opened if index < consumed] == []
+    assert_closed(components)

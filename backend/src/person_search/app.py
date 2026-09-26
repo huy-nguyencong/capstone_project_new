@@ -158,6 +158,7 @@ def create_app(
                     search=search_service,
                     runtime=camera_runtime,
                     diagnostics=diagnostics,
+                    audit=AuditRecorder(lambda: UnitOfWork(session_factory)),
                 ),
             )
             container.register(

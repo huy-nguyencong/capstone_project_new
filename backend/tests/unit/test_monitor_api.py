@@ -18,11 +18,11 @@ class FakeMonitoring:
     def system_status(self):
         return {"generated_at": "2026-09-25T08:00:00Z", "summary": {"healthy": 1}}
 
-    def camera_pipeline(self, camera_id):
+    def camera_pipeline(self, camera_id, actor_id=None):
         self.cameras.append(camera_id)
         return {"ran_at": "2026-09-25T08:00:00Z", "overall": "SUCCESS", "steps": []}
 
-    def search_components(self):
+    def search_components(self, actor_id=None):
         return {"ran_at": "2026-09-25T08:00:00Z", "overall": "FAILED", "steps": []}
 
 
