@@ -17,7 +17,11 @@ from person_search.services.storage_maintenance import (
     StorageReindexer,
 )
 from person_search.services.track_ingestion import TrackIngestionService
-from person_search.storage.contracts import RASA_EMBEDDING_DIMENSION, RASA_ENCODER_VERSION
+from person_search.storage.contracts import (
+    MILVUS_ACTIVE_ALIAS,
+    RASA_EMBEDDING_DIMENSION,
+    RASA_ENCODER_VERSION,
+)
 from person_search.storage.milvus.vectors import MilvusPersonTrackIndex
 from person_search.storage.minio.frames import MinioFrameStore
 from person_search.storage.postgres.unit_of_work import UnitOfWork
@@ -26,6 +30,9 @@ from person_search.storage.runtime import StorageRuntime
 
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="person-search-storage")
+    parser.add_argument("--encoder-version", default=RASA_ENCODER_VERSION)
+    parser.add_argument("--dimension", type=int, default=RASA_EMBEDDING_DIMENSION)
+    parser.add_argument("--alias", default=MILVUS_ACTIVE_ALIAS)
     commands = parser.add_subparsers(dest="command", required=True)
     retry = commands.add_parser("retry-outbox", help="Resume due track ingestion events.")
     retry.add_argument("--limit", type=int, default=50)
@@ -33,6 +40,7 @@ def _parser() -> argparse.ArgumentParser:
         "reconcile", help="Cross-check PostgreSQL, MinIO and Milvus (dry-run by default)."
     )
     reconcile.add_argument("--delete-orphans", action="store_true")
+    reconcile.add_argument("--quarantine-corrupt", action="store_true")
     reconcile.add_argument("--stale-minutes", type=int, default=30)
     reconcile.add_argument("--max-items", type=int, default=10_000)
     reconcile.add_argument("--actor-user-id", type=uuid.UUID)
@@ -57,9 +65,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         frames = MinioFrameStore(runtime.minio.client, settings.minio.bucket)
         vectors = MilvusPersonTrackIndex(
             runtime.milvus.client,
-            encoder_version=RASA_ENCODER_VERSION,
-            dimension=RASA_EMBEDDING_DIMENSION,
+            encoder_version=arguments.encoder_version,
+            dimension=arguments.dimension,
             timeout=settings.milvus.timeout_seconds,
+            alias=arguments.alias,
         )
 
         def unit_of_work() -> UnitOfWork:
@@ -77,7 +86,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                 vectors,
                 stale_after=timedelta(minutes=arguments.stale_minutes),
                 max_items=arguments.max_items,
-            ).run(delete_orphans=arguments.delete_orphans, actor_user_id=arguments.actor_user_id)
+            ).run(
+                delete_orphans=arguments.delete_orphans,
+                quarantine_corrupt=arguments.quarantine_corrupt,
+                actor_user_id=arguments.actor_user_id,
+            )
             print(
                 json.dumps(
                     {"dry_run": report.dry_run, "truncated": report.truncated, **report.counts()}

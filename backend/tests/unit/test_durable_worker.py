@@ -8,7 +8,7 @@ from unittest.mock import Mock
 import pytest
 
 from person_search.storage.postgres.models import JobSourceType, JobStatus
-from person_search.workers.durable import SequentialProductionWorker
+from person_search.workers.durable import SequentialProductionWorker, WorkerRetryPolicy
 from person_search.workers.errors import AIErrorCode, AIWorkerError
 from person_search.workers.production import ProductionPipelineResult
 from person_search.workers.production_main import PublisherNotConfigured, _supervise_child
@@ -64,6 +64,7 @@ class Jobs:
         self.finished = []
         self.checkpoints = []
         self.cleaned = 0
+        self.deferred = []
         self.lose_lease_at = lose_lease_at
 
     def cleanup(self):
@@ -78,6 +79,10 @@ class Jobs:
 
     def finish(self, job_id, token, status, error_code=None):
         self.finished.append((job_id, status, error_code))
+
+    def defer_retry(self, job_id, token, error_code, delay):
+        self.deferred.append((job_id, error_code, delay.total_seconds()))
+        return True
 
 
 def job(*, attempts=1, source_type=JobSourceType.FILE):
@@ -191,7 +196,7 @@ def test_retry_limit_and_invalid_job_fail_safely():
     )
 
 
-def test_ai_stage_error_is_persisted_without_internal_details():
+def test_retryable_ai_stage_error_is_deferred_with_bounded_backoff():
     claimed = job()
     jobs = Jobs([claimed])
     error = AIWorkerError(
@@ -199,19 +204,58 @@ def test_ai_stage_error_is_persisted_without_internal_details():
     )
     subject, _ = worker(jobs, pipeline_error=error)
     assert subject.run_once() is True
-    assert jobs.finished == [
-        (claimed.id, JobStatus.FAILED, AIErrorCode.DETECTOR_INFERENCE_FAILED.value)
+    assert jobs.finished == []
+    assert jobs.deferred == [
+        (claimed.id, AIErrorCode.DETECTOR_INFERENCE_FAILED.value, 5.0)
     ]
 
 
-def test_missing_aiw18_publisher_fails_closed_instead_of_succeeding():
+def test_terminal_ai_stage_error_fails_without_retry():
+    claimed = job()
+    jobs = Jobs([claimed])
+    error = AIWorkerError(AIErrorCode.DETECTOR_OUTPUT_INVALID)
+    subject, _ = worker(jobs, pipeline_error=error)
+    assert subject.run_once() is True
+    assert jobs.deferred == []
+    assert jobs.finished == [
+        (claimed.id, JobStatus.FAILED, AIErrorCode.DETECTOR_OUTPUT_INVALID.value)
+    ]
+
+
+def test_retryable_error_at_attempt_limit_moves_to_dead_letter_code():
+    claimed = job(attempts=3)
+    jobs = Jobs([claimed])
+    subject, _ = worker(
+        jobs, pipeline_error=AIWorkerError(AIErrorCode.STORAGE_UNAVAILABLE)
+    )
+    assert subject.run_once() is True
+    assert jobs.deferred == []
+    assert jobs.finished == [
+        (claimed.id, JobStatus.FAILED, "worker_retries_exhausted")
+    ]
+
+
+def test_worker_retry_backoff_is_exponential_and_capped():
+    policy = WorkerRetryPolicy(
+        max_attempts=5, base_delay_seconds=2, max_delay_seconds=5
+    )
+    assert [policy.delay_after(value).total_seconds() for value in (1, 2, 3, 10)] == [
+        2,
+        4,
+        5,
+        5,
+    ]
+
+
+def test_storage_unavailable_publisher_is_deferred_instead_of_succeeding():
     claimed = job()
     jobs = Jobs([claimed])
     subject, _ = worker(jobs)
     subject.result_consumer = PublisherNotConfigured()
     assert subject.run_once() is True
-    assert jobs.finished == [
-        (claimed.id, JobStatus.FAILED, AIErrorCode.STORAGE_UNAVAILABLE.value)
+    assert jobs.finished == []
+    assert jobs.deferred == [
+        (claimed.id, AIErrorCode.STORAGE_UNAVAILABLE.value, 5.0)
     ]
 
 

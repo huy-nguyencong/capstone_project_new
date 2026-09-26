@@ -15,7 +15,7 @@ from person_search.services.track_ingestion import (
 )
 from person_search.storage.contracts import FRAME_OBJECT_PREFIX
 from person_search.storage.minio.frames import FrameInfo, FrameNotFoundError
-from person_search.storage.postgres.models import AuditResult, TrackIndexStatus
+from person_search.storage.postgres.models import AuditResult, OutboxStatus, TrackIndexStatus
 from person_search.storage.postgres.repositories import Repositories
 from person_search.storage.postgres.unit_of_work import UnitOfWork
 
@@ -124,6 +124,7 @@ class ReconciliationReport:
     orphan_vectors: list[uuid.UUID] = field(default_factory=list)
     deleted_objects: list[str] = field(default_factory=list)
     deleted_vectors: list[uuid.UUID] = field(default_factory=list)
+    quarantined_tracks: list[uuid.UUID] = field(default_factory=list)
     truncated: bool = False
 
     @property
@@ -147,6 +148,7 @@ class ReconciliationReport:
             "orphan_vectors": len(self.orphan_vectors),
             "deleted_objects": len(self.deleted_objects),
             "deleted_vectors": len(self.deleted_vectors),
+            "quarantined_tracks": len(self.quarantined_tracks),
         }
 
 
@@ -187,13 +189,19 @@ class StorageReconciler:
         self._clock = clock
 
     def run(
-        self, *, delete_orphans: bool = False, actor_user_id: uuid.UUID | None = None
+        self,
+        *,
+        delete_orphans: bool = False,
+        quarantine_corrupt: bool = False,
+        actor_user_id: uuid.UUID | None = None,
     ) -> ReconciliationReport:
-        report = ReconciliationReport(dry_run=not delete_orphans)
+        report = ReconciliationReport(dry_run=not (delete_orphans or quarantine_corrupt))
         self._find_stale_tracks(report)
         self._check_ready_tracks(report)
         self._find_orphan_objects(report)
         self._find_orphan_vectors(report)
+        if quarantine_corrupt:
+            self._quarantine_corrupt(report, actor_user_id)
         if delete_orphans:
             self._delete_orphans(report, actor_user_id)
         logger.info(
@@ -201,6 +209,52 @@ class StorageReconciler:
             extra={"dry_run": report.dry_run, "counts": report.counts()},
         )
         return report
+
+    def _quarantine_corrupt(
+        self, report: ReconciliationReport, actor_user_id: uuid.UUID | None
+    ) -> None:
+        reasons: dict[uuid.UUID, str] = {}
+        reasons.update(
+            (track_id, "RECONCILE_MISSING_VECTOR") for track_id in report.missing_vectors
+        )
+        reasons.update(
+            (track_id, "RECONCILE_CHECKSUM_MISMATCH")
+            for track_id in report.checksum_mismatches
+        )
+        reasons.update(
+            (track_id, "RECONCILE_MISSING_OBJECT") for track_id in report.missing_objects
+        )
+        if not reasons:
+            return
+        with self._unit_of_work_factory() as work:
+            repositories = _repositories(work)
+            for track_id, failure_code in reasons.items():
+                track = repositories.tracks.get_for_update(track_id)
+                if track is None or track.index_status is not TrackIndexStatus.READY:
+                    continue
+                track.index_status = TrackIndexStatus.FAILED
+                track.failure_code = failure_code
+                track.failure_message = (
+                    "Storage reconciliation found a missing or invalid artifact."
+                )
+                event = repositories.outbox.get_for_track(
+                    track_id, TRACK_INGEST_EVENT, for_update=True
+                )
+                if event is not None:
+                    event.status = OutboxStatus.DEAD
+                    event.locked_at = None
+                    event.last_error = track.failure_message
+                report.quarantined_tracks.append(track_id)
+                record_audit(
+                    repositories,
+                    event_type=AuditEvent.STORAGE_TRACK_FAILED,
+                    result=AuditResult.FAILURE,
+                    target_type="person_track",
+                    target_id=track_id,
+                    actor_user_id=actor_user_id,
+                    metadata={"failure_code": failure_code, "source": "reconciliation"},
+                )
+            work.commit()
 
     def _find_stale_tracks(self, report: ReconciliationReport) -> None:
         with self._unit_of_work_factory() as work:

@@ -5,6 +5,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
+import sqlalchemy as sa
 from e2e_stack import StorageStack, step, unit_vector
 from pymilvus import MilvusException
 
@@ -27,6 +28,7 @@ from person_search.services.track_search import (
     TrackSearchQuery,
     TrackSearchService,
 )
+from person_search.storage.maintenance_cli import main as maintenance_main
 from person_search.storage.milvus.vectors import MilvusPersonTrackIndex
 from person_search.storage.minio.client import MinioStorage
 from person_search.storage.minio.frames import MinioFrameStore
@@ -186,6 +188,72 @@ def test_track_to_search_to_image_to_case_to_viewer(storage_stack: StorageStack)
         assert summary.ready == 1 and summary.errors == 0
         assert milvus_track.track_id in _search_ids(search, ids["operator_b"])
 
+    cli_options = [
+        "--encoder-version",
+        stack.encoder_version,
+        "--dimension",
+        str(stack.index.dimension),
+        "--alias",
+        stack.index.alias,
+    ]
+    with step("recovery CLI rebuilds a deleted vector in real Milvus", "reindex-cli"):
+        stack.index.delete(track_b.track_id)
+        assert stack.index.get(track_b.track_id) is None
+        assert maintenance_main([*cli_options, "reindex"]) == 0
+        assert stack.index.get(track_b.track_id) is not None
+
+    with step("recovery CLI retries a due outbox event", "retry-outbox-cli"):
+        retry_track = stack.request("b", vector=unit_vector(0), started_at_ms=12_000)
+        result = milvus_ingestion.ingest_track(retry_track)
+        assert result.status is TrackIndexStatus.PENDING
+        stack.execute(
+            "UPDATE storage_outbox_events SET available_at = NOW() - INTERVAL '1 second' "
+            "WHERE track_id = :track_id",
+            track_id=retry_track.track_id,
+        )
+        assert maintenance_main([*cli_options, "retry-outbox", "--limit", "10"]) == 0
+        assert stack.index.get(retry_track.track_id) is not None
+
+    with step(
+        "quarantine CLI preserves CaseResult, then requeue CLI makes the track retryable",
+        "recovery-cli",
+    ):
+        stack.frames.delete_frame(key)
+        assert maintenance_main(
+            [
+                *cli_options,
+                "reconcile",
+                "--quarantine-corrupt",
+                "--actor-user-id",
+                str(ids["admin"]),
+            ]
+        ) == 2
+        with stack.engine.connect() as connection:
+            status = connection.scalar(
+                sa.text("SELECT index_status FROM person_tracks WHERE id = :track_id"),
+                {"track_id": track_a.track_id},
+            )
+            case_references = connection.scalar(
+                sa.text("SELECT COUNT(*) FROM case_results WHERE track_id = :track_id"),
+                {"track_id": track_a.track_id},
+            )
+        assert status == "FAILED"
+        assert case_references == 2
+        assert maintenance_main(
+            [
+                *cli_options,
+                "requeue-track",
+                str(track_a.track_id),
+                "--actor-user-id",
+                str(ids["admin"]),
+            ]
+        ) == 0
+        with stack.engine.connect() as connection:
+            assert connection.scalar(
+                sa.text("SELECT index_status FROM person_tracks WHERE id = :track_id"),
+                {"track_id": track_a.track_id},
+            ) == "PENDING"
+
     with step("reconciliation finds no missing artifacts", "reconciliation"):
         report = StorageReconciler(
             stack.unit_of_work,
@@ -201,6 +269,6 @@ def test_track_to_search_to_image_to_case_to_viewer(storage_stack: StorageStack)
     with step("Admin status reports counts and component errors", "status"):
         status = StorageStatusService(stack.unit_of_work, metrics).snapshot(ids["admin"])
         assert status.tracks_by_status["READY"] == 4
-        assert status.tracks_by_status["PENDING"] == 0
+        assert status.tracks_by_status["PENDING"] == 1
         assert status.component_errors["minio"].count >= 1
         assert status.component_errors["milvus"].count >= 1

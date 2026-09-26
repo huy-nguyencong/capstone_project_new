@@ -14,7 +14,6 @@ from person_search.storage.postgres.models import (
     ProcessingJob,
     StorageOutboxEvent,
     TrackIndexStatus,
-    TrackStateTransitionError,
 )
 from person_search.storage.postgres.models.person_track import reject_invalid_track_transition
 
@@ -56,13 +55,12 @@ def test_track_transition_pending_to_ready_is_allowed() -> None:
     reject_invalid_track_transition(None, None, track)
 
 
-def test_track_transition_ready_to_failed_is_rejected() -> None:
+def test_track_transition_ready_to_failed_supports_reconciliation_quarantine() -> None:
     track = _track(TrackIndexStatus.READY)
     attributes.set_committed_value(track, "index_status", TrackIndexStatus.READY)
     track.index_status = TrackIndexStatus.FAILED
 
-    with pytest.raises(TrackStateTransitionError, match="READY.*FAILED"):
-        reject_invalid_track_transition(None, None, track)
+    reject_invalid_track_transition(None, None, track)
 
 
 def test_track_transition_failed_to_pending_supports_retry() -> None:

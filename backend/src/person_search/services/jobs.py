@@ -348,6 +348,34 @@ class JobService:
         if source:
             self.staging.remove(source)
 
+    def defer_retry(self, job_id, token, error_code, delay: timedelta) -> bool:
+        """Keep a retryable job leased until its bounded backoff expires."""
+
+        if delay <= timedelta(0):
+            raise ValueError("retry delay must be positive")
+        with self.factory() as work:
+            job = self.row(work, job_id, lock=True)
+            if job.status is not JobStatus.RUNNING or job.lease_token != token:
+                return False
+            camera = work.session.get(Camera, job.camera_id)
+            if (
+                job.cancel_requested
+                or camera.status is not CameraStatus.ACTIVE
+                or not camera.ai_enabled
+            ):
+                job.status = JobStatus.CANCELLED
+                job.ended_at = self.clock()
+                job.lease_expires_at = None
+                work.commit()
+                return False
+            now = self.clock()
+            job.error_code = error_code
+            job.error_message = None
+            job.heartbeat_at = now
+            job.lease_expires_at = now + delay
+            work.commit()
+            return True
+
     def cleanup(self):
         """Reconcile terminal staging files and orphaned uploads after a 24h grace period."""
         if not self.staging.root.exists():

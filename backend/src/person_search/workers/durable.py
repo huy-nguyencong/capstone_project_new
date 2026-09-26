@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from contextlib import AbstractContextManager
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Protocol
 from uuid import UUID
@@ -99,6 +99,23 @@ class GracefulStop(RuntimeError):
     pass
 
 
+@dataclass(frozen=True, slots=True)
+class WorkerRetryPolicy:
+    max_attempts: int = 3
+    base_delay_seconds: float = 5.0
+    max_delay_seconds: float = 300.0
+
+    def __post_init__(self) -> None:
+        if self.max_attempts < 1:
+            raise ValueError("max_attempts must be positive")
+        if self.base_delay_seconds <= 0 or self.max_delay_seconds < self.base_delay_seconds:
+            raise ValueError("retry delays must be positive and ordered")
+
+    def delay_after(self, attempts: int) -> timedelta:
+        seconds = self.base_delay_seconds * 2 ** max(attempts - 1, 0)
+        return timedelta(seconds=min(seconds, self.max_delay_seconds))
+
+
 class _JobControl:
     def __init__(self, jobs, snapshot: JobExecutionSnapshot, stop: Callable[[], bool]) -> None:
         self.jobs = jobs
@@ -145,6 +162,7 @@ class SequentialProductionWorker:
         result_consumer: Callable[[JobExecutionSnapshot, ProductionPipelineResult], None],
         stop: Callable[[], bool] = lambda: False,
         max_attempts: int = 3,
+        retry_policy: WorkerRetryPolicy | None = None,
     ) -> None:
         self.jobs = jobs
         self.lock_factory = lock_factory
@@ -152,7 +170,8 @@ class SequentialProductionWorker:
         self.pipeline_factory = pipeline_factory
         self.result_consumer = result_consumer
         self.stop = stop
-        self.max_attempts = max_attempts
+        self.retry_policy = retry_policy or WorkerRetryPolicy(max_attempts=max_attempts)
+        self.max_attempts = self.retry_policy.max_attempts
 
     def run_once(self) -> bool:
         with self.lock_factory() as acquired:
@@ -177,6 +196,7 @@ class SequentialProductionWorker:
 
     def _execute(self, job) -> None:
         result = None
+        snapshot = None
         try:
             snapshot = JobExecutionSnapshot.from_claimed(job)
             if snapshot.attempts > self.max_attempts:
@@ -209,17 +229,22 @@ class SequentialProductionWorker:
         except LeaseLost:
             self.jobs.finish(job.id, job.lease_token, JobStatus.CANCELLED)
         except AIWorkerError as exc:
-            status = (
-                JobStatus.CANCELLED
-                if exc.code is AIErrorCode.CANCELLED
-                else JobStatus.FAILED
-            )
-            self.jobs.finish(
-                job.id,
-                job.lease_token,
-                status,
-                None if status is JobStatus.CANCELLED else exc.code.value,
-            )
+            if exc.code is AIErrorCode.CANCELLED:
+                self.jobs.finish(job.id, job.lease_token, JobStatus.CANCELLED)
+            elif exc.retryable and snapshot is not None and snapshot.attempts < self.max_attempts:
+                self.jobs.defer_retry(
+                    job.id,
+                    job.lease_token,
+                    exc.code.value,
+                    self.retry_policy.delay_after(snapshot.attempts),
+                )
+            else:
+                error_code = (
+                    "worker_retries_exhausted"
+                    if exc.retryable and snapshot is not None
+                    else exc.code.value
+                )
+                self.jobs.finish(job.id, job.lease_token, JobStatus.FAILED, error_code)
         except Exception:
             self.jobs.finish(job.id, job.lease_token, JobStatus.FAILED, "worker_execution_failed")
         finally:

@@ -15,6 +15,7 @@ from PIL import Image
 from sqlalchemy.orm import sessionmaker
 
 from person_search.config import MilvusSettings, MinioSettings, PostgresSettings
+from person_search.services.storage_maintenance import StorageReconciler
 from person_search.services.track_ingestion import TrackIngestionService
 from person_search.storage.contracts import (
     BoundingBoxPixels,
@@ -308,6 +309,18 @@ def test_ingest_track_converges_across_postgres_minio_and_milvus(tmp_path) -> No
         assert importer.import_file(bundle_path) == 1
         assert importer.import_file(bundle_path) == 1
         assert index.get(published_id) is not None
+
+        frames.delete_frame(created_keys[-1])
+        reconciliation = StorageReconciler(
+            lambda: UnitOfWork(factory), frames, index
+        ).run(quarantine_corrupt=True)
+        assert published_id in reconciliation.quarantined_tracks
+        with UnitOfWork(factory) as work:
+            assert work.repositories is not None
+            quarantined = work.repositories.tracks.get(published_id)
+            assert quarantined is not None
+            assert quarantined.index_status is TrackIndexStatus.FAILED
+            assert quarantined.failure_code == "RECONCILE_MISSING_OBJECT"
         image.close()
     finally:
         for key in created_keys:

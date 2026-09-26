@@ -236,6 +236,25 @@ def test_worker_crash_replay_lock_and_cancel_running(setup, video):
     assert not list(setup.jobs.staging.root.iterdir())
 
 
+def test_retryable_job_waits_for_backoff_then_reclaims_with_new_lease(setup, video):
+    job_id = uuid.UUID(upload(setup, video).json["id"])
+    claimed = setup.jobs.claim()
+    assert claimed.id == job_id and claimed.attempts == 1
+    old_token = claimed.lease_token
+    assert setup.jobs.defer_retry(
+        job_id,
+        old_token,
+        "storage_unavailable",
+        timedelta(seconds=30),
+    )
+    assert setup.jobs.claim() is None
+    setup.jobs.clock = lambda: datetime.now(UTC) + timedelta(minutes=1)
+    reclaimed = setup.jobs.claim()
+    assert reclaimed.id == job_id
+    assert reclaimed.attempts == 2
+    assert reclaimed.lease_token != old_token
+
+
 def test_crash_after_track_ingestion_replays_without_duplicates(setup, video):
     job_id = upload(setup, video).json["id"]
 

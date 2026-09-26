@@ -262,6 +262,33 @@ def test_reconcile_delete_mode_removes_only_orphans_and_audits() -> None:
     assert audit.event_metadata == {"deleted_objects": 1, "deleted_vectors": 1}
 
 
+def test_reconcile_quarantines_corrupt_ready_tracks_without_deleting_history() -> None:
+    scenario = ReconcileScenario()
+    harness = scenario.harness
+    case_id = uuid.uuid4()
+    harness.database.case_results[case_id] = SimpleNamespace(
+        case_id=case_id, track_id=scenario.broken.track_id
+    )
+
+    report = _reconciler(harness).run(quarantine_corrupt=True)
+
+    assert set(report.quarantined_tracks) == {
+        scenario.broken.track_id,
+        scenario.tampered.track_id,
+    }
+    broken = harness.database.tracks[scenario.broken.track_id]
+    tampered = harness.database.tracks[scenario.tampered.track_id]
+    assert broken.index_status is TrackIndexStatus.FAILED
+    assert broken.failure_code == "RECONCILE_MISSING_OBJECT"
+    assert tampered.index_status is TrackIndexStatus.FAILED
+    assert tampered.failure_code == "RECONCILE_CHECKSUM_MISMATCH"
+    assert harness.database.case_results[case_id].track_id == scenario.broken.track_id
+    assert (
+        harness.database.events[(scenario.broken.track_id, "track.ingest")].status
+        is OutboxStatus.DEAD
+    )
+
+
 def test_reconcile_clean_storage_reports_clean() -> None:
     harness = Harness()
     harness.service.ingest_track(harness.request())

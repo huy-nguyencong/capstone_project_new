@@ -36,7 +36,9 @@ ALLOWED_TRACK_TRANSITIONS = {
         TrackIndexStatus.FAILED,
     },
     TrackIndexStatus.FAILED: {TrackIndexStatus.FAILED, TrackIndexStatus.PENDING},
-    TrackIndexStatus.READY: {TrackIndexStatus.READY},
+    # Reconciliation may quarantine a READY row when a required external artifact
+    # disappears. The row and any Case references remain intact and auditable.
+    TrackIndexStatus.READY: {TrackIndexStatus.READY, TrackIndexStatus.FAILED},
 }
 
 
