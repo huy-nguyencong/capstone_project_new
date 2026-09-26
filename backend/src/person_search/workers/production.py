@@ -118,6 +118,12 @@ class ProductionPipeline:
             values[0] += 1
             values[1] += elapsed
 
+    def stage_timings(self) -> tuple[StageTiming, ...]:
+        return tuple(
+            StageTiming(name, int(values[0]), float(values[1]))
+            for name, values in self._timings.items()
+        )
+
     def run(self, frames: Iterable[SourceFrame]) -> ProductionPipelineResult:
         started = self.clock()
         source_count = sampled_count = detection_count = update_count = 0
@@ -179,10 +185,7 @@ class ProductionPipeline:
                 detection_count,
                 update_count,
                 tuple(encoded),
-                tuple(
-                    StageTiming(name, int(values[0]), float(values[1]))
-                    for name, values in self._timings.items()
-                ),
+                self.stage_timings(),
             )
         finally:
             for component in reversed(opened):

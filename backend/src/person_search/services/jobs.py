@@ -28,6 +28,7 @@ from person_search.workers.sampling import (
     sampling_interval_for_profile,
     sampling_profile_for_interval,
 )
+from person_search.workers.telemetry import sanitize_metrics
 
 TERMINAL = {JobStatus.SUCCEEDED, JobStatus.FAILED, JobStatus.CANCELLED}
 
@@ -75,6 +76,8 @@ class JobService:
             error_code=job.error_code,
             error_message=job.error_message,
             cancel_requested=job.cancel_requested,
+            metrics=dict(job.metrics or {}),
+            metrics_updated_at=iso(job.metrics_updated_at),
             pipeline_mode="DEMO" if config.encoder_version == "fake_demo_v1" else "AI",
         )
 
@@ -276,6 +279,8 @@ class JobService:
             job.status, job.started_at = JobStatus.RUNNING, job.started_at or now
             job.lease_token = uuid.uuid4()
             job.attempts += 1
+            job.error_code, job.error_message = None, None
+            job.metrics, job.metrics_updated_at = {}, None
             job.heartbeat_at, job.lease_expires_at = now, now + timedelta(seconds=60)
             work.commit()
             work.session.expunge(job)
@@ -289,6 +294,8 @@ class JobService:
         sampled=None,
         completed=None,
         published=None,
+        *,
+        metrics=None,
     ):
         with self.factory() as work:
             job = self.row(work, job_id, lock=True)
@@ -314,6 +321,9 @@ class JobService:
                     return False
                 job.completed_tracks = completed
                 job.published_tracks = published
+            if metrics is not None:
+                job.metrics = sanitize_metrics(metrics)
+                job.metrics_updated_at = self.clock()
             job.heartbeat_at = self.clock()
             job.lease_expires_at = self.clock() + timedelta(seconds=60)
             work.commit()

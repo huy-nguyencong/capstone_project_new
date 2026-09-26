@@ -15,6 +15,7 @@ from sqlalchemy import text
 from person_search.storage.postgres.models import JobSourceType, JobStatus
 from person_search.workers.errors import AIErrorCode, AIWorkerError
 from person_search.workers.production import ProductionPipelineResult
+from person_search.workers.telemetry import JobMetricsCollector, WorkerHeartbeatReporter
 
 WORKER_LOCK = 734202
 
@@ -117,23 +118,47 @@ class WorkerRetryPolicy:
 
 
 class _JobControl:
-    def __init__(self, jobs, snapshot: JobExecutionSnapshot, stop: Callable[[], bool]) -> None:
+    def __init__(
+        self,
+        jobs,
+        snapshot: JobExecutionSnapshot,
+        stop: Callable[[], bool],
+        metrics: JobMetricsCollector | None = None,
+    ) -> None:
         self.jobs = jobs
         self.snapshot = snapshot
         self.stop = stop
+        self.metrics = metrics
         self.source_frames = 0
         self.sampled_frames = 0
         self.completed_tracks = 0
 
-    def progress(self, source_frames: int, sampled_frames: int, completed_tracks: int) -> None:
+    def attach(self, pipeline) -> None:
+        timings = getattr(pipeline, "stage_timings", None)
+        if self.metrics is not None and callable(timings):
+            self.metrics.attach(timings)
+
+    def progress(
+        self,
+        source_frames: int,
+        sampled_frames: int,
+        completed_tracks: int,
+        *,
+        force_metrics: bool = False,
+    ) -> None:
         self.source_frames = source_frames
         self.sampled_frames = sampled_frames
         self.completed_tracks = completed_tracks
-        self.checkpoint()
+        self.checkpoint(force_metrics=force_metrics)
 
-    def checkpoint(self) -> None:
+    def checkpoint(self, *, force_metrics: bool = False) -> None:
         if self.stop():
             raise GracefulStop
+        extra = {}
+        if self.metrics is not None and (force_metrics or self.metrics.due()):
+            extra["metrics"] = self.metrics.snapshot(
+                self.source_frames, self.sampled_frames, self.completed_tracks
+            )
         if not self.jobs.checkpoint(
             self.snapshot.job_id,
             self.snapshot.lease_token,
@@ -141,6 +166,7 @@ class _JobControl:
             self.sampled_frames,
             self.completed_tracks,
             0,
+            **extra,
         ):
             raise LeaseLost
 
@@ -163,6 +189,8 @@ class SequentialProductionWorker:
         stop: Callable[[], bool] = lambda: False,
         max_attempts: int = 3,
         retry_policy: WorkerRetryPolicy | None = None,
+        metrics_factory: Callable[[object], JobMetricsCollector] | None = None,
+        heartbeat: WorkerHeartbeatReporter | None = None,
     ) -> None:
         self.jobs = jobs
         self.lock_factory = lock_factory
@@ -172,6 +200,8 @@ class SequentialProductionWorker:
         self.stop = stop
         self.retry_policy = retry_policy or WorkerRetryPolicy(max_attempts=max_attempts)
         self.max_attempts = self.retry_policy.max_attempts
+        self.metrics_factory = metrics_factory
+        self.heartbeat = heartbeat
 
     def run_once(self) -> bool:
         with self.lock_factory() as acquired:
@@ -183,7 +213,13 @@ class SequentialProductionWorker:
             job = self.jobs.claim()
             if job is None:
                 return False
-            self._execute(job)
+            if self.heartbeat is not None:
+                self.heartbeat.busy(job.id)
+            try:
+                self._execute(job)
+            finally:
+                if self.heartbeat is not None:
+                    self.heartbeat.idle()
             return True
 
     def run_until_idle(self, *, max_jobs: int | None = None) -> int:
@@ -193,6 +229,14 @@ class SequentialProductionWorker:
                 break
             completed += 1
         return completed
+
+    def _metrics_for(self, job) -> JobMetricsCollector | None:
+        if self.metrics_factory is None:
+            return None
+        try:
+            return self.metrics_factory(job)
+        except Exception:
+            return None
 
     def _execute(self, job) -> None:
         result = None
@@ -207,16 +251,20 @@ class SequentialProductionWorker:
                     "worker_retries_exhausted",
                 )
                 return
-            control = _JobControl(self.jobs, snapshot, self.stop)
-            control.checkpoint()
+            control = _JobControl(
+                self.jobs, snapshot, self.stop, self._metrics_for(job)
+            )
+            control.checkpoint(force_metrics=True)
             source = self.source_factory(snapshot)
             pipeline = self.pipeline_factory(snapshot, control.cancelled, control.progress)
+            control.attach(pipeline)
             with source:
                 result = pipeline.run(source)
             control.progress(
                 result.source_frames,
                 result.sampled_frames,
                 len(result.encoded_tracks),
+                force_metrics=True,
             )
             self.result_consumer(snapshot, result)
             control.checkpoint()

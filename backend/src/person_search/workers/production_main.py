@@ -8,6 +8,7 @@ import signal
 import subprocess
 import sys
 import threading
+from datetime import timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -15,12 +16,13 @@ from dotenv import load_dotenv
 from person_search.ai.configuration import VersionedAIConfigCache
 from person_search.ai.preflight import apply_resource_environment, load_resource_settings
 from person_search.ai.registry import RegistryMode, load_registry
-from person_search.config import StorageSettings
+from person_search.config import PostgresSettings, StorageSettings
 from person_search.services.jobs import JobService
 from person_search.services.track_ingestion import TrackIngestionService
 from person_search.services.video_staging import VideoStaging
 from person_search.storage.milvus.vectors import MilvusPersonTrackIndex
 from person_search.storage.minio.frames import MinioFrameStore
+from person_search.storage.postgres.client import PostgresStorage
 from person_search.storage.postgres.models import AIConfigVersion, Camera
 from person_search.storage.postgres.unit_of_work import UnitOfWork
 from person_search.storage.runtime import StorageRuntime
@@ -32,6 +34,14 @@ from person_search.workers.durable import (
 from person_search.workers.errors import AIErrorCode, AIWorkerError
 from person_search.workers.production import build_production_pipeline
 from person_search.workers.publication import ProductionTrackPublisher
+from person_search.workers.telemetry import (
+    JobMetricsCollector,
+    WorkerHeartbeatReporter,
+    WorkerRunState,
+    default_worker_id,
+)
+
+HEARTBEAT_RETENTION = timedelta(days=7)
 
 
 class PublisherNotConfigured:
@@ -48,6 +58,13 @@ def _required_path(name: str, default: Path | None = None) -> Path:
     if path is None or not path.is_file():
         raise ValueError(f"{name} must reference an existing file.")
     return path
+
+
+def _positive_float(name: str, default: float) -> float:
+    value = float(os.getenv(name) or default)
+    if value <= 0:
+        raise ValueError(f"{name} must be positive.")
+    return value
 
 
 def build_worker(*, stopped, result_consumer=None):
@@ -147,13 +164,59 @@ def build_worker(*, stopped, result_consumer=None):
         pipeline_factory=pipeline_factory,
         result_consumer=result_consumer or publish,
         stop=stopped,
+        metrics_factory=lambda job: JobMetricsCollector.for_claimed(
+            job,
+            interval_seconds=_positive_float("PERSON_SEARCH_WORKER_METRICS_SECONDS", 2.0),
+        ),
+        heartbeat=WorkerHeartbeatReporter(
+            unit_of_work, default_worker_id(), report_process=False
+        ),
     )
     return worker, storage
 
 
-def _supervise_child(stopped: threading.Event, deadline: int) -> None:
+def _heartbeat_loop(
+    reporter: WorkerHeartbeatReporter, stopped: threading.Event, interval: float
+) -> None:
+    while not stopped.wait(interval):
+        reporter.safe_beat()
+
+
+def start_supervisor_heartbeat(
+    stopped: threading.Event, *, interval: float | None = None
+) -> tuple[WorkerHeartbeatReporter, PostgresStorage]:
+    storage = PostgresStorage.from_settings(
+        PostgresSettings.from_environment(os.environ)
+    )
+    reporter = WorkerHeartbeatReporter(
+        lambda: UnitOfWork(storage.session_factory), default_worker_id()
+    )
+    reporter.safe_beat(WorkerRunState.IDLE, None)
+    try:
+        reporter.prune(HEARTBEAT_RETENTION)
+    except Exception:
+        pass
+    seconds = interval or _positive_float("PERSON_SEARCH_WORKER_HEARTBEAT_SECONDS", 10.0)
+    threading.Thread(
+        target=_heartbeat_loop,
+        args=(reporter, stopped, seconds),
+        name="worker-heartbeat",
+        daemon=True,
+    ).start()
+    return reporter, storage
+
+
+def _supervise_child(
+    stopped: threading.Event,
+    deadline: int,
+    heartbeat: WorkerHeartbeatReporter | None = None,
+) -> None:
+    environment = dict(os.environ)
+    if heartbeat is not None:
+        environment["PERSON_SEARCH_WORKER_ID"] = heartbeat.worker_id
     child = subprocess.Popen(
-        [sys.executable, "-m", "person_search.workers.production_main", "--once"]
+        [sys.executable, "-m", "person_search.workers.production_main", "--once"],
+        env=environment,
     )
     elapsed = 0
     while child.poll() is None and not stopped.wait(1):
@@ -168,6 +231,10 @@ def _supervise_child(stopped: threading.Event, deadline: int) -> None:
     except subprocess.TimeoutExpired:
         child.kill()
         child.wait()
+    if heartbeat is not None:
+        heartbeat.safe_beat(
+            WorkerRunState.STOPPING if stopped.is_set() else WorkerRunState.IDLE, None
+        )
 
 
 def main() -> int:
@@ -180,9 +247,14 @@ def main() -> int:
         signal.signal(name, lambda *_: stopped.set())
     if not args.once:
         deadline = int(os.getenv("PERSON_SEARCH_JOB_TIMEOUT_SECONDS", "3600"))
-        while not stopped.is_set():
-            _supervise_child(stopped, deadline)
-            stopped.wait(3)
+        heartbeat, heartbeat_storage = start_supervisor_heartbeat(stopped)
+        try:
+            while not stopped.is_set():
+                _supervise_child(stopped, deadline, heartbeat)
+                stopped.wait(3)
+        finally:
+            heartbeat.safe_beat(WorkerRunState.STOPPED, None)
+            heartbeat_storage.close()
         return 0
     worker, storage = build_worker(stopped=stopped.is_set)
     try:

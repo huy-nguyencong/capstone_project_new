@@ -30,6 +30,8 @@ const FILTER_FN = {
 const WORKER_LABEL = {
   IDLE: { label: 'Chờ việc', tone: 'mute' },
   RUNNING: { label: 'Đang xử lý', tone: 'ok' },
+  QUEUED: { label: 'Có job chờ', tone: 'warn' },
+  OFFLINE: { label: 'Worker không hoạt động', tone: 'err' },
   ERROR: { label: 'Mất tín hiệu', tone: 'err' },
 }
 
@@ -45,6 +47,7 @@ const ERROR_TEXT = {
   storage_ingestion_failed: 'Không lưu được track vào kho dữ liệu.',
   pipeline_unavailable: 'Không nạp được pipeline AI.',
   worker_retries_exhausted: 'Job thất bại sau nhiều lần thử lại.',
+  worker_offline: 'Có job chờ nhưng worker không gửi heartbeat.',
 }
 
 const timeFormatter = new Intl.DateTimeFormat('vi-VN', { timeStyle: 'medium' })

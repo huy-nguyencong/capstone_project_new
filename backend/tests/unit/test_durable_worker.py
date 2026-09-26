@@ -10,8 +10,9 @@ import pytest
 from person_search.storage.postgres.models import JobSourceType, JobStatus
 from person_search.workers.durable import SequentialProductionWorker, WorkerRetryPolicy
 from person_search.workers.errors import AIErrorCode, AIWorkerError
-from person_search.workers.production import ProductionPipelineResult
+from person_search.workers.production import ProductionPipelineResult, StageTiming
 from person_search.workers.production_main import PublisherNotConfigured, _supervise_child
+from person_search.workers.telemetry import WorkerRunState
 
 pytestmark = pytest.mark.unit
 
@@ -284,3 +285,153 @@ def test_supervisor_terminates_child_promptly_on_graceful_stop(monkeypatch):
     _supervise_child(StopEvent(), 60)
     child.terminate.assert_called_once()
     child.kill.assert_not_called()
+
+
+class MetricJobs(Jobs):
+    def __init__(self, jobs, **kwargs):
+        super().__init__(jobs, **kwargs)
+        self.metrics = []
+
+    def checkpoint(self, job_id, token, processed, sampled, completed, published, **kwargs):
+        if "metrics" in kwargs:
+            self.metrics.append((processed, sampled, completed, kwargs["metrics"]))
+        return super().checkpoint(job_id, token, processed, sampled, completed, published)
+
+
+class TimedPipeline(Pipeline):
+    def stage_timings(self):
+        return (StageTiming("detector", 2, 30.0),)
+
+
+class Collector:
+    def __init__(self):
+        self.attached = None
+        self.snapshots = 0
+
+    def attach(self, timings):
+        self.attached = timings
+
+    def due(self):
+        return False
+
+    def snapshot(self, source_frames, sampled_frames, completed_tracks):
+        self.snapshots += 1
+        return {"source_fps": float(source_frames), "track_count": float(completed_tracks)}
+
+
+class Heartbeat:
+    def __init__(self):
+        self.events = []
+
+    def busy(self, job_id):
+        self.events.append(("busy", job_id))
+        return True
+
+    def idle(self):
+        self.events.append(("idle", None))
+        return True
+
+
+def metric_worker(jobs, collector, heartbeat=None, *, error=None, factory_error=False):
+    def metrics_factory(claimed):
+        if factory_error:
+            raise RuntimeError("broken metrics")
+        return collector
+
+    return SequentialProductionWorker(
+        jobs,
+        lock_factory=Lock,
+        source_factory=lambda snapshot: Source(),
+        pipeline_factory=lambda snapshot, cancelled, progress: TimedPipeline(
+            progress, error=error
+        ),
+        result_consumer=lambda snapshot, result: None,
+        metrics_factory=metrics_factory,
+        heartbeat=heartbeat,
+    )
+
+
+def test_metrics_are_forced_at_start_and_end_and_throttled_between():
+    claimed = job()
+    jobs = MetricJobs([claimed])
+    collector = Collector()
+
+    assert metric_worker(jobs, collector).run_once() is True
+
+    assert jobs.finished == [(claimed.id, JobStatus.SUCCEEDED, None)]
+    assert [item[:3] for item in jobs.metrics] == [(0, 0, 0), (20, 2, 0)]
+    assert jobs.metrics[-1][3] == {"source_fps": 20.0, "track_count": 0.0}
+    assert collector.attached() == (StageTiming("detector", 2, 30.0),)
+    assert len(jobs.checkpoints) == 5
+
+
+def test_due_metrics_are_attached_to_regular_checkpoints():
+    claimed = job()
+    jobs = MetricJobs([claimed])
+    collector = Collector()
+    collector.due = lambda: True
+
+    metric_worker(jobs, collector).run_once()
+
+    assert len(jobs.metrics) == len(jobs.checkpoints)
+
+
+def test_metrics_factory_failure_does_not_fail_the_job():
+    claimed = job()
+    jobs = MetricJobs([claimed])
+
+    metric_worker(jobs, Collector(), factory_error=True).run_once()
+
+    assert jobs.metrics == []
+    assert jobs.finished == [(claimed.id, JobStatus.SUCCEEDED, None)]
+
+
+def test_heartbeat_marks_busy_then_idle_even_when_job_fails():
+    claimed = job()
+    jobs = MetricJobs([claimed])
+    heartbeat = Heartbeat()
+
+    metric_worker(
+        jobs,
+        Collector(),
+        heartbeat,
+        error=AIWorkerError(AIErrorCode.DETECTOR_OUTPUT_INVALID),
+    ).run_once()
+
+    assert heartbeat.events == [("busy", claimed.id), ("idle", None)]
+    assert jobs.finished[0][1] is JobStatus.FAILED
+
+
+def test_idle_worker_does_not_report_busy():
+    heartbeat = Heartbeat()
+    assert metric_worker(MetricJobs([]), Collector(), heartbeat).run_once() is False
+    assert heartbeat.events == []
+
+
+def test_supervisor_passes_worker_id_and_reports_idle_after_child(monkeypatch):
+    captured = {}
+    child = SimpleNamespace(
+        poll=Mock(return_value=0),
+        terminate=Mock(),
+        kill=Mock(),
+        wait=Mock(return_value=0),
+    )
+
+    def popen(*args, **kwargs):
+        captured.update(kwargs)
+        return child
+
+    monkeypatch.setattr("person_search.workers.production_main.subprocess.Popen", popen)
+    reporter = SimpleNamespace(worker_id="host:9", safe_beat=Mock(return_value=True))
+
+    class Running:
+        def wait(self, seconds):
+            return False
+
+        def is_set(self):
+            return False
+
+    _supervise_child(Running(), 60, reporter)
+
+    assert captured["env"]["PERSON_SEARCH_WORKER_ID"] == "host:9"
+    reporter.safe_beat.assert_called_once_with(WorkerRunState.IDLE, None)

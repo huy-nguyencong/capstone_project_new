@@ -6,7 +6,7 @@ import time
 import uuid
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 from typing import Any
 
@@ -22,6 +22,7 @@ from person_search.storage.postgres.models import (
     JobStatus,
     ProcessingJob,
     RtspStatus,
+    WorkerHeartbeat,
 )
 from person_search.workers.contracts import SampledFrame, SourceFrame
 from person_search.workers.pipeline import Pipeline
@@ -29,6 +30,22 @@ from person_search.workers.pipeline import Pipeline
 TERMINAL_JOBS = (JobStatus.SUCCEEDED, JobStatus.FAILED, JobStatus.CANCELLED)
 PROBE_TEXT = "A person walking."
 TRACKER_WARMUP_FRAMES = 5
+HEARTBEAT_STALE_AFTER = timedelta(seconds=45)
+RTSP_STATUS_STALE_AFTER = timedelta(minutes=5)
+JOB_METRICS_STALE_AFTER = timedelta(seconds=30)
+ERROR_WINDOW = timedelta(hours=24)
+MAX_WORKER_INSTANCES = 10
+CAMERA_METRIC_KEYS = (
+    "source_fps",
+    "sampled_fps",
+    "detector_ms",
+    "tracker_ms",
+    "encoder_ms",
+    "queue_ms",
+    "track_count",
+    "rss_bytes",
+    "cpu_percent",
+)
 
 
 class Outcome(StrEnum):
@@ -44,6 +61,7 @@ class WorkerState(StrEnum):
     RUNNING = "RUNNING"
     ERROR = "ERROR"
     DISABLED = "DISABLED"
+    OFFLINE = "OFFLINE"
 
 
 @dataclass(frozen=True, slots=True)
@@ -76,6 +94,45 @@ def iso(value: datetime | None) -> str | None:
     return value.astimezone(UTC).isoformat().replace("+00:00", "Z")
 
 
+def freshness(
+    observed_at: datetime | None, now: datetime, max_age: timedelta
+) -> dict[str, Any]:
+    if observed_at is None:
+        return {"observed_at": None, "age_seconds": None, "stale": True}
+    if observed_at.tzinfo is None:
+        observed_at = observed_at.replace(tzinfo=UTC)
+    age = max((now - observed_at).total_seconds(), 0.0)
+    return {
+        "observed_at": iso(observed_at),
+        "age_seconds": round(age, 1),
+        "stale": age > max_age.total_seconds(),
+    }
+
+
+def worker_alive(heartbeat: Any | None, now: datetime) -> bool:
+    if heartbeat is None or heartbeat.state == "STOPPED":
+        return False
+    return not freshness(heartbeat.heartbeat_at, now, HEARTBEAT_STALE_AFTER)["stale"]
+
+
+def camera_metrics(
+    job: Any | None, failed_jobs: int, now: datetime, *, live: bool
+) -> dict[str, Any]:
+    values = dict(getattr(job, "metrics", None) or {}) if job is not None else {}
+    metrics: dict[str, Any] = {key: values.get(key) for key in CAMERA_METRIC_KEYS}
+    detector, tracker = values.get("detector_ms"), values.get("tracker_ms")
+    metrics["processed_fps"] = values.get("sampled_fps")
+    metrics["latency_ms"] = (
+        round(detector + tracker, 3) if detector is not None and tracker is not None else None
+    )
+    metrics["retries"] = values.get("error_count")
+    metrics["error_count"] = failed_jobs
+    updated = getattr(job, "metrics_updated_at", None) if job is not None else None
+    metrics["live"] = live and updated is not None
+    metrics["freshness"] = freshness(updated, now, JOB_METRICS_STALE_AFTER)
+    return metrics
+
+
 def overall(steps: Sequence[Step]) -> Outcome:
     outcomes = {step.outcome for step in steps}
     if Outcome.FAILED in outcomes:
@@ -92,23 +149,32 @@ def connection_state(camera: Any) -> str:
 
 
 def worker_state(
-    camera: Any, active_job: Any | None, last_job: Any | None, now: datetime
+    camera: Any,
+    active_job: Any | None,
+    last_job: Any | None,
+    now: datetime,
+    *,
+    alive: bool = True,
 ) -> tuple[WorkerState, str | None]:
     if not camera.ai_enabled:
         return WorkerState.DISABLED, None
     if active_job is not None and active_job.status is JobStatus.RUNNING:
+        if getattr(active_job, "error_code", None):
+            return WorkerState.QUEUED, active_job.error_code
         if active_job.lease_expires_at is not None and active_job.lease_expires_at < now:
             return WorkerState.ERROR, "worker_heartbeat_lost"
         return WorkerState.RUNNING, None
     if active_job is not None:
-        return WorkerState.QUEUED, None
+        return WorkerState.QUEUED, None if alive else "worker_offline"
     if last_job is not None and last_job.status is JobStatus.FAILED:
         return WorkerState.ERROR, last_job.error_code or "job_failed"
     return WorkerState.IDLE, None
 
 
-def camera_category(camera: Any, connection: str, state: WorkerState) -> str:
-    if state is WorkerState.ERROR:
+def camera_category(
+    camera: Any, connection: str, state: WorkerState, error: str | None = None
+) -> str:
+    if state in (WorkerState.ERROR, WorkerState.OFFLINE) or error == "worker_offline":
         return "ai_issues"
     if connection in (RtspStatus.OFFLINE.value, RtspStatus.ERROR.value):
         return "connection_issues"
@@ -374,32 +440,103 @@ class MonitoringService:
                     .order_by(ProcessingJob.camera_id, ProcessingJob.updated_at.desc())
                 )
             }
-            last_heartbeat = session.scalar(select(func.max(ProcessingJob.heartbeat_at)))
-            items = self._camera_rows(cameras, active_jobs, last_jobs, now)
+            failed_counts = dict(
+                session.execute(
+                    select(ProcessingJob.camera_id, func.count())
+                    .where(
+                        ProcessingJob.status == JobStatus.FAILED,
+                        ProcessingJob.updated_at >= now - ERROR_WINDOW,
+                    )
+                    .group_by(ProcessingJob.camera_id)
+                ).all()
+            )
+            heartbeats = list(
+                session.scalars(
+                    select(WorkerHeartbeat)
+                    .order_by(WorkerHeartbeat.heartbeat_at.desc())
+                    .limit(MAX_WORKER_INSTANCES)
+                )
+            )
+            last_job_heartbeat = session.scalar(select(func.max(ProcessingJob.heartbeat_at)))
+            alive = any(worker_alive(row, now) for row in heartbeats)
+            items = self._camera_rows(
+                cameras, active_jobs, last_jobs, failed_counts, now, alive=alive
+            )
         summary = {"healthy": 0, "connection_issues": 0, "ai_issues": 0, "unknown": 0}
         for item in items:
             summary[item["category"]] += 1
-        running = [job for job in active_jobs if job.status is JobStatus.RUNNING]
-        if any(job.lease_expires_at and job.lease_expires_at < now for job in running):
-            worker = WorkerState.ERROR
-        elif running:
-            worker = WorkerState.RUNNING
-        else:
-            worker = WorkerState.IDLE
+        storage = self._storage()
+        encoder = self._encoder_status()
+        worker = self._worker(active_jobs, heartbeats, last_job_heartbeat, now, alive)
         return {
             "generated_at": iso(now),
             "summary": summary,
             "cameras": items,
-            "storage": self._storage(),
-            "encoder": self._encoder_status(),
-            "worker": {
-                "state": worker.value,
-                "queue_depth": sum(job.status is JobStatus.PENDING for job in active_jobs),
-                "last_heartbeat_at": iso(last_heartbeat),
-            },
+            "storage": storage,
+            "encoder": encoder,
+            "worker": worker,
+            "components": [
+                *(
+                    {"component": f"STORAGE_{name.upper()}", "state": state, "checked_at": iso(now)}
+                    for name, state in storage.items()
+                ),
+                {"component": "SEARCH_ENCODER", "state": encoder, "checked_at": iso(now)},
+                {
+                    "component": "AI_WORKER",
+                    "state": worker["state"],
+                    "checked_at": worker["freshness"]["observed_at"],
+                },
+            ],
         }
 
-    def _camera_rows(self, cameras, active_jobs, last_jobs, now) -> list[dict[str, Any]]:
+    def _worker(self, active_jobs, heartbeats, last_job_heartbeat, now, alive) -> dict[str, Any]:
+        running = [job for job in active_jobs if job.status is JobStatus.RUNNING]
+        pending = [job for job in active_jobs if job.status is JobStatus.PENDING]
+        processing = [job for job in running if not getattr(job, "error_code", None)]
+        waiting = len(pending) + len(running) - len(processing)
+        lease_lost = any(
+            job.lease_expires_at is not None and job.lease_expires_at < now for job in processing
+        )
+        if lease_lost:
+            state = WorkerState.ERROR
+        elif not alive:
+            state = WorkerState.OFFLINE
+        elif processing:
+            state = WorkerState.RUNNING
+        elif waiting:
+            state = WorkerState.QUEUED
+        else:
+            state = WorkerState.IDLE
+        latest = heartbeats[0] if heartbeats else None
+        observed = latest.heartbeat_at if latest is not None else None
+        oldest = min((job.created_at for job in pending), default=None)
+        return {
+            "state": state.value,
+            "queue_depth": len(pending),
+            "retry_waiting": len(running) - len(processing),
+            "oldest_queued_at": iso(oldest),
+            "last_heartbeat_at": iso(observed or last_job_heartbeat),
+            "last_job_heartbeat_at": iso(last_job_heartbeat),
+            "freshness": freshness(observed, now, HEARTBEAT_STALE_AFTER),
+            "instances": [
+                {
+                    "id": row.worker_id,
+                    "state": row.state,
+                    "alive": worker_alive(row, now),
+                    "current_job_id": str(row.current_job_id) if row.current_job_id else None,
+                    "started_at": iso(row.started_at),
+                    "state_changed_at": iso(row.state_changed_at),
+                    "rss_bytes": row.rss_bytes,
+                    "cpu_percent": row.cpu_percent,
+                    "freshness": freshness(row.heartbeat_at, now, HEARTBEAT_STALE_AFTER),
+                }
+                for row in heartbeats
+            ],
+        }
+
+    def _camera_rows(
+        self, cameras, active_jobs, last_jobs, failed_counts, now, *, alive: bool = True
+    ) -> list[dict[str, Any]]:
         by_camera: dict[uuid.UUID, ProcessingJob] = {}
         for job in active_jobs:
             current = by_camera.get(job.camera_id)
@@ -411,9 +548,11 @@ class MonitoringService:
         for camera, area in cameras:
             active = by_camera.get(camera.id)
             last = last_jobs.get(camera.id)
-            state, error = worker_state(camera, active, last, now)
+            state, error = worker_state(camera, active, last, now, alive=alive)
             connection = connection_state(camera)
             heartbeat = active.heartbeat_at if active is not None else None
+            running = active is not None and active.status is JobStatus.RUNNING
+            metrics_job = active if running else last
             items.append(
                 {
                     "id": str(camera.id),
@@ -422,14 +561,32 @@ class MonitoringService:
                     "area_name": area.name,
                     "status": camera.status.value,
                     "connection": connection,
+                    "connection_freshness": (
+                        freshness(camera.last_checked_at, now, RTSP_STATUS_STALE_AFTER)
+                        if camera.rtsp_url
+                        else None
+                    ),
                     "last_checked_at": iso(camera.last_checked_at),
                     "ai_enabled": camera.ai_enabled,
                     "worker_state": state.value,
                     "active_job_id": str(active.id) if active is not None else None,
+                    "active_job_status": active.status.value if active is not None else None,
+                    "last_job_status": last.status.value if last is not None else None,
+                    "last_job_ended_at": iso(last.ended_at) if last is not None else None,
                     "last_heartbeat_at": iso(heartbeat),
+                    "heartbeat_freshness": (
+                        freshness(heartbeat, now, HEARTBEAT_STALE_AFTER)
+                        if running
+                        else None
+                    ),
                     "last_error": error,
-                    "metrics": {"source_fps": None, "processed_fps": None, "latency_ms": None},
-                    "category": camera_category(camera, connection, state),
+                    "metrics": camera_metrics(
+                        metrics_job,
+                        int(failed_counts.get(camera.id, 0)),
+                        now,
+                        live=running,
+                    ),
+                    "category": camera_category(camera, connection, state, error),
                 }
             )
         return items
@@ -444,12 +601,7 @@ class MonitoringService:
     def _encoder_status(self) -> str:
         try:
             config = self._search.active_config()
-            gateway = self._search.gateway(config.encoder_version)
-            if getattr(gateway, "synthetic_metadata", None) is not None:
-                return "UP"
-            gateway.text(
-                PROBE_TEXT, version=config.encoder_version, dimension=config.encoder_dimension
-            )
+            self._search.gateway(config.encoder_version)
             return "UP"
         except EncoderUnavailableError:
             return "DOWN"

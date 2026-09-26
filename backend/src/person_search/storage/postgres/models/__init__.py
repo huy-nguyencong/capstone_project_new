@@ -28,6 +28,7 @@ from person_search.storage.postgres.models.person_track import (
 )
 from person_search.storage.postgres.models.processing_job import ProcessingJob
 from person_search.storage.postgres.models.user import User
+from person_search.storage.postgres.models.worker_heartbeat import WorkerHeartbeat
 
 __all__ = [
     "AIConfigStatus",
@@ -54,4 +55,5 @@ __all__ = [
     "User",
     "UserRole",
     "UserStatus",
+    "WorkerHeartbeat",
 ]
