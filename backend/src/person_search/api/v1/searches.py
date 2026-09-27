@@ -20,6 +20,8 @@ from person_search.services.track_imagery import (
     ImageVariant,
     TrackImageNotFoundError,
     TrackImageUnavailableError,
+    parse_crop_aspect,
+    parse_crop_mark,
 )
 from person_search.services.track_search import (
     CameraNotActiveError,
@@ -81,6 +83,11 @@ def text_search():
     text = body.pop("text", None)
     if not isinstance(text, str) or len(text.strip()) < 4 or len(text.strip()) > 1000:
         raise ApiError(422, "text_too_short", "Mô tả phải có từ 4 đến 1000 ký tự.")
+    # RaSa is trained on English captions only; non-ASCII letters (e.g. Vietnamese) are rejected.
+    if any(character.isalpha() and not character.isascii() for character in text):
+        raise ApiError(
+            422, "text_not_english", "Chỉ hỗ trợ mô tả bằng tiếng Anh, không nhận tiếng Việt."
+        )
     return jsonify(
         _run(
             lambda: search_service().search_text(current_actor().id, text.strip(), **_filters(body))
@@ -111,7 +118,15 @@ def attribute_search():
 @search_blueprint.get("/search-results/<uuid:track_id>/crop")
 @require_auth(UserRole.OPERATOR)
 def result_crop(track_id: uuid.UUID):
-    return _track_image(track_id, ImageVariant.PERSON_CROP)
+    try:
+        aspect = parse_crop_aspect(request.args.get("aspect"))
+    except ValueError as error:
+        raise ApiError(422, "invalid_aspect", str(error)) from error
+    try:
+        mark = parse_crop_mark(request.args.get("mark"))
+    except ValueError as error:
+        raise ApiError(422, "invalid_mark", str(error)) from error
+    return _track_image(track_id, ImageVariant.PERSON_CROP, aspect, mark)
 
 
 @search_blueprint.get("/search-results/<uuid:track_id>/frame")
@@ -233,9 +248,16 @@ def _response(value: SearchResponse) -> dict[str, object]:
     }
 
 
-def _track_image(track_id: uuid.UUID, variant: ImageVariant):
+def _track_image(
+    track_id: uuid.UUID,
+    variant: ImageVariant,
+    aspect: float | None = None,
+    mark: bool = False,
+):
     try:
-        image = image_service().search_result_image(current_actor().id, track_id, variant)
+        image = image_service().search_result_image(
+            current_actor().id, track_id, variant, aspect=aspect, mark=mark
+        )
     except ImageAccessDeniedError as error:
         raise ApiError(403, "forbidden", "Bạn không có quyền xem ảnh này.") from error
     except TrackImageNotFoundError as error:

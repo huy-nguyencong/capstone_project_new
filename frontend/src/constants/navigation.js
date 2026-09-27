@@ -54,7 +54,7 @@ export const NAVIGATION = {
       section: 'Điều tra',
       items: [
         { to: PATHS.search, label: 'Tìm kiếm người', icon: MagnifyingGlassIcon },
-        { to: PATHS.cases, label: 'Case của tôi', icon: FolderSimpleIcon },
+        { to: PATHS.cases, label: 'Vụ việc của tôi', icon: FolderSimpleIcon },
       ],
     },
   ],

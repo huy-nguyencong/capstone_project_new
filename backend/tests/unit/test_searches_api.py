@@ -107,6 +107,19 @@ def test_search_rejects_invalid_top_k_and_non_operator() -> None:
     assert forbidden.status_code == 403
 
 
+def test_text_search_rejects_vietnamese_query() -> None:
+    app, _ = _app()
+    client = app.test_client()
+    csrf = _login(client)
+    response = client.post(
+        "/api/v1/searches/text",
+        json={"text": "người mặc áo đỏ, quần đen", "top_k": 8},
+        headers={"X-CSRF-Token": csrf},
+    )
+    assert response.status_code == 422
+    assert response.get_json()["error"]["code"] == "text_not_english"
+
+
 def test_search_filter_on_inactive_camera_is_rejected() -> None:
     app, _ = _app()
     client = app.test_client()

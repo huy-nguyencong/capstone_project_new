@@ -54,13 +54,15 @@ def test_attribute_prompt_is_deterministic_english() -> None:
     assert (
         attributes_prompt(
             {
-                "upper_color": "red",
-                "lower_color": "black",
-                "upper_type": "jacket",
-                "has_backpack": True,
+                "gender": "woman",
+                "upper_color": "navy",
+                "upper_type": "coat",
+                "lower_color": "blue",
+                "lower_type": "jeans",
+                "carrying": "backpack",
             }
         )
-        == "A person wearing red jacket and black pants, carrying a backpack."
+        == "A woman wearing a navy coat and blue jeans, carrying a backpack."
     )
 
 
@@ -71,5 +73,8 @@ def test_attribute_prompt_requires_supported_non_empty_attributes() -> None:
         attributes_prompt({"hat": "red"})
     with pytest.raises(ValueError):
         attributes_prompt({"upper_color": "purple"})
+    with pytest.raises(ValueError):
+        # The negated backpack filter was removed; the old field is no longer accepted.
+        attributes_prompt({"has_backpack": False})
     with pytest.raises(ValueError):
         attributes_prompt({"upper_type": "dress", "lower_color": "black"})

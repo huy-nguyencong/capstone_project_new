@@ -15,7 +15,7 @@ from person_search.ai.encoders import (
 )
 from person_search.ai.preflight import apply_resource_environment, load_resource_settings
 from person_search.ai.registry import PipelineSelection
-from person_search.ai.trackers import build_bytetrack
+from person_search.ai.trackers import build_tracker
 
 
 class ModelLifecycle(Protocol):
@@ -119,7 +119,7 @@ class ProductionComponentFactory:
         )
 
     def tracker(self, selection: PipelineSelection):
-        return build_bytetrack(
+        return build_tracker(
             selection.tracker,
             artifact_root=self.artifact_root,
             device=self.device,

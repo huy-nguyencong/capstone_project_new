@@ -37,7 +37,7 @@ def _production_loaders(registry_path, artifact_root, opened):
 
     from person_search.ai.detectors import build_yolo_detector, load_detector_settings
     from person_search.ai.encoders import build_rasa_image_encoder, load_rasa_settings
-    from person_search.ai.trackers import build_bytetrack
+    from person_search.ai.trackers import build_tracker
 
     config_root = Path(__file__).resolve().parents[1] / "config"
     detector_config = os.getenv("PERSON_SEARCH_DETECTOR_CONFIG") or (
@@ -53,7 +53,10 @@ def _production_loaders(registry_path, artifact_root, opened):
             device=device,
             settings=load_detector_settings(detector_config),
         ),
-        "bytetrack": lambda entry, device: build_bytetrack(
+        "bytetrack": lambda entry, device: build_tracker(
+            entry, artifact_root=artifact_root, device=device
+        ),
+        "botsort": lambda entry, device: build_tracker(
             entry, artifact_root=artifact_root, device=device
         ),
         "rasa": lambda entry, device: build_rasa_image_encoder(

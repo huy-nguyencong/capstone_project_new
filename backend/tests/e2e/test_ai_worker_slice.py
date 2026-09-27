@@ -53,7 +53,7 @@ PASSWORD = "e2e-password"
 DETECTOR_ID = "yolo11n_coco"
 TRACKER_ID = "bytetrack_v1"
 TEXT_QUERY = "A person walking."
-ATTRIBUTES = {"upper_color": "black", "has_backpack": False}
+ATTRIBUTES = {"upper_color": "black", "lower_type": "pants"}
 
 
 @dataclass

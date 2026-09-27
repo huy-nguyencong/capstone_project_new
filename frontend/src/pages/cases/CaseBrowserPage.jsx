@@ -5,6 +5,7 @@ import { Alert } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/Button'
 import { SelectField, TextField } from '@/components/ui/Form'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { Spinner } from '@/components/ui/Spinner'
 import { PATHS } from '@/constants/navigation'
 import { CaseDetail } from '@/features/cases/CaseDetail'
@@ -14,18 +15,29 @@ import { viewerApi } from '@/services/api/viewer'
 
 const COPY = {
   operator: {
-    title: 'Case của tôi',
-    desc: 'Các Case do bạn phụ trách: tiêu đề, ghi chú và kết quả tìm kiếm đã lưu.',
-    empty: 'Bạn chưa có Case nào. Tạo Case từ một kết quả trong trang Tìm kiếm.',
+    title: 'Vụ việc của tôi',
+    desc: 'Các vụ việc do bạn phụ trách: tiêu đề, ghi chú và kết quả tìm kiếm đã lưu.',
+    empty: 'Bạn chưa có vụ việc nào. Tạo vụ việc từ một kết quả trong trang Tìm kiếm.',
   },
   viewer: {
     title: 'Hồ sơ vụ việc',
-    desc: 'Toàn bộ Case trên hệ thống, chế độ chỉ xem.',
-    empty: 'Không có Case nào phù hợp.',
+    desc: 'Toàn bộ vụ việc trên hệ thống, chế độ chỉ xem.',
+    empty: 'Không có vụ việc nào phù hợp.',
   },
 }
 
 const PAGE_SIZE = 20
+
+const EMPTY_BY_STATUS = {
+  OPEN: 'Không có vụ việc nào đang xử lý.',
+  CLOSED: 'Chưa có vụ việc nào hoàn thành.',
+}
+
+const STATUS_FILTERS = [
+  { value: '', label: 'Tất cả' },
+  { value: 'OPEN', label: 'Đang xử lý' },
+  { value: 'CLOSED', label: 'Hoàn thành' },
+]
 
 const OWNER_STATUS = {
   locked: 'đã khóa',
@@ -40,13 +52,14 @@ const listParams = (filters) => ({
   owner_user_id: filters.op || undefined,
   created_from: localDayToUtc(filters.from, false),
   created_to: localDayToUtc(filters.to, true),
+  status: filters.status || undefined,
   limit: PAGE_SIZE,
 })
 
 export default function CaseBrowserPage({ mode }) {
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
-  const [filters, setFilters] = useState({ op: '', from: '', to: '' })
+  const [filters, setFilters] = useState({ op: '', from: '', to: '', status: '' })
   const [cases, setCases] = useState([])
   const [operators, setOperators] = useState([])
   const [nextCursor, setNextCursor] = useState(null)
@@ -117,14 +130,24 @@ export default function CaseBrowserPage({ mode }) {
 
   const applyChange = (next) => {
     setDetail(next)
+    // A case whose new status no longer matches the status filter leaves this list; the
+    // selection then moves to the next case (or the empty state).
+    if (filters.status && next.case.status.toUpperCase() !== filters.status) {
+      setCases((items) => items.filter((c) => c.id !== next.case.id))
+      setParams({}, { replace: true })
+      return
+    }
     setCases((items) => items.map((c) => (c.id === next.case.id ? next.case : c)))
   }
 
-  const setFilter = (key) => (e) => {
+  const setFilterValue = (key, value) => {
     setLoading(true)
     setError(null)
-    setFilters((f) => ({ ...f, [key]: e.target.value }))
+    setFilters((f) => ({ ...f, [key]: value }))
+    // The previously selected case may not belong to the new filtered list.
+    setParams({}, { replace: true })
   }
+  const setFilter = (key) => (e) => setFilterValue(key, e.target.value)
 
   return (
     <>
@@ -136,14 +159,21 @@ export default function CaseBrowserPage({ mode }) {
         )}
       </PageHeader>
 
+      <SegmentedControl
+        options={STATUS_FILTERS}
+        value={filters.status}
+        onChange={(value) => setFilterValue('status', value)}
+        className="mb-3"
+      />
+
       {!isOperator && (
         <div className="mb-3.5 flex flex-wrap items-end gap-2.5">
           <SelectField
-            label="Operator phụ trách"
+            label="Người phụ trách"
             className="min-w-[200px]"
             value={filters.op}
             onChange={setFilter('op')}
-            placeholder="Tất cả Operator"
+            placeholder="Tất cả"
             options={operators.map((op) => ({
               value: op.id,
               label: op.status === 'active' ? op.name : `${op.name} (${OWNER_STATUS[op.status]})`,
@@ -164,7 +194,9 @@ export default function CaseBrowserPage({ mode }) {
             selectedId={selectedId}
             onSelect={(id) => setParams({ case: id }, { replace: true })}
             metaFor={(c) => `${isOperator ? '' : `${c.owner.name} · `}Cập nhật ${c.updated}`}
-            emptyText={loading ? 'Đang tải Case…' : copy.empty}
+            emptyText={
+              loading ? 'Đang tải vụ việc…' : (EMPTY_BY_STATUS[filters.status] ?? copy.empty)
+            }
           />
           {nextCursor && (
             <Button onClick={loadMore} disabled={loading}>
@@ -172,10 +204,10 @@ export default function CaseBrowserPage({ mode }) {
             </Button>
           )}
         </div>
-        {detailError?.id === selectedId && detail?.case.id !== selectedId && (
+        {selectedId && detailError?.id === selectedId && detail?.case.id !== selectedId && (
           <Alert>{detailError.message}</Alert>
         )}
-        {detail && detail.case.id === selectedId && (
+        {selectedId && detail?.case.id === selectedId && (
           <CaseDetail
             key={detail.case.id}
             detail={detail}

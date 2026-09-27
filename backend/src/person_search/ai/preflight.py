@@ -507,7 +507,7 @@ _ADAPTER_PACKAGES = {
     "ultralytics_yolo": ("torch", "torchvision", "ultralytics"),
     "yolox": ("torch", "torchvision"),
     "bytetrack": ("ultralytics", "lap"),
-    "botsort": (),
+    "botsort": ("ultralytics", "lap"),
     "rasa": ("torch", "torchvision", "transformers", "timm"),
     "demo_detector": (),
     "demo_tracker": (),

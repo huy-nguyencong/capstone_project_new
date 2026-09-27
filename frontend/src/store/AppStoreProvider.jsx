@@ -6,6 +6,8 @@ import { AppStoreContext } from './contexts'
 const SYSTEM_ERROR =
   'Không thể đăng nhập tại thời điểm hiện tại do lỗi hệ thống. Vui lòng thử lại sau.'
 const EXPIRED_NOTICE = 'Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.'
+const ACTIVITY_KEY = 'person-search.last-activity'
+const ACTIVITY_EVENTS = ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart']
 
 export function AppStoreProvider({ children }) {
   const [me, setMe] = useState(null)
@@ -39,30 +41,70 @@ export function AppStoreProvider({ children }) {
     [],
   )
 
+  // UC-15: only real user activity extends the session. Background polling must not keep an
+  // idle session alive, so refresh is skipped while idle and the session ends after the idle
+  // timeout (the server refreshes every idle/2). Activity is shared across tabs.
   const userId = me?.id
   useEffect(() => {
     if (!userId || !refreshAfterMs) return undefined
+    const idleMs = refreshAfterMs * 2
+    const checkMs = Math.min(refreshAfterMs, 30_000)
     let active = true
     let timer
+    let lastActivity = Date.now()
+    let lastRefresh = Date.now()
+    let lastShared = 0
 
-    const schedule = (delay) => {
-      timer = window.setTimeout(async () => {
+    const readShared = () => {
+      try {
+        return Number(localStorage.getItem(ACTIVITY_KEY)) || 0
+      } catch {
+        return 0
+      }
+    }
+    const markActive = () => {
+      lastActivity = Date.now()
+      if (lastActivity - lastShared < 5_000) return
+      lastShared = lastActivity
+      try {
+        localStorage.setItem(ACTIVITY_KEY, String(lastActivity))
+      } catch {
+        // Per-tab tracking still works without storage.
+      }
+    }
+    markActive()
+    ACTIVITY_EVENTS.forEach((name) => window.addEventListener(name, markActive, { passive: true }))
+
+    const tick = async () => {
+      if (!active) return
+      const now = Date.now()
+      const latest = Math.max(lastActivity, readShared())
+      if (now - latest >= idleMs) {
+        await authApi.logout().catch(() => null)
+        if (!active) return
+        setMe(null)
+        setRefreshAfterMs(null)
+        setLogoutNotice(EXPIRED_NOTICE)
+        return
+      }
+      if (latest > lastRefresh && now - lastRefresh >= refreshAfterMs) {
         try {
           const session = await authApi.refresh()
           if (!active) return
+          lastRefresh = Date.now()
           setMe(session.user)
-          schedule(session.refreshAfterMs || delay)
-        } catch (error) {
-          if (!active) return
-          if (!error.status || error.status >= 500) schedule(Math.min(delay, 60_000))
+        } catch {
+          // 401 is handled by the API interceptor; transient errors retry on the next tick.
         }
-      }, delay)
+      }
+      if (active) timer = window.setTimeout(tick, checkMs)
     }
 
-    schedule(refreshAfterMs)
+    timer = window.setTimeout(tick, checkMs)
     return () => {
       active = false
       window.clearTimeout(timer)
+      ACTIVITY_EVENTS.forEach((name) => window.removeEventListener(name, markActive))
     }
   }, [userId, refreshAfterMs])
 

@@ -568,6 +568,12 @@ def registry_from_dict(
     )
 
 
+# Production models whose local preflight (load probe) has passed on the demo machine.
+PRODUCTION_PREFLIGHT_IDS = frozenset(
+    {"yolo11n_coco", "bytetrack_v1", "botsort_v1", "rasa_cuhk_pedes_v1"}
+)
+
+
 def load_registry(
     manifest_path: str | Path,
     *,

@@ -25,12 +25,8 @@ export const searchesApi = {
     }
     return apiService.post('/searches/attributes', {
       ...shared,
-      attributes: {
-        upper_color: state.attrs.shirt,
-        lower_color: state.attrs.pants,
-        upper_type: state.attrs.type,
-        has_backpack: state.attrs.bag,
-      },
+      // Only chosen attributes are sent; field names match the API.
+      attributes: Object.fromEntries(Object.entries(state.attrs).filter(([, v]) => v != null)),
     })
   },
 }

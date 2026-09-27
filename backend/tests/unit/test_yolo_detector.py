@@ -21,6 +21,7 @@ from person_search.ai.registry import (
     DeviceKind,
     Provenance,
 )
+from person_search.ai.trackers import load_bytetrack_settings
 from person_search.workers.contracts import ModelLineage, SampledFrame, SourceFrame
 from person_search.workers.errors import AIErrorCode, AIWorkerError
 
@@ -270,6 +271,16 @@ def test_versioned_detector_settings_load_strictly(tmp_path: Path) -> None:
     invalid.write_text('{"schema_version":"ultralytics-yolo-detector/v1"}', encoding="utf-8")
     with pytest.raises(ValueError, match="fields"):
         load_detector_settings(invalid)
+
+
+def test_detector_keeps_the_low_score_boxes_bytetrack_associates() -> None:
+    # ByteTrack's second association stage matches detections scored between its low and
+    # high thresholds; a stricter detector cutoff would silently disable that stage.
+    config = Path(__file__).parents[2] / "config"
+    detector = load_detector_settings(config / "ultralytics_yolo_detector.json")
+    tracker = load_bytetrack_settings(config / "bytetrack_tracker.json")
+
+    assert detector.confidence_threshold <= tracker.track_low_threshold
 
 
 class FakeConnection:

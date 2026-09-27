@@ -4,12 +4,13 @@ import { Button } from '@/components/ui/Button'
 import { Dialog } from '@/components/ui/Dialog'
 import { Field, SelectField, TextField } from '@/components/ui/Form'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
+import { ROLE_LABEL } from '@/constants/status'
 import { usersApi } from '@/services/api/users'
 import { useToast } from '@/store/hooks'
 
 const ROLE_OPTIONS = [
-  { value: 'operator', label: 'Operator' },
-  { value: 'viewer', label: 'Viewer' },
+  { value: 'operator', label: ROLE_LABEL.operator },
+  { value: 'viewer', label: ROLE_LABEL.viewer },
 ]
 
 const emptyForm = { name: '', username: '', password: '', role: 'operator', areaId: '' }
@@ -62,7 +63,7 @@ export function UserDialog({ user, areas, onClose, onSaved }) {
       return 'Mật khẩu tối thiểu 8 ký tự.'
     }
     if (form.role === 'operator' && !form.areaId) {
-      return 'Operator phải được gán đúng một khu vực giám sát.'
+      return 'Giám sát viên phải được gán đúng một khu vực giám sát.'
     }
     return null
   }
@@ -163,7 +164,7 @@ export function UserDialog({ user, areas, onClose, onSaved }) {
           />
         ) : (
           <div className="text-xs text-neutral-400">
-            Viewer xem được toàn bộ Case ở chế độ chỉ đọc và không được gán khu vực.
+            Quản lý xem được toàn bộ hồ sơ vụ việc ở chế độ chỉ đọc, không cần gán khu vực.
           </div>
         )}
         {error && <Alert>{error}</Alert>}

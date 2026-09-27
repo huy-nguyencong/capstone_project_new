@@ -193,6 +193,10 @@ def test_missing_production_artifacts_and_model_probe_block_pipeline(tmp_path: P
         "package_missing:lap",
         "package_missing:ultralytics",
     }
+    assert set(results["botsort_v1"].blockers) == {
+        "package_missing:lap",
+        "package_missing:ultralytics",
+    }
     assert "artifact_missing" not in results["rasa_cuhk_pedes_v1"].blockers
     assert set(results["rasa_cuhk_pedes_v1"].blockers) == {
         "package_missing:timm",
@@ -203,7 +207,7 @@ def test_missing_production_artifacts_and_model_probe_block_pipeline(tmp_path: P
     assert all(
         "artifact_missing" in result.blockers
         for model_id, result in results.items()
-        if model_id not in {"yolo11n_coco", "bytetrack_v1", "rasa_cuhk_pedes_v1"}
+        if model_id not in {"yolo11n_coco", "bytetrack_v1", "botsort_v1", "rasa_cuhk_pedes_v1"}
     )
     assert report.preflight_available_ids == ()
 
@@ -226,7 +230,7 @@ def test_cli_production_loaders_open_real_adapters_and_reach_ready(
     payload = json.loads(
         (Path(__file__).parents[2] / "config" / "models.example.json").read_text("utf-8")
     )
-    approved = {"yolo11n_coco", "bytetrack_v1", "rasa_cuhk_pedes_v1"}
+    approved = {"yolo11n_coco", "bytetrack_v1", "botsort_v1", "rasa_cuhk_pedes_v1"}
     for entry in (*payload["detectors"], *payload["trackers"], payload["encoder"]):
         if entry["id"] in approved:
             artifact = tmp_path / f"{entry['id']}.bin"
@@ -254,7 +258,7 @@ def test_cli_production_loaders_open_real_adapters_and_reach_ready(
     monkeypatch.setattr(detectors, "load_detector_settings", lambda _path: None)
     monkeypatch.setattr(encoders, "load_rasa_settings", lambda _path: None)
     monkeypatch.setattr(detectors, "build_yolo_detector", lambda entry, **_: Component(entry))
-    monkeypatch.setattr(trackers, "build_bytetrack", lambda entry, **_: Component(entry))
+    monkeypatch.setattr(trackers, "build_tracker", lambda entry, **_: Component(entry))
     monkeypatch.setattr(
         encoders, "build_rasa_image_encoder", lambda entry, **_: Component(entry)
     )

@@ -16,6 +16,11 @@ class UserStatus(StrEnum):
     DELETED = "DELETED"
 
 
+class CaseStatus(StrEnum):
+    OPEN = "OPEN"
+    CLOSED = "CLOSED"
+
+
 class CameraStatus(StrEnum):
     ACTIVE = "ACTIVE"
     INACTIVE = "INACTIVE"

@@ -6,7 +6,9 @@ import { Button } from '@/components/ui/Button'
 import { CellStack, DataTable } from '@/components/ui/DataTable'
 import { MetricCard } from '@/components/ui/MetricCard'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { StatusDot } from '@/components/ui/StatusDot'
 import { Tag } from '@/components/ui/Tag'
+import { CASE_STATUS } from '@/constants/status'
 import { PATHS } from '@/constants/navigation'
 import { viewerApi } from '@/services/api/viewer'
 import { nowTime } from '@/utils/format'
@@ -50,12 +52,12 @@ export default function OverviewPage() {
   const columns = [
     {
       key: 'case',
-      header: 'Case',
+      header: 'Vụ việc',
       render: (c) => <CellStack primary={c.title} secondary={c.code} mono />,
     },
     {
       key: 'owner',
-      header: 'Operator phụ trách',
+      header: 'Người phụ trách',
       className: 'text-[13px]',
       render: (c) => (
         <span className="flex items-center gap-2">
@@ -63,6 +65,11 @@ export default function OverviewPage() {
           {OWNER_NOTE[c.owner.status] && <Tag>{OWNER_NOTE[c.owner.status]}</Tag>}
         </span>
       ),
+    },
+    {
+      key: 'status',
+      header: 'Trạng thái',
+      render: (c) => <StatusDot {...CASE_STATUS[c.status]} />,
     },
     { key: 'count', header: 'Kết quả', className: 'text-[13px]', render: (c) => c.resultCount },
     {
@@ -82,10 +89,7 @@ export default function OverviewPage() {
 
   return (
     <>
-      <PageHeader
-        title="Tổng quan"
-        description="Case và kết quả đã lưu trên toàn hệ thống."
-      >
+      <PageHeader title="Tổng quan" description="Vụ việc và kết quả đã lưu trên toàn hệ thống.">
         {lastUpdated && (
           <span className="text-xs text-neutral-400">Cập nhật lúc {lastUpdated}</span>
         )}
@@ -96,22 +100,29 @@ export default function OverviewPage() {
 
       {error && <Alert className="mb-3">{error}</Alert>}
 
-      <div className="mb-[26px] grid max-w-[720px] grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-3">
-        <MetricCard label="Tổng số Case" value={dashboard?.totalCases ?? '—'} size="lg" highlight />
+      <div className="mb-[26px] grid max-w-[980px] grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fit,minmax(200px,1fr))]">
         <MetricCard
-          label="Kết quả đã lưu vào Case"
+          label="Tổng số vụ việc"
+          value={dashboard?.totalCases ?? '—'}
+          size="lg"
+          highlight
+        />
+        <MetricCard
+          label="Kết quả đã lưu vào vụ việc"
           value={dashboard?.totalCaseResults ?? '—'}
           size="lg"
         />
+        <MetricCard label="Vụ việc đang xử lý" value={dashboard?.openCases ?? '—'} size="lg" />
+        <MetricCard label="Vụ việc đã hoàn thành" value={dashboard?.closedCases ?? '—'} size="lg" />
       </div>
 
-      <h5 className="mb-2">Case gần đây</h5>
+      <h5 className="mb-2">Vụ việc gần đây</h5>
       <DataTable
         columns={columns}
         rows={dashboard?.recentCases ?? []}
         rowKey={(c) => c.id}
         onRowClick={(c) => navigate(`${PATHS.caseFiles}?case=${c.id}`)}
-        emptyText={dashboard ? 'Chưa có Case nào.' : 'Đang tải…'}
+        emptyText={dashboard ? 'Chưa có vụ việc nào.' : 'Đang tải…'}
       />
     </>
   )

@@ -7,7 +7,7 @@ import {
 import { Alert } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
-import { TextAreaField, TextField } from '@/components/ui/Form'
+import { Field, TextAreaField, TextField } from '@/components/ui/Form'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { CAMERA_STATUS, TONE } from '@/constants/status'
 import { AttributePicker } from './AttributePicker'
@@ -18,6 +18,8 @@ const METHODS = [
   { value: 'text', label: 'Văn bản', icon: TextAaIcon },
   { value: 'attr', label: 'Thuộc tính', icon: SlidersHorizontalIcon },
 ]
+
+const TOP_K = ['4', '8', '12', '16'].map((value) => ({ value, label: value }))
 
 export function SearchForm({ state, onChange, areaCameras, running, onRun }) {
   const set = (patch) => onChange({ ...patch, error: null })
@@ -42,12 +44,17 @@ export function SearchForm({ state, onChange, areaCameras, running, onRun }) {
       />
 
       {state.method === 'image' && (
-        <ImageDropzone imageUrl={state.imageUrl} imageName={state.imageName} onFile={onFile} />
+        <ImageDropzone
+          imageUrl={state.imageUrl}
+          imageName={state.imageName}
+          onFile={onFile}
+          onError={(error) => onChange({ error })}
+        />
       )}
 
       {state.method === 'text' && (
         <TextAreaField
-          label="Mô tả người cần tìm"
+          label="Mô tả người cần tìm (tiếng Anh)"
           value={state.text}
           onChange={(e) => set({ text: e.target.value })}
           placeholder="e.g. a person wearing a red shirt, black pants, and a backpack"
@@ -93,15 +100,14 @@ export function SearchForm({ state, onChange, areaCameras, running, onRun }) {
         />
       </div>
 
-      <TextField
-        label="Số kết quả tối đa (top_k)"
-        type="number"
-        min={4}
-        max={16}
-        step={4}
-        value={state.topk}
-        onChange={(e) => set({ topk: e.target.value })}
-      />
+      <Field label="Số kết quả hiển thị">
+        <SegmentedControl
+          options={TOP_K}
+          value={state.topk}
+          onChange={(topk) => set({ topk })}
+          stretch
+        />
+      </Field>
 
       {state.error && <Alert className="text-xs">{state.error}</Alert>}
 

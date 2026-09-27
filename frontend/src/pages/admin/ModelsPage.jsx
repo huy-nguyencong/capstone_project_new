@@ -60,7 +60,7 @@ export default function ModelsPage() {
     <>
       <PageHeader
         title="Cấu hình mô hình AI"
-        description="Chọn Detector và Tracker dùng chung. Encoder là thành phần cố định."
+        description="Chọn Detector và Tracker dùng chung toàn hệ thống. Image Encoder và Text Encoder là thành phần cố định."
       />
       {error && (
         <Alert>
@@ -102,12 +102,19 @@ export default function ModelsPage() {
               )
             })}
           </div>
-          <p className="text-muted my-4 text-sm">
-            Encoder:{' '}
-            {registry.encoder
-              ? `${registry.encoder.name} · ${registry.encoder.version} · ${registry.encoder.dimension} chiều`
-              : 'Chưa cấu hình'}
-          </p>
+          <div className="panel my-4 flex flex-col gap-1 p-4 text-sm">
+            <div className="text-muted text-xs">
+              Thành phần cố định, không thay đổi từ giao diện quản trị
+            </div>
+            {['Image Encoder', 'Text Encoder'].map((role) => (
+              <div key={role}>
+                {role}:{' '}
+                {registry.encoder
+                  ? `${registry.encoder.name} · ${registry.encoder.version} · ${registry.encoder.dimension} chiều`
+                  : 'Chưa cấu hình'}
+              </div>
+            ))}
+          </div>
           <div className="panel mt-5 flex items-center gap-3 p-4">
             <span className="flex-1 text-sm">
               {!detector || !tracker

@@ -1,4 +1,4 @@
-# Person Search
+# PRISM — Person Retrieval via Image & Semantic Matching
 
 Ứng dụng tìm kiếm người qua camera/video bằng mô tả văn bản hoặc ảnh truy vấn. Hệ thống gồm:
 
@@ -244,11 +244,33 @@ Nếu đổi `PERSON_SEARCH_PORT` trong `backend/.env`, phải đổi `VITE_API_
 Không tắt worker trong khi job đang chạy. Lần inference đầu có thể chậm hơn do model được nạp vào
 bộ nhớ.
 
+### Nguồn camera RTSP giả lập
+
+Hệ thống camera được giả lập bằng MediaMTX + FFmpeg phát lặp 7 video WILDTRACK, mỗi luồng là một
+camera logic. Từ thư mục gốc:
+
+```powershell
+.\scripts\rtsp.ps1 up            # phát cam1..cam7; dùng -Cameras 1,2 để phát một phần
+.\scripts\rtsp.ps1 status
+```
+
+Script in ra địa chỉ `rtsp://<IP-LAN>:8554/cam<n>`. Backend từ chối địa chỉ loopback, nên đặt
+`PERSON_SEARCH_RTSP_NETWORKS=<IP-LAN>/32` trong `backend/.env` rồi khởi động lại API và worker.
+IP LAN có thể đổi khi đổi mạng Wi-Fi; khi đó chạy lại `rtsp.ps1 up` và sửa hai nơi trên.
+
+Admin tạo camera với địa chỉ RTSP đó, bấm **Kiểm tra** rồi bật xử lý AI. Worker tự tạo lần lượt
+các phiên RTSP có giới hạn frame (mặc định 1800 frame, `N=20`) cho mọi camera đang vận hành, bật AI
+và có RTSP, xoay vòng từng camera. Tắt AI để dừng nhận dữ liệu mới từ camera. Có thể chỉnh bằng các
+biến `PERSON_SEARCH_RTSP_*` trong `backend/.env`. Máy chỉ có CPU không xử lý kịp luồng 1080p60 theo
+thời gian thực nên MediaMTX sẽ bỏ bớt frame; để chuẩn bị nhiều dữ liệu tìm kiếm nhanh hơn, dùng
+upload video.
+
 ## D. Dừng ứng dụng
 
 Dừng frontend, API và worker bằng `Ctrl+C` trong từng terminal. Sau đó, từ thư mục gốc:
 
 ```powershell
+.\scripts\rtsp.ps1 down
 .\scripts\storage.ps1 down
 ```
 

@@ -43,6 +43,12 @@ def retire_camera(camera_id):
     return jsonify(service().transition(camera_id, current_actor().id))
 
 
+@admin_cameras_blueprint.post("/cameras/<uuid:camera_id>/reactivate")
+@require_auth(UserRole.ADMIN)
+def reactivate_camera(camera_id):
+    return jsonify(service().reactivate(camera_id, current_actor().id))
+
+
 @admin_cameras_blueprint.post("/cameras/<uuid:camera_id>/connection-tests")
 @require_auth(UserRole.ADMIN)
 @rate_limited("connection_test")

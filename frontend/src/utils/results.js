@@ -3,6 +3,13 @@ const timeFormatter = new Intl.DateTimeFormat('vi-VN', {
   timeStyle: 'medium',
 })
 
+const clockFormatter = new Intl.DateTimeFormat('vi-VN', { timeStyle: 'medium' })
+const dayFormatter = new Intl.DateTimeFormat('vi-VN', {
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+})
+
 const percentBox = (box) =>
   box
     ? {
@@ -23,9 +30,12 @@ export const describeSearchResult = (item) => {
     area: item.area.name,
     appearedAt: item.appeared_at,
     when: timeFormatter.format(appearedAt),
+    time: clockFormatter.format(appearedAt),
+    day: dayFormatter.format(appearedAt),
     osd: `${item.camera.name.toUpperCase()} · ${timeFormatter.format(appearedAt)}`,
     score: item.matching_score,
     scoreText: item.matching_score.toFixed(3),
+    scoreShort: item.matching_score.toFixed(2),
     hasFrame: true,
     cropUrl: item.crop_url,
     frameUrl: item.frame_url,

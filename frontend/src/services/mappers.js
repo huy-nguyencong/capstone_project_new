@@ -70,6 +70,8 @@ export const toCaseSummary = (item) => ({
     status: item.owner.status.toLowerCase(),
   },
   resultCount: item.result_count,
+  status: (item.status || 'OPEN').toLowerCase(),
+  closed: item.closed_at ? dateTimeFormatter.format(new Date(item.closed_at)) : null,
   created: dateTimeFormatter.format(new Date(item.created_at)),
   updated: dateTimeFormatter.format(new Date(item.updated_at)),
   version: item.version,

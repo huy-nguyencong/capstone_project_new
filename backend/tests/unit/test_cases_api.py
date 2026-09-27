@@ -28,7 +28,9 @@ class FakeImages:
         self.database = database
         self.calls: list[tuple[uuid.UUID, uuid.UUID | None]] = []
 
-    def case_result_image(self, actor_id, case_result_id, variant, *, case_id=None):
+    def case_result_image(
+        self, actor_id, case_result_id, variant, *, case_id=None, aspect=None, mark=False
+    ):
         self.calls.append((case_result_id, case_id))
         row = self.database.case_results.get(case_result_id)
         if row is None or row.case_id != case_id:

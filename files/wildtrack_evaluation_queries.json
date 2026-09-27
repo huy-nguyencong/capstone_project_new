@@ -23,10 +23,11 @@
       },
       "text_query": "A person wearing a dark jacket and light beige pants with a blue and black backpack.",
       "attribute_query": {
-        "upper_color": "black",
-        "lower_color": "beige",
         "upper_type": "jacket",
-        "has_backpack": true
+        "upper_color": "black",
+        "lower_type": "pants",
+        "lower_color": "beige",
+        "carrying": "backpack"
       },
       "difficulty_tags": ["partial_occlusion", "distinctive_backpack"]
     },
@@ -41,10 +42,11 @@
       },
       "text_query": "A person in a black jacket and dark pants carrying a large brown backpack and pulling luggage.",
       "attribute_query": {
-        "upper_color": "black",
-        "lower_color": "black",
         "upper_type": "jacket",
-        "has_backpack": true
+        "upper_color": "black",
+        "lower_type": "pants",
+        "lower_color": "black",
+        "carrying": "backpack"
       },
       "difficulty_tags": ["distinctive_backpack", "carrying_luggage"]
     },
@@ -59,10 +61,11 @@
       },
       "text_query": "A person wearing a dark jacket, blue jeans and brown boots with a large yellow and black shoulder bag.",
       "attribute_query": {
-        "upper_color": "black",
-        "lower_color": "blue",
         "upper_type": "jacket",
-        "has_backpack": false
+        "upper_color": "black",
+        "lower_type": "jeans",
+        "lower_color": "blue",
+        "carrying": "handbag"
       },
       "difficulty_tags": ["distinctive_shoulder_bag", "side_view"]
     },
@@ -77,10 +80,11 @@
       },
       "text_query": "A person in a navy jacket and gray pants carrying a light shoulder bag and a dark duffel bag.",
       "attribute_query": {
-        "upper_color": "blue",
-        "lower_color": "gray",
         "upper_type": "jacket",
-        "has_backpack": false
+        "upper_color": "navy",
+        "lower_type": "pants",
+        "lower_color": "gray",
+        "carrying": "handbag"
       },
       "difficulty_tags": ["rear_view", "multiple_bags"]
     },
@@ -95,9 +99,11 @@
       },
       "text_query": "A person wearing glasses, a brown jacket and blue jeans while carrying a black bag.",
       "attribute_query": {
-        "lower_color": "blue",
         "upper_type": "jacket",
-        "has_backpack": false
+        "upper_color": "brown",
+        "lower_type": "jeans",
+        "lower_color": "blue",
+        "carrying": "handbag"
       },
       "difficulty_tags": ["crowded", "partial_occlusion", "glasses"]
     },
@@ -113,8 +119,9 @@
       "text_query": "A person wearing a dark cap, dark top, gray pants and white shoes with a patterned side bag.",
       "attribute_query": {
         "upper_color": "black",
+        "lower_type": "pants",
         "lower_color": "gray",
-        "has_backpack": false
+        "carrying": "handbag"
       },
       "difficulty_tags": ["small_person", "side_view", "distinctive_white_shoes"]
     }

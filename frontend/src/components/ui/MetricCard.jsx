@@ -6,7 +6,7 @@ export function MetricCard({ label, value, tone, size = 'md', highlight, classNa
     <div
       className={cx(
         'rounded-md shadow-sm',
-        size === 'lg' ? 'px-[22px] py-5' : 'px-4 py-3.5',
+        size === 'lg' ? 'px-4 py-3.5 sm:px-[22px] sm:py-5' : 'px-4 py-3.5',
         highlight
           ? 'bg-[linear-gradient(160deg,color-mix(in_srgb,var(--color-accent)_10%,var(--color-surface)),var(--color-surface)_60%)]'
           : 'bg-surface',
@@ -20,7 +20,7 @@ export function MetricCard({ label, value, tone, size = 'md', highlight, classNa
       <div
         className={cx(
           'mt-1.5 leading-[1.1] font-medium',
-          size === 'lg' ? 'text-[44px]' : 'text-[28px]',
+          size === 'lg' ? 'text-[32px] sm:text-[44px]' : 'text-[28px]',
         )}
       >
         {value}

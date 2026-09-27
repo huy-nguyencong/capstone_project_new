@@ -1,0 +1,11 @@
+{
+  "schema_version": "botsort-tracker/v1",
+  "track_high_threshold": 0.25,
+  "track_low_threshold": 0.1,
+  "new_track_threshold": 0.25,
+  "match_threshold": 0.8,
+  "fuse_score": true,
+  "minimum_confirmed_samples": 2,
+  "maximum_lost_samples": 3,
+  "maximum_lost_milliseconds": 2000
+}

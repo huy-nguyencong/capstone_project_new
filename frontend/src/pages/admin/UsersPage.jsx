@@ -22,14 +22,15 @@ import { UserDialog } from './UserDialog'
 
 const FILTERS = [
   { value: 'all', label: 'Tất cả' },
-  { value: 'operator', label: 'Operator' },
-  { value: 'viewer', label: 'Viewer' },
+  { value: 'operator', label: ROLE_LABEL.operator },
+  { value: 'viewer', label: ROLE_LABEL.viewer },
   { value: 'locked', label: 'Đã khóa' },
+  { value: 'inactive', label: 'Ngừng hoạt động' },
 ]
 
 const filterParams = (filter) => {
   if (filter === 'operator' || filter === 'viewer') return { role: filter.toUpperCase() }
-  if (filter === 'locked') return { status: 'LOCKED' }
+  if (filter === 'locked' || filter === 'inactive') return { status: filter.toUpperCase() }
   return {}
 }
 
@@ -82,7 +83,7 @@ export default function UsersPage() {
       const normalizedQuery = query.trim().toLowerCase()
       const matchesFilter =
         filter === 'all' ||
-        (filter === 'locked' && updated.status === 'locked') ||
+        ((filter === 'locked' || filter === 'inactive') && updated.status === filter) ||
         updated.role === filter
       const matchesQuery =
         !normalizedQuery ||
@@ -127,7 +128,7 @@ export default function UsersPage() {
   const deactivate = (user) =>
     confirm({
       title: 'Ngừng hoạt động tài khoản?',
-      body: `${user.name} sẽ không thể đăng nhập. Case và nhật ký đã tạo vẫn được giữ nguyên.`,
+      body: `${user.name} sẽ không thể đăng nhập. Vụ việc và nhật ký đã tạo vẫn được giữ nguyên.`,
       label: 'Ngừng hoạt động',
       onConfirm: () => runStatusAction(user, 'deactivate'),
     })
@@ -217,7 +218,7 @@ export default function UsersPage() {
     <>
       <PageHeader
         title="Tài khoản người dùng"
-        description="Tạo, cập nhật, khóa hoặc ngừng hoạt động tài khoản. Mỗi Operator được gán đúng một khu vực giám sát."
+        description="Tạo, cập nhật, khóa hoặc ngừng hoạt động tài khoản. Mỗi giám sát viên được gán đúng một khu vực giám sát."
       >
         <Button variant="primary" icon={UserPlusIcon} onClick={() => setEditing(null)}>
           Tạo tài khoản

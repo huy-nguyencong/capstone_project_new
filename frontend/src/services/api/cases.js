@@ -18,4 +18,15 @@ export const casesApi = {
   addResult: async (id, trackId) =>
     describeCaseResult(await apiService.post(`/cases/${id}/results`, { track_id: trackId })),
   removeResult: (id, resultId) => apiService.delete(`/cases/${id}/results/${resultId}`),
+  // Mark a case completed right after saving into it. Reads the current version first so a
+  // concurrent edit does not reject the request. Returns null on success or an error message.
+  markCompleted: async (id) => {
+    try {
+      const fresh = await apiService.get(`/cases/${id}`)
+      await apiService.patch(`/cases/${id}`, { status: 'CLOSED', version: fresh.case.version })
+      return null
+    } catch (error) {
+      return error.message
+    }
+  },
 }

@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import Protocol
 
-from PIL import Image, ImageDraw, UnidentifiedImageError
+from PIL import Image, ImageDraw, ImageEnhance, UnidentifiedImageError
 
 from person_search.services.storage_status import StorageComponent, StorageMetrics
 from person_search.storage.minio.frames import FrameNotFoundError, InvalidFrameError
@@ -32,6 +32,91 @@ PRIVATE_NO_STORE = "private, no-store"
 class ImageVariant(StrEnum):
     PERSON_CROP = "PERSON_CROP"
     FULL_FRAME = "FULL_FRAME"
+
+
+MIN_CROP_ASPECT = 0.2
+MAX_CROP_ASPECT = 5.0
+
+
+def parse_crop_aspect(raw: str | None) -> float | None:
+    """Parse the optional ?aspect=<width/height> display hint for person crops."""
+
+    if raw is None or raw == "":
+        return None
+    try:
+        aspect = float(raw)
+    except ValueError:
+        raise ValueError("aspect must be a number.") from None
+    if not MIN_CROP_ASPECT <= aspect <= MAX_CROP_ASPECT:
+        raise ValueError(f"aspect must be between {MIN_CROP_ASPECT} and {MAX_CROP_ASPECT}.")
+    return aspect
+
+
+MARK_COLOR = (145, 132, 217)  # frontend --color-accent
+MARK_DIM = 0.6
+
+
+def parse_crop_mark(raw: str | None) -> bool:
+    """Parse the optional ?mark=1 hint that outlines the matched person on the crop."""
+
+    if raw is None or raw == "":
+        return False
+    if raw in {"1", "true"}:
+        return True
+    if raw in {"0", "false"}:
+        return False
+    raise ValueError("mark must be 0 or 1.")
+
+
+def mark_person(image: Image.Image, person: tuple[int, int, int, int]) -> Image.Image:
+    """Dim the surroundings and outline the matched person inside a widened crop."""
+
+    left, top, right, bottom = person
+    left, top = max(0, left), max(0, top)
+    right, bottom = min(image.width, right), min(image.height, bottom)
+    if right <= left or bottom <= top:
+        return image
+    marked = ImageEnhance.Brightness(image).enhance(MARK_DIM)
+    marked.paste(image.crop((left, top, right, bottom)), (left, top))
+    stroke = max(1, round(min(image.size) / 70))
+    ImageDraw.Draw(marked).rectangle(
+        (left, top, right - 1, bottom - 1), outline=MARK_COLOR, width=stroke
+    )
+    return marked
+
+
+def fit_box_to_aspect(
+    box: tuple[int, int, int, int], frame_size: tuple[int, int], aspect: float
+) -> tuple[int, int, int, int]:
+    """Grow a crop box to width/height == aspect using surrounding frame pixels.
+
+    The box only ever grows (the person is never cut): a tall box keeps its height and gains
+    width, a wide box keeps its width and gains height. The result stays centred on the person
+    and is shifted inside the frame; near frame edges the aspect is matched as closely as the
+    frame allows.
+    """
+
+    left, top, right, bottom = box
+    frame_width, frame_height = frame_size
+    width, height = right - left, bottom - top
+    if width / height < aspect:
+        target_width, target_height = round(height * aspect), height
+    else:
+        target_width, target_height = width, round(width / aspect)
+    if target_width > frame_width:
+        target_width = frame_width
+        target_height = max(height, min(frame_height, round(frame_width / aspect)))
+    if target_height > frame_height:
+        target_height = frame_height
+        target_width = max(width, min(frame_width, round(frame_height * aspect)))
+
+    def place(start: int, size: int, target: int, limit: int) -> int:
+        centred = start + (size - target) // 2
+        return min(max(0, centred), limit - target)
+
+    new_left = place(left, width, target_width, frame_width)
+    new_top = place(top, height, target_height, frame_height)
+    return new_left, new_top, new_left + target_width, new_top + target_height
 
 
 class ImageAccessDeniedError(PermissionError):
@@ -97,7 +182,13 @@ class TrackImageService:
         self._storage_metrics = storage_metrics
 
     def search_result_image(
-        self, actor_user_id: uuid.UUID, track_id: uuid.UUID, variant: ImageVariant
+        self,
+        actor_user_id: uuid.UUID,
+        track_id: uuid.UUID,
+        variant: ImageVariant,
+        *,
+        aspect: float | None = None,
+        mark: bool = False,
     ) -> TrackImage:
         with self._unit_of_work_factory() as work:
             repositories = self._repositories(work)
@@ -115,7 +206,7 @@ class TrackImageService:
             ):
                 raise TrackImageNotFoundError("Track image was not found.")
             source = _source(track)
-        return self._render(source, variant)
+        return self._render(source, variant, aspect, mark)
 
     def case_result_image(
         self,
@@ -124,6 +215,8 @@ class TrackImageService:
         variant: ImageVariant,
         *,
         case_id: uuid.UUID | None = None,
+        aspect: float | None = None,
+        mark: bool = False,
     ) -> TrackImage:
         with self._unit_of_work_factory() as work:
             repositories = self._repositories(work)
@@ -142,9 +235,15 @@ class TrackImageService:
             if track is None or not track.minio_object_key:
                 raise TrackImageUnavailableError(case_result.track_id, "FRAME_MISSING")
             source = _source(track)
-        return self._render(source, variant)
+        return self._render(source, variant, aspect, mark)
 
-    def _render(self, source: _FrameSource, variant: ImageVariant) -> TrackImage:
+    def _render(
+        self,
+        source: _FrameSource,
+        variant: ImageVariant,
+        aspect: float | None = None,
+        mark: bool = False,
+    ) -> TrackImage:
         try:
             data = self._frames.get_frame(source.object_key)
         except FrameNotFoundError as error:
@@ -167,7 +266,14 @@ class TrackImageService:
 
         box = self._clamped_box(source, image.size)
         if variant is ImageVariant.PERSON_CROP:
+            if aspect is not None:
+                box = fit_box_to_aspect(box, image.size, aspect)
             image = image.crop(box)
+            if mark:
+                x, y, width, height = source.bbox
+                image = mark_person(
+                    image, (x - box[0], y - box[1], x + width - box[0], y + height - box[1])
+                )
         else:
             stroke = max(2, round(min(image.size) / 300))
             ImageDraw.Draw(image).rectangle(

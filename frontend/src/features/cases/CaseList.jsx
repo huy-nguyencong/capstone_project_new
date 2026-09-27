@@ -1,4 +1,6 @@
 import { OptionCard } from '@/components/ui/Chip'
+import { StatusDot } from '@/components/ui/StatusDot'
+import { CASE_STATUS } from '@/constants/status'
 
 export function CaseList({ cases, selectedId, onSelect, metaFor, emptyText }) {
   return (
@@ -15,7 +17,10 @@ export function CaseList({ cases, selectedId, onSelect, metaFor, emptyText }) {
             <span className="ml-auto">{c.resultCount} kết quả</span>
           </div>
           <div className="text-sm leading-[1.35] text-pretty">{c.title}</div>
-          <div className="text-[11px] text-neutral-400">{metaFor(c)}</div>
+          <div className="flex items-center gap-2 text-[11px] text-neutral-400">
+            <StatusDot {...CASE_STATUS[c.status]} className="text-[11px]" />
+            <span className="truncate">{metaFor(c)}</span>
+          </div>
         </OptionCard>
       ))}
       {!cases.length && <div className="px-1 py-6 text-[13px] text-neutral-400">{emptyText}</div>}

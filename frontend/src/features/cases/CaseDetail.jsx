@@ -1,7 +1,11 @@
+import { ArrowCounterClockwiseIcon, CheckCircleIcon } from '@phosphor-icons/react'
 import { useState } from 'react'
+import { Alert } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/Button'
+import { StatusDot } from '@/components/ui/StatusDot'
 import { TextAreaField, TextField } from '@/components/ui/Form'
 import { Tag } from '@/components/ui/Tag'
+import { CASE_STATUS } from '@/constants/status'
 import { ResultViewer } from '@/features/results/ResultViewer'
 import { casesApi } from '@/services/api/cases'
 import { useConfirm, useToast } from '@/store/hooks'
@@ -23,10 +27,13 @@ export function CaseDetail({ detail, editable, onChange }) {
   const [viewerIndex, setViewerIndex] = useState(null)
 
   const ownerNote = OWNER_NOTE[caseFile.owner.status]
+  const closed = caseFile.status === 'closed'
+  // A completed Case is read-only for its owner until reopened.
+  const canEdit = editable && !closed
   const dirty = title !== caseFile.title || note !== caseFile.note
 
   const save = async () => {
-    if (!title.trim()) return toast('Tiêu đề Case không được để trống.', 'err')
+    if (!title.trim()) return toast('Tiêu đề vụ việc không được để trống.', 'err')
     setSaving(true)
     try {
       const updated = await casesApi.update(caseFile.id, {
@@ -37,13 +44,41 @@ export function CaseDetail({ detail, editable, onChange }) {
       setTitle(updated.title)
       setNote(updated.note)
       onChange({ case: updated, results })
-      toast(`Đã lưu thay đổi của Case ${updated.code}.`)
+      toast(`Đã lưu thay đổi của vụ việc ${updated.code}.`)
     } catch (error) {
       toast(error.message, 'err')
     } finally {
       setSaving(false)
     }
   }
+
+  const setStatus = (next) =>
+    confirm({
+      title: next === 'CLOSED' ? 'Đánh dấu vụ việc hoàn thành?' : 'Mở lại vụ việc?',
+      body:
+        next === 'CLOSED'
+          ? 'Vụ việc sẽ bị khóa: không thêm, loại kết quả hay sửa tiêu đề, ghi chú. Bạn có thể mở lại khi cần.'
+          : 'Vụ việc quay về trạng thái Đang xử lý và có thể chỉnh sửa, thêm kết quả như bình thường.',
+      label: next === 'CLOSED' ? 'Đánh dấu hoàn thành' : 'Mở lại',
+      onConfirm: async () => {
+        try {
+          const updated = await casesApi.update(caseFile.id, {
+            status: next,
+            version: caseFile.version,
+          })
+          setTitle(updated.title)
+          setNote(updated.note)
+          onChange({ case: updated, results })
+          toast(
+            next === 'CLOSED'
+              ? `Vụ việc ${updated.code} đã được đánh dấu hoàn thành.`
+              : `Đã mở lại vụ việc ${updated.code}.`,
+          )
+        } catch (error) {
+          toast(error.message, 'err')
+        }
+      },
+    })
 
   const discard = () => {
     setTitle(caseFile.title)
@@ -52,14 +87,14 @@ export function CaseDetail({ detail, editable, onChange }) {
 
   const remove = (resultId) =>
     confirm({
-      title: 'Loại kết quả khỏi Case?',
-      body: 'Kết quả chỉ bị loại khỏi Case này. Dữ liệu kết quả gốc trong hệ thống không bị xóa.',
-      label: 'Loại khỏi Case',
+      title: 'Loại kết quả khỏi vụ việc?',
+      body: 'Kết quả chỉ bị loại khỏi vụ việc này. Dữ liệu kết quả gốc trong hệ thống không bị xóa.',
+      label: 'Loại khỏi vụ việc',
       onConfirm: async () => {
         try {
           await casesApi.removeResult(caseFile.id, resultId)
           onChange(await casesApi.get(caseFile.id))
-          toast(`Đã loại kết quả khỏi Case ${caseFile.code}.`)
+          toast(`Đã loại kết quả khỏi vụ việc ${caseFile.code}.`)
         } catch (error) {
           toast(error.message, 'err')
         }
@@ -78,9 +113,35 @@ export function CaseDetail({ detail, editable, onChange }) {
         {ownerNote && <Tag>{ownerNote}</Tag>}
         <span>Tạo: {caseFile.created}</span>
         <span>Cập nhật: {caseFile.updated}</span>
+        {closed && caseFile.closed && <span>Hoàn thành: {caseFile.closed}</span>}
+        <StatusDot {...CASE_STATUS[caseFile.status]} className="ml-auto text-xs" />
       </div>
 
-      {editable ? (
+      {editable && (
+        <div className="flex flex-wrap items-center gap-2">
+          {closed ? (
+            <>
+              <Alert tone="notice" className="flex-1">
+                Vụ việc đã hoàn thành và đang bị khóa. Mở lại để chỉnh sửa hoặc thêm kết quả.
+              </Alert>
+              <Button icon={ArrowCounterClockwiseIcon} onClick={() => setStatus('OPEN')}>
+                Mở lại vụ việc
+              </Button>
+            </>
+          ) : (
+            <Button
+              icon={CheckCircleIcon}
+              className="ml-auto"
+              disabled={dirty}
+              onClick={() => setStatus('CLOSED')}
+            >
+              Đánh dấu hoàn thành
+            </Button>
+          )}
+        </div>
+      )}
+
+      {canEdit ? (
         <>
           <TextField label="Tiêu đề" value={title} onChange={(e) => setTitle(e.target.value)} />
           <TextAreaField label="Ghi chú" value={note} onChange={(e) => setNote(e.target.value)} />
@@ -108,7 +169,7 @@ export function CaseDetail({ detail, editable, onChange }) {
         <CaseItemGrid
           items={results}
           onOpen={setViewerIndex}
-          onRemove={editable ? remove : undefined}
+          onRemove={canEdit ? remove : undefined}
         />
       </div>
 

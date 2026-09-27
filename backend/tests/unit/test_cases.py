@@ -11,6 +11,7 @@ from storage_fakes import FakeDatabase, FakeUnitOfWork
 from person_search.services.audit import AuditRecorder
 from person_search.services.cases import (
     CaseAccessDeniedError,
+    CaseClosedError,
     CaseListQuery,
     CaseNotFoundError,
     CaseService,
@@ -21,6 +22,7 @@ from person_search.storage.postgres.errors import ConcurrentUpdateError
 from person_search.storage.postgres.models import (
     AuditResult,
     CameraStatus,
+    CaseStatus,
     PersonTrack,
     TrackIndexStatus,
     UserRole,
@@ -124,12 +126,55 @@ def test_create_case_takes_owner_from_session_and_audits() -> None:
     assert detail.case.owner_display_name == "OP-A"
     assert detail.results == []
     assert not hasattr(case, "matching_score")
-    assert not hasattr(case, "area_id") and not hasattr(case, "status")
+    assert not hasattr(case, "area_id")
+    assert case.status is CaseStatus.OPEN and case.closed_at is None
+    assert detail.case.status is CaseStatus.OPEN
     entry = world.database.audit_logs[-1]
     assert entry.event_type == "case.created"
     assert entry.actor_user_id == world.operator
     assert entry.event_metadata["actor"] == {"username": "op-a", "role": "OPERATOR"}
     assert "red shirt" not in str(entry.event_metadata)
+
+
+def test_closed_case_is_locked_until_reopened_and_audited() -> None:
+    world = World()
+    detail = world.service.create_case(world.operator, title="Case", track_id=world.track_a)
+    case_id, [first] = detail.case.id, detail.results
+
+    closed = world.service.update_case(
+        world.operator, case_id, status=CaseStatus.CLOSED, expected_version=1
+    )
+    assert closed.status is CaseStatus.CLOSED and closed.closed_at is not None
+    assert world.events()[-1] == ("case.closed", AuditResult.SUCCESS)
+
+    with pytest.raises(CaseClosedError):
+        world.service.add_result(world.operator, case_id, world.track_a)
+    with pytest.raises(CaseClosedError):
+        world.service.remove_result(world.operator, case_id, first.id)
+    with pytest.raises(CaseClosedError):
+        world.service.update_case(world.operator, case_id, title="New", expected_version=2)
+
+    reopened = world.service.update_case(
+        world.operator, case_id, status=CaseStatus.OPEN, expected_version=2
+    )
+    assert reopened.status is CaseStatus.OPEN and reopened.closed_at is None
+    assert world.events()[-1] == ("case.reopened", AuditResult.SUCCESS)
+    world.service.add_result(world.operator, case_id, world.track_a)
+    assert world.service.get_case(world.viewer, case_id).case.result_count == 2
+
+
+def test_case_list_filters_by_status_and_dashboard_counts_them() -> None:
+    world = World()
+    open_id = world.service.create_case(world.operator, title="Open").case.id
+    closed_id = world.service.create_case(world.operator, title="Done").case.id
+    world.service.update_case(
+        world.operator, closed_id, status=CaseStatus.CLOSED, expected_version=1
+    )
+
+    page = world.service.list_cases(world.operator, CaseListQuery(status=CaseStatus.OPEN))
+    assert [item.id for item in page.items] == [open_id]
+    dashboard = world.service.viewer_dashboard(world.viewer)
+    assert (dashboard.open_cases, dashboard.closed_cases) == (1, 1)
 
 
 def test_create_case_with_initial_track_snapshots_server_metadata() -> None:

@@ -20,6 +20,7 @@ from person_search.storage.postgres.models import (
     CameraStatus,
     Case,
     CaseResult,
+    CaseStatus,
     PersonTrack,
     TrackIndexStatus,
     User,
@@ -45,6 +46,10 @@ class CaseNotFoundError(LookupError):
 
 class InvalidCaseRequestError(ValueError):
     pass
+
+
+class CaseClosedError(RuntimeError):
+    """A completed Case is read-only until its owner reopens it."""
 
 
 class TrackNotSavableError(PermissionError):
@@ -74,6 +79,8 @@ class CaseSummary:
     created_at: datetime
     updated_at: datetime
     version: int
+    status: CaseStatus = CaseStatus.OPEN
+    closed_at: datetime | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -101,6 +108,7 @@ class CaseListQuery:
     created_to: datetime | None = None
     limit: int = 20
     cursor: str | None = None
+    status: CaseStatus | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -121,6 +129,8 @@ class ViewerDashboard:
     total_cases: int
     total_case_results: int
     recent_cases: list[CaseSummary]
+    open_cases: int = 0
+    closed_cases: int = 0
 
 
 def _clean_title(title: str) -> str:
@@ -172,6 +182,8 @@ def _summary(case: Case, owner: User, result_count: int) -> CaseSummary:
         created_at=case.created_at,
         updated_at=case.updated_at,
         version=case.version,
+        status=case.status,
+        closed_at=case.closed_at,
     )
 
 
@@ -238,6 +250,8 @@ class CaseService:
                 created_at=now,
                 updated_at=now,
                 version=1,
+                status=CaseStatus.OPEN,
+                closed_at=None,
             )
             repositories.cases.add(case)
             work.flush()
@@ -266,6 +280,7 @@ class CaseService:
         *,
         title: Any = UNSET,
         note: Any = UNSET,
+        status: Any = UNSET,
         expected_updated_at: datetime | None = None,
         expected_version: int | None = None,
     ) -> CaseSummary:
@@ -274,7 +289,9 @@ class CaseService:
             changes["title"] = _clean_title(title)
         if note is not UNSET:
             changes["note"] = _clean_note(note)
-        if not changes:
+        if status is not UNSET and not isinstance(status, CaseStatus):
+            raise InvalidCaseRequestError("status must be OPEN or CLOSED.")
+        if not changes and status is UNSET:
             raise InvalidCaseRequestError("Nothing to update.")
         with self._unit_of_work_factory() as work:
             repositories = self._repositories(work)
@@ -284,20 +301,44 @@ class CaseService:
                 raise ConcurrentUpdateError("Case was changed by another transaction.")
             if expected_version is not None and case.version != expected_version:
                 raise ConcurrentUpdateError("Case was changed by another request.")
+            reopening = status is CaseStatus.OPEN
+            if case.status is CaseStatus.CLOSED and changes and not reopening:
+                raise CaseClosedError("Case is completed; reopen it before editing.")
             changed = sorted(key for key, value in changes.items() if getattr(case, key) != value)
             for key, value in changes.items():
                 setattr(case, key, value)
+            now = self._clock()
+            status_event = None
+            if status is not UNSET and status is not case.status:
+                case.status = status
+                case.closed_at = now if status is CaseStatus.CLOSED else None
+                status_event = (
+                    AuditEvent.CASE_CLOSED
+                    if status is CaseStatus.CLOSED
+                    else AuditEvent.CASE_REOPENED
+                )
             case.version += 1
-            case.updated_at = self._clock()
-            record_audit(
-                repositories,
-                event_type=AuditEvent.CASE_UPDATED,
-                result=AuditResult.SUCCESS,
-                target_type="case",
-                target_id=case.id,
-                actor=actor,
-                metadata={"changed_fields": changed},
-            )
+            case.updated_at = now
+            if changes:
+                record_audit(
+                    repositories,
+                    event_type=AuditEvent.CASE_UPDATED,
+                    result=AuditResult.SUCCESS,
+                    target_type="case",
+                    target_id=case.id,
+                    actor=actor,
+                    metadata={"changed_fields": changed},
+                )
+            if status_event is not None:
+                record_audit(
+                    repositories,
+                    event_type=status_event,
+                    result=AuditResult.SUCCESS,
+                    target_type="case",
+                    target_id=case.id,
+                    actor=actor,
+                    metadata={"status": case.status.value},
+                )
             work.flush()
             repositories.cases.refresh(case)
             result_count = repositories.case_results.count_by_case([case.id]).get(case.id, 0)
@@ -313,6 +354,8 @@ class CaseService:
                 repositories, actor_user_id, AuditEvent.CASE_RESULT_ADDED, case_id
             )
             case = self._owned_case(repositories, actor, case_id, AuditEvent.CASE_RESULT_ADDED)
+            if case.status is CaseStatus.CLOSED:
+                raise CaseClosedError("Case is completed; reopen it before adding results.")
             now = self._clock()
             result, track = self._save_track(repositories, actor, case, track_id, now)
             case.updated_at = now
@@ -337,6 +380,8 @@ class CaseService:
                 repositories, actor_user_id, AuditEvent.CASE_RESULT_REMOVED, case_id
             )
             case = self._owned_case(repositories, actor, case_id, AuditEvent.CASE_RESULT_REMOVED)
+            if case.status is CaseStatus.CLOSED:
+                raise CaseClosedError("Case is completed; reopen it before removing results.")
             result = repositories.case_results.get(case_result_id)
             if result is None or result.case_id != case.id:
                 raise CaseNotFoundError("Case result was not found.")
@@ -371,6 +416,7 @@ class CaseService:
                 created_to=query.created_to,
                 after=after,
                 limit=query.limit + 1,
+                status=query.status,
             )
             has_more = len(rows) > query.limit
             rows = rows[: query.limit]
@@ -418,7 +464,10 @@ class CaseService:
                 raise CaseAccessDeniedError("Only a Viewer can open the dashboard.")
             recent = repositories.cases.recent_with_owner(limit=recent_limit)
             counts = repositories.case_results.count_by_case(case.id for case, _ in recent)
+            by_status = repositories.cases.count_by_status()
             return ViewerDashboard(
+                open_cases=by_status.get(CaseStatus.OPEN, 0),
+                closed_cases=by_status.get(CaseStatus.CLOSED, 0),
                 total_cases=repositories.cases.count(),
                 total_case_results=repositories.case_results.count(),
                 recent_cases=[

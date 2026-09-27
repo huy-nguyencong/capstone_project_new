@@ -1,4 +1,6 @@
-# Kiến trúc ứng dụng tìm kiếm người qua camera — bản tổng hợp
+# PRISM — Kiến trúc ứng dụng tìm kiếm người qua camera — bản tổng hợp
+
+> Tên hiển thị của ứng dụng: **PRISM — Person Retrieval via Image & Semantic Matching**.
 
 > Tài liệu tổng hợp cuộc thảo luận về yêu cầu, use case, kiến trúc logic, dữ liệu, API, công nghệ và khả năng trình diễn đồ án tốt nghiệp. Những quyết định mới nhất trong tài liệu này thay thế các đề xuất trước đó nếu có mâu thuẫn. Nguồn dữ liệu chính là các luồng RTSP giả lập phát từ 7 video WILDTRACK; các camera được xử lý AI tuần tự.
 >
@@ -23,6 +25,7 @@ Phạm vi là **đồ án tốt nghiệp**, tập trung xây dựng ứng dụng
 | Matching Score | **Chỉ tính/hiển thị trong lần tìm kiếm** để xếp hạng và giúp Operator đánh giá. Không lưu vào PersonTrack/CaseResult, không hiển thị lại trong Case. |
 | Lưu cùng track nhiều lần | Mỗi lần Operator bấm lưu tạo một `CaseResult` riêng. Không kiểm tra trùng track trong cùng Case. |
 | Ảnh kết quả | Lưu một full frame đại diện và bounding box theo track; crop người được dựng động, không lưu person crop độc lập. |
+| Trạng thái Case | Case có trạng thái **Đang xử lý (`OPEN`)** hoặc **Hoàn thành (`CLOSED`)**. Case hoàn thành bị khóa (không thêm/loại kết quả, không sửa tiêu đề/ghi chú), không hiện khi thêm vào Case đã có; Operator phụ trách có thể mở lại. |
 | Cấu hình mô hình | Admin chọn Detector và Tracker từ danh sách đăng ký sẵn; cấu hình **chung cho toàn hệ thống**, không riêng theo camera. Hai encoder cố định trong phiên bản đầu. |
 | Frame Sampling | Sau khi đọc nguồn video và **trước Detector**, chỉ chuyển 1 frame trong mỗi `N` frame nguồn tới Detector/Tracker. Benchmark local CPU ngày 2026-09-27 chốt mặc định demo `throughput` (`N=20`); `baseline` (`N=10`) vẫn là preset chất lượng dày hơn. Admin không nhập giá trị tùy ý và mỗi job lưu `N` thực tế. |
 | Bộ mã hóa ảnh/văn bản | **RaSa — Relation and Sensitivity Aware Representation Learning for Text-based Person Search** theo đề xuất của giảng viên và lựa chọn của người làm đồ án; dùng checkpoint CUHK-PEDES chính thức (vector 256 chiều, L2-normalized, metric IP) cho cả ảnh và văn bản; cần đánh giá chất lượng tìm bằng ảnh và mô tả tiếng Anh trên 7 video. |
@@ -36,7 +39,7 @@ Phạm vi là **đồ án tốt nghiệp**, tập trung xây dựng ứng dụng
 ### Admin
 
 - Đăng nhập, đăng xuất; tạo/cập nhật/khóa hoặc ngừng hoạt động tài khoản; gán đúng một khu vực cho Operator.
-- Tạo và cập nhật camera logic, gán khu vực và địa chỉ RTSP (luồng giả lập) lúc tạo, bật/tắt xử lý AI, loại camera khỏi vận hành. Khi cập nhật camera, không thể đổi khu vực. Có thể kiểm tra kết nối luồng RTSP.
+- Tạo và cập nhật camera logic, gán khu vực và địa chỉ RTSP (luồng giả lập) lúc tạo, bật/tắt xử lý AI, loại camera khỏi vận hành và đưa camera vận hành trở lại (AI ở trạng thái tắt). Khi cập nhật camera, không thể đổi khu vực. Có thể kiểm tra kết nối luồng RTSP; camera có RTSP đang mất kết nối không được bật AI.
 - Chọn Detector/Tracker đã đăng ký sẵn cho **toàn bộ hệ thống**; kiểm tra khả năng tương thích và khả năng áp dụng.
 - Xem trạng thái camera/RTSP/AI, chạy chẩn đoán AI, xem audit log.
 - Quyền quản trị kỹ thuật không mặc nhiên cấp quyền tìm kiếm người hoặc xem mọi Case.
@@ -51,7 +54,7 @@ Phạm vi là **đồ án tốt nghiệp**, tập trung xây dựng ứng dụng
 
 ### Viewer
 
-- Xem dashboard toàn hệ thống: tổng số Case, **số mục CaseResult** (tính cả các mục lặp cùng track), danh sách Case gần đây.
+- Xem dashboard toàn hệ thống: tổng số Case, số Case đang xử lý/đã hoàn thành, **số mục CaseResult** (tính cả các mục lặp cùng track), danh sách Case gần đây kèm trạng thái.
 - Lọc/xem mọi Case và kết quả đã lưu, xem ảnh crop/full frame kèm bounding box, chỉ đọc.
 - Không tìm kiếm AI, quản lý camera/tài khoản/mô hình hoặc chỉnh sửa Case. Case không có Matching Score để Viewer xem lại.
 
@@ -112,7 +115,7 @@ Tên trường dưới đây là **đề xuất schema** dựa trên quy tắc �
 | `User` | `user_id`, `username`, `password_hash`, `display_name`, `role`, `status`, `assigned_area_id`, `created_at` | Operator cần đúng một Area hiện tại; owner User lịch sử phải được giữ để Case và audit log còn truy vết. |
 | `Camera` | `camera_id`, `area_id`, `name`, thông tin RTSP và xác thực, `operational_status`, `rtsp_status`, `ai_enabled`, `created_at` | `area_id` bắt buộc và bất biến; RTSP là nguồn chính (luồng giả lập). Bảo vệ thông tin xác thực RTSP. |
 | `PersonTrack` | `track_id`, `camera_id`, `started_at`, `ended_at`, `representative_frame_object_key`, `bbox`, tham chiếu embedding, `ai_config_version`, `encoder_version`, `sampling_interval`, `index_status` | Mỗi track là một lần xuất hiện, không phải từng frame. Mốc thời gian theo video gốc; full frame + bbox đủ dựng ảnh người và ảnh toàn cảnh. |
-| `Case` | `case_id`, `title`, `note`, `owner_user_id`, `created_at`, `updated_at` | Owner lấy từ phiên Operator lúc tạo, không nhận owner tùy ý; Case không có trạng thái hay `area_id`. |
+| `Case` | `case_id`, `title`, `note`, `owner_user_id`, `status`, `closed_at`, `created_at`, `updated_at` | Owner lấy từ phiên Operator lúc tạo, không nhận owner tùy ý; `status` là `OPEN` hoặc `CLOSED`, `closed_at` chỉ có giá trị khi `CLOSED`; Case không có `area_id`. |
 | `CaseResult` | `case_result_id`, `case_id`, `track_id`, `saved_at`, `camera_name_at_save`, `area_name_at_save`, `appeared_at_save` | Mỗi lần bấm lưu tạo mục mới; **không unique trên `(case_id, track_id)`** và **không có `matching_score`**. Metadata đã lưu vẫn hiển thị nếu tên camera thay đổi hoặc ảnh gặp lỗi. |
 
 Các dữ liệu hỗ trợ nằm ngoài sáu thực thể lõi: danh sách Detector/Tracker đăng ký sẵn, cấu hình AI đang hoạt động, audit log, trạng thái phiên đăng nhập và thông tin vận hành. Đề xuất một bản ghi **`ActiveAIConfig` dùng chung toàn hệ thống** chứa `detector_id`, `tracker_id`, `config_version`, thời điểm áp dụng/trạng thái; mỗi `PersonTrack` lưu phiên bản đã dùng. Không có cặp Detector/Tracker trên từng `Camera`. Tham số `sampling_interval=N` gắn với tác vụ xử lý video để có thể so sánh thử nghiệm; encoder RaSa cố định ở phiên bản đầu, lưu phiên bản checkpoint trên track/vector để không trộn các không gian embedding khác nhau.
@@ -128,7 +131,7 @@ Các dữ liệu hỗ trợ nằm ngoài sáu thực thể lõi: danh sách Dete
 
 ### 6.1. Từ luồng RTSP giả lập (hoặc tệp video) đến track có thể tìm kiếm
 
-1. **Nguồn chính:** FFmpeg phát từng video WILDTRACK vào MediaMTX thành luồng RTSP; mỗi camera logic trỏ tới một luồng. Worker tạo phiên xử lý cho từng camera đang bật AI, đọc giới hạn số frame từ luồng rồi chuyển camera tiếp theo (tuần tự, concurrency = 1). **Dự phòng:** Admin tải tệp video lên gắn với camera logic; worker đọc frame từ tệp. Hai cách đọc frame đi qua cùng các bước tiếp theo.
+1. **Nguồn chính:** FFmpeg phát từng video WILDTRACK vào MediaMTX thành luồng RTSP; mỗi camera logic trỏ tới một luồng. Worker tạo phiên xử lý cho từng camera đang bật AI, đọc giới hạn số frame từ luồng rồi chuyển camera tiếp theo (tuần tự, concurrency = 1). **Đã triển khai:** khi hàng đợi trống, worker tự tạo một phiên RTSP cho camera đang vận hành, bật AI, có RTSP và lâu nhất chưa được xử lý (mặc định 1.800 frame nguồn/phiên, lấy mẫu `N=20`); camera có phiên lỗi được bỏ qua 5 phút; tắt bằng `PERSON_SEARCH_RTSP_AUTO=0`. `scripts/rtsp.ps1` dựng MediaMTX và phát lặp `cam1.mp4` … `cam7.mp4`. **Dự phòng:** Admin tải tệp video lên gắn với camera logic; worker đọc frame từ tệp. Hai cách đọc frame đi qua cùng các bước tiếp theo.
 2. **Frame Sampling:** đếm frame của nguồn và chỉ chuyển một frame cho mỗi `N` frame (`N=10` và `N=20` là hai giá trị thử). Các frame bỏ qua không chạy Detector/Tracker; vẫn giữ `source_frame_index` và timestamp nguồn để suy ra thời gian xuất hiện đúng. Ví dụ video 30 fps lấy `1/20` chỉ còn khoảng 1,5 frame được xử lý mỗi giây: người đi nhanh có thể biến mất giữa hai lần lấy mẫu.
 3. Detector phát hiện người trên frame được chọn; Tracker nối các phát hiện qua **các frame đã lấy mẫu** thành track theo từng camera. Buffer tạm giữ ứng viên trong lúc track hoạt động. Cần thử `N` vì lấy mẫu quá thưa có thể làm đứt track hoặc tăng số track giả; điều chỉnh điều kiện kết thúc track theo thời gian thực hoặc số frame đã lấy mẫu, không coi 20 frame nguồn bị bỏ qua là 20 frame Tracker đã nhận.
 4. Khi track kết thúc hoặc hết thời gian chờ, worker chọn một frame đại diện cùng bounding box, crop người tạm thời rồi đưa vào **RaSa Image Encoder** để tạo một embedding ảnh cho track.
@@ -137,18 +140,19 @@ Các dữ liệu hỗ trợ nằm ngoài sáu thực thể lõi: danh sách Dete
 
 ### 6.2. Tìm kiếm và đánh giá
 
-1. Operator cung cấp ảnh, văn bản hoặc thuộc tính. Ảnh dùng cùng RaSa Image Encoder đã lập chỉ mục; văn bản chỉ nhận mô tả tiếng Anh; thuộc tính chọn sẵn (tên/giá trị tiếng Anh) được chuyển thành câu tiếng Anh có kiểm soát cho RaSa Text Encoder. RaSa được huấn luyện và công bố trên bộ dữ liệu caption tiếng Anh, vì vậy hệ thống không nhận truy vấn tiếng Việt và không có bước dịch tự động.
+1. Operator cung cấp ảnh (chọn tệp, kéo thả, dán, hoặc kéo một kết quả vào để tìm tiếp), văn bản hoặc thuộc tính. Ảnh dùng cùng RaSa Image Encoder đã lập chỉ mục; văn bản chỉ nhận mô tả tiếng Anh; thuộc tính chọn sẵn (tên/giá trị tiếng Anh) được chuyển thành câu tiếng Anh có kiểm soát cho RaSa Text Encoder. RaSa được huấn luyện và công bố trên bộ dữ liệu caption tiếng Anh, vì vậy hệ thống không nhận truy vấn tiếng Việt và không có bước dịch tự động.
 2. Operator chọn `top_k` thuộc `{4, 8, 12, 16}`, camera/thời gian tùy chọn. Flask lấy khu vực từ tài khoản, xác định camera hợp lệ và gửi điều kiện lọc khu vực/camera/thời gian cho Milvus **trước khi lấy top kết quả**.
 3. Milvus xếp hạng vector ảnh RaSa; Flask ghép `track_id` với metadata PostgreSQL và ảnh MinIO, đồng thời kiểm tra track đã sẵn sàng và thuộc quyền. Với văn bản, có thể thử bước xếp hạng lại một số ứng viên bằng bộ image–text matching của RaSa sau truy vấn Milvus. Nếu có ít track hơn `top_k`, trả số lượng thực có. So sánh ảnh–ảnh bằng vector ảnh RaSa là cách áp dụng cần đo thực nghiệm, không mặc định có chất lượng như kết quả tìm kiếm văn bản–ảnh công bố của RaSa.
-4. Kết quả hiển thị crop người dựng từ full frame + bbox, camera, khu vực, thời gian và **Matching Score của lần tìm kiếm hiện tại**. Operator có thể lọc/sắp xếp danh sách đang xem và mở full frame + bbox để tự đánh giá. Không dùng ngưỡng Matching Score để loại kết quả; confidence nội bộ Detector không hiển thị.
+4. Kết quả hiển thị crop người dựng từ full frame + bbox, camera, khu vực, thời gian và **Matching Score của lần tìm kiếm hiện tại**. API crop nhận `?aspect=` (nới vùng cắt theo tỉ lệ khung bằng cảnh xung quanh, không cắt vào người) và `?mark=1` (viền người được tìm thấy, làm tối phần còn lại); danh sách ưu tiên thứ hạng, camera, giờ, điểm ở dạng phụ, khu vực/ngày chung hiển thị một lần ở đầu danh sách. Operator có thể lọc/sắp xếp danh sách đang xem và mở full frame + bbox để tự đánh giá. Không dùng ngưỡng Matching Score để loại kết quả; confidence nội bộ Detector không hiển thị.
 
 ### 6.3. Lưu Case, xem Case
 
 1. Operator chọn một track và tạo Case hoặc thêm vào Case do mình sở hữu. Giao diện chỉ cần gửi `track_id`, thông tin Case/định danh Case; **không cần `result_ref` hay điểm**.
 2. Flask kiểm tra Operator, quyền đối với track ở khu vực hiện tại, quyền sở hữu Case; khi tạo Case lấy owner từ phiên đăng nhập. Flask lấy metadata cần snapshot từ dữ liệu server.
 3. **Mỗi lần bấm lưu tạo `CaseResult` mới**, kể cả nếu Case đã chứa cùng `track_id`. Lưu metadata camera/khu vực/thời gian, không lưu Matching Score. Dashboard đếm số mục CaseResult.
-4. Operator/Viewer mở Case thì xem ảnh crop động, camera, khu vực, thời gian; bấm ảnh xem full frame có bbox. Không có điểm phù hợp ở màn hình Case. Operator chuyển khu vực vẫn xem ảnh trong Case mình sở hữu qua quyền Case cũ; Viewer xem toàn bộ Case chỉ đọc.
-5. Nếu frame/bbox không khả dụng, Case vẫn hiện metadata đã snapshot và thông báo không thể dựng ảnh. Xóa một mục theo `case_result_id` không xóa mục khác hay dữ liệu track gốc.
+4. Operator đánh dấu Case **Hoàn thành** khi xử lý xong: Case bị khóa (từ chối thêm/loại kết quả và sửa tiêu đề/ghi chú với lỗi `409 case_closed`) và bị loại khỏi danh sách "Thêm vào Case đã có"; Operator có thể **mở lại** để quay về Đang xử lý. Đóng/mở lại được ghi audit (`case.closed`, `case.reopened`).
+5. Operator/Viewer mở Case thì xem ảnh crop động, camera, khu vực, thời gian; bấm ảnh xem full frame có bbox. Không có điểm phù hợp ở màn hình Case. Operator chuyển khu vực vẫn xem ảnh trong Case mình sở hữu qua quyền Case cũ; Viewer xem toàn bộ Case chỉ đọc.
+6. Nếu frame/bbox không khả dụng, Case vẫn hiện metadata đã snapshot và thông báo không thể dựng ảnh. Xóa một mục theo `case_result_id` không xóa mục khác hay dữ liệu track gốc.
 
 ### 6.4. Đổi Detector/Tracker chung
 
@@ -167,7 +171,7 @@ Các dữ liệu hỗ trợ nằm ngoài sáu thực thể lõi: danh sách Dete
 | Xem Case và ảnh trong Case | Không mặc định | Case của mình, kể cả sau khi đổi khu vực | Mọi Case, chỉ đọc |
 | Dashboard tổng quan Case | Không | Không | Toàn hệ thống |
 
-Mọi quyền được kiểm tra tại Flask cho từng request, bao gồm request lấy crop/full frame. Không để trình duyệt truy cập bucket MinIO công khai hoặc tin owner/area do client tự khai báo. Phiên đăng nhập hết hạn/tài khoản bị khóa không được dùng gọi API mới; Case lịch sử vẫn tồn tại cho Viewer.
+Mọi quyền được kiểm tra tại Flask cho từng request, bao gồm request lấy crop/full frame. Địa chỉ RTSP chỉ được kết nối khi là IP thuộc dải mạng camera được khai báo (`PERSON_SEARCH_RTSP_NETWORKS`); địa chỉ loopback/link-local bị từ chối, và thông tin xác thực RTSP được mã hóa khi lưu. Không để trình duyệt truy cập bucket MinIO công khai hoặc tin owner/area do client tự khai báo. Phiên đăng nhập hết hạn/tài khoản bị khóa không được dùng gọi API mới; Case lịch sử vẫn tồn tại cho Viewer.
 
 ## 8. Phác thảo API
 
@@ -177,12 +181,12 @@ Mọi quyền được kiểm tra tại Flask cho từng request, bao gồm requ
 | --- | --- | --- |
 | Xác thực | `POST /auth/login`, `POST /auth/logout` | Phiên hợp lệ, vai trò và trạng thái tài khoản. |
 | Admin / khu vực | `GET /areas`, API tài khoản | Danh mục khu vực khai báo sẵn để chọn khi gán Operator. |
-| Admin / camera | API tạo/sửa camera, kiểm tra kết nối RTSP, bật/tắt AI, tải tệp video dự phòng gắn camera, trạng thái | Khi sửa, backend từ chối đổi `area_id`; RTSP giả lập là nguồn chính, tệp video là dự phòng; ngừng camera dừng nhận luồng mới, không xóa lịch sử; dữ liệu cũ tạm ẩn khỏi tìm kiếm cho tới khi camera vận hành trở lại. |
+| Admin / camera | API tạo/sửa camera, kiểm tra kết nối RTSP, bật/tắt AI (từ chối `409 camera_offline` khi camera RTSP mất kết nối), loại khỏi vận hành, đưa vận hành trở lại (`POST /admin/cameras/{id}/reactivate`), tải tệp video dự phòng gắn camera, trạng thái | Khi sửa, backend từ chối đổi `area_id`; RTSP giả lập là nguồn chính, tệp video là dự phòng; ngừng camera dừng nhận luồng mới, không xóa lịch sử; dữ liệu cũ tạm ẩn khỏi tìm kiếm cho tới khi camera vận hành trở lại. |
 | Admin / mô hình | API danh sách Detector/Tracker và cập nhật cấu hình đang dùng | Một cấu hình chung, chỉ chọn cặp hợp lệ; áp dụng lỗi giữ cặp trước. |
 | Tìm kiếm | `POST /searches/image`, `/searches/text`, `/searches/attributes` | Phương thức truy vấn, camera đang vận hành trong khu vực/thời gian tùy chọn, `top_k` thuộc `{4,8,12,16}`; khu vực từ phiên Operator. Response có `track_id`, metadata, điểm tạm thời. |
-| Case | `POST /cases`, `GET /cases`, `GET /cases/{id}`, `PATCH /cases/{id}` | Owner khi tạo lấy từ phiên; Operator chỉ xem/sửa Case mình, Viewer chỉ đọc tất cả. |
+| Case | `POST /cases`, `GET /cases?status=`, `GET /cases/{id}`, `PATCH /cases/{id}` | Owner khi tạo lấy từ phiên; Operator chỉ xem/sửa Case mình, Viewer chỉ đọc tất cả. `PATCH` nhận `status` (`OPEN`/`CLOSED`) để đánh dấu hoàn thành hoặc mở lại. |
 | Mục trong Case | `POST /cases/{id}/results`, `DELETE /cases/{id}/results/{case_result_id}` | POST nhận `track_id`, không nhận Matching Score; mỗi lần gọi hợp lệ tạo mục mới. DELETE xóa đúng mục. |
-| Ảnh và dashboard | API ảnh kết quả/ảnh trong Case, dashboard Viewer | Ảnh qua quyền track hoặc Case phù hợp; dashboard đếm CaseResult, không đếm track phân biệt. |
+| Ảnh và dashboard | API ảnh kết quả/ảnh trong Case (`/crop?aspect=&mark=`, `/frame`), dashboard Viewer | Ảnh qua quyền track hoặc Case phù hợp; dashboard đếm CaseResult, không đếm track phân biệt. |
 
 ## 9. Công nghệ đã bàn và mức độ chốt
 
@@ -194,7 +198,7 @@ Mọi quyền được kiểm tra tại Flask cho từng request, bao gồm requ
 | Database nghiệp vụ | **PostgreSQL** | **Đã chốt** cho dữ liệu quan hệ, Case/quyền/cấu hình/audit/session và outbox đồng bộ ba kho. |
 | Nguồn video | **FFmpeg + MediaMTX** phát 7 video WILDTRACK thành RTSP giả lập; tệp video tải lên gắn `camera_id` làm dự phòng | RTSP giả lập là nguồn chính của ứng dụng; worker xử lý tuần tự từng camera. |
 | AI worker và sampling | Python, tách Flask; lấy **1/N frame trước Detector** | Xử lý RTSP/tệp video và suy luận không nằm trong request API; chạy tuần tự, một camera tại một thời điểm. Thử `N=10`, `N=20`; chọn bằng chất lượng track và thời gian xử lý. |
-| Detector/Tracker baseline | **YOLO11n (COCO) + ByteTrack** đã tích hợp và đăng ký trong registry | Cặp baseline đang dùng; BoT-SORT là Tracker thay thế, YOLOX là Detector dự phòng. Admin chọn cặp trong registry chung. YOLO11n theo giấy phép AGPL-3.0, được chấp nhận vì đồ án phi thương mại. |
+| Detector/Tracker baseline | **YOLO11n (COCO) + ByteTrack** đã tích hợp và đăng ký trong registry | Cặp baseline đang dùng; **BoT-SORT (Ultralytics, `botsort_v1`) đã tích hợp làm Tracker thay thế** với cùng ngưỡng như ByteTrack, tắt ReID và bù chuyển động camera (camera cố định). YOLOX là Detector dự phòng đã đăng ký nhưng chưa có trọng số nên hiển thị không khả dụng. Admin chọn cặp trong registry chung. YOLO11n theo giấy phép AGPL-3.0, được chấp nhận vì đồ án phi thương mại. **Ràng buộc cấu hình (2026-09-27):** ngưỡng tin cậy của Detector không được cao hơn ngưỡng phát hiện điểm thấp của Tracker, vì ByteTrack dùng các phát hiện điểm thấp cho bước liên kết thứ hai; cấu hình đích là Detector 0,1 (bằng `track_low_threshold`), còn Tracker chỉ khởi tạo track mới từ phát hiện có độ tin cậy ≥ 0,25. |
 | Image/Text Encoder | **RaSa**, cùng một checkpoint cho ảnh và văn bản | **Đã chọn** theo đề xuất của giảng viên. Repo gốc hỗ trợ text→image (tiếng Anh) và có bước image–text matching để xếp hạng lại; ảnh→ảnh là chức năng phải tự tích hợp và kiểm chứng trên dataset thật. |
 | Tối ưu Intel CPU/iGPU | **OpenVINO** | Phương án thử sau khi có baseline đúng; không bảo đảm cải thiện nếu chưa đo trên máy và model thực tế. |
 | Giao diện | **React + Vite** | Đã chốt và triển khai; không ảnh hưởng các quy tắc quyền/dữ liệu (mọi quyền kiểm tra ở backend). |
@@ -230,6 +234,7 @@ Theo ảnh người làm đồ án cung cấp: **Intel Core i5-11300H, RAM 16 GB
 | Camera có thể được chuyển khu vực | **Không chuyển khu vực sau khi tạo**; chỉ sửa các thông tin và trạng thái được phép. |
 | `top_k` có thể là 5, 10, 20 hoặc số tùy nhập | Giao diện chọn **4, 8, 12, 16**; backend kiểm tra. |
 | Lưu Matching Score trong CaseResult và dùng `result_ref` để xác thực đúng lần tìm kiếm | **Không lưu điểm**; chỉ hiển thị khi tìm kiếm. Khi lưu gửi `track_id`, backend kiểm tra quyền, không cần `result_ref` để liên kết điểm. |
+| Case không có trạng thái | Case có **trạng thái Đang xử lý/Hoàn thành**; Case hoàn thành bị khóa và mở lại được, để Operator và Viewer theo dõi tiến độ xử lý. |
 | Một track chỉ xuất hiện một lần trong Case | **Mỗi lần bấm lưu tạo mục riêng**, cho phép lặp cùng track. |
 | Bộ chọn nhiều ảnh cho track | Bản đầu lưu **một frame đại diện** sau khi track kết thúc, chọn bằng bộ chọn chất lượng deterministic từ tối đa 3 ứng viên; không lưu nhiều frame, không gộp nhiều embedding. |
 | YOLO + ByteTrack được nêu làm lựa chọn kỹ thuật | Chỉ là **cặp thử ban đầu**; Admin thay Detector/Tracker đăng ký sẵn, áp dụng **chung toàn hệ thống**. |
@@ -242,17 +247,22 @@ Theo ảnh người làm đồ án cung cấp: **Intel Core i5-11300H, RAM 16 GB
 | Demo dùng tệp video tải lên, RTSP giả lập chỉ thử tại nhà | **RTSP giả lập từ 7 video WILDTRACK (FFmpeg + MediaMTX) là nguồn chính**, xử lý tuần tự một camera tại một thời điểm; tải tệp video lên là đường dự phòng. Trọng tâm đồ án là xây dựng ứng dụng, không nghiên cứu AI mới. |
 | Camera ngừng vận hành: dữ liệu cũ có còn được tìm kiếm không | Ngừng vận hành **dừng nhận luồng vào để xử lý/lưu trữ**; dữ liệu đã có được giữ nhưng **không truy vấn được trong lúc camera ngừng**, chờ camera vận hành trở lại. Kết quả đã lưu trong Case vẫn xem được. |
 
-## 13. Việc chưa chốt và bước tiếp theo
+## 13. Trạng thái triển khai và việc còn lại
 
-Đã chốt và triển khai: PostgreSQL + Milvus + MinIO, schema và đồng bộ ba kho (`PENDING → READY`), checkpoint RaSa CUHK-PEDES (vector 256 chiều, L2, metric IP), cặp baseline YOLO11n + ByteTrack, pipeline RTSP/tệp video dùng chung, API và giao diện React + Vite cho ba vai trò.
+Cập nhật ngày 2026-09-27.
 
-Còn lại:
+**Đã chốt và triển khai:** PostgreSQL + Milvus + MinIO, schema và đồng bộ ba kho (`PENDING → READY`), checkpoint RaSa CUHK-PEDES (vector 256 chiều, L2, metric IP), Detector YOLO11n với hai Tracker ByteTrack và BoT-SORT, pipeline RTSP/tệp video dùng chung, API và giao diện React + Vite cho ba vai trò, trạng thái Case, đưa camera vận hành trở lại, bộ thuộc tính tiếng Anh mở rộng (giới tính, loại/màu trang phục trên và dưới, vật mang theo; không có lựa chọn phủ định).
 
-1. Dựng 7 luồng RTSP giả lập (FFmpeg phát lặp `cam1.mp4` … `cam7.mp4` vào MediaMTX), seed 7 camera trỏ đúng URL và cơ chế xoay vòng tạo phiên RTSP tuần tự cho các camera đang bật AI.
-2. Benchmark `N=10`/`N=20` trên máy demo đã chốt preset mặc định `throughput` (`N=20`); Colab T4 là phép đo mở rộng, không chặn demo học thuật.
-3. Đánh giá chất lượng tìm kiếm ảnh→ảnh, văn bản tiếng Anh→ảnh và thuộc tính tiếng Anh→ảnh trên 7 camera (Recall@4/8/12/16); quyết định có bật xếp hạng lại image–text matching hay không.
-4. Đo RAM toàn stack (Flask có nạp RaSa để mã hóa truy vấn + worker + Milvus/MinIO/PostgreSQL) trên máy 16 GB; nếu thiếu, tách encoder truy vấn thành một tiến trình dùng chung.
-5. Chạy E2E thật trên stack Docker: **một phiên RTSP giả lập → track → ảnh/vector → tìm kiếm → lưu Case → Viewer xem**, rồi lập chỉ mục đủ 7 camera trước buổi demo.
+| # | Việc | Trạng thái |
+| --- | --- | --- |
+| 1 | Dựng 7 luồng RTSP giả lập và cơ chế xoay vòng phiên RTSP | **Đã xong.** `scripts/rtsp.ps1` phát 7 luồng qua MediaMTX; worker tự tạo phiên RTSP tuần tự (mục 6.1). Đã kiểm chứng: bật AI cho một camera RTSP, worker tự tạo phiên sau khoảng 10 giây, phiên 600 frame hoàn tất với 35 track `READY`; tắt AI hủy phiên đang chờ. |
+| 2 | Benchmark `N=10`/`N=20` | **Đã xong**, chốt `throughput` (`N=20`). Đo khi lập chỉ mục trên máy demo: khoảng 6,7 giây xử lý cho mỗi giây video 1080p60 (chậm hơn thời gian thực khoảng 7 lần) cộng khoảng 35 giây nạp mô hình mỗi job. Máy chỉ có CPU không xử lý kịp luồng RTSP 1080p60 theo thời gian thực nên MediaMTX bỏ bớt frame; dữ liệu demo được chuẩn bị bằng tệp video. |
+| 3 | Đánh giá Recall@4/8/12/16 trên 7 camera WILDTRACK | **Đã đo hai lần.** Lần 1 (bộ thuộc tính cũ, ngưỡng Detector 0,25): ảnh→ảnh Recall@4 = 0,83, Recall@8–16 = 1,0; văn bản→ảnh và thuộc tính→ảnh Recall@4–16 = 0 (MRR thuộc tính 0,005). Lần 2 (bộ thuộc tính mới, nhãn 6 truy vấn chuyển theo mô tả đã duyệt, ngưỡng Detector 0,1; `var/evaluation/wildtrack-attributes-v2.json`): thuộc tính→ảnh vẫn Recall@4–16 = 0, MRR 0,0045; kết quả đúng đầu tiên ở hạng 87/241/365 trên 1.526 track. **Kết luận:** bộ từ vựng giàu hơn không cải thiện; giới hạn nằm ở RaSa văn bản→ảnh trên miền WILDTRACK (người nhỏ, xa, góc nhìn chếch từ trên cao) khác xa CUHK-PEDES (ảnh crop rõ, chính diện). Tìm bằng ảnh là phương thức đáng tin cậy nhất cho demo; tìm bằng văn bản/thuộc tính được trình bày như chức năng hỗ trợ, cần Operator đánh giá bằng mắt. Hướng cải thiện (ngoài phạm vi): bật xếp hạng lại image–text matching của RaSa hoặc tinh chỉnh trên dữ liệu cùng miền. |
+| 4 | Đo RAM toàn stack | **Đo gián tiếp:** khi chạy đủ stack cùng trình duyệt/IDE trên máy 16 GB chỉ còn khoảng 2 GB trống, dưới ngưỡng 4 GB của preflight; worker vẫn chạy được nhưng khi demo nên đóng bớt ứng dụng. Chưa cần tách encoder truy vấn thành tiến trình riêng. |
+| 5 | Chạy lại đánh giá sau khi hạ ngưỡng Detector xuống 0,1 | **Đã đo** (lần 2 ở mục 3): recall phát hiện tăng 0,54 → 0,64, precision giảm 0,58 → 0,43; gallery 1.526 track. Hai lần đo khác cả ngưỡng Detector lẫn nhãn thuộc tính nên chỉ so sánh định tính. |
+| 6 | E2E thật trên stack Docker | **Đã xong** cho cả hai nguồn: tệp video (7 camera, 736 track `READY`) và phiên RTSP; luồng tìm kiếm → lưu Case → Viewer xem đã kiểm chứng. |
+
+**Lưu ý vận hành khi demo:** không để máy vào chế độ ngủ trong lúc worker xử lý (job bị ngắt và lease hết hạn); dùng `person-search-storage reconcile`/`retry-outbox` để kiểm tra và hoàn tất dữ liệu nếu có job bị gián đoạn.
 
 ### Tham khảo kỹ thuật đã dùng khi đánh giá phương án
 

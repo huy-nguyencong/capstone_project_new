@@ -211,6 +211,7 @@ class FakeCases(FakeLookup):
         created_to: datetime | None = None,
         after: tuple[datetime, uuid.UUID] | None = None,
         limit: int = 51,
+        status: Any = None,
     ) -> list[tuple[Any, Any]]:
         cases = sorted(
             self.rows.values(), key=lambda case: (case.created_at, case.id), reverse=True
@@ -221,6 +222,8 @@ class FakeCases(FakeLookup):
             cases = [case for case in cases if case.created_at >= created_from]
         if created_to is not None:
             cases = [case for case in cases if case.created_at <= created_to]
+        if status is not None:
+            cases = [case for case in cases if case.status == status]
         if after is not None:
             cases = [case for case in cases if (case.created_at, case.id) < after]
         return self._with_owner(cases[:limit])
@@ -233,6 +236,12 @@ class FakeCases(FakeLookup):
 
     def count(self) -> int:
         return len(self.rows)
+
+    def count_by_status(self) -> dict[Any, int]:
+        counts: dict[Any, int] = {}
+        for case in self.rows.values():
+            counts[case.status] = counts.get(case.status, 0) + 1
+        return counts
 
     def owners(self) -> list[Any]:
         owner_ids = {case.owner_user_id for case in self.rows.values()}

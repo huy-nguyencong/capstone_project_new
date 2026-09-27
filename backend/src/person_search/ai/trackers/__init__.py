@@ -7,6 +7,7 @@ from person_search.ai.trackers.bytetrack import (
     RawTrack,
     UltralyticsByteTrackBackend,
     build_bytetrack,
+    build_tracker,
     load_bytetrack_settings,
 )
 
@@ -17,5 +18,6 @@ __all__ = [
     "RawTrack",
     "UltralyticsByteTrackBackend",
     "build_bytetrack",
+    "build_tracker",
     "load_bytetrack_settings",
 ]

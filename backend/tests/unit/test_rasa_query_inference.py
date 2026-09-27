@@ -105,10 +105,12 @@ def test_text_normalization_is_deterministic_without_translation():
 @pytest.mark.parametrize(
     ("attributes", "expected"),
     [
-        ({"upper_color": "red"}, "A person wearing red top."),
+        ({"upper_color": "red"}, "A person wearing a red top."),
         ({"lower_color": "black"}, "A person wearing black pants."),
-        ({"upper_type": "dress"}, "A person wearing dress."),
-        ({"has_backpack": False}, "A person without a backpack."),
+        ({"upper_type": "dress"}, "A person wearing a dress."),
+        ({"lower_type": "skirt", "lower_color": "black"}, "A person wearing a black skirt."),
+        ({"gender": "woman", "carrying": "handbag"}, "A woman carrying a handbag."),
+        ({"gender": "man"}, "A man."),
     ],
 )
 def test_attribute_prompt_snapshots_are_english_and_deterministic(attributes, expected):
@@ -118,6 +120,8 @@ def test_attribute_prompt_snapshots_are_english_and_deterministic(attributes, ex
 def test_attribute_prompt_rejects_conflicting_dress_and_pants():
     with pytest.raises(ValueError, match="cannot be combined"):
         attributes_prompt({"upper_type": "dress", "lower_color": "black"})
+    with pytest.raises(ValueError, match="cannot be combined"):
+        attributes_prompt({"upper_type": "dress", "lower_type": "jeans"})
 
 
 @pytest.mark.parametrize(

@@ -81,17 +81,17 @@
       "compatible_detectors": ["yolo11n_coco", "yolo_small_candidate", "yolox_tiny_candidate", "yolox_small_candidate"]
     },
     {
-      "id": "botsort_candidate", "display_name": "BoT-SORT candidate",
-      "version": "pin-before-use",
-      "description": "Alternative tracker; ReID and camera-motion compensation disabled by default.",
+      "id": "botsort_v1", "display_name": "BoT-SORT",
+      "version": "ultralytics-8.4.163",
+      "description": "Alternative tracker (Ultralytics BoT-SORT); ReID and camera-motion compensation disabled for static cameras.",
       "adapter_kind": "botsort",
-      "artifact": {"path": "model_artifacts/botsort.json", "sha256": "0000000000000000000000000000000000000000000000000000000000000000"},
+      "artifact": {"path": "botsort_tracker.json", "sha256": "b8a6e7e0449f27e11f5373516d0267c0813312d656797733f991c365ec7c0d7c"},
       "devices": ["cpu", "cuda"], "input_shape": [6],
       "provenance": {
-        "package_name": "bot-sort", "package_version": "pin-before-use",
-        "source_url": "https://github.com/NirAharon/BoT-SORT", "weights_url": null,
-        "license": "MIT", "approved_for_project": true,
-        "review_note": "Pin the adapter commit and local tracker config before enabling."
+        "package_name": "ultralytics", "package_version": "8.4.163",
+        "source_url": "https://github.com/ultralytics/ultralytics", "weights_url": null,
+        "license": "AGPL-3.0", "approved_for_project": true,
+        "review_note": "Ultralytics BoT-SORT implementation approved with the YOLO11n non-commercial academic demo baseline on 2026-09-27; shares the ByteTrack thresholds for a like-for-like comparison."
       },
       "compatible_detectors": ["yolo11n_coco", "yolo_small_candidate", "yolox_tiny_candidate", "yolox_small_candidate"]
     }

@@ -224,48 +224,69 @@ def decode_query_image(content: bytes) -> Image.Image:
         raise InvalidQueryImageError("Image is invalid.") from error
 
 
+# Attribute search vocabulary (English, CUHK-PEDES caption style). Values are the API enum;
+# the text is what the prompt builder writes. The frontend mirrors this table exactly.
+ATTRIBUTE_GENDERS = {"man": "man", "woman": "woman"}
+ATTRIBUTE_UPPER_TYPES = {
+    "t_shirt": "t-shirt",
+    "shirt": "shirt",
+    "sweater": "sweater",
+    "jacket": "jacket",
+    "coat": "coat",
+    "dress": "dress",
+}
+ATTRIBUTE_UPPER_COLORS = frozenset(
+    {"black", "white", "gray", "red", "blue", "navy", "green", "yellow", "brown", "beige"}
+)
+# Plural garments take no article ("blue jeans"); a skirt does ("a black skirt").
+ATTRIBUTE_LOWER_TYPES = {"pants": "pants", "jeans": "jeans", "shorts": "shorts", "skirt": "skirt"}
+ATTRIBUTE_LOWER_COLORS = frozenset({"black", "white", "gray", "blue", "brown", "beige"})
+ATTRIBUTE_CARRYING = {"backpack": "backpack", "handbag": "handbag"}
+ATTRIBUTE_FIELDS = frozenset(
+    {"gender", "upper_type", "upper_color", "lower_type", "lower_color", "carrying"}
+)
+
+
+def _choice(attributes: Mapping[str, object], field: str, allowed) -> str | None:
+    value = attributes.get(field)
+    if value is not None and value not in allowed:
+        raise ValueError(f"{field} is not supported.")
+    return value  # type: ignore[return-value]
+
+
 def attributes_prompt(attributes: Mapping[str, object]) -> str:
-    allowed = {"upper_color", "lower_color", "upper_type", "has_backpack"}
-    if not attributes or set(attributes) - allowed:
+    """Build the English caption sent to the Text Encoder from the selected attributes.
+
+    Negations ("without a backpack") are deliberately not offered: CLIP-style text encoders
+    match the noun and would rank people carrying one higher.
+    """
+
+    if not attributes or set(attributes) - ATTRIBUTE_FIELDS:
         raise ValueError("Attributes contain unsupported fields.")
-    colors = {"red", "blue", "white", "black", "green", "yellow", "gray", "beige"}
-    clothing = {
-        "t_shirt": "t-shirt",
-        "shirt": "shirt",
-        "jacket": "jacket",
-        "dress": "dress",
-    }
-    upper_color = attributes.get("upper_color")
-    lower_color = attributes.get("lower_color")
-    upper_type = attributes.get("upper_type")
-    backpack = attributes.get("has_backpack")
-    if upper_color is not None and upper_color not in colors:
-        raise ValueError("upper_color is not supported.")
-    if lower_color is not None and lower_color not in colors:
-        raise ValueError("lower_color is not supported.")
-    if upper_type is not None and upper_type not in clothing:
-        raise ValueError("upper_type is not supported.")
-    if upper_type == "dress" and lower_color is not None:
-        raise ValueError("A dress cannot be combined with lower_color.")
-    if backpack is not None and type(backpack) is not bool:
-        raise ValueError("has_backpack must be boolean.")
+    gender = _choice(attributes, "gender", ATTRIBUTE_GENDERS)
+    upper_type = _choice(attributes, "upper_type", ATTRIBUTE_UPPER_TYPES)
+    upper_color = _choice(attributes, "upper_color", ATTRIBUTE_UPPER_COLORS)
+    lower_type = _choice(attributes, "lower_type", ATTRIBUTE_LOWER_TYPES)
+    lower_color = _choice(attributes, "lower_color", ATTRIBUTE_LOWER_COLORS)
+    carrying = _choice(attributes, "carrying", ATTRIBUTE_CARRYING)
+    if upper_type == "dress" and (lower_type or lower_color):
+        raise ValueError("A dress cannot be combined with lower clothing.")
+    if not any((gender, upper_type, upper_color, lower_type, lower_color, carrying)):
+        raise ValueError("At least one attribute is required.")
 
     garments: list[str] = []
-    if upper_color or upper_type:
-        garment = " ".join(
-            value for value in (upper_color, clothing.get(upper_type, "top")) if value
-        )
-        garments.append(garment)
-    if lower_color:
-        garments.append(f"{lower_color} pants")
+    if upper_type or upper_color:
+        words = [upper_color, ATTRIBUTE_UPPER_TYPES[upper_type] if upper_type else "top"]
+        garments.append("a " + " ".join(word for word in words if word))
+    if lower_type or lower_color:
+        noun = ATTRIBUTE_LOWER_TYPES[lower_type] if lower_type else "pants"
+        phrase = " ".join(word for word in (lower_color, noun) if word)
+        garments.append(f"a {phrase}" if noun == "skirt" else phrase)
     parts = [f"wearing {' and '.join(garments)}"] if garments else []
-    if backpack is True:
-        parts.append("carrying a backpack")
-    elif backpack is False:
-        parts.append("without a backpack")
-    if not parts:
-        raise ValueError("At least one attribute is required.")
-    return "A person " + ", ".join(parts) + "."
+    if carrying:
+        parts.append(f"carrying a {ATTRIBUTE_CARRYING[carrying]}")
+    subject = f"A {ATTRIBUTE_GENDERS[gender]}" if gender else "A person"
+    return f"{subject} {', '.join(parts)}." if parts else f"{subject}."
 
 
 def _repositories(work: UnitOfWork) -> Repositories:

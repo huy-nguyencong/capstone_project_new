@@ -10,6 +10,7 @@ from sqlalchemy import select, text
 
 from person_search.ai.configuration import ConfigApplyCoordinator
 from person_search.ai.registry import (
+    PRODUCTION_PREFLIGHT_IDS,
     IncompatibleModelPairError,
     ModelNotFoundError,
     ModelRegistry,
@@ -88,11 +89,7 @@ class CameraService:
             path,
             artifact_root=artifact_root or Path(path).resolve().parent,
             allow_demo=allow_demo,
-            preflight_available=(
-                {"yolo11n_coco", "bytetrack_v1", "rasa_cuhk_pedes_v1"}
-                if not allow_demo
-                else ()
-            ),
+            preflight_available=PRODUCTION_PREFLIGHT_IDS if not allow_demo else (),
         )
 
     def models(self):
@@ -224,6 +221,19 @@ class CameraService:
             if enabled is not None:
                 if row.status != CameraStatus.ACTIVE:
                     raise ApiError(409, "camera_not_active", "Camera đã ngừng vận hành.")
+                # UC-04 E1: an RTSP camera whose last check failed cannot start AI processing.
+                # Cameras without RTSP only receive uploaded videos (fallback path).
+                if (
+                    enabled
+                    and row.rtsp_url
+                    and row.rtsp_status in (RtspStatus.OFFLINE, RtspStatus.ERROR)
+                ):
+                    raise ApiError(
+                        409,
+                        "camera_offline",
+                        "Camera đang mất kết nối RTSP. "
+                        "Kiểm tra lại kết nối trước khi bật xử lý AI.",
+                    )
                 if enabled and not self.active(work):
                     raise ApiError(409, "ai_config_missing", "Chưa có cấu hình AI.")
                 changed = row.ai_enabled != enabled
@@ -255,6 +265,19 @@ class CameraService:
                     row.id,
                 )
                 work.commit()
+            return self.view(work, row)
+
+    def reactivate(self, camera_id, actor):
+        """UC-03 A5: return a retired camera to operation with AI processing still off."""
+
+        with self.factory() as work:
+            row = self.camera(work, camera_id, True)
+            if row.status != CameraStatus.RETIRED:
+                raise ApiError(409, "camera_not_retired", "Camera đang vận hành.")
+            row.status, row.ai_enabled = CameraStatus.ACTIVE, False
+            row.version += 1
+            self.audit(work, actor, AuditEvent.CAMERA_REACTIVATED, row.id)
+            work.commit()
             return self.view(work, row)
 
     def test(self, camera_id, actor):

@@ -6,6 +6,7 @@ import { Spinner } from '@/components/ui/Spinner'
 import { Tag } from '@/components/ui/Tag'
 import { casesApi } from '@/services/api/cases'
 import { useToast } from '@/store/hooks'
+import { MarkCompleteOption } from './MarkCompleteOption'
 
 export function AddToCaseDialog({ result, onClose }) {
   const toast = useToast()
@@ -14,11 +15,12 @@ export function AddToCaseDialog({ result, onClose }) {
   const [duplicate, setDuplicate] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
+  const [complete, setComplete] = useState(false)
 
   useEffect(() => {
     let active = true
     casesApi
-      .list({ limit: 100 })
+      .list({ limit: 100, status: 'OPEN' })
       .then((page) => active && setOwn(page.items))
       .catch((requestError) => {
         if (!active) return
@@ -46,12 +48,25 @@ export function AddToCaseDialog({ result, onClose }) {
   }, [selected, result.track])
 
   const save = async () => {
-    if (!selected) return setError('Chọn một Case.')
+    if (!selected) return setError('Chọn một vụ việc.')
     setSaving(true)
     try {
       await casesApi.addResult(selected, result.track)
       const target = own.find((c) => c.id === selected)
-      toast(`Đã thêm kết quả vào Case ${target?.code ?? ''}.`)
+      const code = target?.code ?? ''
+      const closeError = complete ? await casesApi.markCompleted(selected) : null
+      if (closeError) {
+        toast(
+          `Đã thêm kết quả vào vụ việc ${code} nhưng chưa đánh dấu hoàn thành: ${closeError}`,
+          'warn',
+        )
+      } else {
+        toast(
+          complete
+            ? `Đã thêm kết quả và đánh dấu vụ việc ${code} hoàn thành.`
+            : `Đã thêm kết quả vào vụ việc ${code}.`,
+        )
+      }
       onClose()
     } catch (requestError) {
       setError(requestError.message)
@@ -61,7 +76,7 @@ export function AddToCaseDialog({ result, onClose }) {
 
   return (
     <Dialog
-      title="Thêm vào Case đã có"
+      title="Thêm vào vụ việc đã có"
       width={480}
       onClose={onClose}
       className="z-[60]"
@@ -69,12 +84,15 @@ export function AddToCaseDialog({ result, onClose }) {
         <>
           <Button onClick={onClose}>Hủy</Button>
           <Button variant="primary" onClick={save} disabled={saving || !own?.length}>
-            Thêm vào Case
+            Thêm vào vụ việc
           </Button>
         </>
       }
     >
-      <div className="text-xs text-neutral-400">Chỉ hiển thị các Case do bạn phụ trách.</div>
+      <div className="text-xs text-neutral-400">
+        Chỉ hiển thị các vụ việc đang xử lý do bạn phụ trách. Vụ việc đã hoàn thành cần được mở lại
+        trước khi thêm kết quả.
+      </div>
       <div className="flex max-h-80 flex-col gap-1.5 overflow-auto">
         {own === null && <Spinner className="text-neutral-400" />}
         {own?.map((c) => (
@@ -101,15 +119,16 @@ export function AddToCaseDialog({ result, onClose }) {
         ))}
         {own?.length === 0 && !error && (
           <div className="text-[13px] text-neutral-400">
-            Bạn chưa phụ trách Case nào. Hãy tạo Case mới.
+            Bạn không có vụ việc nào đang xử lý. Hãy tạo vụ việc mới.
           </div>
         )}
       </div>
       {duplicate && (
         <div className="text-xs text-neutral-400">
-          Kết quả này đã có trong Case đã chọn. Thêm lần nữa sẽ lưu một bản mới.
+          Kết quả này đã có trong vụ việc đã chọn. Thêm lần nữa sẽ lưu một bản mới.
         </div>
       )}
+      {own?.length > 0 && <MarkCompleteOption checked={complete} onChange={setComplete} />}
       {error && <Alert>{error}</Alert>}
     </Dialog>
   )

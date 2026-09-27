@@ -1,4 +1,10 @@
-import { ArchiveIcon, PencilSimpleIcon, PlugsConnectedIcon, PlusIcon } from '@phosphor-icons/react'
+import {
+  ArchiveIcon,
+  ArrowCounterClockwiseIcon,
+  PencilSimpleIcon,
+  PlugsConnectedIcon,
+  PlusIcon,
+} from '@phosphor-icons/react'
 import { useEffect, useState } from 'react'
 import { Button, IconButton } from '@/components/ui/Button'
 import { CellStack, DataTable } from '@/components/ui/DataTable'
@@ -15,7 +21,7 @@ import { CameraDialog } from './CameraDialog'
 
 function CameraThumb({ status }) {
   return (
-    <div className="relative h-9 w-16 flex-none rounded-sm bg-[linear-gradient(180deg,var(--color-neutral-800),var(--color-bg))] shadow-sm">
+    <div className="relative hidden h-9 w-16 flex-none rounded-sm bg-[linear-gradient(180deg,var(--color-neutral-800),var(--color-bg))] shadow-sm sm:block">
       <Dot tone={CAMERA_STATUS[status].tone} size={5} className="absolute right-1 bottom-1" />
     </div>
   )
@@ -67,13 +73,29 @@ export default function CamerasPage() {
   const retire = (c) =>
     confirm({
       title: 'Loại camera khỏi vận hành?',
-      body: `${c.name} sẽ ngừng tạo dữ liệu AI mới và không được chọn cho truy vấn mới. Embedding, frame, bounding box và kết quả đã lưu trong Case được giữ nguyên.`,
+      body: `${c.name} sẽ ngừng nhận luồng để xử lý và lưu trữ. Dữ liệu đã phân tích (đặc trưng, khung hình, vị trí người và thông tin đi kèm) được giữ nguyên nhưng tạm thời không được tìm kiếm cho đến khi camera vận hành trở lại. Kết quả đã lưu trong vụ việc vẫn xem được.`,
       label: 'Loại khỏi vận hành',
       onConfirm: async () => {
         try {
           await camerasApi.retire(c.id)
           await load()
           toast(`Đã loại ${c.name} khỏi vận hành.`)
+        } catch (e) {
+          toast(e.message, 'err')
+        }
+      },
+    })
+
+  const reactivate = (c) =>
+    confirm({
+      title: 'Đưa camera vận hành trở lại?',
+      body: `${c.name} trở lại vận hành với xử lý AI ở trạng thái tắt. Dữ liệu đã tạo trước đó được tìm kiếm lại bình thường.`,
+      label: 'Đưa vào vận hành',
+      onConfirm: async () => {
+        try {
+          await camerasApi.reactivate(c.id)
+          await load()
+          toast(`Đã đưa ${c.name} vận hành trở lại. Bật xử lý AI tại trang Xử lý AI.`)
         } catch (e) {
           toast(e.message, 'err')
         }
@@ -111,7 +133,14 @@ export default function CamerasPage() {
       align: 'right',
       render: (c) =>
         c.status === 'retired' ? (
-          <span className="text-xs text-neutral-500">Giữ dữ liệu lịch sử</span>
+          <Button
+            variant="quiet"
+            icon={ArrowCounterClockwiseIcon}
+            className="text-xs"
+            onClick={() => reactivate(c)}
+          >
+            Đưa vào vận hành
+          </Button>
         ) : (
           <div className="inline-flex gap-0.5">
             <Button

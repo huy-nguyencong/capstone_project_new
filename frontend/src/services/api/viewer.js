@@ -7,6 +7,8 @@ export const viewerApi = {
     return {
       totalCases: body.total_cases,
       totalCaseResults: body.total_case_results,
+      openCases: body.open_cases,
+      closedCases: body.closed_cases,
       recentCases: body.recent_cases.map(toCaseSummary),
     }
   },

@@ -20,6 +20,7 @@ from person_search.ai.trackers import (
     RawTrack,
     UltralyticsByteTrackBackend,
     build_bytetrack,
+    build_tracker,
     load_bytetrack_settings,
 )
 from person_search.storage.contracts import BoundingBoxPixels
@@ -289,6 +290,58 @@ def test_factory_verifies_registry_artifact_and_checksum(tmp_path: Path) -> None
     artifact.write_text("changed", encoding="utf-8")
     with pytest.raises(ValueError, match="checksum changed"):
         build_bytetrack(entry, artifact_root=tmp_path)
+
+
+def _tracker_entry(kind: str, artifact: Path) -> TrackerEntry:
+    return TrackerEntry(
+        f"{kind}_v1",
+        kind,
+        "1",
+        "test",
+        kind,
+        ArtifactReference(artifact.name, hashlib.sha256(artifact.read_bytes()).hexdigest()),
+        (DeviceKind.CPU,),
+        (6,),
+        Provenance("ultralytics", "8.4.163", "https://example.test", None, "AGPL-3.0", True, "ok"),
+        True,
+        (),
+        ("yolo11n_coco",),
+    )
+
+
+def test_botsort_factory_uses_its_own_settings_schema_and_track_prefix(tmp_path: Path) -> None:
+    config = Path(__file__).parents[2] / "config"
+    artifact = tmp_path / "botsort.json"
+    artifact.write_bytes((config / "botsort_tracker.json").read_bytes())
+    backend = FakeBackend()
+
+    built = build_tracker(
+        _tracker_entry("botsort", artifact),
+        artifact_root=tmp_path,
+        backend_factory=lambda _: backend,
+    )
+    assert built._id_prefix == "bs"
+
+    wrong = tmp_path / "bytetrack.json"
+    wrong.write_bytes((config / "bytetrack_tracker.json").read_bytes())
+    with pytest.raises(ValueError, match="Unsupported tracker settings schema"):
+        build_tracker(_tracker_entry("botsort", wrong), artifact_root=tmp_path)
+
+
+@pytest.mark.model_real(modules=("ultralytics", "lap"))
+def test_real_botsort_backend_tracks_multiple_people() -> None:
+    camera_id = uuid.uuid4()
+    subject = tracker(UltralyticsByteTrackBackend(ByteTrackSettings(), "botsort"))
+    subject.open()
+    active_sets = []
+    for sequence, positions in enumerate(((10, 65), (14, 61), (18, 57))):
+        frame = sample(sequence, camera_id)
+        updates = subject.update(frame, [detection(frame, x) for x in positions])
+        if updates:
+            active_sets.append({item.local_track_id for item in updates})
+    subject.close()
+
+    assert active_sets == [{"bt-1", "bt-2"}, {"bt-1", "bt-2"}]
 
 
 @pytest.mark.model_real(modules=("ultralytics", "lap"))

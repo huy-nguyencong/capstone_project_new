@@ -11,11 +11,16 @@ from PIL import Image
 from storage_fakes import FakeDatabase, FakeMinioClient, FakeUnitOfWork
 
 from person_search.services.track_imagery import (
+    MARK_COLOR,
     ImageAccessDeniedError,
     ImageVariant,
     TrackImageNotFoundError,
     TrackImageService,
     TrackImageUnavailableError,
+    fit_box_to_aspect,
+    mark_person,
+    parse_crop_aspect,
+    parse_crop_mark,
 )
 from person_search.storage.minio.frames import MinioFrameStore
 from person_search.storage.postgres.models import (
@@ -159,6 +164,83 @@ def test_bbox_on_frame_edge_with_padding_is_clamped() -> None:
     image = world.service.search_result_image(world.operator, track_id, ImageVariant.PERSON_CROP)
 
     assert (image.width, image.height) == (WIDTH - 34, HEIGHT - 3)
+
+
+@pytest.mark.parametrize(
+    ("box", "expected"),
+    [
+        # Tall person: keep height, widen with neighbouring pixels, stay centred.
+        ((100, 100, 140, 300), (60, 100, 180, 300)),
+        # Wide box: keep width, extend height.
+        ((100, 100, 280, 200), (100, 0, 280, 300)),
+        # Near the left edge the window is shifted inside the frame, not clipped.
+        ((0, 100, 40, 300), (0, 100, 120, 300)),
+        # Full-height box: height already at the frame limit, width grows to 1080 * 0.6.
+        ((500, 0, 540, 1080), (196, 0, 844, 1080)),
+    ],
+)
+def test_fit_box_to_aspect_grows_box_without_cutting_person(box, expected) -> None:
+    fitted = fit_box_to_aspect(box, (1920, 1080), 0.6)
+    assert fitted == expected
+    left, top, right, bottom = fitted
+    assert left <= box[0] and top <= box[1] and right >= box[2] and bottom >= box[3]
+    assert 0 <= left and 0 <= top and right <= 1920 and bottom <= 1080
+
+
+def test_fit_box_to_aspect_is_limited_by_frame_size() -> None:
+    fitted = fit_box_to_aspect((0, 400, 1920, 500), (1920, 1080), 0.6)
+    assert fitted == (0, 0, 1920, 1080)
+
+
+def test_person_crop_matches_requested_aspect() -> None:
+    world = World()
+    track_id = world.track()
+
+    image = world.service.search_result_image(
+        world.operator, track_id, ImageVariant.PERSON_CROP, aspect=0.6
+    )
+
+    assert (image.width, image.height) == (20, 33)
+
+
+def test_mark_person_outlines_match_and_dims_surroundings() -> None:
+    image = Image.new("RGB", (60, 100), (200, 200, 200))
+
+    marked = mark_person(image, (20, 30, 40, 80))
+
+    assert marked.getpixel((20, 50)) == MARK_COLOR
+    assert marked.getpixel((30, 55)) == (200, 200, 200)
+    assert marked.getpixel((5, 5)) == (120, 120, 120)
+    assert image.getpixel((5, 5)) == (200, 200, 200)
+
+
+def test_marked_person_crop_is_rendered_with_outline() -> None:
+    world = World()
+    track_id = world.track()
+
+    plain = world.service.search_result_image(
+        world.operator, track_id, ImageVariant.PERSON_CROP, aspect=0.6
+    )
+    marked = world.service.search_result_image(
+        world.operator, track_id, ImageVariant.PERSON_CROP, aspect=0.6, mark=True
+    )
+
+    assert (marked.width, marked.height) == (plain.width, plain.height)
+    assert marked.content != plain.content
+
+
+@pytest.mark.parametrize("raw", ["yes", "2"])
+def test_parse_crop_mark_rejects_invalid_values(raw) -> None:
+    with pytest.raises(ValueError):
+        parse_crop_mark(raw)
+    assert parse_crop_mark(None) is False and parse_crop_mark("1") is True
+
+
+@pytest.mark.parametrize("raw", ["abc", "0", "9"])
+def test_parse_crop_aspect_rejects_invalid_values(raw) -> None:
+    with pytest.raises(ValueError):
+        parse_crop_aspect(raw)
+    assert parse_crop_aspect(None) is None and parse_crop_aspect("0.6") == 0.6
 
 
 def test_bbox_outside_decoded_frame_is_reported() -> None:

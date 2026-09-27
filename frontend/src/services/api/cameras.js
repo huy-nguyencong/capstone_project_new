@@ -10,6 +10,7 @@ export const camerasApi = {
   create: async (data) => toCamera(await apiService.post('/admin/cameras', data)),
   update: async (id, data) => toCamera(await apiService.patch(`/admin/cameras/${id}`, data)),
   retire: async (id) => toCamera(await apiService.post(`/admin/cameras/${id}/retire`)),
+  reactivate: async (id) => toCamera(await apiService.post(`/admin/cameras/${id}/reactivate`)),
   test: (id) => apiService.post(`/admin/cameras/${id}/connection-tests`),
   state: async (id, enabled) =>
     toCamera(await apiService.put(`/admin/cameras/${id}/ai-state`, { enabled })),

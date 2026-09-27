@@ -1,4 +1,9 @@
-"""Registry-backed ByteTrack adapter with camera/job-local lifecycle state."""
+"""Registry-backed ByteTrack/BoT-SORT adapters with camera/job-local lifecycle state.
+
+BoT-SORT (Ultralytics) extends ByteTrack with optional camera-motion compensation and ReID;
+both are disabled here (static cameras, no extra model), so the two trackers share this
+adapter and differ in their association logic only.
+"""
 
 from __future__ import annotations
 
@@ -62,7 +67,12 @@ class ByteTrackSettings:
                 raise ValueError("ByteTrack lifecycle limits must be positive integers.")
 
 
-def load_bytetrack_settings(path: str | Path) -> ByteTrackSettings:
+TRACKER_SCHEMAS = {"bytetrack": "bytetrack-tracker/v1", "botsort": "botsort-tracker/v1"}
+
+
+def load_bytetrack_settings(
+    path: str | Path, schema: str = TRACKER_SCHEMAS["bytetrack"]
+) -> ByteTrackSettings:
     payload = json.loads(Path(path).read_text(encoding="utf-8"))
     expected = {
         "schema_version",
@@ -77,8 +87,8 @@ def load_bytetrack_settings(path: str | Path) -> ByteTrackSettings:
     }
     if not isinstance(payload, dict) or set(payload) != expected:
         raise ValueError("ByteTrack settings contain missing or unknown fields.")
-    if payload.pop("schema_version") != "bytetrack-tracker/v1":
-        raise ValueError("Unsupported ByteTrack settings schema.")
+    if payload.pop("schema_version") != schema:
+        raise ValueError("Unsupported tracker settings schema.")
     return ByteTrackSettings(**payload)
 
 
@@ -114,10 +124,13 @@ class _Results:
 
 
 class UltralyticsByteTrackBackend:
-    """Thin delayed-import boundary around the pinned Ultralytics ByteTrack implementation."""
+    """Thin delayed-import boundary around the pinned Ultralytics ByteTrack/BoT-SORT."""
 
-    def __init__(self, settings: ByteTrackSettings) -> None:
+    def __init__(self, settings: ByteTrackSettings, algorithm: str = "bytetrack") -> None:
+        if algorithm not in TRACKER_SCHEMAS:
+            raise ValueError("Unsupported tracker algorithm.")
         self.settings = settings
+        self.algorithm = algorithm
         self._tracker = None
 
     def open(self) -> None:
@@ -133,6 +146,7 @@ class UltralyticsByteTrackBackend:
             config_dir.mkdir(parents=True, exist_ok=True)
             os.environ[config_key] = str(config_dir)
         try:
+            from ultralytics.trackers.bot_sort import BOTSORT, BOTrack
             from ultralytics.trackers.byte_tracker import BYTETracker, STrack
         finally:
             # Ultralytics patches PIL.Image.open process-wide to auto-install optional
@@ -141,7 +155,10 @@ class UltralyticsByteTrackBackend:
             if previous_config_dir is None:
                 os.environ.pop(config_key, None)
 
-        class LocalTrack(STrack):
+        base_track = BOTrack if self.algorithm == "botsort" else STrack
+        base_tracker = BOTSORT if self.algorithm == "botsort" else BYTETracker
+
+        class LocalTrack(base_track):
             _local_count = 0
 
             @classmethod
@@ -153,7 +170,7 @@ class UltralyticsByteTrackBackend:
             def reset_id(cls) -> None:
                 cls._local_count = 0
 
-        class LocalByteTracker(BYTETracker):
+        class LocalByteTracker(base_tracker):
             track_class = LocalTrack
 
             @staticmethod
@@ -167,6 +184,12 @@ class UltralyticsByteTrackBackend:
             match_thresh=self.settings.match_threshold,
             track_buffer=self.settings.maximum_lost_samples,
             fuse_score=self.settings.fuse_score,
+            # BoT-SORT only: static cameras need no motion compensation; ReID stays off.
+            gmc_method="none",
+            proximity_thresh=0.5,
+            appearance_thresh=0.8,
+            with_reid=False,
+            model="auto",
         )
         self._tracker = LocalByteTracker(args)
 
@@ -216,8 +239,10 @@ class ByteTrackPersonTracker:
         *,
         lineage: ModelLineage,
         settings: ByteTrackSettings,
+        id_prefix: str = "bt",
     ) -> None:
         self._backend = backend
+        self._id_prefix = id_prefix
         self.lineage = lineage
         self.settings = settings
         self._records: dict[int, _TrackRecord] = {}
@@ -319,7 +344,7 @@ class ByteTrackPersonTracker:
             if record is None:
                 generation = self._generations.get(item.track_id, 0) + 1
                 self._generations[item.track_id] = generation
-                local_track_id = f"bt-{item.track_id}"
+                local_track_id = f"{self._id_prefix}-{item.track_id}"
                 if generation > 1:
                     local_track_id += f"-g{generation}"
                 record = _TrackRecord(
@@ -376,15 +401,17 @@ class ByteTrackPersonTracker:
             self._closed = True
 
 
-def build_bytetrack(
+def build_tracker(
     entry: TrackerEntry,
     *,
     artifact_root: str | Path,
     device: str = "cpu",
     backend_factory=UltralyticsByteTrackBackend,
 ) -> ByteTrackPersonTracker:
-    if not isinstance(entry, TrackerEntry) or entry.adapter_kind != "bytetrack":
-        raise ValueError("Tracker entry is not a ByteTrack adapter.")
+    """Build a registry-approved ByteTrack or BoT-SORT tracker from its verified settings file."""
+
+    if not isinstance(entry, TrackerEntry) or entry.adapter_kind not in TRACKER_SCHEMAS:
+        raise ValueError("Tracker entry is not a supported ByteTrack/BoT-SORT adapter.")
     if not entry.available:
         raise ValueError("Tracker entry is not available for production.")
     if device not in {item.value for item in entry.devices}:
@@ -396,9 +423,28 @@ def build_bytetrack(
     digest = sha256(artifact.read_bytes()).hexdigest()
     if digest != entry.artifact.sha256:
         raise ValueError("Tracker artifact checksum changed.")
-    settings = load_bytetrack_settings(artifact)
+    settings = load_bytetrack_settings(artifact, TRACKER_SCHEMAS[entry.adapter_kind])
+    if backend_factory is UltralyticsByteTrackBackend:
+        backend = backend_factory(settings, entry.adapter_kind)
+    else:
+        backend = backend_factory(settings)
     return ByteTrackPersonTracker(
-        backend_factory(settings),
+        backend,
         lineage=ModelLineage(entry.id, entry.version, entry.artifact.sha256),
         settings=settings,
+        id_prefix="bs" if entry.adapter_kind == "botsort" else "bt",
+    )
+
+
+def build_bytetrack(
+    entry: TrackerEntry,
+    *,
+    artifact_root: str | Path,
+    device: str = "cpu",
+    backend_factory=UltralyticsByteTrackBackend,
+) -> ByteTrackPersonTracker:
+    if not isinstance(entry, TrackerEntry) or entry.adapter_kind != "bytetrack":
+        raise ValueError("Tracker entry is not a ByteTrack adapter.")
+    return build_tracker(
+        entry, artifact_root=artifact_root, device=device, backend_factory=backend_factory
     )

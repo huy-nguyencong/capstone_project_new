@@ -17,7 +17,7 @@ from person_search.ai.encoders import (
 )
 from person_search.ai.registry import ModelRegistry
 from person_search.ai.selectors import RepresentativeFrameSelector, load_selector_settings
-from person_search.ai.trackers import build_bytetrack
+from person_search.ai.trackers import build_tracker
 from person_search.workers.contracts import (
     CompletedTrack,
     EmbeddingVector,
@@ -242,7 +242,7 @@ def build_production_pipeline(
         device=device,
         settings=load_detector_settings(detector_settings_path),
     )
-    tracker = build_bytetrack(
+    tracker = build_tracker(
         selection.tracker,
         artifact_root=artifact_root,
         device=device,

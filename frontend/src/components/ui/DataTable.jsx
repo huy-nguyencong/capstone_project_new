@@ -11,11 +11,14 @@ export function DataTable({
 }) {
   return (
     <div className="panel overflow-x-auto">
-      <table className="table">
+      <table className="table min-w-[640px] md:min-w-0">
         <thead>
           <tr>
             {columns.map((c) => (
-              <th key={c.key} className={cx(c.align === 'right' && 'text-right')}>
+              <th
+                key={c.key}
+                className={cx('whitespace-nowrap', c.align === 'right' && 'text-right')}
+              >
                 {c.header}
               </th>
             ))}

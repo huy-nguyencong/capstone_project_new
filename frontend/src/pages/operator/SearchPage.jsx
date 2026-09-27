@@ -5,7 +5,8 @@ import { SearchForm } from '@/features/search/SearchForm'
 import { SearchResults } from '@/features/search/SearchResults'
 import { searchesApi } from '@/services/api/searches'
 import { useAppStore } from '@/store/hooks'
-import { attributesToPrompt, validateSearch } from '@/utils/search'
+import { EMPTY_ATTRIBUTES, attributesToPrompt } from '@/constants/attributes'
+import { validateSearch } from '@/utils/search'
 
 const INITIAL = {
   method: 'text',
@@ -13,7 +14,7 @@ const INITIAL = {
   imageFile: null,
   imageName: '',
   text: '',
-  attrs: { shirt: null, pants: null, type: null, bag: null },
+  attrs: EMPTY_ATTRIBUTES,
   cams: [],
   from: '',
   to: '',
@@ -56,10 +57,10 @@ export default function SearchPage() {
       const response = await searchesApi.run(form)
       const label =
         response.mode === 'IMAGE'
-          ? `Hình ảnh · ${form.imageName} · ${response.encoder_version}`
+          ? `Tìm bằng hình ảnh · ${form.imageName}`
           : response.mode === 'ATTRIBUTES'
-            ? `Thuộc tính · ${response.prompt || attributesToPrompt(form.attrs)} · ${response.encoder_version}`
-            : `Văn bản · “${response.prompt}” · ${response.encoder_version}`
+            ? `Tìm theo đặc điểm · “${response.prompt || attributesToPrompt(form.attrs)}”`
+            : `Tìm bằng mô tả · “${response.prompt}”`
       setOutcome({
         status: response.results.length ? 'done' : 'nodata',
         runId,
@@ -73,7 +74,7 @@ export default function SearchPage() {
     }
   }
 
-  const runningMessage = `Đang mã hóa truy vấn bằng ${outcome.method === 'image' ? 'Image Encoder' : 'Text Encoder'} và so khớp trong ${outcome.camCount} camera thuộc khu vực của bạn…`
+  const runningMessage = `Đang tìm trong ${outcome.camCount} camera thuộc khu vực của bạn…`
 
   return (
     <>

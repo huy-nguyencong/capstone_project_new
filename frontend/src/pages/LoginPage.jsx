@@ -39,6 +39,10 @@ export default function LoginPage() {
         <Brand size="lg" />
         <div>
           <h1 className="mb-2 text-[34px]">Đăng nhập</h1>
+          <p className="m-0 text-sm text-neutral-400">
+            Hệ thống tìm kiếm người trong dữ liệu camera giám sát. Dùng tài khoản do quản trị viên
+            cấp.
+          </p>
         </div>
         {logoutNotice && !error && <Alert tone="notice">{logoutNotice}</Alert>}
         <form onSubmit={submit} className="flex flex-col gap-3.5" noValidate>
@@ -46,7 +50,7 @@ export default function LoginPage() {
             label="Tên đăng nhập"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            placeholder="vd. khoa.tran"
+            placeholder="Nhập tên đăng nhập"
             autoComplete="username"
           />
           <TextField

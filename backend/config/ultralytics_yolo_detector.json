@@ -1,6 +1,6 @@
 {
   "schema_version": "ultralytics-yolo-detector/v1",
-  "confidence_threshold": 0.25,
+  "confidence_threshold": 0.1,
   "iou_threshold": 0.7,
   "inference_timeout_seconds": 120,
   "load_timeout_seconds": 120,

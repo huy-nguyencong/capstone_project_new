@@ -39,6 +39,8 @@ def dashboard():  # type: ignore[no-untyped-def]
         {
             "total_cases": value.total_cases,
             "total_case_results": value.total_case_results,
+            "open_cases": value.open_cases,
+            "closed_cases": value.closed_cases,
             "recent_cases": [serialize_case(item) for item in value.recent_cases],
         }
     )

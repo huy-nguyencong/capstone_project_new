@@ -15,8 +15,9 @@ from person_search.storage.postgres.models import AuditLog, Case, CaseResult, Us
 pytestmark = pytest.mark.unit
 
 
-def test_case_schema_excludes_status_area_and_matching_score() -> None:
-    assert {"status", "area_id", "matching_score"}.isdisjoint(Case.__table__.columns.keys())
+def test_case_schema_has_status_but_no_area_or_matching_score() -> None:
+    assert {"area_id", "matching_score"}.isdisjoint(Case.__table__.columns.keys())
+    assert Case.__table__.columns["status"].nullable is False
     assert "matching_score" not in CaseResult.__table__.columns
     assert AuditLog.__table__.columns["metadata"].nullable is False
 

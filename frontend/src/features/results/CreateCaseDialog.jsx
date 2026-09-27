@@ -6,6 +6,7 @@ import { Dialog } from '@/components/ui/Dialog'
 import { TextAreaField, TextField } from '@/components/ui/Form'
 import { casesApi } from '@/services/api/cases'
 import { useAppStore, useToast } from '@/store/hooks'
+import { MarkCompleteOption } from './MarkCompleteOption'
 
 export function CreateCaseDialog({ result, onClose }) {
   const { me } = useAppStore()
@@ -14,9 +15,10 @@ export function CreateCaseDialog({ result, onClose }) {
   const [note, setNote] = useState('')
   const [error, setError] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [complete, setComplete] = useState(false)
 
   const save = async () => {
-    if (!title.trim()) return setError('Vui lòng nhập tiêu đề Case.')
+    if (!title.trim()) return setError('Vui lòng nhập tiêu đề vụ việc.')
     setSaving(true)
     try {
       const created = await casesApi.create({
@@ -24,7 +26,19 @@ export function CreateCaseDialog({ result, onClose }) {
         note: note.trim() || null,
         track_id: result.track,
       })
-      toast(`Đã tạo Case ${created.case.code} với kết quả đã chọn.`)
+      const closeError = complete ? await casesApi.markCompleted(created.case.id) : null
+      if (closeError) {
+        toast(
+          `Đã tạo vụ việc ${created.case.code} nhưng chưa đánh dấu hoàn thành: ${closeError}`,
+          'warn',
+        )
+      } else {
+        toast(
+          complete
+            ? `Đã tạo vụ việc ${created.case.code} và đánh dấu hoàn thành.`
+            : `Đã tạo vụ việc ${created.case.code} với kết quả đã chọn.`,
+        )
+      }
       onClose()
     } catch (requestError) {
       setError(requestError.message)
@@ -34,7 +48,7 @@ export function CreateCaseDialog({ result, onClose }) {
 
   return (
     <Dialog
-      title="Tạo Case mới"
+      title="Tạo vụ việc mới"
       width={480}
       onClose={onClose}
       className="z-[60]"
@@ -42,7 +56,7 @@ export function CreateCaseDialog({ result, onClose }) {
         <>
           <Button onClick={onClose}>Hủy</Button>
           <Button variant="primary" onClick={save} disabled={saving}>
-            Tạo Case
+            Tạo vụ việc
           </Button>
         </>
       }
@@ -50,7 +64,7 @@ export function CreateCaseDialog({ result, onClose }) {
       <div className="flex items-center gap-2.5 rounded-md bg-bg px-3 py-2.5 text-xs">
         <UserFocusIcon size={18} className="text-accent" />
         <span className="flex-1">
-          Kết quả được chọn: <span className="font-mono">{result.track}</span> · {result.camName}
+          Kết quả được chọn: {result.camName} · {result.when}
         </span>
         <span className="text-accent-200">{result.scoreText}</span>
       </div>
@@ -67,6 +81,7 @@ export function CreateCaseDialog({ result, onClose }) {
       <div className="text-xs text-neutral-400">
         Người phụ trách: {me.name} (tự động theo tài khoản đang đăng nhập)
       </div>
+      <MarkCompleteOption checked={complete} onChange={setComplete} />
       {error && <Alert>{error}</Alert>}
     </Dialog>
   )

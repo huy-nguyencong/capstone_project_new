@@ -23,6 +23,7 @@ from person_search.storage.postgres.models import (
     CameraStatus,
     Case,
     CaseResult,
+    CaseStatus,
     OutboxStatus,
     PersonTrack,
     ProcessingJob,
@@ -187,6 +188,7 @@ class CaseRepository(Repository[Case]):
         created_to: datetime | None = None,
         after: tuple[datetime, uuid.UUID] | None = None,
         limit: int = 51,
+        status: CaseStatus | None = None,
     ) -> list[tuple[Case, User]]:
         statement = (
             select(Case, User)
@@ -199,6 +201,8 @@ class CaseRepository(Repository[Case]):
             statement = statement.where(Case.created_at >= created_from)
         if created_to is not None:
             statement = statement.where(Case.created_at <= created_to)
+        if status is not None:
+            statement = statement.where(Case.status == status)
         if after is not None:
             statement = statement.where(tuple_(Case.created_at, Case.id) < after)
         return [(case, owner) for case, owner in self.session.execute(statement.limit(limit))]
@@ -214,6 +218,10 @@ class CaseRepository(Repository[Case]):
 
     def count(self) -> int:
         return int(self.session.scalar(select(func.count()).select_from(Case)) or 0)
+
+    def count_by_status(self) -> dict[CaseStatus, int]:
+        rows = self.session.execute(select(Case.status, func.count()).group_by(Case.status))
+        return {status: count for status, count in rows}
 
     def owners(self) -> list[User]:
         statement = (

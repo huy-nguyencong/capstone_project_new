@@ -18,7 +18,7 @@ export const CAMERA_STATUS = {
 export const AI_STATE = {
   running: { label: 'Đang xử lý', tone: 'ok' },
   starting: { label: 'Đang khởi động', tone: 'warn' },
-  stopped: { label: 'Ngừng xử lý', tone: 'warn' },
+  stopped: { label: 'Sẵn sàng, chờ dữ liệu', tone: 'ok' },
   error: { label: 'Lỗi tiến trình', tone: 'err' },
   off: { label: 'Đã tắt', tone: 'mute' },
   unknown: { label: 'Không xác định', tone: 'mute' },
@@ -30,10 +30,15 @@ export const USER_STATUS = {
   inactive: { label: 'Ngừng hoạt động', tone: 'mute' },
 }
 
+export const CASE_STATUS = {
+  open: { label: 'Đang xử lý', tone: 'warn' },
+  closed: { label: 'Hoàn thành', tone: 'ok' },
+}
+
 export const ROLE_LABEL = {
-  admin: 'Admin',
-  operator: 'Operator',
-  viewer: 'Viewer',
+  admin: 'Quản trị viên',
+  operator: 'Giám sát viên',
+  viewer: 'Quản lý',
 }
 
 export const ROLE_TAG = {
@@ -41,27 +46,6 @@ export const ROLE_TAG = {
   operator: 'accent',
   viewer: 'neutral',
 }
-
-export const COLORS = {
-  red: { label: 'Red', swatch: 'oklch(0.58 0.16 25)' },
-  blue: { label: 'Blue', swatch: 'oklch(0.55 0.12 250)' },
-  white: { label: 'White', swatch: 'oklch(0.9 0.01 260)' },
-  black: { label: 'Black', swatch: 'oklch(0.3 0.01 260)' },
-  green: { label: 'Green', swatch: 'oklch(0.58 0.1 150)' },
-  yellow: { label: 'Yellow', swatch: 'oklch(0.82 0.13 90)' },
-  gray: { label: 'Gray', swatch: 'oklch(0.62 0.01 260)' },
-  beige: { label: 'Beige', swatch: 'oklch(0.78 0.04 70)' },
-}
-
-export const PANTS_COLORS = ['black', 'blue', 'gray', 'beige']
-
-// Values match the backend attribute enum; labels are the English words used in the prompt.
-export const CLOTHING_TYPES = [
-  { value: 't_shirt', label: 'T-shirt' },
-  { value: 'shirt', label: 'Shirt' },
-  { value: 'jacket', label: 'Jacket' },
-  { value: 'dress', label: 'Dress' },
-]
 
 export const AUDIT_EVENTS = {
   'auth.login': 'Đăng nhập',
@@ -71,10 +55,11 @@ export const AUDIT_EVENTS = {
   'user.updated': 'Cập nhật tài khoản',
   'user.status_changed': 'Đổi trạng thái tài khoản',
   'user.role_changed': 'Đổi vai trò',
-  'operator.area_assigned': 'Gán khu vực cho Operator',
+  'operator.area_assigned': 'Gán khu vực cho giám sát viên',
   'camera.created': 'Thêm camera',
   'camera.updated': 'Cập nhật camera',
   'camera.deactivated': 'Ngừng vận hành camera',
+  'camera.reactivated': 'Đưa camera vận hành trở lại',
   'camera.connection_tested': 'Kiểm tra kết nối RTSP',
   'ai.state_changed': 'Bật/tắt xử lý AI',
   'job.created': 'Tạo job xử lý video',
@@ -85,10 +70,12 @@ export const AUDIT_EVENTS = {
   'ai.config_failed': 'Áp dụng mô hình thất bại',
   'ai.pipeline_failed': 'Pipeline AI lỗi',
   'ai.diagnostic_failed': 'Kiểm tra AI phát hiện lỗi',
-  'case.created': 'Tạo Case',
-  'case.updated': 'Cập nhật Case',
-  'case.result_added': 'Thêm kết quả vào Case',
-  'case.result_removed': 'Loại kết quả khỏi Case',
+  'case.created': 'Tạo vụ việc',
+  'case.updated': 'Cập nhật vụ việc',
+  'case.closed': 'Đánh dấu vụ việc hoàn thành',
+  'case.reopened': 'Mở lại vụ việc',
+  'case.result_added': 'Thêm kết quả vào vụ việc',
+  'case.result_removed': 'Loại kết quả khỏi vụ việc',
   'storage.track_failed': 'Lưu track thất bại',
   'storage.track_requeued': 'Xếp lại track',
   'storage.orphans_deleted': 'Dọn dữ liệu mồ côi',
@@ -104,8 +91,11 @@ export const AUDIT_GROUPS = [
   { label: 'Camera', events: eventsWithPrefix('camera.') },
   { label: 'Xử lý AI', events: eventsWithPrefix('ai.state_changed', 'job.') },
   { label: 'Mô hình AI', events: eventsWithPrefix('ai.config_') },
-  { label: 'Case', events: eventsWithPrefix('case.') },
-  { label: 'Lỗi hệ thống', events: eventsWithPrefix('system.', 'storage.') },
+  { label: 'Vụ việc', events: eventsWithPrefix('case.') },
+  {
+    label: 'Lỗi hệ thống',
+    events: eventsWithPrefix('system.', 'storage.', 'ai.pipeline_failed', 'ai.diagnostic_failed'),
+  },
 ]
 
 export const auditGroupOf = (eventType) =>

@@ -14,6 +14,8 @@ from typing import Any
 import av
 from PIL import Image
 
+from person_search.services.searches import attributes_prompt
+
 MANIFEST_SCHEMA = "wildtrack-dataset-manifest/v1"
 QUERY_SCHEMA = "wildtrack-evaluation-queries/v1"
 EXPECTED_CAMERA_COUNT = 7
@@ -367,8 +369,6 @@ def validate_query_set(dataset_root: str | Path, query_set: dict[str, Any]) -> l
         return errors + ["queries must be a non-empty list"]
 
     seen_ids: set[str] = set()
-    colors = {"red", "blue", "white", "black", "green", "yellow", "gray", "beige"}
-    clothing = {"t_shirt", "shirt", "jacket", "dress"}
     for query in queries:
         query_id = query.get("id") if isinstance(query, dict) else None
         prefix = str(query_id or "<missing-id>")
@@ -389,22 +389,11 @@ def validate_query_set(dataset_root: str | Path, query_set: dict[str, Any]) -> l
         if not isinstance(attributes, dict) or not attributes:
             errors.append(f"{prefix}: attribute_query must be a non-empty object")
         else:
-            if set(attributes) - {
-                "upper_color",
-                "lower_color",
-                "upper_type",
-                "has_backpack",
-            }:
-                errors.append(f"{prefix}: unsupported attribute field")
-            if attributes.get("upper_color") not in colors | {None}:
-                errors.append(f"{prefix}: unsupported upper_color")
-            if attributes.get("lower_color") not in colors | {None}:
-                errors.append(f"{prefix}: unsupported lower_color")
-            if attributes.get("upper_type") not in clothing | {None}:
-                errors.append(f"{prefix}: unsupported upper_type")
-            backpack = attributes.get("has_backpack")
-            if backpack is not None and type(backpack) is not bool:
-                errors.append(f"{prefix}: has_backpack must be boolean")
+            # Same vocabulary and rules as the Operator attribute search.
+            try:
+                attributes_prompt(attributes)
+            except ValueError as error:
+                errors.append(f"{prefix}: {error}")
 
         image_query = query.get("image_query")
         if not isinstance(image_query, dict):

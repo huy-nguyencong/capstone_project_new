@@ -25,7 +25,7 @@ from person_search.workers.errors import AIErrorCode, AIWorkerError
 
 @dataclass(frozen=True, slots=True)
 class DetectorSettings:
-    confidence_threshold: float = 0.25
+    confidence_threshold: float = 0.1
     iou_threshold: float = 0.7
     inference_timeout_seconds: float = 120.0
     load_timeout_seconds: float = 120.0

@@ -53,7 +53,7 @@ def main() -> int:
     dimension = registry.encoder.dimension
     text = "a person wearing a light colored top and dark pants"
     prompt = attributes_prompt(
-        {"upper_color": "white", "lower_color": "black", "has_backpack": False}
+        {"upper_color": "white", "lower_color": "black", "carrying": "backpack"}
     )
     gateway.open()
     try:

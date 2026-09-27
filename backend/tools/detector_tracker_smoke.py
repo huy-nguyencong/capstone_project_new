@@ -11,7 +11,7 @@ import av
 from person_search.ai.detectors import build_yolo_detector, load_detector_settings
 from person_search.ai.registry import load_registry
 from person_search.ai.selectors import RepresentativeFrameSelector, load_selector_settings
-from person_search.ai.trackers import build_bytetrack
+from person_search.ai.trackers import build_tracker
 from person_search.workers.contracts import ModelLineage, SampledFrame, SourceFrame, TrackState
 
 
@@ -25,11 +25,12 @@ def main() -> int:
     parser.add_argument("--frames", type=int, default=8)
     parser.add_argument("--interval", type=int, default=10)
     parser.add_argument("--device", default="cpu")
+    parser.add_argument("--tracker", default="bytetrack_v1")
     args = parser.parse_args()
     if args.frames < 1 or args.interval < 1:
         parser.error("--frames and --interval must be positive")
 
-    available = {"yolo11n_coco", "bytetrack_v1"}
+    available = {"yolo11n_coco", args.tracker}
     registry = load_registry(
         args.registry,
         artifact_root=args.artifact_root,
@@ -41,8 +42,8 @@ def main() -> int:
         device=args.device,
         settings=load_detector_settings(args.detector_settings),
     )
-    tracker = build_bytetrack(
-        registry.tracker("bytetrack_v1"),
+    tracker = build_tracker(
+        registry.tracker(args.tracker),
         artifact_root=args.artifact_root,
         device=args.device,
     )

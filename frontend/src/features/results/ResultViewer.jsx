@@ -17,7 +17,7 @@ import { CreateCaseDialog } from './CreateCaseDialog'
 
 const KICKER = {
   search: 'Kết quả tìm kiếm',
-  'case-op': 'Kết quả trong Case',
+  'case-op': 'Kết quả trong vụ việc',
   'case-viewer': 'Kết quả đã lưu',
 }
 
@@ -42,8 +42,7 @@ export function ResultViewer({ items, index, context, onIndexChange, onClose }) 
     { k: 'Camera', v: result.camName },
     { k: 'Khu vực', v: result.area },
     { k: 'Thời gian', v: result.when },
-    { k: 'Track', v: result.track, mono: true },
-    ...(result.saved ? [{ k: 'Lưu vào Case', v: result.saved }] : []),
+    ...(result.saved ? [{ k: 'Lưu vào vụ việc lúc', v: result.saved }] : []),
   ]
 
   return createPortal(
@@ -55,14 +54,16 @@ export function ResultViewer({ items, index, context, onIndexChange, onClose }) 
         <div
           role="dialog"
           aria-modal="true"
-          aria-label={`Track ${result.track}`}
+          aria-label={`${result.camName} · ${result.when}`}
           onClick={(e) => e.stopPropagation()}
           className="flex max-h-[calc(100vh-48px)] w-[min(1120px,100%)] flex-col gap-3.5 overflow-auto rounded-lg bg-surface p-[18px] shadow-lg"
         >
-          <div className="flex items-center gap-2.5">
-            <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="min-w-0 basis-full sm:flex-1 sm:basis-0">
               <div className="kicker text-accent-300">{KICKER[context]}</div>
-              <div className="text-lg font-medium">Track {result.track}</div>
+              <div className="text-base font-medium sm:text-lg">
+                {result.camName} · {result.when}
+              </div>
             </div>
             <span className="text-xs text-neutral-400">
               {index + 1} / {items.length}
@@ -88,14 +89,14 @@ export function ResultViewer({ items, index, context, onIndexChange, onClose }) 
             <div className="flex flex-col gap-2">
               <ResultScene result={result} />
               <div className="text-[11px] text-neutral-500">
-                Frame toàn cảnh đại diện của track · bounding box vẽ từ dữ liệu đã lưu
+                Khung hình toàn cảnh tại lần xuất hiện · khung viền đánh dấu người được tìm thấy
               </div>
             </div>
 
             <div className="flex flex-col gap-3.5">
               <div className="flex items-end gap-3">
                 <div className="w-[84px] flex-none">
-                  <PersonCrop result={result} showScore={false} />
+                  <PersonCrop result={result} />
                 </div>
                 {result.scoreText && (
                   <div>
@@ -109,7 +110,8 @@ export function ResultViewer({ items, index, context, onIndexChange, onClose }) 
               <KeyValueList items={meta} />
               {result.scoreText && (
                 <p className="m-0 text-xs text-pretty text-neutral-400">
-                  Điểm phù hợp chỉ hỗ trợ xếp hạng; người dùng cần quan sát ảnh để xác định kết quả.
+                  Điểm phù hợp chỉ dùng để xếp hạng, không khẳng định đây là cùng một người. Hãy
+                  quan sát ảnh để đánh giá.
                 </p>
               )}
               {context === 'search' && (
@@ -120,14 +122,14 @@ export function ResultViewer({ items, index, context, onIndexChange, onClose }) 
                     className="h-9"
                     onClick={() => setDialog('create')}
                   >
-                    Tạo Case mới
+                    Tạo vụ việc mới
                   </Button>
                   <Button
                     icon={FolderSimplePlusIcon}
                     className="h-9"
                     onClick={() => setDialog('add')}
                   >
-                    Thêm vào Case đã có
+                    Thêm vào vụ việc đã có
                   </Button>
                 </div>
               )}

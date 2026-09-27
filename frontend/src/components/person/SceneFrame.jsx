@@ -1,7 +1,6 @@
 import { ImageBrokenIcon } from '@phosphor-icons/react'
 import { useState } from 'react'
 import { cx } from '@/components/ui/cx'
-import { PersonFigure } from './PersonFigure'
 
 export function SceneFrame({ osd, aspect = '16/9', className, children }) {
   return (
@@ -46,39 +45,28 @@ export function BoundingBox({ box, label, dashed, className, children }) {
 
 export function ResultScene({ result }) {
   const [failedUrl, setFailedUrl] = useState(null)
-  const available = result.hasFrame && failedUrl !== result.frameUrl
-  const label = result.scoreText ? `${result.track} · ${result.scoreText}` : result.track
+  const available = result.hasFrame && Boolean(result.frameUrl) && failedUrl !== result.frameUrl
+  const label = result.scoreText ? `Điểm ${result.scoreText}` : null
   return (
     <SceneFrame osd={result.osd} className="rounded-md">
       {available ? (
-        result.frameUrl ? (
-          <>
-            <img
-              src={result.frameUrl}
-              alt={`Toàn cảnh track ${result.track}`}
-              className="absolute inset-0 h-full w-full object-fill"
-              onError={() => setFailedUrl(result.frameUrl)}
-            />
-            {result.bbox && <BoundingBox box={result.bbox} label={label} />}
-          </>
-        ) : (
-          <BoundingBox box={result.bbox} label={label}>
-            <PersonFigure
-              shirt={result.shirt}
-              pants={result.pants}
-              bag={result.bag}
-              layout="scene"
-            />
-          </BoundingBox>
-        )
+        <>
+          <img
+            src={result.frameUrl}
+            alt={`Toàn cảnh ${result.camName} lúc ${result.when}`}
+            className="absolute inset-0 h-full w-full object-fill"
+            onError={() => setFailedUrl(result.frameUrl)}
+          />
+          {result.bbox && <BoundingBox box={result.bbox} label={label} />}
+        </>
       ) : (
         <div className="absolute inset-0 grid place-items-center p-4 text-center text-[13px] text-neutral-300">
           <div className="flex flex-col items-center gap-1">
             <ImageBrokenIcon size={28} />
-            <div>
-              Không thể dựng ảnh người — frame toàn cảnh hoặc bounding box không còn khả dụng.
+            <div>Không còn ảnh gốc cho kết quả này.</div>
+            <div className="text-xs text-neutral-500">
+              Thông tin camera, khu vực và thời gian vẫn được giữ bên cạnh.
             </div>
-            <div className="text-xs text-neutral-500">Metadata vẫn được hiển thị bên cạnh.</div>
           </div>
         </div>
       )}

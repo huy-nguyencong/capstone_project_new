@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import os
 import signal
 import subprocess
@@ -15,11 +16,12 @@ from dotenv import load_dotenv
 
 from person_search.ai.configuration import VersionedAIConfigCache
 from person_search.ai.preflight import apply_resource_environment, load_resource_settings
-from person_search.ai.registry import RegistryMode, load_registry
+from person_search.ai.registry import PRODUCTION_PREFLIGHT_IDS, RegistryMode, load_registry
 from person_search.config import PostgresSettings, StorageSettings
 from person_search.observability import configure_logging, log_context
 from person_search.services.camera_runtime import CameraRuntime
 from person_search.services.jobs import JobService
+from person_search.services.rtsp_scheduler import RtspSchedulerSettings, RtspSessionScheduler
 from person_search.services.track_ingestion import TrackIngestionService
 from person_search.services.video_staging import VideoStaging
 from person_search.storage.milvus.vectors import MilvusPersonTrackIndex
@@ -46,6 +48,7 @@ from person_search.workers.telemetry import (
 )
 
 HEARTBEAT_RETENTION = timedelta(days=7)
+LOGGER = logging.getLogger(__name__)
 
 
 class PublisherNotConfigured:
@@ -77,7 +80,7 @@ def build_worker(*, stopped, result_consumer=None, source_hook=None):
     artifact_root = Path(
         os.getenv("PERSON_SEARCH_MODEL_ARTIFACT_ROOT") or registry_path.parent
     ).resolve()
-    preflight_ids = {"yolo11n_coco", "bytetrack_v1", "rasa_cuhk_pedes_v1"}
+    preflight_ids = PRODUCTION_PREFLIGHT_IDS
     registry = load_registry(
         registry_path,
         artifact_root=artifact_root,
@@ -274,6 +277,18 @@ def _supervise_child(
         )
 
 
+def _rtsp_scheduler(storage: PostgresStorage) -> RtspSessionScheduler:
+    def unit_of_work():
+        return UnitOfWork(storage.session_factory)
+
+    jobs = JobService(
+        unit_of_work,
+        VideoStaging.from_environment(),
+        source_types=(JobSourceType.FILE, JobSourceType.RTSP),
+    )
+    return RtspSessionScheduler(unit_of_work, jobs, RtspSchedulerSettings.from_environment())
+
+
 def main() -> int:
     load_dotenv()
     configure_logging()
@@ -292,8 +307,13 @@ def main() -> int:
             return 2
         deadline = int(os.getenv("PERSON_SEARCH_JOB_TIMEOUT_SECONDS", "3600"))
         heartbeat, heartbeat_storage = start_supervisor_heartbeat(stopped)
+        scheduler = _rtsp_scheduler(heartbeat_storage)
         try:
             while not stopped.is_set():
+                try:
+                    scheduler.enqueue_next()
+                except Exception:
+                    LOGGER.exception("rtsp session scheduling failed")
                 _supervise_child(stopped, deadline, heartbeat)
                 stopped.wait(3)
         finally:

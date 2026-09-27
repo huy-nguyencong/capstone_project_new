@@ -124,6 +124,8 @@ def test_camera_lifecycle_and_privacy(world):
     assert patched.json["rtsp_url_masked"] == "rtsp://***@10.0.0.1/live"
     service.runtime.probe = lambda *args: "OFFLINE"
     assert api.post(path + "/connection-tests").json["rtsp_status"] == "OFFLINE"
+    offline = api.put(path + "/ai-state", json={"enabled": True})
+    assert offline.status_code == 409 and offline.json["error"]["code"] == "camera_offline"
     duplicate = create_camera(api, area, code=row["code"])
     assert duplicate.status_code == 409
     assert api.post(path + "/retire").json["status"] == "RETIRED"
@@ -137,6 +139,24 @@ def test_camera_lifecycle_and_privacy(world):
         assert all("secret" not in str(a.event_metadata) for a in audits)
 
 
+def test_retired_camera_can_be_reactivated_with_ai_off(world):
+    api = client(world)
+    _, _, _, area, factory = world
+    row = create_camera(api, area).json
+    path = f"/api/v1/admin/cameras/{row['id']}"
+    assert api.post(path + "/reactivate").json["error"]["code"] == "camera_not_retired"
+    assert api.post(path + "/retire").json["status"] == "RETIRED"
+    reactivated = api.post(path + "/reactivate")
+    assert reactivated.status_code == 200
+    assert reactivated.json["status"] == "ACTIVE" and reactivated.json["ai_enabled"] is False
+    assert reactivated.json["version"] == row["version"] + 2
+    with factory() as session:
+        events = session.scalars(
+            select(AuditLog.event_type).where(AuditLog.target_id == uuid.UUID(row["id"]))
+        ).all()
+        assert "camera.reactivated" in events
+
+
 def test_permissions_and_csrf_all_routes(world):
     camera_id = uuid.uuid4()
     routes = [
@@ -145,6 +165,7 @@ def test_permissions_and_csrf_all_routes(world):
         ("GET", f"/cameras/{camera_id}"),
         ("PATCH", f"/cameras/{camera_id}"),
         ("POST", f"/cameras/{camera_id}/retire"),
+        ("POST", f"/cameras/{camera_id}/reactivate"),
         ("POST", f"/cameras/{camera_id}/connection-tests"),
         ("PUT", f"/cameras/{camera_id}/ai-state"),
         ("GET", "/ai/models"),

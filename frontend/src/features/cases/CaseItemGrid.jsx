@@ -4,7 +4,7 @@ import { PersonCrop } from '@/components/person/PersonCrop'
 
 export function CaseItemGrid({ items, onOpen, onRemove }) {
   if (!items.length) {
-    return <div className="py-3.5 text-[13px] text-neutral-400">Case chưa có kết quả nào.</div>
+    return <div className="py-3.5 text-[13px] text-neutral-400">Vụ việc chưa có kết quả nào.</div>
   }
 
   return (
@@ -15,9 +15,9 @@ export function CaseItemGrid({ items, onOpen, onRemove }) {
             type="button"
             onClick={() => onOpen(index)}
             className="block rounded-md border-0 bg-transparent p-0"
-            aria-label={`Xem track ${item.track}`}
+            aria-label={`Xem kết quả tại ${item.camName} lúc ${item.when}`}
           >
-            <PersonCrop result={item} showScore={false} />
+            <PersonCrop result={item} />
           </button>
           <div className="min-w-0">
             <div className="truncate text-xs">{item.camName}</div>
@@ -28,7 +28,7 @@ export function CaseItemGrid({ items, onOpen, onRemove }) {
             <IconButton
               icon={XIcon}
               size={13}
-              label="Loại khỏi Case"
+              label="Loại khỏi vụ việc"
               onClick={() => onRemove(item.id)}
               className="absolute top-3 right-3 size-[26px] bg-[color-mix(in_srgb,var(--color-bg)_80%,transparent)]"
             />
