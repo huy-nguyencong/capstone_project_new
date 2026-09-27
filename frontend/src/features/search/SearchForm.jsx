@@ -50,7 +50,7 @@ export function SearchForm({ state, onChange, areaCameras, running, onRun }) {
           label="Mô tả người cần tìm"
           value={state.text}
           onChange={(e) => set({ text: e.target.value })}
-          placeholder="vd. người mặc áo đỏ, quần đen, mang ba lô"
+          placeholder="e.g. a person wearing a red shirt, black pants, and a backpack"
         />
       )}
 
@@ -71,7 +71,7 @@ export function SearchForm({ state, onChange, areaCameras, running, onRun }) {
               dot={TONE[CAMERA_STATUS[c.status].tone]}
               onClick={() => toggleCam(c.id)}
             >
-              {c.name.split(' ')[0]}
+              {c.name}
               {!c.ai && ' · AI tắt'}
             </Chip>
           ))}

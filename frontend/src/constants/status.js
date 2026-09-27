@@ -43,19 +43,25 @@ export const ROLE_TAG = {
 }
 
 export const COLORS = {
-  red: { label: 'Đỏ', swatch: 'oklch(0.58 0.16 25)' },
-  blue: { label: 'Xanh dương', swatch: 'oklch(0.55 0.12 250)' },
-  white: { label: 'Trắng', swatch: 'oklch(0.9 0.01 260)' },
-  black: { label: 'Đen', swatch: 'oklch(0.3 0.01 260)' },
-  green: { label: 'Xanh lá', swatch: 'oklch(0.58 0.1 150)' },
-  yellow: { label: 'Vàng', swatch: 'oklch(0.82 0.13 90)' },
-  gray: { label: 'Xám', swatch: 'oklch(0.62 0.01 260)' },
-  beige: { label: 'Be', swatch: 'oklch(0.78 0.04 70)' },
+  red: { label: 'Red', swatch: 'oklch(0.58 0.16 25)' },
+  blue: { label: 'Blue', swatch: 'oklch(0.55 0.12 250)' },
+  white: { label: 'White', swatch: 'oklch(0.9 0.01 260)' },
+  black: { label: 'Black', swatch: 'oklch(0.3 0.01 260)' },
+  green: { label: 'Green', swatch: 'oklch(0.58 0.1 150)' },
+  yellow: { label: 'Yellow', swatch: 'oklch(0.82 0.13 90)' },
+  gray: { label: 'Gray', swatch: 'oklch(0.62 0.01 260)' },
+  beige: { label: 'Beige', swatch: 'oklch(0.78 0.04 70)' },
 }
 
 export const PANTS_COLORS = ['black', 'blue', 'gray', 'beige']
 
-export const CLOTHING_TYPES = ['Áo thun', 'Áo sơ mi', 'Áo khoác', 'Váy/đầm']
+// Values match the backend attribute enum; labels are the English words used in the prompt.
+export const CLOTHING_TYPES = [
+  { value: 't_shirt', label: 'T-shirt' },
+  { value: 'shirt', label: 'Shirt' },
+  { value: 'jacket', label: 'Jacket' },
+  { value: 'dress', label: 'Dress' },
+]
 
 export const AUDIT_EVENTS = {
   'auth.login': 'Đăng nhập',

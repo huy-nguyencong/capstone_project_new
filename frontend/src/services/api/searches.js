@@ -1,12 +1,5 @@
 import { apiService } from '@/services/apiService'
 
-const UPPER_TYPES = {
-  'Áo thun': 't_shirt',
-  'Áo sơ mi': 'shirt',
-  'Áo khoác': 'jacket',
-  'Váy/đầm': 'dress',
-}
-
 const filters = (state) => ({
   top_k: Number(state.topk),
   camera_ids: state.cams,
@@ -35,7 +28,7 @@ export const searchesApi = {
       attributes: {
         upper_color: state.attrs.shirt,
         lower_color: state.attrs.pants,
-        upper_type: UPPER_TYPES[state.attrs.type] || null,
+        upper_type: state.attrs.type,
         has_backpack: state.attrs.bag,
       },
     })

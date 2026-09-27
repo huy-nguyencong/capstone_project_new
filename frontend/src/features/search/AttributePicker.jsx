@@ -6,23 +6,19 @@ const colorOpts = (keys) =>
   keys.map((k) => ({ value: k, label: COLORS[k].label, swatch: COLORS[k].swatch }))
 
 const GROUPS = [
-  { key: 'shirt', label: 'Màu áo', options: colorOpts(Object.keys(COLORS)) },
-  {
-    key: 'type',
-    label: 'Loại trang phục',
-    options: CLOTHING_TYPES.map((t) => ({ value: t, label: t })),
-  },
+  { key: 'shirt', label: 'Upper color', options: colorOpts(Object.keys(COLORS)) },
+  { key: 'type', label: 'Upper type', options: CLOTHING_TYPES },
   {
     key: 'pants',
-    label: 'Màu quần',
+    label: 'Lower color',
     options: colorOpts(['black', 'blue', 'gray', 'beige', 'white']),
   },
   {
     key: 'bag',
-    label: 'Ba lô',
+    label: 'Backpack',
     options: [
-      { value: true, label: 'Có mang ba lô' },
-      { value: false, label: 'Không mang' },
+      { value: true, label: 'Carrying a backpack' },
+      { value: false, label: 'No backpack' },
     ],
   },
 ]

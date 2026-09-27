@@ -12,7 +12,7 @@ export function PersonCrop({ result, showScore = true, rank }) {
           <img
             src={result.cropUrl}
             alt={`Track ${result.track}`}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-contain"
             onError={() => setFailedUrl(result.cropUrl)}
           />
         ) : (

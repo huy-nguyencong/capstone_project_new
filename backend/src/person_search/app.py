@@ -181,6 +181,8 @@ def create_app(
                 TrackImageService(
                     lambda: UnitOfWork(session_factory),
                     MinioFrameStore(runtime.minio.client, settings.minio.bucket),
+                    # Tight detector boxes clip heads/feet; a small margin keeps the whole person.
+                    crop_padding_ratio=0.1,
                 ),
             )
             app.extensions["person_search.storage_runtime"] = runtime

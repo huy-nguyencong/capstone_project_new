@@ -32,7 +32,7 @@ cd capstone_project_new
 Chạy từ thư mục gốc repository:
 
 ```powershell
-Copy-Item infra/.env.example infra/.env
+if (-not (Test-Path infra/.env)) { Copy-Item infra/.env.example infra/.env }
 .\scripts\storage.ps1 validate
 .\scripts\storage.ps1 up
 ```
@@ -44,12 +44,17 @@ MinIO vượt qua smoke check.
 
 ```powershell
 cd backend
-python -m venv .venv
+if (-not (Test-Path .venv)) { python -m venv .venv }
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 python -m pip install -e ".[dev,ai-ultralytics,ai-rasa]"
-Copy-Item .env.example .env
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 ```
+
+Không chạy lại `python -m venv .venv` trên một `.venv` đã có: nếu `python` trỏ tới phiên bản khác,
+venv sẽ bị chuyển sang interpreter mới nhưng vẫn giữ package build cho phiên bản cũ. Trước khi cài
+lại package, dừng worker/API đang chạy để tránh lỗi `WinError 32` do file `.exe` trong
+`.venv\Scripts` bị khóa.
 
 Nếu PowerShell chặn script kích hoạt virtual environment, không cần đổi execution policy. Có thể
 gọi trực tiếp `.\.venv\Scripts\python.exe` thay cho `python` trong các lệnh backend.
@@ -131,7 +136,7 @@ Vẫn tại `backend`, với virtual environment đang kích hoạt:
 
 ```powershell
 python -m alembic upgrade head
-python -c 'from dotenv import load_dotenv; load_dotenv(".env"); from person_search.storage.postgres.seed import main; main()'
+python -c "from dotenv import load_dotenv; load_dotenv('.env'); from person_search.storage.postgres.seed import main; main()"
 ```
 
 Tài khoản development được seed:
@@ -162,7 +167,7 @@ Mở terminal mới tại thư mục gốc repository:
 
 ```powershell
 cd frontend
-Copy-Item .env.example .env
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 npm install
 ```
 
@@ -273,8 +278,12 @@ npm run build
 | --- | --- |
 | Docker service chưa sẵn sàng | Mở Docker Desktop, sau đó chạy lại `.\scripts\storage.ps1 up`. |
 | `ModuleNotFoundError: person_search` | Chạy lại `python -m pip install -e ".[dev,ai-ultralytics,ai-rasa]"` trong `backend`. |
+| `ImportError: cannot import name '_imaging' from 'PIL'` (hoặc lỗi DLL của numpy/torch) | Virtual environment chứa package build cho phiên bản Python khác. Dừng worker/API, xóa `backend/.venv`, tạo lại bằng `python -m venv .venv` rồi cài lại. |
+| `WinError 32 ... person-search-production-worker.exe` khi `pip install` | Worker hoặc API vẫn đang chạy và khóa file. Dừng chúng (`Ctrl+C` hoặc Task Manager) rồi cài lại. |
+| Worker báo `PermissionError` với thư mục video staging | Thư mục bị tạo với quyền không đọc được. Tạo thư mục mới và cập nhật `PERSON_SEARCH_VIDEO_STAGING` trong `backend/.env`. |
 | `/health/ready` trả về 503 | Chạy `.\scripts\storage.ps1 status`, kiểm tra `backend/.env` và log của từng storage service. |
 | Worker dừng ngay khi mở | Chạy lại preflight và kiểm tra ba đường dẫn tuyệt đối trong `backend/.env`. |
+| `PERSON_SEARCH_MODEL_REGISTRY must reference an existing file` | `backend/.env` chưa điền (hoặc đã bị ghi đè bởi `.env.example`). Điền lại ba đường dẫn ở bước A.4. |
 | Job ở trạng thái chờ quá lâu | Kiểm tra terminal worker và heartbeat trên màn hình trạng thái hệ thống. |
 | RaSa báo thiếu artifact hoặc sai checksum | Kiểm tra đúng tên file, thư mục và SHA-256 ở phần chuẩn bị model. |
 | `npm` từ chối phiên bản Node | Cài Node.js 24.11.1 trở lên. |

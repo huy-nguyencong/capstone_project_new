@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import hashlib
+import importlib.util
 import json
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -203,6 +206,82 @@ def test_missing_production_artifacts_and_model_probe_block_pipeline(tmp_path: P
         if model_id not in {"yolo11n_coco", "bytetrack_v1", "rasa_cuhk_pedes_v1"}
     )
     assert report.preflight_available_ids == ()
+
+
+def _load_preflight_tool():
+    path = Path(__file__).parents[2] / "tools" / "ai_preflight.py"
+    spec = importlib.util.spec_from_file_location("ai_preflight_tool", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_cli_production_loaders_open_real_adapters_and_reach_ready(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import person_search.ai.detectors as detectors
+    import person_search.ai.encoders as encoders
+    import person_search.ai.trackers as trackers
+
+    payload = json.loads(
+        (Path(__file__).parents[2] / "config" / "models.example.json").read_text("utf-8")
+    )
+    approved = {"yolo11n_coco", "bytetrack_v1", "rasa_cuhk_pedes_v1"}
+    for entry in (*payload["detectors"], *payload["trackers"], payload["encoder"]):
+        if entry["id"] in approved:
+            artifact = tmp_path / f"{entry['id']}.bin"
+            artifact.write_bytes(entry["id"].encode())
+            entry["artifact"] = {
+                "path": artifact.name,
+                "sha256": hashlib.sha256(artifact.read_bytes()).hexdigest(),
+            }
+    registry_path = tmp_path / "models.json"
+    registry_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    events = []
+
+    class Component:
+        def __init__(self, entry):
+            assert entry.available
+            self.id = entry.id
+
+        def open(self):
+            events.append(("open", self.id))
+
+        def close(self):
+            events.append(("close", self.id))
+
+    monkeypatch.setattr(detectors, "load_detector_settings", lambda _path: None)
+    monkeypatch.setattr(encoders, "load_rasa_settings", lambda _path: None)
+    monkeypatch.setattr(detectors, "build_yolo_detector", lambda entry, **_: Component(entry))
+    monkeypatch.setattr(trackers, "build_bytetrack", lambda entry, **_: Component(entry))
+    monkeypatch.setattr(
+        encoders, "build_rasa_image_encoder", lambda entry, **_: Component(entry)
+    )
+
+    tool = _load_preflight_tool()
+    opened = []
+    loaders = tool._production_loaders(registry_path, tmp_path, opened)
+    packages = {
+        name: "1"
+        for name in ("torch", "torchvision", "ultralytics", "lap", "transformers", "timm")
+    }
+    report = run_preflight(
+        settings(),
+        load_registry(registry_path, artifact_root=tmp_path),
+        workspace=tmp_path,
+        probes=replace(
+            fake_probes(torch=TorchSnapshot("2.7.0", True, None, False, (), None)),
+            packages=lambda: packages,
+        ),
+        model_loaders=loaders,
+        clock=lambda: NOW,
+    )
+
+    assert report.ready is True
+    assert report.preflight_available_ids == tuple(sorted(approved))
+    assert sorted(events) == sorted(("open", model_id) for model_id in approved)
+    assert [component.id for component in opened] == [model_id for _, model_id in events]
 
 
 def test_model_loader_measurements_capture_idle_and_post_load_memory(tmp_path: Path) -> None:

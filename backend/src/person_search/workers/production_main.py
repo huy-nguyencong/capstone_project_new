@@ -284,6 +284,12 @@ def main() -> int:
     for name in (signal.SIGTERM, signal.SIGINT):
         signal.signal(name, lambda *_: stopped.set())
     if not args.once:
+        # A child that fails on static configuration would be respawned forever; fail fast instead.
+        try:
+            _required_path("PERSON_SEARCH_MODEL_REGISTRY")
+        except ValueError as error:
+            print(f"Worker configuration error: {error} Check backend/.env.", file=sys.stderr)
+            return 2
         deadline = int(os.getenv("PERSON_SEARCH_JOB_TIMEOUT_SECONDS", "3600"))
         heartbeat, heartbeat_storage = start_supervisor_heartbeat(stopped)
         try:

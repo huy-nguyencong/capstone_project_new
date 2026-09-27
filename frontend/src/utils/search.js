@@ -1,42 +1,16 @@
-import { COLORS } from '@/constants/status'
+const GARMENT_WORDS = { t_shirt: 't-shirt', shirt: 'shirt', jacket: 'jacket', dress: 'dress' }
 
-const COLOR_WORDS = {
-  đỏ: 'red',
-  'xanh dương': 'blue',
-  'xanh lam': 'blue',
-  'xanh lá': 'green',
-  trắng: 'white',
-  đen: 'black',
-  vàng: 'yellow',
-  xám: 'gray',
-  be: 'beige',
-  xanh: 'blue',
-}
-
-const COLOR_PATTERN = '(xanh dương|xanh lam|xanh lá|đỏ|trắng|đen|vàng|xám|be|xanh)'
-
-export const parseDescription = (text) => {
-  const t = text.toLowerCase()
-  const find = (word) => {
-    const m = t.match(new RegExp(`${word}\\s+(?:màu\\s+)?${COLOR_PATTERN}`))
-    return m ? COLOR_WORDS[m[1]] : null
-  }
-  let bag = null
-  if (/không\s+(mang|đeo)\s+(ba lô|balo)/.test(t)) bag = false
-  else if (/(ba lô|balo)/.test(t)) bag = true
-  return { shirt: find('áo(?:\\s+(?:thun|sơ mi|khoác))?'), pants: find('quần'), bag }
-}
-
+// Mirrors backend services/searches.py attributes_prompt so the preview is the encoded sentence.
 export const attributesToPrompt = (a) => {
-  const parts = []
+  const garments = []
   if (a.shirt || a.type) {
-    const garment = (a.type || 'áo').toLowerCase()
-    parts.push(`mặc ${garment}${a.shirt ? ` màu ${COLORS[a.shirt].label.toLowerCase()}` : ''}`)
+    garments.push([a.shirt, GARMENT_WORDS[a.type] || 'top'].filter(Boolean).join(' '))
   }
-  if (a.pants) parts.push(`quần màu ${COLORS[a.pants].label.toLowerCase()}`)
-  if (a.bag === true) parts.push('mang ba lô')
-  if (a.bag === false) parts.push('không mang ba lô')
-  return parts.length ? `Một người ${parts.join(', ')}.` : 'Chưa chọn thuộc tính nào.'
+  if (a.pants) garments.push(`${a.pants} pants`)
+  const parts = garments.length ? [`wearing ${garments.join(' and ')}`] : []
+  if (a.bag === true) parts.push('carrying a backpack')
+  if (a.bag === false) parts.push('without a backpack')
+  return parts.length ? `A person ${parts.join(', ')}.` : 'Chưa chọn thuộc tính nào.'
 }
 
 export const validateSearch = (s) => {
@@ -49,6 +23,9 @@ export const validateSearch = (s) => {
   }
   if (s.method === 'attr' && !Object.values(s.attrs).some((v) => v != null)) {
     return 'Chọn ít nhất một thuộc tính ngoại hình.'
+  }
+  if (s.method === 'attr' && s.attrs.type === 'dress' && s.attrs.pants) {
+    return 'Dress không đi kèm Lower color. Bỏ chọn một trong hai.'
   }
   if (![4, 8, 12, 16].includes(k)) return 'top_k phải là 4, 8, 12 hoặc 16.'
   if (s.from && s.to && s.from > s.to) return 'Ngày bắt đầu phải trước hoặc bằng ngày kết thúc.'
