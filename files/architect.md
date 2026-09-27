@@ -1,6 +1,8 @@
 # PRISM — Kiến trúc ứng dụng tìm kiếm người qua camera — bản tổng hợp
 
 > Tên hiển thị của ứng dụng: **PRISM — Person Retrieval via Image & Semantic Matching**.
+>
+> **Quy ước thuật ngữ trên giao diện:** Tài liệu dùng thuật ngữ thiết kế **Case**, **Admin**, **Operator**, **Viewer**; giao diện tiếng Việt hiển thị lần lượt là **vụ việc**, **Quản trị viên**, **Giám sát viên**, **Quản lý**. Chỉ các nội dung thuộc câu truy vấn (mô tả văn bản, giá trị thuộc tính, câu mô tả được sinh ra) dùng tiếng Anh.
 
 > Tài liệu tổng hợp cuộc thảo luận về yêu cầu, use case, kiến trúc logic, dữ liệu, API, công nghệ và khả năng trình diễn đồ án tốt nghiệp. Những quyết định mới nhất trong tài liệu này thay thế các đề xuất trước đó nếu có mâu thuẫn. Nguồn dữ liệu chính là các luồng RTSP giả lập phát từ 7 video WILDTRACK; các camera được xử lý AI tuần tự.
 >
@@ -147,7 +149,7 @@ Các dữ liệu hỗ trợ nằm ngoài sáu thực thể lõi: danh sách Dete
 
 ### 6.3. Lưu Case, xem Case
 
-1. Operator chọn một track và tạo Case hoặc thêm vào Case do mình sở hữu. Giao diện chỉ cần gửi `track_id`, thông tin Case/định danh Case; **không cần `result_ref` hay điểm**.
+1. Operator chọn một track và tạo Case hoặc thêm vào Case do mình sở hữu. Giao diện chỉ cần gửi `track_id`, thông tin Case/định danh Case; **không cần `result_ref` hay điểm**. Tùy chọn "đánh dấu hoàn thành khi lưu" được giao diện thực hiện bằng hai bước: lưu kết quả, rồi `PATCH /cases/{id}` với `status: CLOSED` theo `version` mới nhất; nếu bước sau lỗi thì kết quả đã lưu vẫn giữ nguyên.
 2. Flask kiểm tra Operator, quyền đối với track ở khu vực hiện tại, quyền sở hữu Case; khi tạo Case lấy owner từ phiên đăng nhập. Flask lấy metadata cần snapshot từ dữ liệu server.
 3. **Mỗi lần bấm lưu tạo `CaseResult` mới**, kể cả nếu Case đã chứa cùng `track_id`. Lưu metadata camera/khu vực/thời gian, không lưu Matching Score. Dashboard đếm số mục CaseResult.
 4. Operator đánh dấu Case **Hoàn thành** khi xử lý xong: Case bị khóa (từ chối thêm/loại kết quả và sửa tiêu đề/ghi chú với lỗi `409 case_closed`) và bị loại khỏi danh sách "Thêm vào Case đã có"; Operator có thể **mở lại** để quay về Đang xử lý. Đóng/mở lại được ghi audit (`case.closed`, `case.reopened`).
@@ -201,7 +203,7 @@ Mọi quyền được kiểm tra tại Flask cho từng request, bao gồm requ
 | Detector/Tracker baseline | **YOLO11n (COCO) + ByteTrack** đã tích hợp và đăng ký trong registry | Cặp baseline đang dùng; **BoT-SORT (Ultralytics, `botsort_v1`) đã tích hợp làm Tracker thay thế** với cùng ngưỡng như ByteTrack, tắt ReID và bù chuyển động camera (camera cố định). YOLOX là Detector dự phòng đã đăng ký nhưng chưa có trọng số nên hiển thị không khả dụng. Admin chọn cặp trong registry chung. YOLO11n theo giấy phép AGPL-3.0, được chấp nhận vì đồ án phi thương mại. **Ràng buộc cấu hình (2026-09-27):** ngưỡng tin cậy của Detector không được cao hơn ngưỡng phát hiện điểm thấp của Tracker, vì ByteTrack dùng các phát hiện điểm thấp cho bước liên kết thứ hai; cấu hình đích là Detector 0,1 (bằng `track_low_threshold`), còn Tracker chỉ khởi tạo track mới từ phát hiện có độ tin cậy ≥ 0,25. |
 | Image/Text Encoder | **RaSa**, cùng một checkpoint cho ảnh và văn bản | **Đã chọn** theo đề xuất của giảng viên. Repo gốc hỗ trợ text→image (tiếng Anh) và có bước image–text matching để xếp hạng lại; ảnh→ảnh là chức năng phải tự tích hợp và kiểm chứng trên dataset thật. |
 | Tối ưu Intel CPU/iGPU | **OpenVINO** | Phương án thử sau khi có baseline đúng; không bảo đảm cải thiện nếu chưa đo trên máy và model thực tế. |
-| Giao diện | **React + Vite** | Đã chốt và triển khai; không ảnh hưởng các quy tắc quyền/dữ liệu (mọi quyền kiểm tra ở backend). |
+| Giao diện | **React + Vite** | Đã chốt và triển khai; không ảnh hưởng các quy tắc quyền/dữ liệu (mọi quyền kiểm tra ở backend). Giao diện tiếng Việt, **dùng được trên điện thoại** (đã kiểm thử ở độ rộng 390 px cho cả ba vai trò): bộ lọc vuốt ngang, bảng giữ độ rộng tối thiểu và vuốt ngang, menu thu thành danh sách chọn. |
 
 Milvus Standalone dùng thêm bộ phận lưu trữ nội bộ; MinIO của ứng dụng phục vụ full frame phải dùng bucket tách biệt với dữ liệu Milvus nếu chia sẻ cùng một instance. Đây là phương án cấu hình cần thử, không đồng nghĩa ảnh Case được Milvus quản lý.
 
