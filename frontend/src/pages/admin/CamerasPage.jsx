@@ -11,7 +11,7 @@ import { CellStack, DataTable } from '@/components/ui/DataTable'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { Dot, StatusDot } from '@/components/ui/StatusDot'
-import { AI_STATE, CAMERA_STATUS } from '@/constants/status'
+import { CAMERA_STATUS } from '@/constants/status'
 import { camerasApi } from '@/services/api/cameras'
 import { usersApi } from '@/services/api/users'
 import { useCameraAdmin } from '@/hooks/useCameraAdmin'
@@ -125,7 +125,7 @@ export default function CamerasPage() {
       key: 'ai',
       header: 'Xử lý AI',
       className: 'text-[13px] text-neutral-300',
-      render: (c) => (c.ai ? AI_STATE[c.aiState].label : 'Đã tắt'),
+      render: (c) => (c.ai ? 'Đã bật' : 'Đã tắt'),
     },
     {
       key: 'actions',

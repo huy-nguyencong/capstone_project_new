@@ -10,7 +10,10 @@
     "preview": "vite preview",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "ui:smoke": "node ui-smoke/run.mjs",
+    "ui:case-status": "node ui-smoke/case-status.mjs",
+    "ui:demo": "node ui-smoke/demo-run.mjs"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
@@ -30,6 +33,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.7",
     "globals": "^17.12.0",
+    "playwright-core": "^1.63.0",
     "prettier": "^3.9.9",
     "prettier-plugin-tailwindcss": "^0.8.1",
     "sass-embedded": "^1.105.0",

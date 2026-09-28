@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Alert } from '@/components/ui/Alert'
 import { useCameraAdmin } from '@/hooks/useCameraAdmin'
 import { aiApi, camerasApi } from '@/services/api/cameras'
+import { monitorApi } from '@/services/api/monitor'
 import { ArrowRightIcon, StackIcon } from '@phosphor-icons/react'
 import { useNavigate } from 'react-router'
 import { Button } from '@/components/ui/Button'
@@ -17,6 +18,21 @@ export default function AiProcessingPage() {
   const { cameras, error, loading, nextCursor, load } = useCameraAdmin()
   const [models, setModels] = useState(null)
   const [busy, setBusy] = useState({})
+  // Worker state per camera, from the same source as the system status page.
+  const [workerStates, setWorkerStates] = useState({})
+  const loadWorkerStates = useCallback(
+    () =>
+      monitorApi
+        .systemStatus()
+        .then((status) =>
+          setWorkerStates(Object.fromEntries(status.cameras.map((c) => [c.id, c.aiState]))),
+        )
+        .catch(() => setWorkerStates({})),
+    [],
+  )
+  useEffect(() => {
+    loadWorkerStates()
+  }, [loadWorkerStates])
   const confirm = useConfirm()
   const toast = useToast()
   const navigate = useNavigate()
@@ -53,7 +69,7 @@ export default function AiProcessingPage() {
         setBusy((old) => ({ ...old, [c.id]: true }))
         try {
           await camerasApi.state(c.id, on)
-          await load()
+          await Promise.all([load(), loadWorkerStates()])
           toast(on ? 'Đã bật quyền xử lý AI cho camera.' : 'Đã tắt quyền xử lý AI cho camera.')
         } catch (e) {
           toast(e.message, 'err')
@@ -72,7 +88,11 @@ export default function AiProcessingPage() {
       header: 'Kết nối RTSP',
       render: (c) => <StatusDot {...CAMERA_STATUS[c.status]} />,
     },
-    { key: 'ai', header: 'Tiến trình AI', render: (c) => <StatusDot {...AI_STATE[c.aiState]} /> },
+    {
+      key: 'ai',
+      header: 'Tiến trình AI',
+      render: (c) => <StatusDot {...AI_STATE[c.ai ? workerStates[c.id] || c.aiState : 'off']} />,
+    },
     {
       key: 'toggle',
       header: 'Xử lý AI',

@@ -5,6 +5,8 @@ import os
 from pathlib import Path
 
 import pytest
+from database_guard import DISPOSABLE_DATABASE_SUFFIXES, unsafe_test_databases
+from dotenv import dotenv_values
 
 from person_search import create_app
 
@@ -28,6 +30,20 @@ def _missing_model_requirements(marker):
         if not MODEL_ARTIFACTS[name].is_file()
     ]
     return missing
+
+
+def pytest_configure(config):
+    dotenv_path = Path(__file__).parents[1] / ".env"
+    environment = {**dotenv_values(dotenv_path), **os.environ}
+    unsafe = unsafe_test_databases(environment)
+    if unsafe:
+        details = ", ".join(f"{variable} -> database '{name}'" for variable, name in unsafe)
+        pytest.exit(
+            f"Refusing to run: {details}. Integration/E2E tests write to or drop the schema of "
+            f"this database; point them at a disposable one whose name ends with "
+            f"{' or '.join(DISPOSABLE_DATABASE_SUFFIXES)} (see scripts/test-db.ps1).",
+            returncode=4,
+        )
 
 
 def pytest_collection_modifyitems(config, items):

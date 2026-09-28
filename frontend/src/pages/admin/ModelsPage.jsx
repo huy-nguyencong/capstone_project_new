@@ -87,7 +87,7 @@ export default function ModelsPage() {
                       key={model.id}
                       active={selected[key] === model.id}
                       disabled={!model.available || busy}
-                      onPick={() => setSelected((old) => ({ ...old, [key]: model.id }))}
+                      onClick={() => setSelected((old) => ({ ...old, [key]: model.id }))}
                     >
                       <div className="text-sm font-medium">
                         {model.name}{' '}

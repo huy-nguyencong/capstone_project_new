@@ -305,8 +305,7 @@ def _reindexer(harness: Harness, **options: object) -> StorageReindexer:
         MilvusPersonTrackIndex(
             harness.milvus, encoder_version=RASA_ENCODER_VERSION, dimension=RASA_EMBEDDING_DIMENSION
         ),
-        batch_size=1,
-        **options,  # type: ignore[arg-type]
+        **{"batch_size": 1, **options},  # type: ignore[arg-type]
     )
 
 
@@ -337,13 +336,57 @@ def test_reindex_reports_missing_payloads_failures_and_unverified_rows() -> None
     harness.milvus.rows.clear()
     harness.event(requests[0].track_id).payload = {"version": 1}
     ordered = sorted(request.track_id for request in requests[1:])
-    harness.milvus.failures.append(TimeoutError("down"))
+    # The batch write fails, then the per-track retry fails too.
+    harness.milvus.failures.extend([TimeoutError("down"), TimeoutError("down")])
 
     report = _reindexer(harness).run()
 
     assert report.missing_payload == [requests[0].track_id]
     assert report.failed == [ordered[0]]
     assert report.indexed == 1
+    assert report.clean is False
+
+
+def test_reindex_writes_and_verifies_each_batch_in_one_request() -> None:
+    harness = Harness()
+    for _ in range(3):
+        harness.service.ingest_track(harness.request())
+    harness.milvus.rows.clear()
+    harness.milvus.upserts = 0
+
+    report = _reindexer(harness, batch_size=200).run()
+
+    assert report.clean is True
+    assert report.indexed == 3
+    assert harness.milvus.upserts == 1
+
+
+def test_reindex_retries_a_failed_batch_per_track() -> None:
+    harness = Harness()
+    for _ in range(2):
+        harness.service.ingest_track(harness.request())
+    harness.milvus.rows.clear()
+    harness.milvus.failures.append(TimeoutError("transient"))
+
+    report = _reindexer(harness, batch_size=200).run()
+
+    assert report.clean is True
+    assert report.indexed == 2
+    assert len(harness.milvus.rows) == 2
+
+
+def test_reindex_reports_rows_missing_after_write_as_unverified() -> None:
+    harness = Harness()
+    requests = [harness.request() for _ in range(2)]
+    for request in requests:
+        harness.service.ingest_track(request)
+    harness.milvus.rows.clear()
+    harness.milvus.query_misses = 1
+
+    report = _reindexer(harness, batch_size=200).run()
+
+    assert sorted(report.unverified) == sorted(request.track_id for request in requests)
+    assert report.indexed == 0
     assert report.clean is False
 
 

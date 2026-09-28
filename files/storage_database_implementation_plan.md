@@ -17,7 +17,7 @@ Tầng lưu trữ phải bảo đảm các quy tắc đã chốt trong `architec
 - Một kết quả tìm kiếm đại diện cho một track, không phải một frame.
 - `Matching Score` chỉ tồn tại trong response của lần tìm kiếm; không lưu vào `PersonTrack` hoặc `CaseResult`.
 - Mỗi lần bấm lưu tạo một `CaseResult` mới, kể cả khi cùng track đã có trong Case.
-- Case có đúng một Operator sở hữu, không gắn khu vực và không có trạng thái.
+- Case có đúng một Operator sở hữu, không gắn khu vực và có trạng thái `OPEN` (Đang xử lý) hoặc `CLOSED` (Hoàn thành); `closed_at` chỉ có giá trị khi `CLOSED`.
 - Tài khoản/camera ngừng hoạt động không làm mất dữ liệu lịch sử được Case tham chiếu; track của camera ngừng vận hành được giữ nguyên nhưng tạm ẩn khỏi tìm kiếm cho đến khi camera vận hành trở lại.
 - Track chỉ được tìm kiếm khi metadata, full frame và vector đã được ghi hoàn chỉnh.
 
@@ -127,7 +127,7 @@ Trạng thái hợp lệ:
 | STO-12 | Retry, reconciliation và xử lý dữ liệu dở dang | STO-11 | DONE | `8f0dd4f` |
 | STO-13 | Truy vấn vector có lọc và kiểm tra quyền | STO-11 | DONE | `8f0dd4f` |
 | STO-14 | Đọc ảnh, crop động và kiểm tra quyền truy cập | STO-11 | DONE | `8f0dd4f` |
-| STO-15 | Lưu CaseResult và thống kê Viewer | STO-08, STO-14 | DONE | `22f5f51` |
+| STO-15 | Lưu CaseResult và thống kê Viewer | STO-08, STO-14 | DONE | `22f5f51`, `183c4d0` (trạng thái Case) |
 | STO-16 | Audit log và trạng thái vận hành lưu trữ | STO-08, STO-12 | DONE | `22f5f51` |
 | STO-17 | Kiểm thử tích hợp và E2E toàn luồng | STO-13 đến STO-16 | DONE | `a99d48a` |
 | STO-18 | Đo hiệu năng, tài nguyên và dung lượng | STO-17 | DONE | `a99d48a` |
@@ -315,7 +315,7 @@ Sau khi các service healthy, chạy smoke check kết nối riêng cho PostgreS
 
 **Bảng dự kiến:**
 
-- `cases`: title, note, `owner_user_id`, timestamp; không có `status`, không có `area_id`.
+- `cases`: title, note, `owner_user_id`, timestamp; không có `area_id`. (Bản đầu không có `status`; cột `status`/`closed_at` được thêm sau bằng migration `20260927_0013`, xem mục STO-15.)
 - `case_results`: ID riêng cho mỗi lần lưu, `case_id`, `track_id`, snapshot tên camera/khu vực/thời gian xuất hiện, `saved_at`.
 - `audit_logs`: actor, event type, target type/id, result, timestamp và metadata JSON đã lọc secret.
 
@@ -469,7 +469,7 @@ Sau khi các service healthy, chạy smoke check kết nối riêng cho PostgreS
 - Retry sau từng lỗi phải hội tụ về đúng một track/object/vector.
 - Search không thấy track `PENDING` hoặc `FAILED`.
 
-**Tiêu chí chấp nhận:** không có trạng thái mà PostgreSQL báo `READY` nhưng object/vector bắt buộc chưa tồn tại; retry không nhân bản dữ liệu.
+**Tiêu chí chấp nhận:** không có tình huống PostgreSQL báo `READY` nhưng object/vector bắt buộc chưa tồn tại; retry không nhân bản dữ liệu.
 
 **Commit đề xuất:** `feat(storage): coordinate durable person track ingestion`
 
@@ -559,9 +559,10 @@ Sau khi các service healthy, chạy smoke check kết nối riêng cho PostgreS
 - Mỗi lần thêm tạo một `CaseResult` mới; không deduplicate.
 - Sửa title/note và xóa đúng `case_result_id`.
 - Operator luôn xem Case của mình sau khi đổi area; Viewer xem toàn bộ Case chỉ đọc.
-- Dashboard đếm số row `CaseResult`, bao gồm các mục lặp cùng track.
+- Dashboard đếm số row `CaseResult`, bao gồm các mục lặp cùng track, và số Case theo trạng thái.
+- Trạng thái Case (bổ sung 2026-09-27, migration `20260927_0013_case_status.py`): enum PostgreSQL `case_status` (`OPEN`, `CLOSED`); cột `cases.status` `NOT NULL DEFAULT 'OPEN'` (Case có sẵn được backfill `OPEN`); cột `cases.closed_at timestamptz NULL`; ràng buộc `ck_cases_closed_at_matches_status`: `(status = 'CLOSED') = (closed_at IS NOT NULL)`; chỉ mục `ix_cases_status` cho lọc `?status=` và đếm dashboard. Downgrade xóa chỉ mục, ràng buộc, hai cột và kiểu enum. Khóa nội dung Case `CLOSED` (`409 case_closed`) nằm ở service, không dùng trigger.
 
-**Kiểm thử:** duplicate save, owner spoofing, thêm vào Case người khác, đổi area sau khi tạo Case, Viewer read-only, dashboard count và xóa một duplicate.
+**Kiểm thử:** duplicate save, owner spoofing, thêm vào Case người khác, đổi area sau khi tạo Case, Viewer read-only, dashboard count, xóa một duplicate và migration `0013` (backfill `OPEN`, ràng buộc `status`/`closed_at`, enum lạ bị từ chối, downgrade/upgrade khứ hồi: `test_case_status_migration_backfills_open_and_round_trips`).
 
 **Tiêu chí chấp nhận:** Case không lưu Matching Score; quyền xem ảnh Case dựa trên Case/owner chứ không bị mất do Operator đổi area.
 
@@ -908,6 +909,26 @@ Mỗi lần làm task, thêm một mục theo mẫu:
 - Kết quả: backup/verify đạt; khôi phục 3 track và upload lại 3 frame; reindex 3/3; không thiếu object/vector và không sai checksum; RTO tổng thử nghiệm 5,522 giây.
 - Commit SHA: —.
 
+### 2026-09-27 — STO-15 (bổ sung trạng thái Case)
+
+- Trạng thái: `DONE`.
+- Thay đổi chính: migration `20260927_0013_case_status.py` thêm enum `case_status`, cột `cases.status` (mặc định `OPEN`), `cases.closed_at`, ràng buộc `ck_cases_closed_at_matches_status` và chỉ mục `ix_cases_status`; model `Case`/`CaseStatus`; dashboard đếm `open_cases`/`closed_cases`.
+- Test đã chạy (2026-09-28, R3): integration migration/schema 7 passed trên database dùng một lần `person_search_citest`, gồm test mới cho `0013`; `alembic check` không phát hiện sai lệch model.
+- Commit SHA: `183c4d0` (migration, model); test migration chưa commit.
+
+### 2026-09-28 — STO-19 (khôi phục với dữ liệu demo thật)
+
+- Trạng thái: `DONE`.
+- Phát hiện: diễn tập khôi phục 1.555 track mất 1.485 s, trong đó reindex Milvus 1.468 s (một upsert
+  và một truy vấn xác minh cho mỗi vector), 1 vector `DEADLINE_EXCEEDED`.
+- Thay đổi chính: `MilvusPersonTrackIndex.upsert_many`/`existing_ids` và `VectorRecord`
+  (`storage/milvus/vectors.py`); `StorageReindexer` ghi và xác minh theo lô 200, lô lỗi thì thử lại
+  từng vector (`services/storage_maintenance.py`); lệnh `person-search-storage reindex` dùng chung.
+- Test đã chạy: unit 711 passed (+3 test reindex theo lô, thử lại, unverified); diễn tập lại sau khi
+  xóa 10 object MinIO: tổng 28,8 s (reindex 8,8 s), upload lại 10/10 ảnh, 1.555/1.555 vector,
+  reconcile sạch.
+- Commit SHA: —.
+
 ## 11. Các quyết định đã khóa ở STO-01
 
 - PostgreSQL là database nghiệp vụ cuối cùng và là nguồn sự thật về quyền/trạng thái.
@@ -919,4 +940,4 @@ Mỗi lần làm task, thêm một mục theo mẫu:
 - Trong phạm vi đồ án không có retention job tự xóa track, kể cả track chưa được Case tham chiếu.
 - PostgreSQL và bucket frame bắt buộc backup; Milvus được backup để phục hồi nhanh và không mặc định có thể tái tạo nếu video/checkpoint không còn.
 
-Chi tiết và hệ quả của từng quyết định nằm trong ADR-0001. Thay đổi các quyết định trên cần ADR mới hoặc thay thế ADR hiện tại trước khi sửa schema/adapter.
+ADR-0001 gốc nằm trong thư mục `docs/` đã gỡ khỏi repo ngày 2026-09-28 (xem lịch sử Git, commit `222c0ad`); các quyết định còn hiệu lực là danh sách trên. Thay đổi các quyết định này phải cập nhật mục này và ba tài liệu nguồn trước khi sửa schema/adapter.

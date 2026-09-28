@@ -73,6 +73,15 @@ class VectorSearchHit:
 
 
 @dataclass(frozen=True, slots=True)
+class VectorRecord:
+    track_id: uuid.UUID
+    vector: Sequence[float]
+    area_id: uuid.UUID
+    camera_id: uuid.UUID
+    appeared_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
 class VectorIndexConfig:
     index_type: str = "HNSW"
     metric_type: str = "IP"
@@ -171,17 +180,45 @@ class MilvusPersonTrackIndex:
     ) -> None:
         self.client.upsert(
             self.collection_name,
-            data={
-                "track_id": str(track_id),
-                "embedding": self.validate_vector(vector),
-                "area_id": str(area_id),
-                "camera_id": str(camera_id),
-                "appeared_at_epoch": int(appeared_at.timestamp()),
-                "encoder_version": self.encoder_version,
-                "index_status": "READY",
-            },
+            data=self._row(VectorRecord(track_id, vector, area_id, camera_id, appeared_at)),
             timeout=self.timeout,
         )
+
+    def upsert_many(self, records: Sequence[VectorRecord]) -> None:
+        """Write many vectors in one request; a restore rebuilds thousands at once."""
+
+        if records:
+            self.client.upsert(
+                self.collection_name,
+                data=[self._row(record) for record in records],
+                timeout=self.timeout,
+            )
+
+    def _row(self, record: VectorRecord) -> dict[str, Any]:
+        return {
+            "track_id": str(record.track_id),
+            "embedding": self.validate_vector(record.vector),
+            "area_id": str(record.area_id),
+            "camera_id": str(record.camera_id),
+            "appeared_at_epoch": int(record.appeared_at.timestamp()),
+            "encoder_version": self.encoder_version,
+            "index_status": "READY",
+        }
+
+    def existing_ids(self, track_ids: Sequence[uuid.UUID]) -> set[uuid.UUID]:
+        """Return which of ``track_ids`` are stored, with one strongly consistent query."""
+
+        if not track_ids:
+            return set()
+        quoted = ", ".join(f'"{track_id}"' for track_id in track_ids)
+        rows = self.client.query(
+            self.collection_name,
+            filter=f"track_id in [{quoted}]",
+            output_fields=["track_id"],
+            consistency_level="Strong",
+            timeout=self.timeout,
+        )
+        return {uuid.UUID(row["track_id"]) for row in rows}
 
     def get(self, track_id: uuid.UUID) -> dict[str, Any] | None:
         rows = self.client.query(

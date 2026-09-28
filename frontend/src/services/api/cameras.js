@@ -15,8 +15,13 @@ export const camerasApi = {
   state: async (id, enabled) =>
     toCamera(await apiService.put(`/admin/cameras/${id}/ai-state`, { enabled })),
 }
+// Applying a Detector/Tracker pair first loads the candidate models, including RaSa, on the
+// server (tens of seconds on CPU), which exceeds the default request timeout.
+const AI_CONFIG_APPLY_TIMEOUT_MS = 180000
+
 export const aiApi = {
   models: () => apiService.get('/admin/ai/models'),
   config: () => apiService.get('/admin/ai/config'),
-  apply: (data) => apiService.put('/admin/ai/config', data),
+  apply: (data) =>
+    apiService.put('/admin/ai/config', data, { timeout: AI_CONFIG_APPLY_TIMEOUT_MS }),
 }

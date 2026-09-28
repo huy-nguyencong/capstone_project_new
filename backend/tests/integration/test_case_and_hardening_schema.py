@@ -213,3 +213,64 @@ def test_case_rules_populated_migration_indexes_and_seed() -> None:
     finally:
         engine.dispose()
         command.downgrade(config, "base")
+
+
+def test_case_status_migration_backfills_open_and_round_trips() -> None:
+    settings = PostgresSettings.from_environment(os.environ)
+    engine = sa.create_engine(settings.dsn)
+    config = Config("alembic.ini")
+    case_id = uuid.uuid4()
+
+    command.downgrade(config, "base")
+    command.upgrade(config, "20260926_0012")
+    try:
+        seed_reference_data(os.environ)
+        seed_development_users(os.environ)
+        with engine.begin() as connection:
+            connection.execute(
+                sa.text(
+                    "INSERT INTO cases (id, owner_user_id, title) "
+                    "SELECT :id, id, 'Existing case' FROM users WHERE username = 'operator'"
+                ),
+                {"id": case_id},
+            )
+
+        command.upgrade(config, "20260927_0013")
+        status_sql = sa.text("SELECT status, closed_at FROM cases WHERE id = :id")
+        with engine.connect() as connection:
+            assert tuple(connection.execute(status_sql, {"id": case_id}).one()) == ("OPEN", None)
+
+        for invalid in (
+            "status = 'CLOSED'",
+            "closed_at = now()",
+            "status = 'ARCHIVED'",
+        ):
+            with pytest.raises(DBAPIError):
+                with engine.begin() as connection:
+                    connection.execute(
+                        sa.text(f"UPDATE cases SET {invalid} WHERE id = :id"), {"id": case_id}
+                    )
+        with engine.begin() as connection:
+            connection.execute(
+                sa.text("UPDATE cases SET status = 'CLOSED', closed_at = now() WHERE id = :id"),
+                {"id": case_id},
+            )
+            connection.execute(
+                sa.text("UPDATE cases SET status = 'OPEN', closed_at = NULL WHERE id = :id"),
+                {"id": case_id},
+            )
+
+        command.downgrade(config, "20260926_0012")
+        with engine.connect() as connection:
+            columns = {column["name"] for column in sa.inspect(connection).get_columns("cases")}
+            case_status_type = connection.execute(
+                sa.text("SELECT 1 FROM pg_type WHERE typname = 'case_status'")
+            ).first()
+        assert not {"status", "closed_at"} & columns
+        assert case_status_type is None
+
+        command.upgrade(config, "head")
+        command.check(config)
+    finally:
+        engine.dispose()
+        command.downgrade(config, "base")

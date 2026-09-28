@@ -15,6 +15,8 @@ cd backend
 PERSON_SEARCH_RUN_E2E=1 .venv/bin/python -m pytest -m e2e -v
 ```
 
+DSN phải trỏ tới database có tên kết thúc bằng `_test`/`_citest`, nếu không `tests/conftest.py` dừng ngay (exit 4). Trên Windows tạo bằng `.\scripts\test-db.ps1 create` rồi export DSN được in ra; xem `tests/integration/README.md`.
+
 Khi một bước lỗi, thông báo có dạng `[minio] E2E step '...' failed: ...` để chỉ rõ component.
 MinIO unavailable dùng endpoint thật không tồn tại (`127.0.0.1:1`); Milvus unavailable dùng client
 giả ném `MilvusException` vì `MilvusClient` kết nối ngay khi khởi tạo.

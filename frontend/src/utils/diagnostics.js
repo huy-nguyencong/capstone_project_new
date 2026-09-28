@@ -29,9 +29,11 @@ export const summarizeDiagnostic = (report, steps) => {
     return { tone: 'err', text: `Phát hiện lỗi tại: ${failed.join(', ')}.` }
   }
   if (report.overall === 'INCONCLUSIVE') {
+    // Name the actual reason (no person in the sample, no frame source, ...), not a fixed guess.
+    const reason = report.steps.find((step) => step.outcome === 'INCONCLUSIVE')?.message
     return {
       tone: 'warn',
-      text: 'Chưa thể xác minh đầy đủ vì dữ liệu kiểm tra không có người — không kết luận pipeline bị lỗi.',
+      text: `Chưa thể xác minh đầy đủ${reason ? `: ${reason}` : '.'} Không kết luận pipeline bị lỗi.`,
     }
   }
   return { tone: 'ok', text: 'Tất cả thành phần hoạt động bình thường.' }

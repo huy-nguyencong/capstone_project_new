@@ -66,7 +66,7 @@ Các quyết định bắt buộc phải được giữ xuyên suốt backend:
 - Mỗi lần thêm kết quả tạo một `CaseResult` mới; cho phép lặp cùng `track_id`.
 - Operator chỉ tìm kiếm camera/track thuộc khu vực hiện tại do backend lấy từ tài khoản.
 - Operator đổi khu vực vẫn xem và quản lý Case cũ do mình sở hữu.
-- Case không có trạng thái, không gắn khu vực và có đúng một Operator owner.
+- Case có trạng thái `OPEN` (Đang xử lý) hoặc `CLOSED` (Hoàn thành), không gắn khu vực và có đúng một Operator owner. Case `CLOSED` bị khóa (`409 case_closed`) cho tới khi owner mở lại.
 - Viewer xem mọi Case nhưng không được tìm kiếm hoặc sửa dữ liệu.
 - Admin quản trị kỹ thuật, không mặc nhiên có quyền tìm kiếm hoặc xem mọi Case.
 - Ảnh kết quả được tạo động từ full frame và bbox; MinIO không public.
@@ -74,7 +74,8 @@ Các quyết định bắt buộc phải được giữ xuyên suốt backend:
 - Camera ngừng vận hành dừng nhận luồng mới; track đã có được giữ nhưng tạm ẩn khỏi tìm kiếm, bộ lọc, media kết quả tìm kiếm và thao tác thêm vào Case cho đến khi camera vận hành trở lại; CaseResult đã lưu vẫn xem được.
 - Detector/Tracker là cấu hình chung toàn hệ thống; Image/Text Encoder cố định trong phiên bản đầu.
 - Text search chỉ nhận mô tả tiếng Anh; không hỗ trợ tiếng Việt và không dịch tự động.
-- Tên/giá trị bộ lọc thuộc tính dùng tiếng Anh; prompt builder sinh câu tiếng Anh deterministic.
+- Tên/giá trị bộ lọc thuộc tính dùng tiếng Anh; prompt builder sinh câu tiếng Anh deterministic. Bộ thuộc tính hiện hành gồm `gender`, `upper_type`, `upper_color`, `lower_type`, `lower_color`, `carrying` (chi tiết ở BE-14).
+- Camera ngừng vận hành có thể được đưa vận hành trở lại (`POST /admin/cameras/{id}/reactivate`) với AI tắt; camera RTSP mất kết nối không được bật AI (`409 camera_offline`).
 
 ## 4. Kiến trúc Backend dự kiến
 
@@ -188,7 +189,7 @@ Trạng thái hợp lệ: `TODO`, `IN_PROGRESS`, `READY_FOR_REVIEW`, `DONE`, `BL
 | BE-03 | UC-01/UC-15: đăng nhập, phiên và đăng xuất | BE-02 | READY_FOR_REVIEW | `51998f8`, `bf745c6` |
 | BE-04 | Policy phân quyền tập trung | BE-03 | READY_FOR_REVIEW | `2483044` (test ma trận quyền mọi route) |
 | BE-05 | UC-02: quản lý Area tham chiếu và tài khoản | BE-04, STO-08 | READY_FOR_REVIEW | `64ea468` |
-| BE-06 | UC-03: quản lý camera và kiểm tra RTSP | BE-04, STO-08 | READY_FOR_REVIEW | `85de936` |
+| BE-06 | UC-03: quản lý camera và kiểm tra RTSP | BE-04, STO-08 | READY_FOR_REVIEW | `85de936`, `183c4d0` (reactivate) |
 | BE-07 | UC-05: registry và cấu hình Detector/Tracker | BE-04, STO-08 | READY_FOR_REVIEW | `85de936`, `e316055` (AIW-19) |
 | BE-08 | UC-04: bật/tắt AI theo camera | BE-06, BE-07 | READY_FOR_REVIEW | `85de936`, `e316055` (AIW-19) |
 | BE-09 | API upload video và quản lý processing job | BE-06, STO-05 | READY_FOR_REVIEW | `9676a48` |
@@ -199,7 +200,7 @@ Trạng thái hợp lệ: `TODO`, `IN_PROGRESS`, `READY_FOR_REVIEW`, `DONE`, `BL
 | BE-14 | Chuẩn bị truy vấn ảnh/văn bản/thuộc tính | BE-04, BE-10 | READY_FOR_REVIEW | `35995fb`, `366239f` (AIW-15) |
 | BE-15 | UC-09: tìm kiếm có lọc và phân quyền | BE-14, STO-13 | READY_FOR_REVIEW | `35995fb`; bổ sung 2026-09-27 (chưa commit): chỉ tìm trên camera đang vận hành, truy vấn bù khi loại hit stale |
 | BE-16 | UC-10: trình bày kết quả và media có quyền | BE-15, STO-14 | READY_FOR_REVIEW | `35995fb` |
-| BE-17 | UC-11: quản lý Case và CaseResult | BE-16, STO-15 | READY_FOR_REVIEW | `2483044` |
+| BE-17 | UC-11: quản lý Case và CaseResult | BE-16, STO-15 | READY_FOR_REVIEW | `2483044`, `183c4d0` (trạng thái Case) |
 | BE-18 | UC-12, UC-13, UC-14: Viewer dashboard và xem Case | BE-17 | READY_FOR_REVIEW | `2483044` |
 | BE-19 | Quy tắc lịch sử khi User/Camera thay đổi vòng đời | BE-05, BE-06, BE-17 | READY_FOR_REVIEW | `2483044` |
 | BE-20 | Idempotency, concurrency và error handling | BE-03 đến BE-19 | READY_FOR_REVIEW | `9676a48`, `2483044` |
@@ -207,7 +208,7 @@ Trạng thái hợp lệ: `TODO`, `IN_PROGRESS`, `READY_FOR_REVIEW`, `DONE`, `BL
 | BE-22 | Logging, metric, tracing và readiness | BE-11, BE-20 | READY_FOR_REVIEW | `d9b628a` (AIW-23), `8515ba2` |
 | BE-23 | Test contract, integration, authorization và E2E | BE-03 đến BE-22, STO-17 | IN_PROGRESS | `e893093` (E2E AI slice); E2E thật trên stack Docker chưa chạy |
 | BE-24 | Đo hiệu năng và tài nguyên Backend | BE-23, STO-18 | TODO | — |
-| BE-25 | Đóng gói, cấu hình triển khai và runbook | BE-24, STO-19 | IN_PROGRESS | `81df802` (release check, README); runbook RTSP 7 camera chưa có |
+| BE-25 | Đóng gói, cấu hình triển khai và runbook | BE-24, STO-19 | IN_PROGRESS | `81df802` (release check, README); runbook RTSP 7 camera (`scripts/rtsp.ps1`) nằm trong `README.md` gốc; còn thiếu đo hiệu năng BE-24 |
 
 > **Đồng bộ trạng thái 2026-09-27:** bảng trên được đối chiếu với lịch sử Git và roadmap cũ (roadmap đã gỡ khỏi repo ngày 2026-09-28). Các task đã có code và commit nhưng chưa có ghi nhận review trong tài liệu này được để ở `READY_FOR_REVIEW`; người thực hiện xác nhận review thì chuyển sang `DONE`.
 
@@ -224,7 +225,8 @@ Tên và payload cuối cùng được khóa ở BE-01. Bảng này dùng để 
 | User | `GET/PATCH/DELETE /api/v1/admin/users/{id}` | Admin |
 | User | `POST /api/v1/admin/users/{id}/lock`, `/unlock` | Admin |
 | Camera | `GET/POST /api/v1/admin/cameras` | Admin |
-| Camera | `GET/PATCH/DELETE /api/v1/admin/cameras/{id}` | Admin |
+| Camera | `GET/PATCH /api/v1/admin/cameras/{id}` | Admin |
+| Camera | `POST /api/v1/admin/cameras/{id}/retire`, `/reactivate` | Admin |
 | Camera | `POST /api/v1/admin/cameras/{id}/connection-tests` | Admin |
 | AI | `PUT /api/v1/admin/cameras/{id}/ai-state` | Admin |
 | AI config | `GET /api/v1/admin/ai/models`, `GET/PUT /api/v1/admin/ai/config` | Admin |
@@ -237,13 +239,13 @@ Tên và payload cuối cùng được khóa ở BE-01. Bảng này dùng để 
 | Search | `POST /api/v1/searches/image` | Operator |
 | Search | `POST /api/v1/searches/text` | Operator |
 | Search | `POST /api/v1/searches/attributes` | Operator |
-| Search media | `GET /api/v1/search-results/{track_id}/crop` | Operator có quyền hiện tại |
+| Search media | `GET /api/v1/search-results/{track_id}/crop?aspect=&mark=` | Operator có quyền hiện tại |
 | Search media | `GET /api/v1/search-results/{track_id}/frame` | Operator có quyền hiện tại |
-| Case | `GET/POST /api/v1/cases` | Operator; GET có semantics riêng cho Viewer nếu thống nhất |
+| Case | `GET/POST /api/v1/cases` (`GET` nhận `?status=OPEN\|CLOSED`) | Operator; Viewer chỉ `GET` (xem mọi Case) |
 | Case | `GET/PATCH /api/v1/cases/{id}` | Operator owner; Viewer chỉ GET |
 | Case result | `POST /api/v1/cases/{id}/results` | Operator owner |
 | Case result | `DELETE /api/v1/cases/{id}/results/{case_result_id}` | Operator owner |
-| Case media | `GET /api/v1/cases/{id}/results/{case_result_id}/crop` | Operator owner hoặc Viewer |
+| Case media | `GET /api/v1/cases/{id}/results/{case_result_id}/crop?aspect=&mark=` | Operator owner hoặc Viewer |
 | Case media | `GET /api/v1/cases/{id}/results/{case_result_id}/frame` | Operator owner hoặc Viewer |
 | Viewer | `GET /api/v1/viewer/dashboard` | Viewer |
 | Health | `GET /health/live`, `GET /health/ready` | Hạ tầng; response giới hạn thông tin |
@@ -414,10 +416,10 @@ Không xây dựng “superuser bypass” ẩn. Nếu tương lai cần một va
 - Connection test chạy với timeout chặt, không giữ request vô hạn; trả trạng thái có cấu trúc.
 - Chặn SSRF: validate scheme `rtsp/rtsps`, host/port và policy mạng phù hợp môi trường.
 - Camera deactivated không nhận job/AI data mới nhưng lịch sử không bị xóa.
-- Đưa camera vận hành trở lại (UC-03 A5): chuyển về `ACTIVE` với `ai_enabled=false`, có audit; dữ liệu cũ tìm kiếm được lại. **Chưa hiện thực** (hiện chỉ có `POST /cameras/{id}/retire` một chiều).
-- Audit create/update/test/deactivate.
+- Đưa camera vận hành trở lại (UC-03 A5): `POST /api/v1/admin/cameras/{id}/reactivate` chuyển camera `RETIRED` về `ACTIVE` với `ai_enabled=false`, tăng `version`; camera không ở `RETIRED` trả `409 camera_not_retired`. Track cũ tìm kiếm được lại ngay. Đã hiện thực (`183c4d0`).
+- Audit create/update/test/deactivate/reactivate (`camera.reactivated`).
 
-**Kiểm thử:** camera không RTSP, RTSP unreachable, credential redaction, duplicate policy, area immutable, SSRF input và deactivate giữ track/Case.
+**Kiểm thử:** camera không RTSP, RTSP unreachable, credential redaction, duplicate policy, area immutable, SSRF input, deactivate giữ track/Case, reactivate camera `RETIRED` (AI vẫn tắt) và reactivate camera đang vận hành bị từ chối.
 
 **Tiêu chí chấp nhận:** không có response/log chứa RTSP password; camera file-only vẫn hợp lệ.
 
@@ -456,12 +458,12 @@ Không xây dựng “superuser bypass” ẩn. Nếu tương lai cần một va
 
 - Endpoint thay đổi `ai_enabled` idempotent.
 - Khi bật: camera active, nguồn phù hợp và active AI config hợp lệ.
-- Camera file-only có thể bật để nhận processing job dù không có RTSP; RTSP availability chỉ bắt buộc khi khởi chạy RTSP worker.
+- Camera file-only có thể bật để nhận processing job dù không có RTSP. Camera có RTSP mà lần kiểm tra kết nối gần nhất là `OFFLINE`/`ERROR` bị từ chối bật AI bằng `409 camera_offline` (UC-04 E1); camera không `ACTIVE` trả `409 camera_not_active`.
 - Khi tắt: không nhận job/track mới; job đang chạy xử lý theo policy cancel/graceful-stop được khóa trong BE-01.
 - Không xóa dữ liệu đã tạo.
 - Audit transition và lý do lỗi.
 
-**Kiểm thử:** bật camera inactive, bật thiếu model config, toggle lặp, tắt giữa job và dữ liệu lịch sử còn truy xuất.
+**Kiểm thử:** bật camera inactive, bật camera RTSP đang offline, bật thiếu model config, toggle lặp, tắt giữa job và dữ liệu lịch sử còn truy xuất.
 
 **Tiêu chí chấp nhận:** trạng thái mong muốn và trạng thái worker thực tế được phân biệt; không báo “running” chỉ vì flag đã bật.
 
@@ -587,8 +589,8 @@ Không xây dựng “superuser bypass” ẩn. Nếu tương lai cần một va
 **Phạm vi:**
 
 - Image endpoint: validate ảnh crop, decode an toàn, orientation, kích thước, channel và preprocessing theo RaSa.
-- Text endpoint: chỉ nhận mô tả tiếng Anh, validate length/encoding và từ chối input không được hỗ trợ; không có bước dịch tự động. Quy tắc ký tự: chỉ nhận chữ cái/chữ số ASCII, khoảng trắng và các dấu `. , ; : ' " ( ) / -` (whitelist trong `validate_english_description`), tối đa 500 ký tự; ký tự khác, kể cả chữ có dấu tiếng Việt, bị từ chối bằng `422` với thông báo rõ ràng. Không chuẩn hóa hay dịch nội dung.
-- Attribute endpoint: whitelist tên/giá trị thuộc tính tiếng Anh và prompt builder deterministic sang câu tiếng Anh có kiểm soát.
+- Text endpoint: chỉ nhận mô tả tiếng Anh, validate length/encoding và từ chối input không được hỗ trợ; không có bước dịch tự động. Tầng API kiểm tra trước: độ dài sau khi bỏ khoảng trắng hai đầu ngoài 4–1000 ký tự trả `422 text_too_short`; có chữ cái không phải ASCII (ví dụ tiếng Việt có dấu) trả `422 text_not_english` với thông báo tiếng Việt. Sau đó gateway áp quy tắc ký tự: chỉ nhận chữ cái/chữ số ASCII, khoảng trắng và các dấu `. , ; : ' " ( ) / -` (whitelist trong `validate_english_description`), tối đa 500 ký tự; ký tự khác, kể cả chữ có dấu tiếng Việt, bị từ chối bằng `422` với thông báo rõ ràng. Không chuẩn hóa hay dịch nội dung.
+- Attribute endpoint: whitelist tên/giá trị thuộc tính tiếng Anh và prompt builder deterministic sang câu tiếng Anh có kiểm soát. Bộ thuộc tính hiện hành (`services/searches.py`, giao diện dùng đúng bảng này): `gender` (`man`, `woman`); `upper_type` (`t_shirt`, `shirt`, `sweater`, `jacket`, `coat`, `dress`); `upper_color` (`black`, `white`, `gray`, `red`, `blue`, `navy`, `green`, `yellow`, `brown`, `beige`); `lower_type` (`pants`, `jeans`, `shorts`, `skirt`); `lower_color` (`black`, `white`, `gray`, `blue`, `brown`, `beige`); `carrying` (`backpack`, `handbag`). Câu sinh theo văn phong CUHK-PEDES, ví dụ `A man wearing a red jacket and blue jeans, carrying a backpack.`; `dress` không đi cùng thuộc tính phần dưới; không có phủ định ("without a backpack") vì text encoder kiểu CLIP khớp theo danh từ và sẽ xếp người có mang lên cao hơn; phải chọn ít nhất một thuộc tính.
 - Gateway tới RaSa Image/Text Encoder, timeout và model version check.
 - Normalize/vector dimension theo cùng policy lúc lập chỉ mục.
 - Không persist raw query image, text hoặc embedding mặc định.
@@ -634,6 +636,7 @@ Không xây dựng “superuser bypass” ẩn. Nếu tương lai cần một va
 
 - DTO kết quả nhất quán cho ba search mode.
 - Endpoint crop động và full frame annotated theo context quyền current-area.
+- Crop nhận `?aspect=` (tỉ lệ khung hiển thị): vùng cắt được nới bằng cảnh xung quanh cho đủ tỉ lệ, không bao giờ cắt vào người; và `?mark=1`: viền người được tìm thấy và làm tối phần còn lại. Giá trị sai trả `422`. Áp dụng cho crop của lượt tìm kiếm và crop trong Case.
 - Không nhận object key/bbox tùy ý từ client.
 - Streaming có content type, size limit, cache policy và ETag/checksum phù hợp.
 - Metadata vẫn có thể hiển thị nếu ảnh thiếu; error code ảnh rõ ràng.
@@ -653,18 +656,20 @@ Không xây dựng “superuser bypass” ẩn. Nếu tương lai cần một va
 
 **Phạm vi:**
 
-- List/detail Case của Operator hiện tại.
+- List/detail Case của Operator hiện tại; list nhận `?status=OPEN|CLOSED`.
 - Tạo Case với title/note; owner luôn lấy từ session.
-- Patch title/note; không có field status/area/owner trong payload.
+- Patch title/note/status kèm `version`; không có field area/owner trong payload. `status: CLOSED` ghi `closed_at` và audit `case.closed`; `status: OPEN` xóa `closed_at` và audit `case.reopened`.
+- Case `CLOSED` bị khóa: sửa title/note, thêm hoặc xóa kết quả trả `409 case_closed`; chỉ cho phép mở lại. Giao diện ẩn Case `CLOSED` khỏi danh sách "Thêm vào Case đã có".
+- Tùy chọn "đánh dấu hoàn thành khi lưu" do giao diện thực hiện bằng hai request (lưu kết quả, rồi `PATCH status: CLOSED` theo `version` mới); backend không có endpoint gộp.
 - Thêm `track_id` vào Case sau khi kiểm tra owner Case và quyền current-area đối với track ở thời điểm lưu.
 - Mỗi POST thành công tạo `CaseResult` mới, kể cả track trùng.
 - Không nhận/lưu Matching Score hoặc `result_ref`.
 - Xóa đúng `case_result_id`; không xóa track/frame/vector.
 - Media trong Case kiểm tra Case owner thay vì area hiện tại.
 
-**Kiểm thử:** spoof owner, Case người khác, track ngoài area, duplicate save, xóa một duplicate, concurrent patch, Operator đổi area vẫn xem Case cũ và score field bị từ chối/ignore theo contract đã chốt.
+**Kiểm thử:** spoof owner, Case người khác, track ngoài area, duplicate save, xóa một duplicate, concurrent patch, Operator đổi area vẫn xem Case cũ, score field bị từ chối/ignore theo contract đã chốt, đóng/mở lại Case (audit, `closed_at`) và mọi mutation trên Case `CLOSED` trả `409 case_closed`.
 
-**Tiêu chí chấp nhận:** Case chứa title, note và các CaseResult; không có trạng thái, area hoặc score.
+**Tiêu chí chấp nhận:** Case chứa title, note, trạng thái (`OPEN`/`CLOSED`, `closed_at`) và các CaseResult; không có area hoặc score.
 
 **Commit đề xuất:** `feat(case): implement operator case management`
 
@@ -676,8 +681,8 @@ Không xây dựng “superuser bypass” ẩn. Nếu tương lai cần một va
 
 **Phạm vi:**
 
-- UC-12: dashboard gồm tổng số Case, tổng số row CaseResult kể cả duplicate và Case gần đây.
-- UC-13: list/filter Case theo thời gian/Operator; detail có owner snapshot và result list.
+- UC-12: dashboard gồm tổng số Case, số Case theo trạng thái (`open_cases`, `closed_cases`), tổng số row CaseResult kể cả duplicate và Case gần đây kèm trạng thái.
+- UC-13: list/filter Case theo thời gian/Operator/trạng thái; detail có owner snapshot, trạng thái và result list.
 - UC-14: xem metadata và media Case qua context `case_id + case_result_id`.
 - Nếu ảnh thiếu, trả metadata snapshot và trạng thái ảnh không khả dụng.
 - Không hiển thị Matching Score vì score không được lưu trong Case.
@@ -922,7 +927,9 @@ Các quyết định dưới đây đã được áp dụng trong code (đối c
 - **Tắt AI giữa phiên:** dừng ở checkpoint an toàn kế tiếp; track đã `READY` được giữ; job chuyển `CANCELLED`.
 - **Ngôn ngữ truy vấn:** chỉ tiếng Anh; chỉ nhận chữ cái/chữ số ASCII, khoảng trắng và các dấu `. , ; : ' " ( ) / -` (whitelist trong `validate_english_description`), tối đa 500 ký tự; ký tự khác, kể cả chữ có dấu tiếng Việt, bị từ chối bằng `422` với thông báo rõ ràng. Không chuẩn hóa hay dịch nội dung. Chọn whitelist thay vì chuẩn hóa dấu câu kiểu chữ để giữ hệ thống đơn giản (quyết định 2026-09-27).
 - **403/404:** sai vai trò hoặc tài khoản không `ACTIVE` trả `403`; tài nguyên không tồn tại hoặc không thuộc quyền (Case/track/media của người khác, ngoài area) trả `404`.
-- **Media:** luôn stream qua Flask, `Cache-Control: private, no-store`; không dùng presigned URL.
+- **Media:** luôn stream qua Flask, `Cache-Control: private, no-store`; không dùng presigned URL. Crop nhận `aspect` và `mark` (BE-16).
+- **Trạng thái Case (2026-09-27):** `OPEN`/`CLOSED` qua `PATCH /cases/{id}`; Case `CLOSED` từ chối mọi thay đổi nội dung bằng `409 case_closed`; mở lại được; audit `case.closed`/`case.reopened`. Migration `20260927_0013`.
+- **Vòng đời camera (2026-09-27):** `retire` và `reactivate` là hai chiều; reactivate để AI tắt; bật AI cho camera RTSP mất kết nối trả `409 camera_offline`.
 - **Rate limit:** fixed-window trong bộ nhớ theo process: login 10/phút, search 30/phút, upload 10/phút, RTSP test 10/phút, diagnostics 6/phút.
 
 ## 15. Nhật ký đã thực hiện
@@ -950,3 +957,12 @@ Các quyết định dưới đây đã được áp dụng trong code (đối c
 - Rủi ro hoặc điểm cần review: CSRF dẫn xuất từ session token thay vì lưu riêng; logout yêu cầu CSRF khi còn cookie; username chuẩn hóa về chữ thường; chưa có rate limit login (BE-21).
 - Chỉnh sửa sau review:
 - Commit SHA (chỉ điền sau khi DONE):
+
+### 2026-09-27 — BE-06, BE-08, BE-14, BE-16, BE-17, BE-18 (bổ sung theo đặc tả)
+
+- Trạng thái: `READY_FOR_REVIEW`.
+- Use case/endpoint liên quan: UC-03 A5, UC-04 E1, UC-09, UC-10, UC-11, UC-12, UC-13; `POST /admin/cameras/{id}/reactivate`, `PUT /admin/cameras/{id}/ai-state`, `/searches/text`, `/searches/attributes`, `/crop`, `/cases`.
+- Thay đổi chính: trạng thái Case `OPEN`/`CLOSED` (khóa, mở lại, lọc `?status=`, dashboard đếm theo trạng thái, audit `case.closed`/`case.reopened`); đưa camera vận hành trở lại (`camera.reactivated`); chặn bật AI cho camera RTSP mất kết nối (`409 camera_offline`); `422 text_not_english`; bộ thuộc tính mới; crop `aspect`/`mark`.
+- File quan trọng: `services/cases.py`, `api/v1/cases.py`, `services/cameras.py`, `api/v1/cameras.py`, `api/v1/searches.py`, `services/searches.py`, `services/track_imagery.py`, `migrations/versions/20260927_0013_case_status.py`.
+- Test đã chạy (2026-09-28, R3): unit 708 passed; integration camera/job/worker 21 passed; migration/schema 7 passed (có test migration `0013`); E2E 2 passed.
+- Commit SHA: `183c4d0`.

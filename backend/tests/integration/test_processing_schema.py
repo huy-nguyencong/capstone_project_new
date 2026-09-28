@@ -152,9 +152,15 @@ def test_processing_schema_constraints_and_round_trip() -> None:
         with pytest.raises(DBAPIError, match="Invalid PersonTrack"):
             with engine.begin() as connection:
                 connection.execute(
-                    sa.text("UPDATE person_tracks SET index_status = 'FAILED' WHERE id = :id"),
+                    sa.text("UPDATE person_tracks SET index_status = 'PENDING' WHERE id = :id"),
                     {"id": ids["track"]},
                 )
+        # 20260926_0011: reconciliation may quarantine a corrupt READY track.
+        with engine.begin() as connection:
+            connection.execute(
+                sa.text("UPDATE person_tracks SET index_status = 'FAILED' WHERE id = :id"),
+                {"id": ids["track"]},
+            )
     finally:
         engine.dispose()
         command.downgrade(config, "20260925_0001")

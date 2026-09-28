@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from collections.abc import Callable, Iterable, Iterator
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime, timedelta
 from itertools import islice
@@ -14,6 +14,7 @@ from person_search.services.track_ingestion import (
     TrackIngestionService,
 )
 from person_search.storage.contracts import FRAME_OBJECT_PREFIX
+from person_search.storage.milvus.vectors import VectorRecord
 from person_search.storage.minio.frames import FrameInfo, FrameNotFoundError
 from person_search.storage.postgres.models import AuditResult, OutboxStatus, TrackIndexStatus
 from person_search.storage.postgres.repositories import Repositories
@@ -363,17 +364,9 @@ class StorageReconciler:
 
 
 class VectorRebuilder(Protocol):
-    def upsert(
-        self,
-        *,
-        track_id: uuid.UUID,
-        vector: Any,
-        area_id: uuid.UUID,
-        camera_id: uuid.UUID,
-        appeared_at: datetime,
-    ) -> None: ...
+    def upsert_many(self, records: Sequence[VectorRecord]) -> None: ...
 
-    def get(self, track_id: uuid.UUID) -> dict[str, Any] | None: ...
+    def existing_ids(self, track_ids: Sequence[uuid.UUID]) -> set[uuid.UUID]: ...
 
 
 @dataclass(slots=True)
@@ -432,42 +425,66 @@ class StorageReindexer:
                     batch.append((track.id, track.camera_id, track.appeared_at_utc, payload))
             if not batch:
                 return report
-            for track_id, camera_id, appeared_at, payload in batch:
-                self._reindex_one(report, track_id, camera_id, appeared_at, payload)
+            self._reindex_batch(report, batch)
             processed += len(batch)
             after_id = batch[-1][0]
         report.truncated = True
         return report
 
-    def _reindex_one(
+    def _reindex_batch(
         self,
         report: ReindexReport,
-        track_id: uuid.UUID,
-        camera_id: uuid.UUID,
-        appeared_at: datetime,
-        payload: dict[str, Any],
+        batch: list[tuple[uuid.UUID, uuid.UUID, datetime, dict[str, Any]]],
     ) -> None:
-        embedding = payload.get("embedding")
-        area_id = payload.get("area_id")
-        if not embedding or not area_id or payload.get("camera_id") != str(camera_id):
-            report.missing_payload.append(track_id)
+        # One upsert and one verification query per batch: a per-track round trip made a restore
+        # of ~1,500 tracks take ~25 minutes on Milvus standalone.
+        records = []
+        for track_id, camera_id, appeared_at, payload in batch:
+            embedding = payload.get("embedding")
+            area_id = payload.get("area_id")
+            if not embedding or not area_id or payload.get("camera_id") != str(camera_id):
+                report.missing_payload.append(track_id)
+                continue
+            records.append(
+                VectorRecord(track_id, embedding, uuid.UUID(area_id), camera_id, appeared_at)
+            )
+        if not records:
             return
         try:
-            self._vectors.upsert(
-                track_id=track_id,
-                vector=embedding,
-                area_id=uuid.UUID(area_id),
-                camera_id=camera_id,
-                appeared_at=appeared_at,
-            )
+            self._vectors.upsert_many(records)
+            written = records
         except Exception as error:
-            report.failed.append(track_id)
+            # Retry one by one so a transient error heals and a bad row is named precisely.
+            logger.warning(
+                "vector batch reindex failed; retrying per track",
+                extra={"batch_size": len(records), "error_type": type(error).__name__},
+            )
+            written = [record for record in records if self._upsert_one(report, record)]
+        if not self._verify:
+            report.indexed += len(written)
+            return
+        try:
+            present = self._vectors.existing_ids([record.track_id for record in written])
+        except Exception as error:
+            logger.warning(
+                "vector reindex verification failed",
+                extra={"batch_size": len(written), "error_type": type(error).__name__},
+            )
+            present = set()
+        for record in written:
+            if record.track_id in present:
+                report.indexed += 1
+            else:
+                report.unverified.append(record.track_id)
+
+    def _upsert_one(self, report: ReindexReport, record: VectorRecord) -> bool:
+        try:
+            self._vectors.upsert_many([record])
+        except Exception as error:
+            report.failed.append(record.track_id)
             logger.warning(
                 "vector reindex failed",
-                extra={"track_id": str(track_id), "error_type": type(error).__name__},
+                extra={"track_id": str(record.track_id), "error_type": type(error).__name__},
             )
-            return
-        if self._verify and self._vectors.get(track_id) is None:
-            report.unverified.append(track_id)
-            return
-        report.indexed += 1
+            return False
+        return True

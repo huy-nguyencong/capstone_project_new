@@ -459,11 +459,14 @@ class FakeMilvusClient:
         self.failures: list[Exception] = []
         self.query_misses = 0
 
-    def upsert(self, collection_name: str, *, data: dict[str, Any], timeout: int) -> None:
+    def upsert(
+        self, collection_name: str, *, data: dict[str, Any] | list[dict[str, Any]], timeout: int
+    ) -> None:
         if self.failures:
             raise self.failures.pop(0)
         self.upserts += 1
-        self.rows[data["track_id"]] = data
+        for row in data if isinstance(data, list) else [data]:
+            self.rows[row["track_id"]] = row
 
     def query(
         self,
@@ -477,8 +480,9 @@ class FakeMilvusClient:
         if self.query_misses:
             self.query_misses -= 1
             return []
-        track_id = filter.split('"')[1]
-        return [self.rows[track_id]] if track_id in self.rows else []
+        # Handles `track_id == "x"` and `track_id in ["x", "y"]`: quoted values are track IDs.
+        track_ids = filter.split('"')[1::2]
+        return [self.rows[track_id] for track_id in track_ids if track_id in self.rows]
 
     def query_iterator(
         self,
