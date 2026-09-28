@@ -1,0 +1,25 @@
+% !TEX root = ../../main.tex
+% C1.2 — Mục tiêu của đề tài
+% Chương 1 là tổng quan: nêu mục tiêu ở mức "đạt được gì", KHÔNG liệt kê chức năng chi tiết, trường dữ liệu hay bộ lọc
+% (để dành cho Mục 4.2), KHÔNG nêu tên công nghệ/mô hình (Chương 3, Mục 6.1) và KHÔNG nêu tên vai trò (Mục 4.1).
+% Mỗi mục tiêu phải được đối chiếu lại ở Mục 9.1.
+\section{Mục tiêu của đề tài}
+\label{sec:1.2}
+
+Mục tiêu tổng quát của đề tài là xây dựng một ứng dụng hỗ trợ tìm kiếm người trong dữ liệu thu thập từ hệ thống camera giám sát, cho phép người dùng mô tả người cần tìm bằng nhiều hình thức khác nhau thay vì phải xem lại video thủ công. Ứng dụng đóng vai trò hỗ trợ: hệ thống đề xuất và sắp xếp các kết quả phù hợp, còn quyết định cuối cùng về việc một kết quả có đúng là người cần tìm hay không vẫn thuộc về người dùng.
+
+Để đạt được mục tiêu tổng quát, đề tài đặt ra các mục tiêu cụ thể sau:
+
+\begin{enumerate}
+    \item \textbf{Chuyển dữ liệu camera thành dữ liệu có thể tìm kiếm.} Ứng dụng tự động phân tích hình ảnh từ các camera, phát hiện và theo dõi người xuất hiện trong video, và lưu lại mỗi lần xuất hiện của một người như một đơn vị có thể tra cứu.
+
+    \item \textbf{Tìm kiếm người bằng mô tả đa phương thức.} Người dùng có thể mô tả người cần tìm bằng hình ảnh tham chiếu, bằng câu mô tả hoặc bằng các đặc điểm ngoại hình chọn sẵn; cả ba hình thức cùng được so khớp với dữ liệu đã phân tích và kết quả được sắp xếp theo mức độ phù hợp.
+
+    \item \textbf{Hỗ trợ đánh giá và quản lý kết quả tìm kiếm.} Người dùng có thể xem lại từng kết quả trong bối cảnh gốc của nó để tự đánh giá, và lưu những kết quả đã xác nhận thành hồ sơ vụ việc để tiếp tục theo dõi, tra cứu về sau.
+
+    \item \textbf{Vận hành an toàn trong môi trường nhiều người dùng.} Ứng dụng phân quyền theo trách nhiệm của từng nhóm người dùng, giới hạn dữ liệu mỗi người được phép tìm kiếm theo khu vực giám sát được giao, và cung cấp các chức năng cần thiết để quản trị, theo dõi hoạt động của hệ thống.
+
+    \item \textbf{Đánh giá khả năng áp dụng các mô hình trí tuệ nhân tạo có sẵn.} Đề tài không huấn luyện mô hình mới mà lựa chọn các mô hình đã được công bố phù hợp với bài toán và điều kiện phần cứng phổ thông, sau đó đánh giá chất lượng tìm kiếm và chi phí xử lý khi tích hợp chúng vào ứng dụng.
+\end{enumerate}
+
+Đề tài được xem là hoàn thành mục tiêu khi ứng dụng vận hành trọn vẹn luồng nghiệp vụ, từ tiếp nhận dữ liệu camera, tìm kiếm, đánh giá kết quả đến lưu hồ sơ vụ việc, đồng thời có số liệu đánh giá chất lượng tìm kiếm và hiệu năng được trình bày tại Chương~\ref{chapter:kiemthu}.

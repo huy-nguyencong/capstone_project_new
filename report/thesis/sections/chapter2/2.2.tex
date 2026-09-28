@@ -1,0 +1,47 @@
+% !TEX root = ../../main.tex
+% C2.2 — So sánh và nhận xét các hệ thống liên quan
+% Chỉ dùng thông tin đã kiểm chứng ở Mục 2.1. Ô nào tài liệu của hãng không nói tới thì ghi "không đề cập", không suy đoán.
+% Cột "Hệ thống của đề tài" phải khớp ứng dụng thật (chỉ 4 thuộc tính, chỉ tiếng Anh, triển khai tại chỗ trên CPU).
+\section{So sánh và nhận xét các hệ thống liên quan}
+\label{sec:2.2}
+
+Bảng~\ref{tab:related-comparison} tổng hợp các đặc điểm của ba hệ thống đã khảo sát theo những tiêu chí liên quan trực tiếp đến đề tài. Thông tin được lấy từ tài liệu công bố của các hãng đã trích dẫn tại Mục~\ref{sec:2.1}; những nội dung không được đề cập trong các tài liệu này được ghi rõ là ``không đề cập''. Cột cuối cùng trình bày hệ thống của đề tài để làm rõ điểm tương đồng và khác biệt.
+
+\begin{longtable}{|>{\raggedright\arraybackslash}p{2.2cm}|>{\raggedright\arraybackslash}p{2.85cm}|>{\raggedright\arraybackslash}p{2.85cm}|>{\raggedright\arraybackslash}p{2.85cm}|>{\raggedright\arraybackslash}p{2.85cm}|}
+\caption{So sánh các hệ thống tìm kiếm người trong video}\label{tab:related-comparison}\\
+\hline
+\textbf{Tiêu chí} & \textbf{BriefCam} & \textbf{Avigilon Appearance Search} & \textbf{Verkada AI-Powered Search} & \textbf{Hệ thống của đề tài} \\
+\hline
+\endfirsthead
+\multicolumn{5}{l}{\textit{(tiếp theo Bảng~\ref{tab:related-comparison})}}\\
+\hline
+\textbf{Tiêu chí} & \textbf{BriefCam} & \textbf{Avigilon Appearance Search} & \textbf{Verkada AI-Powered Search} & \textbf{Hệ thống của đề tài} \\
+\hline
+\endhead
+Tìm theo thuộc tính & Có: loại đối tượng, màu sắc, kích thước, tốc độ, hướng di chuyển & Có: màu quần áo, giới tính, nhóm tuổi; loại và màu xe & Có bộ lọc thuộc tính định sẵn; được mở rộng bằng tìm kiếm bằng câu mô tả & Có: giới tính, loại và màu trang phục trên, dưới, vật mang theo; được chuyển thành câu mô tả \\
+\hline
+Tìm theo ảnh hoặc mẫu ngoại hình & Có: chọn đối tượng mẫu trong video để tìm ngoại hình tương tự & Có: tải ảnh lên hoặc chọn mẫu trong video & Có: tải ảnh người, phương tiện hoặc đồ vật lên & Có: tải ảnh đã cắt chứa một người \\
+\hline
+Tìm bằng câu mô tả tự do & Không đề cập & Không đề cập & Có & Có (chỉ tiếng Anh) \\
+\hline
+Cơ chế so khớp được công bố & Tìm theo siêu dữ liệu và độ tương tự ngoại hình & Học sâu trên đặc trưng ngoại hình, có kết hợp đặc trưng khuôn mặt & Mã hóa ảnh cắt và câu truy vấn vào cùng một không gian biểu diễn (CLIP), tìm trên cơ sở dữ liệu vector & Mã hóa ảnh, câu mô tả và thuộc tính vào cùng một không gian biểu diễn, tìm trên cơ sở dữ liệu vector \\
+\hline
+Chức năng khác & Tóm tắt video (Video Synopsis), nhận diện khuôn mặt, biển số xe, cảnh báo thời gian thực, thống kê và bản đồ nhiệt & Đánh dấu và xuất kết quả thành bằng chứng, tìm kiếm trên nhiều địa điểm & Tạo cảnh báo từ câu truy vấn, quản lý tập trung trên nền tảng đám mây & Hồ sơ vụ việc, phân quyền theo vai trò và khu vực giám sát, trang tổng quan theo dõi hồ sơ vụ việc \\
+\hline
+Mô hình triển khai & Tại chỗ hoặc trên máy chủ đám mây & Tại chỗ, tích hợp phần mềm quản lý video của hãng & Nền tảng đám mây của hãng & Tại chỗ trên một máy tính cá nhân \\
+\hline
+Yêu cầu phần cứng và thiết bị & Máy chủ xử lý bắt buộc có card đồ họa NVIDIA & Camera và đầu ghi của hãng, hoặc thiết bị AI Appliance cho camera ONVIF khác hãng & Camera của hãng, hoặc thiết bị Command Connector cho camera khác hãng & Không yêu cầu card đồ họa rời; nhận luồng từ camera bất kỳ hỗ trợ RTSP \\
+\hline
+Hình thức cung cấp & Phần mềm thương mại & Phần mềm và thiết bị thương mại & Nền tảng dịch vụ thương mại & Ứng dụng tự phát triển, sử dụng các mô hình đã công bố \\
+\hline
+\end{longtable}
+
+Từ kết quả so sánh, có thể rút ra một số nhận xét sau:
+
+\begin{itemize}
+    \item \textbf{Hỗ trợ nhiều hình thức mô tả đã trở thành xu hướng.} Cả ba hệ thống đều hỗ trợ ít nhất hai hình thức: tìm theo thuộc tính và tìm theo ảnh hoặc mẫu ngoại hình. Tuy nhiên, trong phạm vi tài liệu khảo sát, chỉ Verkada hỗ trợ tìm kiếm bằng câu mô tả tự do; chức năng này mới được giới thiệu từ năm 2024, cho thấy đây là hướng phát triển còn mới.
+    \item \textbf{Biểu diễn chung ảnh--văn bản là nền tảng cho tìm kiếm bằng câu mô tả.} Verkada công bố việc mã hóa ảnh đối tượng và câu truy vấn vào cùng một không gian biểu diễn rồi tìm kiếm trên cơ sở dữ liệu vector. Cách tiếp cận này cho phép dùng chung một cơ chế cho cả tìm bằng câu mô tả và tìm bằng ảnh, thay vì xây dựng riêng từng bộ lọc.
+    \item \textbf{Tìm kiếm thường đi kèm công cụ tổng hợp kết quả.} Avigilon cho phép đánh dấu và xuất kết quả thành bộ bằng chứng về diễn biến sự việc. Điều này cho thấy tìm được kết quả mới chỉ là một phần; người dùng còn cần lưu trữ, tổng hợp và chia sẻ kết quả trong quá trình điều tra.
+    \item \textbf{Các hệ thống thương mại gắn với hạ tầng của hãng.} BriefCam đòi hỏi máy chủ có card đồ họa chuyên dụng; Avigilon cần phần mềm và thiết bị xử lý của hãng; Verkada vận hành trên nền tảng đám mây của hãng. Dù cả ba đều đã có phương án cho camera khác hãng, chi phí triển khai và sự phụ thuộc vào nhà cung cấp vẫn là rào cản đối với các tổ chức có quy mô nhỏ hoặc yêu cầu dữ liệu phải lưu trữ tại chỗ.
+    \item \textbf{Phạm vi chức năng rộng hơn tìm kiếm.} Các sản phẩm thương mại tích hợp nhiều chức năng như cảnh báo thời gian thực, nhận diện khuôn mặt, biển số xe và thống kê. Đây là các chức năng nằm ngoài phạm vi của đề tài, vốn tập trung vào bài toán tìm kiếm người và quản lý kết quả tìm kiếm.
+\end{itemize}

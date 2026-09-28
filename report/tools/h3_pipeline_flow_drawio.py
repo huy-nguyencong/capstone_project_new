@@ -1,0 +1,127 @@
+"""Sinh figures/H3-luu-do-xu-ly-camera.drawio: lưu đồ xử lý một công việc (vòng lặp theo khung hình).
+
+Chi tiết hơn Hình 5.1: vòng lặp đọc khung, các điểm rẽ nhánh (kết thúc nguồn/hủy, lấy mẫu i mod N, lần xuất hiện kết thúc),
+dữ liệu trung gian. Khớp workers/pipeline.py, workers/sampling.py, ai/selectors/representative.py, services/track_ingestion.py.
+Ký hiệu theo figures/README.md mục 3. Chạy: python report/tools/h3_pipeline_flow_drawio.py
+"""
+import base64
+from xml.sax.saxutils import quoteattr
+
+OUT = r'D:/uni-studies/semester-253/capstone_project_new/report/thesis/figures/H3-luu-do-xu-ly-camera.drawio'
+FS = 22
+F = f'fontFamily=Times New Roman;fontSize={FS};'
+cells = []
+
+
+def svg_uri(svg):
+    return 'data:image/svg+xml,' + base64.b64encode(svg.encode()).decode()
+
+
+BRAIN = svg_uri(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#E1D5E7" stroke="#9673A6" '
+    'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">'
+    '<path d="M12 5a3 3 0 0 0-5.6-1.5A3 3 0 0 0 3.5 7a3 3 0 0 0-.9 5.2A3.5 3.5 0 0 0 5 18a3 3 0 0 0 5.5 1.5A2 2 0 0 0 12 20z"/>'
+    '<path d="M12 5a3 3 0 0 1 5.6-1.5A3 3 0 0 1 20.5 7a3 3 0 0 1 .9 5.2A3.5 3.5 0 0 1 19 18a3 3 0 0 1-5.5 1.5A2 2 0 0 1 12 20z"/>'
+    '<path d="M12 5v15M8 8.5c1 0 2 .7 2 2M16 8.5c-1 0-2 .7-2 2M7.5 14c1.2 0 2.2-.6 2.5-1.5M16.5 14c-1.2 0-2.2-.6-2.5-1.5" fill="none"/>'
+    '</svg>')
+BUCKET = svg_uri(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="#FFE6CC" stroke="#D79B00" stroke-width="1.5">'
+    '<path d="M5 9l4 27c.3 2 22 2 22.3 0L35 9z"/><ellipse cx="20" cy="9" rx="15" ry="4.5"/></svg>')
+
+
+def v(id, val, style, x, y, w, h):
+    cells.append(f'<mxCell id="{id}" value={quoteattr(val)} style={quoteattr(style + F)} vertex="1" parent="1">'
+                 f'<mxGeometry x="{x}" y="{y}" width="{w}" height="{h}" as="geometry"/></mxCell>')
+
+
+n = 0
+
+
+def e(s, t, style, val='', pts=None, lx=None, off=None):
+    global n
+    n += 1
+    g = '<mxGeometry relative="1" as="geometry"' + (f' x="{lx}"' if lx is not None else '') + '>'
+    if off:
+        g += f'<mxPoint x="{off[0]}" y="{off[1]}" as="offset"/>'
+    if pts:
+        g += '<Array as="points">' + ''.join(f'<mxPoint x="{a}" y="{b}"/>' for a, b in pts) + '</Array>'
+    g += '</mxGeometry>'
+    cells.append(f'<mxCell id="e{n}" value={quoteattr(val)} style={quoteattr(style + F)} edge="1" parent="1" '
+                 f'source="{s}" target="{t}">{g}</mxCell>')
+
+
+PROC = 'rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;'
+DATA = 'shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;size=18;fillColor=#FFF2CC;strokeColor=#D6B656;'
+DEC = 'rhombus;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#333333;'
+TERM = 'rounded=1;arcSize=50;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#666666;'
+DB = 'shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;size=10;fillColor=#FFE6CC;strokeColor=#D79B00;'
+ICON_R = 'shape=image;html=1;imageAspect=0;aspect=fixed;labelPosition=right;verticalLabelPosition=middle;align=left;verticalAlign=middle;spacingLeft=6;image='
+ICON_B = 'shape=image;html=1;imageAspect=0;aspect=fixed;verticalLabelPosition=bottom;verticalAlign=top;image='
+A = 'endArrow=block;endFill=1;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;labelBackgroundColor=#ffffff;jumpStyle=arc;'
+E = 'exitX={};exitY={};exitDx=0;exitDy=0;entryX={};entryY={};entryDx=0;entryDy=0;'
+
+# --- Cột trái: vòng lặp theo khung hình ---
+v('L0', 'Công việc xử lý<br>(camera, nguồn, N)', DATA, 50, 0, 330, 70)
+v('L1', 'Đọc, giải mã khung hình kế tiếp', PROC, 50, 110, 330, 64)
+v('L2', 'Hết nguồn, đủ số khung<br>hoặc bị hủy?', DEC, 45, 215, 340, 130)
+v('L3', 'i mod N = 0 ?', DEC, 80, 385, 270, 100)
+v('L4', 'Phát hiện người<br>(YOLO11n)', ICON_R + BRAIN + ';', 185, 525, 60, 60)
+v('L5', 'Khung bao người', DATA, 85, 620, 260, 56)
+v('L6', 'Theo vết<br>(ByteTrack /<br>BoT-SORT)', ICON_R + BRAIN + ';', 185, 715, 60, 60)
+v('L7', 'Có lần xuất hiện<br>vừa kết thúc?', DEC, 60, 830, 310, 130)
+v('L8', 'Cập nhật ứng viên<br>khung hình đại diện (≤ 3)', PROC, 65, 1000, 300, 76)
+v('END', 'Kết thúc công việc', TERM, 560, 250, 220, 60)
+# --- Cột phải: xử lý lần xuất hiện vừa kết thúc ---
+v('R1', 'Chọn khung hình đại diện<br>(lọc cứng + điểm chất lượng)', PROC, 470, 855, 330, 80)
+v('R2', 'Cắt tạm vùng người<br>(nới 5%)', PROC, 510, 975, 250, 70)
+v('R2b', 'Mã hóa ảnh<br>(RaSa)', ICON_R + BRAIN + ';', 605, 1085, 60, 60)
+v('R3', 'Vector 256 chiều, khung hình,<br>khung bao', DATA, 470, 1185, 330, 70)
+v('R4', 'Ghi vào ba kho<br>(PENDING → READY, thử lại)', PROC, 470, 1295, 330, 76)
+# --- Kho dữ liệu ---
+v('S1', '<b>PostgreSQL</b><br>thông tin mô tả', DB, 930, 1060, 190, 90)
+v('S3', '<b>MinIO</b><br>khung hình', ICON_R + BUCKET + ';', 935, 1180, 60, 60)
+v('S2', '<b>Milvus</b><br>vector', DB, 930, 1288, 190, 90)
+
+e('L0', 'L1', A + E.format(.5, 1, .5, 0))
+e('L1', 'L2', A + E.format(.5, 1, .5, 0))
+e('L2', 'END', A + E.format(1, .5, 0, .5), 'Có')
+e('L2', 'L3', A + E.format(.5, 1, .5, 0), 'Không')
+e('L3', 'L1', A + E.format(0, .5, 0, .5), 'Không', [(20, 435), (20, 142)], -0.85)
+e('L3', 'L4', A + E.format(.5, 1, .5, 0), 'Có')
+e('L4', 'L5', A + E.format(.5, 1, .5, 0))
+e('L5', 'L6', A + E.format(.5, 1, .5, 0))
+e('L6', 'L7', A + E.format(.5, 1, .5, 0))
+e('L7', 'L8', A + E.format(.5, 1, .5, 0), 'Không')
+e('L8', 'L1', A + E.format(0, .5, 0, .5), '', [(20, 1038), (20, 142)])
+e('L7', 'R1', A + E.format(1, .5, 0, .5), 'Có')
+e('R1', 'R2', A + E.format(.5, 1, .5, 0))
+e('R2', 'R2b', A + E.format(.5, 1, .5, 0))
+e('R2b', 'R3', A + E.format(.5, 1, .5, 0))
+e('R3', 'R4', A + E.format(.5, 1, .5, 0))
+e('R4', 'S1', A + E.format(1, .5, 0, .5), '', [(870, 1333), (870, 1105)])
+e('R4', 'S3', A + E.format(1, .5, 0, .5), '', [(870, 1333), (870, 1210)])
+e('R4', 'S2', A + E.format(1, .5, 0, .5))
+e('R4', 'L1', A + E.format(0, .5, 1, .5), 'lần xuất hiện<br>sẵn sàng', [(440, 1333), (440, 142)], 0.1)
+
+# Chú giải (góc dưới bên trái)
+FRAME = 'rounded=0;whiteSpace=wrap;html=1;dashed=1;fillColor=none;verticalAlign=top;align=left;spacingLeft=8;fontStyle=1;'
+LG = 'text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;'
+v('LG', 'Chú giải', FRAME, 0, 1120, 405, 260)
+v('g1', 'Dữ liệu', DATA, 15, 1165, 120, 40)
+v('g2', 'Xử lý', PROC, 15, 1220, 120, 40)
+v('g3', '', DEC, 20, 1275, 70, 46)
+v('g3t', 'Rẽ nhánh', LG, 96, 1283, 110, 30)
+v('g7', 'Kết thúc', TERM, 15, 1333, 120, 34)
+v('g4', 'Mô hình AI', ICON_R + BRAIN + ';', 225, 1165, 40, 40)
+v('g5', '', DB, 227, 1220, 36, 46)
+v('g5t', 'CSDL', LG, 272, 1228, 100, 30)
+v('g6', 'Kho đối tượng', ICON_R + BUCKET + ';', 225, 1280, 40, 40)
+
+xml = ('<mxfile host="app.diagrams.net"><diagram name="H3 - Lưu đồ xử lý camera" id="h3"><mxGraphModel dx="1400" dy="1100" '
+       'grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" '
+       'pageWidth="1169" pageHeight="1654" math="0" shadow="0"><root><mxCell id="0"/><mxCell id="1" parent="0"/>'
+       + ''.join(cells) + '</root></mxGraphModel></diagram></mxfile>')
+open(OUT, 'w', encoding='utf-8').write(xml)
+import xml.dom.minidom as M  # noqa: E402
+M.parseString(xml.encode())
+print('ok', len(cells))

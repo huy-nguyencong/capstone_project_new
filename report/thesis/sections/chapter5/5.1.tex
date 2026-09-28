@@ -1,0 +1,50 @@
+% !TEX root = ../../main.tex
+% C5.1 — Thiết kế kiến trúc hệ thống
+% Nguồn: architect.md mục 3 (ranh giới thành phần, ba nơi lưu trữ), mục 1 (tuần tự, concurrency 1), mục 9, 13 (#4 RAM: chưa cần tách encoder).
+% Khớp code: InProcessQueryEncoder trong app.py (encoder truy vấn chạy trong tiến trình API, trừ khi đặt PERSON_SEARCH_ENCODER_URL);
+% hàng đợi = bảng processing_job trong PostgreSQL, worker nhận việc bằng lease + heartbeat (workers/durable.py);
+% Vite proxy /api → Flask (frontend/vite.config). Hình H2: figures/H2-kien-truc.drawio (tools/h2_architecture_drawio.py).
+\section{Thiết kế kiến trúc hệ thống}
+\label{sec:5.1}
+
+Hình~\ref{fig:architecture} trình bày kiến trúc tổng thể của hệ thống. Kiến trúc được tổ chức quanh hai luồng chính tương ứng với hai giai đoạn đã nêu ở Mục~\ref{sec:3.1.6}: luồng \emph{lập chỉ mục} ở cột trái, biến dữ liệu camera thành các lần xuất hiện có thể tìm kiếm; và luồng \emph{tìm kiếm} ở cột phải, phục vụ các thao tác của người dùng. Hai luồng gặp nhau ở tầng lưu trữ phía dưới.
+
+\begin{figure}[!tbp]
+\centering
+\includegraphics[width=\textwidth]{H2-kien-truc.png}
+\caption{Kiến trúc tổng thể của hệ thống}
+\label{fig:architecture}
+\end{figure}
+
+\subsection{Các thành phần của hệ thống}
+\label{sec:5.1.1}
+
+Hệ thống gồm năm nhóm thành phần:
+\begin{itemize}
+    \item \textbf{Nguồn dữ liệu camera.} Trong phạm vi đồ án, các tệp video của bộ dữ liệu thử nghiệm được FFmpeg phát liên tục lên máy chủ phát luồng MediaMTX, tạo thành các luồng RTSP; mỗi luồng là một camera logic (Mục~\ref{sec:3.7.3}). Đối với hệ thống, các luồng này không khác camera IP thật.
+    \item \textbf{Ứng dụng web.} Giao diện chạy trên trình duyệt, xây dựng bằng React, dùng chung cho cả ba vai trò; các chức năng hiển thị tùy theo vai trò của tài khoản đăng nhập. Ứng dụng web chỉ giao tiếp với máy chủ ứng dụng, không truy cập trực tiếp bất kỳ kho dữ liệu nào.
+    \item \textbf{Máy chủ ứng dụng.} Một tiến trình Flask cung cấp giao diện lập trình ứng dụng (API) cho toàn bộ chức năng: xác thực và phân quyền, quản trị tài khoản, camera và cấu hình AI, tìm kiếm, quản lý vụ việc, và cung cấp hình ảnh sau khi kiểm tra quyền. Để phục vụ tìm kiếm, máy chủ ứng dụng nạp sẵn bộ mã hóa ảnh và văn bản RaSa, cùng trọng số với bộ mã hóa ảnh dùng khi lập chỉ mục, và thành phần tạo câu mô tả tiếng Anh từ các thuộc tính được chọn.
+    \item \textbf{Tiến trình xử lý nền.} Một tiến trình Python chạy tách khỏi máy chủ ứng dụng, thực hiện toàn bộ phần xử lý AI: bộ lập lịch tự tạo các phiên xử lý RTSP xoay vòng giữa các camera, tiến trình lần lượt nhận từng công việc trong hàng đợi và chạy quy trình lấy mẫu, phát hiện, theo vết, chọn khung hình đại diện, mã hóa và ghi dữ liệu. Chi tiết quy trình này được trình bày tại Mục~\ref{sec:5.2}.
+    \item \textbf{Tầng lưu trữ.} Gồm ba kho, mỗi kho phục vụ một loại dữ liệu: PostgreSQL lưu dữ liệu nghiệp vụ có quan hệ (tài khoản, khu vực, camera, thông tin mô tả của các lần xuất hiện, vụ việc, nhật ký hệ thống, cấu hình AI) và cũng là nơi lưu hàng đợi công việc; Milvus lưu vector đặc trưng kèm các trường dùng để lọc; MinIO lưu khung hình toàn cảnh đại diện của mỗi lần xuất hiện. Thiết kế chi tiết của từng kho được trình bày tại Mục~\ref{sec:5.3}.
+\end{itemize}
+
+\subsection{Hai luồng xử lý chính}
+\label{sec:5.1.2}
+
+\paragraph{Luồng lập chỉ mục.} Khi Quản trị viên bật xử lý AI cho một camera, bộ lập lịch trong tiến trình xử lý nền tạo các công việc xử lý luồng RTSP của camera đó và đưa vào hàng đợi. Với tệp video do Quản trị viên tải lên, máy chủ ứng dụng tạo công việc tương ứng. Tiến trình xử lý nền lấy lần lượt từng công việc, đọc khung hình từ luồng RTSP hoặc từ tệp, chạy quy trình phân tích và ghi kết quả của mỗi lần xuất hiện vào cả ba kho. Lần xuất hiện ở trạng thái \emph{chờ} (PENDING) trong lúc ghi và chỉ chuyển sang \emph{sẵn sàng} (READY), tức được đưa vào kết quả tìm kiếm, khi cả ba kho đã ghi thành công.
+
+\paragraph{Luồng tìm kiếm.} Giám sát viên gửi truy vấn là ảnh, câu mô tả hoặc thuộc tính từ ứng dụng web. Máy chủ ứng dụng kiểm tra quyền, xác định khu vực và tập camera được phép từ phiên đăng nhập, chuyển thuộc tính thành câu mô tả nếu cần, rồi mã hóa truy vấn thành vector. Milvus tìm các vector gần nhất trong phạm vi đã lọc; máy chủ ứng dụng đối chiếu kết quả với PostgreSQL, lấy khung hình từ MinIO để dựng ảnh người, rồi trả danh sách kết quả về ứng dụng web. Chi tiết luồng này được trình bày tại Mục~\ref{sec:5.2}.
+
+\subsection{Các nguyên tắc thiết kế}
+\label{sec:5.1.3}
+
+Kiến trúc trên dựa trên các nguyên tắc sau:
+\begin{itemize}
+    \item \textbf{Tách xử lý AI khỏi máy chủ ứng dụng.} Việc phân tích video tốn nhiều thời gian: trên máy triển khai, mỗi giây video cần khoảng 6,7 giây xử lý. Nếu đặt trong máy chủ ứng dụng, quá trình này sẽ chiếm tài nguyên và làm chậm phản hồi của mọi yêu cầu khác. Vì vậy, máy chủ ứng dụng không bao giờ trực tiếp đọc luồng RTSP hay chạy quy trình phân tích; nó chỉ tạo công việc, còn tiến trình xử lý nền thực hiện các công việc này một cách độc lập. Nhờ đó, người dùng vẫn tìm kiếm bình thường trong khi hệ thống đang lập chỉ mục (NFR-15), và lỗi trong quá trình phân tích không làm dừng máy chủ ứng dụng.
+    \item \textbf{Hàng đợi công việc đặt trong cơ sở dữ liệu quan hệ.} Thay vì dùng thêm một hệ thống hàng đợi thông điệp riêng, các công việc được lưu thành bản ghi trong PostgreSQL. Tiến trình xử lý nền nhận từng công việc bằng cơ chế giữ chỗ có thời hạn và định kỳ báo hiệu còn hoạt động, nên một công việc bị bỏ dở do tiến trình dừng đột ngột có thể được nhận lại. Cách làm này giảm số thành phần phải triển khai trên máy cá nhân và giữ trạng thái công việc cùng chỗ với dữ liệu nghiệp vụ.
+    \item \textbf{Xử lý tuần tự một camera tại một thời điểm.} Tiến trình xử lý nền chỉ chạy một công việc tại một thời điểm, và các phiên xử lý RTSP có giới hạn số khung hình được xoay vòng giữa các camera. Với phần cứng không có card đồ họa rời, đây là cách để mọi camera đang bật xử lý AI đều lần lượt được phân tích mà không làm quá tải máy (NFR-14, NFR-16).
+    \item \textbf{Mỗi kho lưu trữ một loại dữ liệu.} Dữ liệu có quan hệ và các quy tắc phân quyền nằm trong PostgreSQL; vector nằm trong cơ sở dữ liệu vector chuyên dụng để tìm kiếm nhanh (Mục~\ref{sec:3.6}); ảnh nằm trong kho đối tượng thay vì trong cơ sở dữ liệu. Ba phần của cùng một lần xuất hiện được liên kết bằng một mã định danh chung, và PostgreSQL là nơi quyết định về quyền và trạng thái: một kết quả do Milvus trả về luôn được đối chiếu lại với PostgreSQL trước khi hiển thị. Cơ chế giữ nhất quán giữa ba kho được trình bày tại Mục~\ref{sec:5.3}.
+    \item \textbf{Mọi truy cập dữ liệu đi qua máy chủ ứng dụng.} Trình duyệt không kết nối trực tiếp tới cơ sở dữ liệu hay kho ảnh; cả ảnh người và khung hình toàn cảnh đều được máy chủ ứng dụng cung cấp sau khi kiểm tra quyền (NFR-01, NFR-03). Điều này cho phép áp dụng ma trận phân quyền ở Mục~\ref{sec:4.6} tại một điểm duy nhất.
+    \item \textbf{Dùng chung bộ mã hóa giữa lập chỉ mục và tìm kiếm.} Vector của truy vấn và vector đã lập chỉ mục phải nằm trong cùng một không gian biểu diễn, nên máy chủ ứng dụng dùng đúng trọng số RaSa mà tiến trình xử lý nền đã dùng. Bộ mã hóa truy vấn được đặt ngay trong tiến trình máy chủ ứng dụng thay vì một dịch vụ suy luận riêng, vì trên máy triển khai điều này đơn giản hơn và bộ nhớ vẫn đủ đáp ứng.
+    \item \textbf{Dùng chung quy trình cho mọi nguồn dữ liệu.} Luồng RTSP và tệp video chỉ khác nhau ở bước đọc khung hình; từ bước lấy mẫu trở đi, cả hai đi qua cùng một quy trình và tạo ra cùng một loại dữ liệu (NFR-22).
+\end{itemize}

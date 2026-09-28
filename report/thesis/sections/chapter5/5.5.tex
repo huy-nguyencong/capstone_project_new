@@ -1,0 +1,78 @@
+% !TEX root = ../../main.tex
+% C5.5 — Thiết kế bảo mật và phân quyền
+% Khớp: auth/tokens.py (mã phiên 32 byte ngẫu nhiên, lưu SHA-256; CSRF = HMAC-SHA256(mã phiên, ngữ cảnh)); auth/web.py (cookie HttpOnly, SameSite=Lax,
+% Secure ở môi trường chính thức; tiêu đề X-CSRF-Token cho phương thức không an toàn; require_auth(vai trò) -> 403);
+% auth/passwords.py (Argon2, dài tối thiểu 8, băm giả khi không có tài khoản); services/auth.py (login thu hồi phiên cũ; mỗi yêu cầu kiểm tra thu hồi,
+% hạn 12 h, 30 phút không hoạt động, tài khoản ACTIVE, Operator có khu vực; refresh cấp mã mới); api/security.py (CORS danh sách cho phép, tiêu đề bảo mật);
+% api/rate_limit.py + config.py (cửa sổ cố định trong bộ nhớ, theo người dùng hoặc IP; login theo IP + tên đăng nhập); services/cases.py (không phải chủ -> 404);
+% services/camera_runtime.py (Fernet, chỉ IP literal thuộc dải cho phép, chặn loopback/link-local/multicast/unspecified).
+% LƯU Ý: refresh() đặt hạn mới = now + 12 h -> hạn 12 h không còn "tuyệt đối" khi người dùng hoạt động liên tục (architect.md §13 #8). Văn bản mô tả đúng code.
+\section{Thiết kế bảo mật và phân quyền}
+\label{sec:5.5}
+
+Mục này trình bày các cơ chế hiện thực những yêu cầu bảo mật ở Mục~\ref{sec:4.3.1} và ma trận phân quyền ở Mục~\ref{sec:4.6}. Thiết kế theo nguyên tắc \emph{phòng thủ nhiều lớp}: mỗi yêu cầu phải vượt qua lần lượt các lớp kiểm tra về phiên đăng nhập, vai trò và phạm vi dữ liệu, và các ràng buộc trong cơ sở dữ liệu (Mục~\ref{sec:5.3.1}) là lớp cuối cùng ngăn dữ liệu sai được ghi vào.
+
+\subsection{Xác thực và phiên đăng nhập}
+\label{sec:5.5.1}
+
+\paragraph{Mật khẩu.} Mật khẩu được băm bằng thuật toán Argon2 trước khi lưu, với độ dài tối thiểu 8 ký tự. Khi đăng nhập bằng một tên không tồn tại, hệ thống vẫn thực hiện một phép kiểm tra trên một giá trị băm giả, để thời gian phản hồi không cho biết tên đăng nhập có tồn tại hay không; thông báo lỗi cũng giống nhau cho trường hợp sai tên và sai mật khẩu. Mọi lần đăng nhập thất bại đều được ghi vào nhật ký hệ thống (NFR-02, NFR-17).
+
+\paragraph{Phiên phía máy chủ.} Khi đăng nhập thành công, máy chủ sinh một mã phiên ngẫu nhiên dài 32 byte và gửi cho trình duyệt trong một cookie. Cookie được đặt thuộc tính \texttt{HttpOnly}, nên mã JavaScript trên trang, kể cả mã độc được chèn vào, không đọc được; thuộc tính \texttt{SameSite=Lax}, nên trình duyệt không gửi cookie kèm các yêu cầu thay đổi dữ liệu xuất phát từ trang web khác; và thuộc tính \texttt{Secure} khi triển khai qua HTTPS. Cơ sở dữ liệu chỉ lưu \emph{mã băm SHA-256} của mã phiên, nên kể cả khi bảng phiên bị lộ, kẻ tấn công cũng không có mã phiên hợp lệ để sử dụng. Phiên cũ trên cùng trình duyệt bị thu hồi mỗi khi đăng nhập lại.
+
+\paragraph{Kiểm tra phiên ở mỗi yêu cầu.} Với mỗi yêu cầu, máy chủ tìm phiên theo mã băm và từ chối với mã 401 nếu phiên đã bị thu hồi, đã quá thời hạn 12 giờ kể từ khi được cấp, hoặc đã quá 30 phút không có hoạt động. Máy chủ cũng kiểm tra lại tài khoản: nếu tài khoản đã bị khóa hay ngừng hoạt động, hoặc là tài khoản Giám sát viên nhưng không còn khu vực, phiên bị thu hồi ngay ở yêu cầu đó (FR-C02). Khi người dùng đang thao tác, giao diện định kỳ yêu cầu làm mới phiên; mỗi lần làm mới, phiên cũ bị thu hồi và một mã phiên mới được cấp, nên một mã phiên bị lộ chỉ có giá trị trong thời gian ngắn. Việc làm mới chỉ diễn ra khi có thao tác thực của người dùng, không diễn ra do các yêu cầu tự động của giao diện, để một phiên bị bỏ quên vẫn hết hạn sau 30 phút. Đăng xuất thu hồi phiên ở máy chủ và xóa cookie ở trình duyệt.
+
+\subsection{Chống giả mạo yêu cầu}
+\label{sec:5.5.2}
+
+Vì trình duyệt tự động gửi cookie phiên, một trang web độc hại có thể tìm cách khiến trình duyệt của người dùng gửi yêu cầu tới hệ thống mà người dùng không biết (tấn công CSRF). Ngoài thuộc tính \texttt{SameSite} của cookie, hệ thống dùng thêm một \emph{mã chống giả mạo}: mã này được tính bằng HMAC-SHA256 từ mã phiên, được trả về cho giao diện khi đăng nhập, và phải được gửi lại trong tiêu đề \texttt{X-CSRF-Token} của mọi yêu cầu thay đổi dữ liệu (\texttt{POST}, \texttt{PUT}, \texttt{PATCH}, \texttt{DELETE}). Một trang web khác không đọc được mã này nên không thể tạo yêu cầu hợp lệ. Bên cạnh đó, máy chủ chỉ cho phép các trang thuộc danh sách nguồn được cấu hình gọi API kèm cookie và đọc phản hồi (cơ chế CORS); với trang thuộc nguồn khác, trình duyệt chặn việc đọc phản hồi.
+
+Mọi phản hồi của máy chủ kèm các tiêu đề bảo mật: cấm trình duyệt đoán kiểu nội dung, cấm nhúng trang vào khung của trang khác, không gửi địa chỉ trang nguồn, không lưu bộ nhớ đệm cho phản hồi của API, và bắt buộc dùng HTTPS khi triển khai với chứng chỉ.
+
+\subsection{Phân quyền}
+\label{sec:5.5.3}
+
+Việc phân quyền được thực hiện ở máy chủ, theo ba lớp:
+\begin{enumerate}
+    \item \textbf{Kiểm tra vai trò.} Mỗi API khai báo các vai trò được phép gọi (Bảng~\ref{tab:api-groups}). Yêu cầu từ vai trò khác bị từ chối với mã 403 trước khi bất kỳ xử lý nghiệp vụ nào được thực hiện.
+    \item \textbf{Kiểm tra phạm vi dữ liệu.} Trong phạm vi của một vai trò hợp lệ, tầng nghiệp vụ tiếp tục kiểm tra quyền với từng đối tượng cụ thể: camera và lần xuất hiện phải thuộc khu vực hiện tại của Giám sát viên và camera phải đang vận hành; vụ việc phải do chính Giám sát viên đó phụ trách; ảnh được cấp theo một trong hai căn cứ ở Mục~\ref{sec:4.6}. Khu vực và người phụ trách luôn được lấy từ phiên đăng nhập (Mục~\ref{sec:5.4.3}).
+    \item \textbf{Ràng buộc dữ liệu.} Các ràng buộc trong cơ sở dữ liệu, như tài khoản Giám sát viên luôn có khu vực hay vụ việc luôn có người phụ trách, ngăn dữ liệu sai được ghi vào kể cả khi tầng nghiệp vụ có lỗi.
+\end{enumerate}
+
+Khi một Giám sát viên yêu cầu một vụ việc hay một ảnh nằm ngoài phạm vi của mình, máy chủ trả mã 404 (không tìm thấy) thay vì 403 (không có quyền). Nếu trả 403, người dùng có thể suy ra rằng đối tượng đó tồn tại, chẳng hạn bằng cách thử lần lượt các mã; với 404, một đối tượng nằm ngoài phạm vi và một đối tượng không tồn tại là không thể phân biệt. Giao diện có ẩn các chức năng không thuộc vai trò, nhưng việc ẩn này chỉ nhằm thuận tiện cho người dùng và không được xem là biện pháp phân quyền (NFR-01).
+
+\subsection{Bảo vệ dữ liệu hình ảnh và kết nối camera}
+\label{sec:5.5.4}
+
+\paragraph{Hình ảnh.} Khung hình chỉ nằm trong bucket riêng tư của MinIO; trình duyệt không bao giờ nhận địa chỉ trực tiếp tới kho ảnh, và mọi ảnh người hay khung hình toàn cảnh đều do máy chủ ứng dụng đọc, kiểm tra quyền rồi trả về (Mục~\ref{sec:5.3.3}, NFR-03).
+
+\paragraph{Thông tin xác thực camera.} Khi Quản trị viên nhập địa chỉ RTSP có kèm tên đăng nhập và mật khẩu, máy chủ tách phần thông tin xác thực ra, mã hóa bằng thuật toán mã hóa đối xứng Fernet với khóa được cấu hình qua biến môi trường và không lưu trong cơ sở dữ liệu, rồi chỉ lưu địa chỉ không kèm thông tin xác thực. Thông tin xác thực chỉ được giải mã và ghép lại vào địa chỉ tại thời điểm kết nối, không bao giờ được trả về giao diện hay ghi vào nhật ký (NFR-04).
+
+\paragraph{Chống lợi dụng kết nối.} Chức năng kiểm tra kết nối RTSP khiến máy chủ chủ động mở kết nối tới một địa chỉ do người dùng nhập. Nếu không giới hạn, chức năng này có thể bị lợi dụng để dò các máy chủ khác trong mạng nội bộ (tấn công SSRF). Vì vậy, hệ thống chỉ chấp nhận địa chỉ IP, không chấp nhận tên miền, và địa chỉ đó phải thuộc các dải mạng camera được khai báo khi triển khai; các địa chỉ loopback, link-local, multicast và địa chỉ không xác định luôn bị từ chối (NFR-04).
+
+\subsection{Hạn chế lạm dụng}
+\label{sec:5.5.5}
+
+Các chức năng tốn tài nguyên hoặc dễ bị dò được giới hạn số lần gọi trong mỗi phút như Bảng~\ref{tab:rate-limits}. Giới hạn được tính theo tài khoản đối với người dùng đã đăng nhập; riêng đăng nhập được tính theo cặp địa chỉ IP và tên đăng nhập, nhằm làm chậm việc thử mật khẩu. Khi vượt giới hạn, máy chủ trả mã 429 kèm thời gian cần chờ (NFR-05). Bộ đếm được giữ trong bộ nhớ của tiến trình máy chủ; cách này phù hợp với triển khai một tiến trình của đề tài, nhưng sẽ cần một kho dùng chung nếu chạy nhiều tiến trình máy chủ.
+
+\begin{table}[H]
+\centering
+\caption{Giới hạn số lần gọi của các chức năng}
+\label{tab:rate-limits}
+\begin{tabularx}{\textwidth}{|L|>{\raggedright\arraybackslash}p{4.2cm}|>{\raggedright\arraybackslash}p{4.2cm}|}
+\hline
+\textbf{Chức năng} & \textbf{Giới hạn} & \textbf{Tính theo} \\
+\hline
+Đăng nhập & 10 lần mỗi phút & Địa chỉ IP và tên đăng nhập \\
+\hline
+Tìm kiếm & 30 lần mỗi phút & Tài khoản \\
+\hline
+Tải video lên & 10 lần mỗi phút & Tài khoản \\
+\hline
+Kiểm tra kết nối camera & 10 lần mỗi phút & Tài khoản \\
+\hline
+Kiểm tra hoạt động AI & 6 lần mỗi phút & Tài khoản \\
+\hline
+\end{tabularx}
+\end{table}
+
+Ngoài ra, dữ liệu tải lên được kiểm tra trước khi xử lý: ảnh truy vấn phải là JPEG hoặc PNG, không quá 10~MB và 24 triệu điểm ảnh; tệp video không quá 500~MB và phải có chữ ký định dạng hợp lệ; tên tệp do người dùng gửi không được dùng làm đường dẫn lưu trữ. Thông báo lỗi trả về không chứa thông tin nội bộ, và các trường nhạy cảm như mật khẩu, mã phiên hay thông tin xác thực được che trước khi ghi vào nhật ký (NFR-05, NFR-17).

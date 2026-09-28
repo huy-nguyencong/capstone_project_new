@@ -1,0 +1,127 @@
+% Biên dịch bằng XeLaTeX + Biber:  latexmk   (cấu hình trong .latexmkrc)
+\documentclass[12pt]{report}
+\usepackage[fontsize=13pt]{scrextend}
+\usepackage[a4paper,top=2cm,bottom=2cm,left=3cm,right=2cm]{geometry}
+\usepackage{fontspec}
+\setmainfont{Times New Roman}
+\usepackage[vietnamese]{babel}
+\usepackage[autostyle=false,style=english]{csquotes} % csquotes chưa hỗ trợ tiếng Việt
+\usepackage{indentfirst} % thụt lề cả đoạn đầu sau tiêu đề, theo cách trình bày văn bản tiếng Việt
+% biblatex chưa có gói ngôn ngữ tiếng Việt: trình bày tài liệu tham khảo theo chuẩn IEEE tiếng Anh.
+\usepackage[backend=biber,style=ieee,language=english,autolang=none]{biblatex}
+\DeclareLanguageMapping{vietnamese}{english}
+\addbibresource{ref.bib}
+\usepackage{eso-pic}
+\usepackage{graphicx}
+\usepackage{pdfpages}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,shapes.geometric}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\newcolumntype{L}{>{\raggedright\arraybackslash}X} % cột X canh trái, tránh giãn chữ trong bảng
+\newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}} % cột p{} canh trái (dùng được trong longtable)
+\usepackage{xurl} % cho phép ngắt dòng URL dài
+\usepackage{amsmath}
+\usepackage{anyfontsize}
+\usepackage{float}
+\usepackage{titlesec}
+\usepackage{listings}
+\usepackage{lscape}
+\usepackage{afterpage} % đặt trang ngang sau trang hiện tại, tránh để trống nửa trang
+\usepackage{subcaption}
+% Kiểu chung cho MỌI bảng (quyết định 2026-09-28): chữ nhỏ hơn thân bài một bậc, giãn dòng đơn,
+% đệm hàng 1,3; tên bảng giữ cỡ thường như tên hình. Không chỉnh cỡ chữ/giãn dòng riêng trong từng bảng.
+\usepackage{etoolbox}
+\newcommand{\tablestyle}{\small\linespread{1.0}\selectfont\renewcommand{\arraystretch}{1.3}}
+\AtBeginEnvironment{table}{\tablestyle}
+\AtBeginEnvironment{longtable}{\tablestyle}
+\captionsetup[table]{font=normalsize}
+\usepackage{enumitem}
+% Danh sách yêu cầu có mã (FR-xx, NFR-xx) ở Chương 4
+\newlist{reqlist}{description}{1}
+\setlist[reqlist]{leftmargin=2.4cm, labelwidth=2.2cm, labelsep=0.2cm, align=left, font=\normalfont\bfseries}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+\linespread{1.5}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks,
+    citecolor=black,
+    filecolor=black,
+    linkcolor=black,
+    urlcolor=black
+}
+
+\lstset{
+    basicstyle=\small\ttfamily,
+    numbers=left,
+    frame=single,
+    breaklines=true,
+    columns=fullflexible,
+}
+
+\graphicspath{{images/}{figures/}}
+
+% Ghi chú trong lúc viết nháp/góp ý; xóa hết trước khi nộp.
+\newcommand{\nhap}[1]{\textcolor{red!70!pink}{\textbf{\textit{[#1]}}}}
+
+% Khung giữ chỗ cho hình SV tự vẽ: \hinhcho{mã hình}{mô tả cần vẽ}.
+% Khi có ảnh: thay bằng \includegraphics{figures/<tên file>}. Xóa hết trước khi nộp.
+\newcommand{\hinhcho}[2]{%
+    \fbox{\parbox{0.9\textwidth}{\centering\vspace{1.5cm}%
+        \textcolor{red!70!pink}{\textbf{[Hình #1 -- chờ sinh viên vẽ]}}\\[0.3cm]%
+        \small #2\vspace{1.5cm}}}%
+}
+
+\titleformat{\chapter}[display]{\normalfont\huge\bfseries}{\chaptertitlename\ \thechapter}{20pt}{\Huge}
+
+\begin{document}
+
+\pagenumbering{Alph}
+\input{sections/front/cover-page}
+
+\clearpage
+\pagenumbering{roman}
+\input{sections/front/nhiem-vu}
+\input{sections/front/decl-of-authen}
+\input{sections/front/ack}
+\input{sections/front/abstract}
+\input{sections/front/chapter-summary}
+
+\tableofcontents
+% Tên theo hướng dẫn của khoa: "Danh mục bảng biểu, hình ảnh".
+\renewcommand{\listtablename}{Danh mục bảng}
+\renewcommand{\listfigurename}{Danh mục hình ảnh}
+\cleardoublepage\phantomsection
+\addcontentsline{toc}{chapter}{\listfigurename}
+\listoffigures
+\cleardoublepage\phantomsection
+\addcontentsline{toc}{chapter}{\listtablename}
+\listoftables
+\input{sections/front/abbreviations}
+
+\clearpage
+\pagenumbering{arabic}
+
+\input{sections/chapter1/chapter1}
+\input{sections/chapter2/chapter2}
+\input{sections/chapter3/chapter3}
+\input{sections/chapter4/chapter4}
+\input{sections/chapter5/chapter5}
+\input{sections/chapter6/chapter6}
+\input{sections/chapter7/chapter7}
+\input{sections/chapter8/chapter8}
+\input{sections/chapter9/chapter9}
+
+\printbibliography[heading=bibintoc,title={Tài liệu tham khảo}]
+
+\appendix
+\input{sections/appendix/appendix}
+
+\end{document}

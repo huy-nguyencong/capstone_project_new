@@ -2,6 +2,5 @@
 backups/
 wildtrack-dataset/
 slides/
-report/
 .venv/
 backend/config/model_artifacts/*.pth

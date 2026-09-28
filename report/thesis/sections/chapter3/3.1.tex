@@ -1,0 +1,75 @@
+% !TEX root = ../../main.tex
+% C3.1 — Bài toán tìm kiếm người và truy hồi đa phương thức (chuyển từ mục 2.1 cũ)
+% Nội dung cần có: ReID (ảnh→ảnh) và text-based person search (văn bản→ảnh); tìm theo thuộc tính; khác nhận dạng khuôn mặt;
+% hướng tiếp cận của đề tài (đơn vị kết quả là track, một không gian biểu diễn chung cho ba hình thức mô tả).
+\section{Bài toán tìm kiếm người và truy hồi đa phương thức}
+\label{sec:3.1}
+
+\subsection{Phát biểu bài toán}
+\label{sec:3.1.1}
+
+Bài toán tìm kiếm người trong dữ liệu camera có thể được phát biểu như sau. Cho một tập hình ảnh người được trích xuất từ video của nhiều camera, gọi là \emph{tập dữ liệu tìm kiếm} (gallery), $\mathcal{G} = \{g_1, g_2, \ldots, g_n\}$, và một \emph{truy vấn} $q$ mô tả người cần tìm. Hệ thống cần xếp hạng các phần tử của $\mathcal{G}$ theo mức độ phù hợp với $q$ và trả về $k$ phần tử có mức độ phù hợp cao nhất.
+
+Cách tiếp cận phổ biến là học một hàm biểu diễn ánh xạ truy vấn và từng phần tử của tập dữ liệu vào một không gian vector, rồi đo mức độ phù hợp bằng một hàm tương đồng $s(q, g_i)$, chẳng hạn độ tương đồng cosine. Việc tìm kiếm khi đó trở thành bài toán tìm các vector gần nhất trong không gian biểu diễn. Tùy theo dạng của truy vấn $q$, bài toán được chia thành các nhánh nghiên cứu khác nhau, được trình bày ở các mục tiếp theo.
+
+Phát biểu trên giả định rằng tập dữ liệu tìm kiếm gồm các ảnh người đã được cắt sẵn, đúng như cách các bộ dữ liệu chuẩn cho bài toán nhận dạng người được xây dựng. Tuy nhiên, trong dữ liệu camera giám sát, những người cần được lập chỉ mục không có sẵn dưới dạng ảnh cắt gọn mà xuất hiện trong các khung hình toàn cảnh, cùng với nhiều người và vật thể khác. Vì vậy, bài toán hoàn chỉnh còn bao gồm bước phát hiện người trong khung hình. Xiao và cộng sự gọi bài toán kết hợp phát hiện và nhận dạng này là \emph{person search} và đề xuất học đồng thời hai nhiệm vụ trong một mô hình duy nhất~\cite{xiao2017personsearch}; một hướng khác là dùng riêng một bộ phát hiện người và một mô hình nhận dạng, như được khảo sát bởi Zheng và cộng sự~\cite{zheng2017reidwild}. Đề tài đi theo hướng thứ hai, cho phép thay thế độc lập từng thành phần. Bên cạnh đó, về mặt tổ chức hệ thống, việc phát hiện và trích xuất đặc trưng được thực hiện trước ở giai đoạn lập chỉ mục, tách khỏi giai đoạn truy vấn chỉ so khớp mô tả của người dùng với các đặc trưng đã lưu (Mục~\ref{sec:3.1.6}).
+
+\subsection{Tìm kiếm bằng hình ảnh: tái nhận dạng người}
+\label{sec:3.1.2}
+
+Khi truy vấn là một ảnh chứa người cần tìm, bài toán tương ứng với \emph{tái nhận dạng người} (Person Re-identification -- ReID): xác định các ảnh thuộc cùng một người trong dữ liệu thu từ nhiều camera không chồng lấn hoặc tại nhiều thời điểm khác nhau~\cite{ye2022reidsurvey}. Do truy vấn và dữ liệu cùng là ảnh, đây là bài toán so khớp trong cùng một phương thức.
+
+Theo khảo sát của Ye và cộng sự~\cite{ye2022reidsurvey}, những thách thức chính của ReID gồm sự thay đổi góc nhìn giữa các camera, điều kiện ánh sáng, tư thế của người, hiện tượng bị che khuất, độ phân giải thấp và nhiễu do bước phát hiện người gây ra. Cùng một người có thể trông rất khác nhau giữa hai camera, trong khi hai người khác nhau mặc trang phục giống nhau lại có thể trông rất giống nhau.
+
+\subsection{Tìm kiếm bằng mô tả văn bản}
+\label{sec:3.1.3}
+
+Trong nhiều tình huống, người dùng không có ảnh của người cần tìm mà chỉ có lời mô tả từ nhân chứng, ví dụ ``a man wearing a black jacket and blue jeans, carrying a backpack''. Bài toán tìm kiếm người bằng mô tả văn bản (Text-Based Person Search -- TBPS) được Li và cộng sự đề xuất cùng bộ dữ liệu CUHK-PEDES, gồm các ảnh người đi kèm mô tả bằng ngôn ngữ tự nhiên tiếng Anh~\cite{li2017cuhkpedes}.
+
+Khác với ReID, TBPS là bài toán so khớp liên phương thức: truy vấn là văn bản trong khi dữ liệu là ảnh. Mô hình cần đưa hai phương thức về cùng một không gian biểu diễn để có thể so sánh trực tiếp. Bên cạnh những thách thức của ReID, TBPS còn gặp khó khăn do mô tả văn bản thường mơ hồ, không đầy đủ, và sự khác biệt giữa những người khác nhau nằm ở các chi tiết nhỏ như màu sắc hay phụ kiện.
+
+\subsection{Tìm kiếm theo thuộc tính}
+\label{sec:3.1.4}
+
+Một hình thức truy vấn khác là chọn các thuộc tính ngoại hình từ danh sách định sẵn, chẳng hạn giới tính, loại và màu trang phục hay vật mang theo. So với văn bản tự do, thuộc tính có cấu trúc rõ ràng, dễ nhập và ít mơ hồ, nhưng chỉ diễn đạt được những đặc điểm có trong danh sách. Có hai cách tiếp cận chính để hiện thực hình thức tìm kiếm này:
+\begin{itemize}
+    \item \textbf{Nhận dạng thuộc tính rồi lọc.} Mỗi người trong dữ liệu được gán nhãn thuộc tính bằng một mô hình nhận dạng thuộc tính người đi bộ (pedestrian attribute recognition)~\cite{wang2022parsurvey}; truy vấn khi đó là phép lọc theo nhãn. Cách này cho kết quả lọc rõ ràng, nhưng cần dữ liệu huấn luyện có gán nhãn cho từng thuộc tính và phải bổ sung mô hình mỗi khi mở rộng danh sách thuộc tính.
+    \item \textbf{Chuyển thuộc tính thành câu mô tả.} Tập thuộc tính đã chọn được ghép thành một câu mô tả có cấu trúc theo mẫu cố định, rồi xử lý như một truy vấn văn bản (Mục~\ref{sec:3.1.3}). Ví dụ, với các lựa chọn \emph{nữ}, \emph{áo khoác màu đỏ}, \emph{quần jean màu xanh dương} và \emph{túi xách}, câu được sinh ra là ``A woman wearing a red jacket and blue jeans, carrying a handbag.''
+\end{itemize}
+
+Đề tài sử dụng cách tiếp cận thứ hai. Nhờ đó, tìm kiếm theo thuộc tính dùng chung mô hình và không gian biểu diễn với tìm kiếm bằng văn bản, không cần thêm mô hình phân loại hay dữ liệu gán nhãn thuộc tính. Đổi lại, cách tiếp cận này có ba đặc điểm cần lưu ý. Thứ nhất, thuộc tính chỉ ảnh hưởng đến thứ hạng chứ không phải điều kiện lọc bắt buộc, nên một kết quả được xếp hạng cao vẫn có thể không thỏa mãn đầy đủ mọi thuộc tính đã chọn. Thứ hai, chất lượng tìm kiếm phụ thuộc hoàn toàn vào khả năng của bộ mã hóa văn bản. Thứ ba, các lựa chọn phủ định như ``không mang ba lô'' không được hỗ trợ, vì các mô hình ngôn ngữ--thị giác hiện nay, trong đó có các mô hình kiểu CLIP, gặp khó khăn đáng kể với truy vấn chứa phủ định và trong nhiều trường hợp chỉ đạt kết quả ở mức ngẫu nhiên~\cite{alhamoud2025negation}.
+
+\subsection{Phân biệt với nhận dạng khuôn mặt}
+\label{sec:3.1.5}
+
+Tìm kiếm người theo ngoại hình khác với nhận dạng khuôn mặt ở cả mục đích lẫn dữ liệu sử dụng. Nhận dạng khuôn mặt dựa trên đặc điểm sinh trắc học để xác định danh tính một người, và đòi hỏi khuôn mặt đủ rõ, nhìn gần chính diện. Trong khi đó, camera giám sát thường đặt ở vị trí cao, xa, khiến khuôn mặt nhỏ hoặc không nhìn thấy. Tìm kiếm theo ngoại hình tận dụng các đặc điểm dễ quan sát hơn như trang phục, màu sắc, vóc dáng và vật dụng mang theo. Tuy nhiên, các đặc điểm này có thể thay đổi, chẳng hạn khi người đó thay áo, và nhiều người có thể có ngoại hình tương tự nhau. Do đó, kết quả chỉ mang tính gợi ý cho người dùng đánh giá, không phải kết luận về danh tính.
+
+\subsection{Hướng tiếp cận của đề tài}
+\label{sec:3.1.6}
+
+Đề tài hỗ trợ cả ba hình thức truy vấn nêu trên và đưa chúng về chung một cơ chế so khớp. Bảng~\ref{tab:query-modes} tóm tắt đặc điểm của từng hình thức và cách đề tài xử lý.
+
+\begin{table}[H]
+\centering
+\caption{Ba hình thức mô tả người cần tìm và cách xử lý trong đề tài}
+\label{tab:query-modes}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{2.6cm}|L|L|L|}
+\hline
+\textbf{Hình thức} & \textbf{Đầu vào} & \textbf{Ưu điểm và thách thức} & \textbf{Cách xử lý trong đề tài} \\
+\hline
+Ảnh tham chiếu (ReID) & Ảnh đã cắt chứa một người & Giàu thông tin thị giác; nhạy với góc nhìn, ánh sáng, che khuất & Mã hóa bằng bộ mã hóa ảnh \\
+\hline
+Mô tả văn bản (TBPS) & Câu mô tả tiếng Anh & Không cần ảnh; mô tả có thể mơ hồ, thiếu chi tiết & Mã hóa bằng bộ mã hóa văn bản \\
+\hline
+Thuộc tính & Giới tính, loại và màu trang phục trên, dưới, vật mang theo & Dễ nhập, rõ ràng; chỉ diễn đạt được các thuộc tính có sẵn & Chuyển thành câu tiếng Anh có cấu trúc, rồi xử lý như mô tả văn bản \\
+\hline
+\end{tabularx}
+\end{table}
+
+Cụ thể, hướng tiếp cận của đề tài gồm các điểm chính sau:
+\begin{itemize}
+    \item \textbf{Một không gian biểu diễn chung.} Đề tài sử dụng mô hình RaSa~\cite{bai2023rasa}, vốn được thiết kế cho bài toán TBPS, để mã hóa cả ảnh và văn bản vào cùng một không gian vector. Ảnh người trong video, ảnh truy vấn, mô tả văn bản và câu sinh từ thuộc tính vì vậy đều so sánh được trực tiếp với nhau (Mục~\ref{sec:3.5}). Việc dùng mô hình này cho truy vấn ảnh--ảnh và sự khác biệt giữa dữ liệu huấn luyện của mô hình với dữ liệu của đề tài được phân tích tại Mục~\ref{sec:3.5.4}; chất lượng thực tế của từng hình thức truy vấn được đánh giá tại Chương~\ref{chapter:kiemthu}.
+    \item \textbf{Đơn vị kết quả là một lần xuất hiện.} Thay vì lấy mọi khung hình làm phần tử của tập dữ liệu tìm kiếm, đề tài phát hiện và theo vết người qua các khung hình (Mục~\ref{sec:3.2} và~\ref{sec:3.3}). Mỗi lần xuất hiện liên tục của một người trên một camera (track) được biểu diễn bằng một khung hình đại diện và một vector đặc trưng. Cách làm này giảm đáng kể số phần tử cần so khớp và tránh trả về nhiều kết quả trùng lặp.
+    \item \textbf{Hai giai đoạn tách biệt.} Giai đoạn lập chỉ mục chạy nền, xử lý luồng camera và lưu đặc trưng của các lần xuất hiện. Giai đoạn truy vấn chỉ mã hóa mô tả của người dùng và tìm các vector gần nhất trong tập đặc trưng đã lưu (Mục~\ref{sec:3.6}), không cần xem lại hay xử lý lại dữ liệu hình ảnh. Thời gian phản hồi vì vậy chủ yếu phụ thuộc vào số lượng lần xuất hiện đã được lập chỉ mục, và nhờ chỉ mục tìm kiếm gần đúng, thời gian này tăng chậm hơn nhiều so với việc so sánh lần lượt với từng phần tử.
+    \item \textbf{Con người ra quyết định cuối cùng.} Hệ thống chỉ xếp hạng kết quả theo mức độ phù hợp; người dùng đánh giá từng kết quả dựa trên hình ảnh gốc trước khi lưu vào hồ sơ vụ việc.
+\end{itemize}

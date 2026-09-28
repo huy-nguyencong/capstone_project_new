@@ -1,0 +1,28 @@
+% !TEX root = ../../main.tex
+% C1.4 — Giới hạn của đề tài
+% Mục này nói HẠN CHẾ của kết quả đạt được (khác 1.3 nói phạm vi). Chương 1: không nêu tên công nghệ/mô hình.
+% Các hạn chế ở đây phải được đối chiếu lại ở Mục 8.2 và, nếu có số liệu, dẫn tới Chương 7.
+\section{Những hạn chế của đề tài}
+\label{sec:1.4}
+
+Bên cạnh phạm vi đã xác định, kết quả của đề tài còn một số hạn chế sau.
+
+\begin{itemize}
+    \item \textbf{Chất lượng tìm kiếm phụ thuộc vào các mô hình có sẵn.} Các mô hình được sử dụng đã được huấn luyện trước trên những bộ dữ liệu có bối cảnh khác với dữ liệu camera của đề tài và không được tinh chỉnh thêm: mô hình biểu diễn được huấn luyện trên ảnh người đã được cắt gọn sẵn, trong khi ảnh người trong đề tài được cắt tự động từ khung hình toàn cảnh của khu vực đông người và thường bị che khuất một phần. Sự khác biệt này ảnh hưởng mạnh nhất đến tìm kiếm bằng mô tả văn bản và thuộc tính, vốn cho kết quả kém hơn đáng kể so với tìm kiếm bằng ảnh tham chiếu trong thực nghiệm của đề tài. Vì vậy, tìm kiếm bằng ảnh là hình thức đáng tin cậy nhất, còn tìm kiếm bằng văn bản và thuộc tính đóng vai trò hỗ trợ và cần người dùng đánh giá kỹ hơn.
+
+    \item \textbf{Dữ liệu thử nghiệm còn hạn chế.} Hệ thống chỉ được thử nghiệm trên một bộ dữ liệu gồm bảy camera tĩnh cùng quan sát một địa điểm ngoài trời, trong điều kiện ánh sáng ban ngày. Hiệu quả của hệ thống với camera thực tế có điều kiện khó hơn, như ánh sáng yếu, góc quay cao, độ phân giải thấp hoặc đám đông dày đặc, chưa được kiểm chứng.
+
+    \item \textbf{Không phân tích liên tục toàn bộ các camera.} Do chạy trên máy tính không có card đồ họa rời, hệ thống xử lý luân phiên từng camera, mỗi lượt trong một khoảng thời gian giới hạn. Hình ảnh mà các camera khác ghi được trong lúc chưa tới lượt không được phân tích, nên khi có nhiều camera, dữ liệu có thể tìm kiếm của mỗi camera sẽ có những khoảng trống; số camera càng nhiều thì khoảng trống càng lớn. Ngoài ra, tốc độ phân tích chậm hơn nhiều lần so với tốc độ ghi hình, nên một phần khung hình của luồng trực tiếp bị bỏ qua và dữ liệu mới cần một khoảng thời gian xử lý trước khi có thể được tìm kiếm.
+
+    \item \textbf{Có thể bỏ sót hoặc tách rời các lần xuất hiện.} Để giảm chi phí xử lý, hệ thống chỉ phân tích một phần các khung hình của video. Người xuất hiện trong thời gian rất ngắn có thể bị bỏ sót; người bị che khuất hoặc di chuyển nhanh có thể bị theo dõi không liên tục, khiến một lần xuất hiện bị tách thành nhiều kết quả.
+
+    \item \textbf{Mỗi lần xuất hiện chỉ được biểu diễn bằng một khung hình.} Hệ thống chọn một khung hình đại diện cho mỗi lần xuất hiện. Nếu mọi khung hình của lần xuất hiện đó đều có chất lượng kém, chẳng hạn người bị che một phần hoặc quay lưng về phía camera, kết quả có thể không được xếp hạng cao dù đúng là người cần tìm.
+
+    \item \textbf{Mô tả bị giới hạn về ngôn ngữ và thuộc tính.} Mô tả văn bản chỉ hỗ trợ tiếng Anh. Tập thuộc tính chọn sẵn chỉ gồm giới tính, loại và màu trang phục, vật mang theo, và không có lựa chọn phủ định như ``không mang ba lô'' do mô hình biểu diễn văn bản xử lý phủ định kém. Các đặc điểm khác như độ tuổi, kiểu tóc hay vóc dáng chỉ có thể được diễn đạt qua mô tả văn bản.
+
+    \item \textbf{Điểm phù hợp chỉ mang tính tương đối.} Điểm phù hợp dùng để sắp xếp kết quả trong một lượt tìm kiếm, không có ngưỡng để khẳng định hai hình ảnh thuộc cùng một người. Độ tin cậy của kết luận cuối cùng vẫn phụ thuộc vào đánh giá của người dùng.
+
+    \item \textbf{Quy mô triển khai nhỏ.} Hệ thống được triển khai và đánh giá trên một máy tính với số lượng camera và người dùng đồng thời ở mức trình diễn; khả năng mở rộng cho hệ thống quy mô lớn chưa được đánh giá.
+\end{itemize}
+
+Một số hạn chế trên, như chất lượng tìm kiếm và tốc độ xử lý, được lượng hóa bằng số liệu thực nghiệm tại Chương~\ref{chapter:kiemthu}; hướng khắc phục các hạn chế được đề xuất tại Chương~\ref{chapter:tongket}.

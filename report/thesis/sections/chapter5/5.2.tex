@@ -1,0 +1,104 @@
+% !TEX root = ../../main.tex
+% C5.2 — Thiết kế các luồng xử lý chính
+% Khớp code: services/rtsp_scheduler.py (hàng đợi trống, camera ACTIVE + bật AI + có RTSP, lâu nhất chưa xử lý, bỏ qua camera lỗi 5 phút,
+% 1.800 khung nguồn/phiên, profile throughput); services/jobs.py (claim, giữ chỗ 60 s, cancel, defer_retry); workers/durable.py (tối đa 3 lần);
+% ai/selectors/representative.py + config (K=3, bộ đệm 256 MB, lọc cứng 24x48 px, phương sai độ nét >= 15, chạm < 2 cạnh, diện tích <= 4x,
+% tỉ lệ <= 2,5x; điểm 0,30/0,25/0,20/0,15/0,10 trừ phạt biên 0,1/cạnh và che khuất <= 0,2; nới 5% khi cắt);
+% services/track_ingestion.py (PENDING -> MinIO -> Milvus -> READY, thử lại lũy thừa tối đa 5 lần); services/searches.py (JPEG/PNG <= 10 MB,
+% tạo câu từ thuộc tính); services/track_search.py; services/cases.py (_save_track: READY + camera ACTIVE thuộc khu vực hiện tại;
+% snapshot tên camera/khu vực/thời điểm; version khi cập nhật; khóa khi CLOSED).
+% Hình: H7 (trạng thái công việc), H4 (tuần tự tìm kiếm). H3 bỏ (Hình 5.1 đã thể hiện các bước quy trình).
+\section{Thiết kế các luồng xử lý chính}
+\label{sec:5.2}
+
+\subsection{Luồng xử lý dữ liệu camera}
+\label{sec:5.2.1}
+
+\paragraph{Tạo công việc.} Mọi hoạt động phân tích đều được tổ chức thành \emph{công việc xử lý} lưu trong hàng đợi, mỗi công việc gắn với một camera và một nguồn dữ liệu. Công việc được tạo theo hai cách:
+\begin{itemize}
+    \item \textbf{Phiên RTSP tự động.} Khi hàng đợi trống, bộ lập lịch trong tiến trình xử lý nền chọn một camera đang vận hành, đang bật xử lý AI và có địa chỉ RTSP, ưu tiên camera có phiên xử lý gần nhất cách đây lâu nhất, rồi tạo một phiên xử lý giới hạn 1.800 khung hình nguồn, tương đương khoảng 30 giây video ở 60 khung hình mỗi giây. Camera có phiên gần nhất thất bại được bỏ qua trong 5 phút để một luồng không kết nối được không chiếm lượt của các camera khác. Nhờ xoay vòng như vậy, các camera lần lượt được phân tích dù tiến trình xử lý nền chỉ chạy một công việc tại một thời điểm; đổi lại, giữa hai phiên của cùng một camera có những khoảng thời gian không được phân tích (Mục~\ref{sec:1.4}).
+    \item \textbf{Tệp video tải lên.} Khi Quản trị viên tải lên một tệp video cho một camera, máy chủ ứng dụng kiểm tra tệp, lưu tạm và tạo công việc tương ứng.
+\end{itemize}
+
+\paragraph{Vòng đời công việc.} Hình~\ref{fig:job-state} mô tả các trạng thái của một công việc xử lý. Công việc mới ở trạng thái \emph{Chờ xử lý}. Khi tiến trình xử lý nền nhận việc, công việc chuyển sang \emph{Đang xử lý} kèm một thời hạn giữ chỗ 60 giây, được gia hạn định kỳ trong suốt quá trình xử lý; nếu tiến trình dừng đột ngột và thời hạn này trôi qua, công việc có thể được nhận lại. Lỗi tạm thời, chẳng hạn mất kết nối tới luồng video, lỗi khi chạy mô hình hoặc một kho dữ liệu tạm thời không truy cập được, được thử lại sau một khoảng chờ, tối đa ba lần. Công việc kết thúc ở một trong ba trạng thái: \emph{Hoàn thành}, \emph{Thất bại} khi gặp lỗi không phục hồi được hoặc hết số lần thử, và \emph{Đã hủy} khi Quản trị viên yêu cầu hủy, hoặc khi camera bị loại khỏi vận hành hay bị tắt xử lý AI trong lúc công việc đang chạy.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{H7-trang-thai-cong-viec.png}
+\caption{Sơ đồ trạng thái của công việc xử lý}
+\label{fig:job-state}
+\end{figure}
+
+\paragraph{Các bước xử lý.} Hình~\ref{fig:pipeline-flow} trình bày lưu đồ xử lý của một công việc. Khác với Hình~\ref{fig:architecture} chỉ cho thấy các bước nối tiếp nhau, lưu đồ này thể hiện rằng công việc là một \emph{vòng lặp theo từng khung hình}: mỗi khung hình được đọc, kiểm tra điều kiện dừng và điều kiện lấy mẫu, rồi mới đi qua các mô hình; phần chọn khung hình đại diện, mã hóa và ghi dữ liệu chỉ chạy khi có một lần xuất hiện vừa kết thúc, còn trong lúc lần xuất hiện đang diễn ra, hệ thống chỉ cập nhật các ứng viên khung hình đại diện.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{H3-luu-do-xu-ly-camera.png}
+\caption{Lưu đồ xử lý một công việc}
+\label{fig:pipeline-flow}
+\end{figure}
+
+Để lưu đồ gọn, hình không vẽ một trường hợp: khi nguồn kết thúc hoặc đã đủ số khung hình của phiên, các lần xuất hiện đã được xác nhận nhưng còn đang theo vết cũng được kết thúc và đi qua nhánh bên phải trước khi công việc dừng (Mục~\ref{sec:3.3.5}). Cụ thể, dữ liệu đi qua các bước sau:
+\begin{enumerate}
+    \item \textbf{Đọc và giải mã khung hình} từ luồng RTSP hoặc từ tệp, kèm chỉ số và mốc thời gian của từng khung hình (Mục~\ref{sec:3.3.5}, Mục~\ref{sec:3.7.4}).
+    \item \textbf{Lấy mẫu:} chỉ giữ một khung hình trong mỗi $N$ khung hình nguồn, với $N$ lấy từ cấu hình lấy mẫu đã chọn (Mục~\ref{sec:3.4}).
+    \item \textbf{Phát hiện người} trên khung hình được lấy mẫu (Mục~\ref{sec:3.2}).
+    \item \textbf{Theo vết} để gom các phát hiện của cùng một người thành một lần xuất hiện; lần xuất hiện được xác nhận sau hai lần quan sát và kết thúc khi mất dấu (Mục~\ref{sec:3.3}).
+    \item \textbf{Giữ ứng viên khung hình đại diện} cho mỗi lần xuất hiện đang diễn ra, và chọn ra một khung hình khi lần xuất hiện kết thúc (Mục~\ref{sec:5.2.2}).
+    \item \textbf{Mã hóa:} cắt tạm vùng người trên khung hình đại diện, nới rộng mỗi phía 5\% kích thước khung bao, rồi đưa qua bộ mã hóa ảnh để tạo vector đặc trưng (Mục~\ref{sec:3.5}). Vùng cắt này chỉ tồn tại trong bộ nhớ và không được lưu lại.
+    \item \textbf{Ghi dữ liệu vào ba kho:} tạo bản ghi lần xuất hiện ở trạng thái \emph{chờ} trong PostgreSQL, lưu khung hình đại diện vào MinIO, lưu vector vào Milvus, và cuối cùng chuyển bản ghi sang trạng thái \emph{sẵn sàng}. Nếu một bước ghi thất bại, bước đó được thử lại sau các khoảng chờ tăng dần; lần xuất hiện chỉ được tìm thấy sau khi chuyển sang trạng thái sẵn sàng (Mục~\ref{sec:5.3}).
+\end{enumerate}
+Mỗi lần xuất hiện được ghi kèm phiên bản cấu hình Detector--Tracker, phiên bản bộ mã hóa và khoảng lấy mẫu $N$ đã dùng (FR-S04).
+
+\subsection{Chọn khung hình đại diện}
+\label{sec:5.2.2}
+
+Mỗi lần xuất hiện chỉ lưu \emph{một} khung hình toàn cảnh, dùng cho cả việc tạo vector đặc trưng lẫn việc hiển thị kết quả. Vì vậy, khung hình này cần cho thấy người rõ nhất có thể. Một lần xuất hiện có thể kéo dài qua hàng chục khung hình được lấy mẫu, nhưng việc giữ toàn bộ chúng trong bộ nhớ cho tới khi lần xuất hiện kết thúc là quá tốn kém. Bộ chọn khung hình đại diện giải quyết vấn đề này như sau:
+\begin{itemize}
+    \item \textbf{Giữ tối đa ba ứng viên.} Với mỗi lần xuất hiện đang diễn ra, bộ chọn chỉ giữ ba khung hình có điểm chất lượng cao nhất; khi có ứng viên mới, ứng viên kém nhất bị loại. Tổng bộ nhớ dành cho các ứng viên của mọi lần xuất hiện được giới hạn ở 256~MB; khi vượt giới hạn, ứng viên kém nhất trên toàn bộ bị loại. Khung hình có nhiều người được dùng chung giữa các lần xuất hiện, không bị sao chép.
+    \item \textbf{Lọc cứng.} Một ứng viên chỉ đạt yêu cầu khi khung bao có kích thước tối thiểu 24$\times$48 điểm ảnh, vùng người đủ nét, khung bao chạm ít hơn hai cạnh của khung hình, và hình dạng khung bao không thay đổi đột ngột so với lần quan sát trước (diện tích không thay đổi quá 4 lần, tỉ lệ rộng--cao không thay đổi quá 2,5 lần). Những thay đổi đột ngột như vậy thường là dấu hiệu khung bao bị nhầm sang người khác hoặc bị che khuất.
+    \item \textbf{Điểm chất lượng.} Mỗi ứng viên được chấm điểm bằng tổng có trọng số của năm tiêu chí: độ lớn của người trong khung hình (0,30), độ nét (0,25), mức độ đầy đủ của thân người, ước lượng qua tỉ lệ khung bao và việc bị cắt ở cạnh khung hình (0,20), độ ổn định so với lần quan sát trước (0,15), và vị trí gần giữa khoảng thời gian xuất hiện (0,10); sau đó trừ điểm phạt khi khung bao chạm cạnh khung hình (0,1 cho mỗi cạnh) và khi khung bao chồng lấn với người khác (tối đa 0,2).
+    \item \textbf{Chọn khi kết thúc.} Khi lần xuất hiện kết thúc, bộ chọn lấy ứng viên có điểm cao nhất trong số các ứng viên đạt lọc cứng. Nếu không có ứng viên nào đạt, ứng viên có điểm cao nhất vẫn được chọn nhưng lần xuất hiện được đánh dấu chất lượng thấp, thay vì bị loại bỏ.
+\end{itemize}
+Các tiêu chí và trọng số trên được thiết kế theo kinh nghiệm để ưu tiên ảnh người lớn, rõ và không bị che; chúng được lưu thành tệp cấu hình và cho kết quả xác định, tức cùng dữ liệu đầu vào luôn chọn cùng một khung hình.
+
+\subsection{Luồng tìm kiếm}
+\label{sec:5.2.3}
+
+Hình~\ref{fig:search-sequence} trình bày luồng tìm kiếm dưới dạng sơ đồ tuần tự. Luồng gồm hai giai đoạn: lấy danh sách kết quả, rồi lấy ảnh cho từng kết quả.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{H4-tuan-tu-tim-kiem.png}
+\caption{Sơ đồ tuần tự của luồng tìm kiếm}
+\label{fig:search-sequence}
+\end{figure}
+
+\paragraph{Lấy danh sách kết quả.} Ứng dụng web gửi truy vấn cùng bộ lọc camera, khoảng thời gian và số kết quả $k$. Máy chủ ứng dụng thực hiện các bước:
+\begin{enumerate}
+    \item \textbf{Kiểm tra đầu vào.} Ảnh truy vấn phải ở định dạng JPEG hoặc PNG, dung lượng tối đa 10~MB; các thuộc tính phải thuộc danh sách cho phép và tạo thành tổ hợp hợp lệ, chẳng hạn không chọn đồng thời váy liền và trang phục phía dưới; $k$ phải thuộc tập $\{4, 8, 12, 16\}$.
+    \item \textbf{Xác định phạm vi.} Khu vực được lấy từ tài khoản của Giám sát viên; tập camera tìm kiếm là các camera được chọn, hoặc mọi camera đang vận hành trong khu vực nếu không chọn. Yêu cầu chứa camera ngoài phạm vi bị từ chối.
+    \item \textbf{Mã hóa truy vấn.} Với tìm kiếm theo thuộc tính, các thuộc tính được ghép thành một câu tiếng Anh theo mẫu cố định, ví dụ \emph{``A woman wearing a red jacket and blue jeans, carrying a handbag.''}. Ảnh được đưa qua bộ mã hóa ảnh, câu mô tả được đưa qua bộ mã hóa văn bản.
+    \item \textbf{Tìm kiếm vector có lọc trước} trong Milvus, đối chiếu kết quả với PostgreSQL và tìm lại với số lượng gấp đôi khi thiếu kết quả hợp lệ, tối đa ba lượt, như đã trình bày tại Mục~\ref{sec:3.6.4}.
+\end{enumerate}
+Danh sách trả về chỉ gồm thông tin của từng kết quả: mã lần xuất hiện, camera, khu vực, thời điểm, khung bao và điểm phù hợp; ảnh không được gửi kèm.
+
+\paragraph{Lấy ảnh kết quả.} Ứng dụng web yêu cầu ảnh của từng kết quả qua một đường dẫn riêng. Với mỗi yêu cầu, máy chủ ứng dụng kiểm tra lại quyền của người dùng đối với lần xuất hiện, đọc khung hình đại diện từ MinIO, rồi tạo ảnh người theo tham số của giao diện: vùng cắt được nới rộng theo tỉ lệ ô hiển thị bằng phần cảnh xung quanh trên khung hình, người được tìm thấy được viền khung và phần xung quanh được làm tối. Khi người dùng mở chi tiết, khung hình toàn cảnh được trả về theo cách tương tự. Việc tách ảnh khỏi danh sách giúp danh sách được trả về nhanh, và bảo đảm mọi ảnh đều đi qua bước kiểm tra quyền.
+
+\subsection{Luồng quản lý hồ sơ vụ việc}
+\label{sec:5.2.4}
+
+Hình~\ref{fig:case-sequence} trình bày luồng lưu một kết quả tìm kiếm vào vụ việc, gồm hai lựa chọn tạo vụ việc mới hoặc thêm vào vụ việc đã có, và tùy chọn đánh dấu vụ việc hoàn thành ngay khi lưu.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{H5-tuan-tu-vu-viec.png}
+\caption{Sơ đồ tuần tự của luồng lưu kết quả vào vụ việc}
+\label{fig:case-sequence}
+\end{figure}
+
+\paragraph{Lưu kết quả vào vụ việc.} Khi Giám sát viên tạo vụ việc mới hoặc thêm vào vụ việc đã có, giao diện chỉ gửi mã lần xuất hiện, không gửi điểm phù hợp hay thông tin hiển thị. Máy chủ ứng dụng kiểm tra rằng lần xuất hiện đang ở trạng thái sẵn sàng, thuộc một camera đang vận hành trong khu vực hiện tại của Giám sát viên, và vụ việc đích do chính người đó phụ trách và đang ở trạng thái Đang xử lý. Nếu hợp lệ, máy chủ tạo một mục kết quả mới, kể cả khi lần xuất hiện đó đã có trong vụ việc, và ghi lại \emph{bản chụp} gồm tên camera, tên khu vực và thời điểm xuất hiện tại thời điểm lưu. Bản chụp giúp vụ việc vẫn hiển thị đúng thông tin lịch sử khi tên camera thay đổi về sau, hoặc khi khung hình tạm thời không truy xuất được (NFR-08).
+
+\paragraph{Cập nhật và đánh dấu hoàn thành.} Mỗi vụ việc mang một số phiên bản tăng dần sau mỗi lần cập nhật. Yêu cầu sửa tiêu đề, ghi chú hoặc đổi trạng thái phải kèm số phiên bản mà giao diện đang hiển thị; nếu vụ việc đã bị thay đổi ở nơi khác, chẳng hạn trong một thẻ trình duyệt khác, yêu cầu bị từ chối thay vì ghi đè. Vụ việc ở trạng thái Hoàn thành từ chối mọi thao tác thêm, loại kết quả hay sửa nội dung, cho tới khi được mở lại. Tùy chọn ``đánh dấu hoàn thành ngay khi lưu'' được giao diện thực hiện bằng hai yêu cầu nối tiếp: lưu kết quả, rồi đổi trạng thái; nếu yêu cầu thứ hai thất bại, kết quả đã lưu vẫn được giữ và người dùng được thông báo để đánh dấu lại (FR-O11). Các thao tác tạo, cập nhật, đánh dấu hoàn thành và mở lại vụ việc đều được ghi vào nhật ký hệ thống.
+
+\paragraph{Xem vụ việc.} Khi Giám sát viên hoặc Quản lý mở một vụ việc, ảnh của các kết quả được cấp theo quyền đối với vụ việc chứ không theo quyền tìm kiếm (Mục~\ref{sec:4.6}); nhờ đó, Giám sát viên đã chuyển khu vực và Quản lý vẫn xem được ảnh, trong khi điểm phù hợp không có mặt vì chưa bao giờ được lưu.

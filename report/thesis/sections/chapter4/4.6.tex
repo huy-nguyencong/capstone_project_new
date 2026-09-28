@@ -1,0 +1,47 @@
+% !TEX root = ../../main.tex
+% C4.6 — Ma trận phân quyền
+% Nguồn: architect.md mục 4 (khu vực, camera, quyền) và mục 7 (ma trận quyền tóm tắt); usecase_detail.md ghi chú UC-03, UC-09, UC-11.
+% "Không mặc định" của architect §7 viết là "Không" trong bảng, giải thích bằng câu ngay dưới bảng (khớp 4.1.1).
+% Chương 8 (Mục 8.3) dùng bảng này làm căn cứ kiểm thử phân quyền.
+\section{Ma trận phân quyền}
+\label{sec:4.6}
+
+Sơ đồ use case (Hình~\ref{fig:usecase}) cho biết mỗi tác nhân sử dụng những chức năng nào. Tuy nhiên, với cùng một chức năng, các vai trò còn khác nhau ở \emph{phạm vi dữ liệu} được phép truy cập. Bảng~\ref{tab:permissions} tổng hợp quyền của từng vai trò theo từng nhóm hành động, kèm điều kiện về phạm vi dữ liệu.
+
+\begin{table}[H]
+\centering
+\caption{Ma trận phân quyền theo vai trò}
+\label{tab:permissions}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{4.4cm}|L|L|L|}
+\hline
+\textbf{Nhóm hành động} & \textbf{Quản trị viên} & \textbf{Giám sát viên} & \textbf{Quản lý} \\
+\hline
+Đăng nhập, đăng xuất & Có & Có & Có \\
+\hline
+Quản lý tài khoản, gán khu vực cho Giám sát viên & Có & Không & Không \\
+\hline
+Quản lý camera, bật/tắt xử lý AI, tải video dự phòng, chọn Detector/Tracker & Có & Không & Không \\
+\hline
+Theo dõi trạng thái, kiểm tra hoạt động AI, xem nhật ký hệ thống & Có & Không & Không \\
+\hline
+Tìm kiếm người, xem ảnh và khung hình của kết quả tìm kiếm & Không & Chỉ trên các camera đang vận hành thuộc khu vực hiện tại & Không \\
+\hline
+Tạo vụ việc, thêm hoặc loại kết quả, sửa tiêu đề và ghi chú, đánh dấu hoàn thành hoặc mở lại & Không & Chỉ với vụ việc do mình phụ trách; kết quả thêm mới phải thuộc khu vực hiện tại & Không \\
+\hline
+Xem vụ việc và ảnh của kết quả đã lưu & Không & Vụ việc do mình phụ trách, kể cả sau khi được chuyển khu vực & Mọi vụ việc, chỉ đọc \\
+\hline
+Xem bảng tổng quan & Không & Không & Toàn hệ thống \\
+\hline
+\end{tabularx}
+\end{table}
+
+Như đã nêu ở Mục~\ref{sec:4.1.1}, quyền quản trị kỹ thuật \emph{không mặc nhiên} kèm theo quyền nghiệp vụ; vì vậy, với tài khoản Quản trị viên, các hành động tìm kiếm và xem vụ việc được ghi là ``Không''.
+
+Ma trận được áp dụng theo các nguyên tắc sau:
+\begin{itemize}
+    \item \textbf{Kiểm tra tại máy chủ cho mọi yêu cầu.} Vai trò, khu vực hiện tại và quyền phụ trách vụ việc được lấy từ phiên đăng nhập, không lấy từ dữ liệu trình duyệt gửi lên. Yêu cầu chứa camera hoặc khu vực ngoài quyền bị từ chối, kể cả khi được gửi trực tiếp tới máy chủ mà không qua giao diện.
+    \item \textbf{Hai con đường truy cập hình ảnh.} Ảnh và khung hình của một lần xuất hiện được cấp theo một trong hai căn cứ: quyền tìm kiếm, tức lần xuất hiện thuộc camera đang vận hành trong khu vực hiện tại của Giám sát viên; hoặc quyền đối với vụ việc, tức lần xuất hiện đã được lưu trong một vụ việc mà người dùng được xem. Nhờ căn cứ thứ hai, Giám sát viên đã chuyển khu vực và Quản lý vẫn xem được ảnh trong vụ việc, dù không có quyền tìm kiếm trên camera đó.
+    \item \textbf{Trạng thái dữ liệu thu hẹp quyền.} Dữ liệu của camera đang ngừng vận hành không xuất hiện trong kết quả tìm kiếm, không được chọn làm bộ lọc và không được thêm mới vào vụ việc, nhưng vẫn xem được trong các vụ việc đã lưu. Vụ việc đã hoàn thành từ chối mọi thao tác chỉnh sửa cho tới khi được mở lại. Tài khoản bị khóa hoặc ngừng hoạt động mất toàn bộ quyền ngay ở yêu cầu kế tiếp.
+\end{itemize}
+
+Việc kiểm thử hệ thống có thực thi đúng từng ô của ma trận này hay không được trình bày tại Mục~\ref{sec:8.3}.

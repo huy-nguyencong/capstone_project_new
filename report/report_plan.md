@@ -1,0 +1,370 @@
+# Kế hoạch viết báo cáo Đồ án tốt nghiệp
+
+> **Đề tài:** Phát triển hệ thống tìm kiếm người dựa trên mô tả đa phương thức.
+> **Ngành:** Khoa học Máy tính · **Hội đồng:** 1CC · **GVHD:** TS. Lê Thành Sách · **GVPB:** TS. Trần Tuấn Anh · **SVTH:** Nguyễn Công Huy (2113499) · **Bảo vệ:** 10/2026.
+> **Khuôn trình bày:** LaTeX, dựng từ template `report/Template_for_Capstone_Project___Thesis_Defense/` (giữ nguyên làm mẫu), viết bằng tiếng Việt, 9 chương (cấu trúc theo đề xuất của SV, chốt 2026-09-27). Mạch chương tham khảo `report/reference-reports/242_ĐATN_66.pdf`.
+> **Mã nguồn báo cáo:** `report/thesis/`.
+> **Tài liệu nguồn:** `files/architect.md`, `files/project_requirements.md`, `files/usecase_detail.md`. Các plan triển khai, `docs/` và code dùng để lấy chi tiết hiện thực và số liệu.
+
+## 1. Cách làm việc
+
+### 1.1. Cấu trúc thư mục `report/thesis/`
+
+| Đường dẫn | Nội dung |
+| --- | --- |
+| `main.tex` | File gốc: gói lệnh, trang đầu, 9 chương, tài liệu tham khảo, phụ lục |
+| `sections/front/` | Bìa và trang tên (F1), phiếu nhiệm vụ (F2), cam đoan (F3), cảm ơn (F4), tóm tắt (F5), tóm tắt chương (F6), từ viết tắt (F7) |
+| `sections/chapterN/chapterN.tex` | Tiêu đề chương N, `\input` các mục theo thứ tự |
+| `sections/chapterN/N.x.tex` | **Một file cho mỗi mục** (mã `CN.x` trong plan). Đầu file có ghi chú “Nội dung cần có” |
+| `sections/appendix/appendix.tex` | Phụ lục A–D (đang comment, bật khi có nội dung) |
+| `ref.bib` | Tài liệu tham khảo (đã có sẵn ByteTrack, RaSa, CUHK-PEDES, WILDTRACK, HNSW, Milvus, YOLO11, BoT-SORT, RFC 7826) |
+| `figures/` | Nguồn sơ đồ và ảnh xuất, đặt tên theo mã hình (H1…H10) |
+| `images/` | Logo và ảnh tĩnh |
+
+- **Build:** trong `report/thesis/` chạy `latexmk main.tex`. Cấu hình ở `.latexmkrc` (XeLaTeX + Biber), kết quả ở `build/main.pdf`.
+- **Ghi chú nháp:** dùng `\nhap{...}` (chữ đỏ nghiêng) cho chỗ chưa viết xong hoặc cần xác nhận. Trước khi nộp phải xóa hết.
+- **Nhãn tham chiếu:** chương dùng `chapter:<tên>`, mục dùng `sec:<mã>` (ví dụ `\ref{sec:4.5}`), hình dùng `fig:<mã hình>`, bảng dùng `tab:<tên>`.
+
+### 1.2. Vòng góp ý
+
+1. Bạn viết nháp thẳng vào file của mục (ví dụ `sections/chapter4/4.3.tex`), hoặc dán nội dung vào chat, kèm mã mục (ví dụ `C4.3`).
+2. Tôi đối chiếu bản nháp với phần **Nội dung cần có** và **Lưu ý nhất quán** của mục đó, cùng với tài liệu nguồn và code. Sau đó tôi trả về:
+   - **Sai hoặc lệch so với ứng dụng:** phải sửa.
+   - **Còn thiếu:** nên bổ sung.
+   - **Diễn đạt, bố cục, thuật ngữ:** tùy chọn.
+   - Đoạn văn gợi ý, nếu bạn cần.
+3. Bạn chỉnh xong thì mục đó chuyển sang `DONE` trong bảng theo dõi (mục 9).
+4. Nếu phát hiện ứng dụng và tài liệu nguồn chưa khớp nhau, ta ghi vào mục 8 (**Vấn đề mở**) để xử lý riêng, không sửa lách trong báo cáo.
+
+Trạng thái mỗi mục: `TODO` → `DRAFTING` (bạn đang viết) → `REVIEW` (đã gửi, chờ góp ý) → `REVISING` → `DONE`. `BLOCKED` dùng cho mục đang chờ số đo.
+
+## 2. Quy ước chung cho toàn báo cáo
+
+### 2.0. Quy định của khoa
+
+Nguồn: `report/1_NopBC_GD1&2_PB&BV_.../GD1&2_1_HuongDan_HoanThien_NopBaoCao_...docx` (hướng dẫn ngày 11/10/2022) và `1.2_SoDoThucHien_GD2_DATN_20250305.pdf`.
+
+- **Thứ tự bắt buộc:** trang bìa → phiếu nhiệm vụ (có chữ ký CBHD) → lời cam đoan → lời cảm ơn → tóm tắt → mục lục → danh mục bảng biểu, hình ảnh (nếu có) → nội dung → danh mục tài liệu tham khảo → phụ lục (nếu có). `main.tex` đã theo đúng thứ tự này; danh mục từ viết tắt đặt sau danh mục hình.
+- **Trình bày:** Unicode; font Times New Roman; cỡ chữ 12–13 (đang dùng 13); lề trái 3,0 cm, phải 2,0 cm, trên 2,0 cm, dưới 2,0 cm.
+- **Nộp bài:** theo thông báo của khoa trên https://elearning-cse.hcmut.edu.vn/ (thời gian, hình thức).
+- **Quy trình GĐ2 (ĐATN):** giao đề tài → **đánh giá báo cáo giữa kỳ** (nếu không đạt thì dừng) → phân công phản biện và hội đồng → nộp báo cáo → phản biện, bảo vệ → nộp hồ sơ sau bảo vệ. Cần có bản báo cáo đủ chương 1–5 trước mốc giữa kỳ.
+
+### 2.1. Các quyết định phải mô tả đúng
+
+Các điểm dưới đây rất dễ viết sai. Mỗi lần góp ý tôi sẽ kiểm tra lại chúng.
+
+| Chủ đề | Mô tả đúng |
+| --- | --- |
+| Tên đề tài | “Mô tả đa phương thức” là việc người dùng mô tả người cần tìm bằng **ảnh** (crop chứa người), **văn bản** (mô tả tự do tiếng Anh) hoặc **thuộc tính** (chọn sẵn, sinh câu tiếng Anh). Cả ba đều được đưa về **cùng một không gian embedding** của RaSa để so khớp với embedding của track. Định nghĩa này ở C1.2 và C2.1, và dùng nhất quán trong toàn báo cáo. |
+| Phạm vi | Đồ án tập trung **xây dựng ứng dụng**; AI dùng mô hình có sẵn, không nghiên cứu hay huấn luyện mô hình mới; không nhằm mục đích thương mại. |
+| Tên ứng dụng | **PRISM — Person Retrieval via Image & Semantic Matching** (tên hiển thị của ứng dụng; tên đề tài chính thức vẫn giữ nguyên). |
+| Kết quả đánh giá (định hướng cách viết) | Tìm bằng ảnh đáng tin cậy nhất (Recall@4 = 0,83, Recall@8–16 = 1,0). Tìm bằng văn bản/thuộc tính **Recall@4–16 = 0** kể cả sau khi mở rộng bộ thuộc tính, do khác biệt miền giữa CUHK-PEDES (ảnh một người đã cắt gọn, gom từ 5 bộ ReID có sẵn, mỗi ảnh có câu mô tả viết riêng) và WILDTRACK (ảnh cắt tự động từ khung toàn cảnh khu vực đông người, bối cảnh/góc quay khác, thường bị che khuất). **Không** viết CUHK-PEDES là “rõ nét, chính diện”. Trình bày văn bản/thuộc tính như **chức năng hỗ trợ** cần người dùng đánh giá bằng mắt; không che giấu kết quả này. Phát hiện người sau khi hạ ngưỡng: recall 0,64, precision 0,43. Số liệu chi tiết ở architect mục 13. |
+| Nguồn camera | 7 video WILDTRACK được FFmpeg phát vào MediaMTX thành **7 luồng RTSP giả lập**, mỗi luồng là một camera logic. Tải tệp video lên là đường **dự phòng**. Máy chỉ có CPU xử lý chậm hơn thời gian thực khoảng 7 lần (≈6,7 s cho mỗi giây video 1080p60) nên MediaMTX bỏ bớt frame; **dữ liệu demo được lập chỉ mục trước từ tệp video** qua cùng pipeline. |
+| Xử lý AI | Worker chạy tách khỏi API, xử lý **tuần tự từng camera** (concurrency = 1): khi hàng đợi trống, tự tạo phiên RTSP cho camera lâu nhất chưa được xử lý (1.800 frame nguồn/phiên, `N=20`), camera lỗi bỏ qua 5 phút. Không xử lý đồng thời 7 luồng; camera chưa tới lượt có khoảng trống dữ liệu. |
+| Pipeline | RTSP → lấy mẫu 1/N frame → Detector → Tracker → chọn frame đại diện → RaSa Image Encoder → công bố sang 3 kho. Lấy mẫu diễn ra **trước** Detector. |
+| Mô hình | Detector YOLO11n (ngưỡng tin cậy 0,1 = `track_low_threshold`); Tracker ByteTrack (mặc định) hoặc BoT-SORT (thay thế, tắt ReID và bù chuyển động camera); Admin chọn từ registry, cấu hình **chung toàn hệ thống**. RaSa checkpoint CUHK-PEDES, vector 256 chiều, chuẩn hóa L2, metric IP; **cố định**, Admin không đổi được. Lấy mẫu mặc định `throughput` (`N=20`). |
+| Đơn vị kết quả | Một kết quả là **một track** (một lần xuất hiện trên một camera), không phải một frame. Mỗi track lưu một full frame đại diện, bbox, embedding và metadata; **không lưu ảnh crop**, crop được dựng động khi hiển thị. |
+| Truy vấn | Có 3 cách: ảnh crop (chọn tệp, kéo thả, dán, hoặc kéo một kết quả vào để tìm tiếp), văn bản **tiếng Anh**, thuộc tính. Thuộc tính gồm **giới tính, loại và màu trang phục trên, loại và màu trang phục dưới, vật mang theo (ba lô, túi xách)**; **không có lựa chọn phủ định**; tên nhóm hiển thị tiếng Việt, giá trị tiếng Anh; chỉ là prompt builder sinh câu tiếng Anh cho Text Encoder. Không hỗ trợ tiếng Việt, không dịch tự động. |
+| `top_k` | Chỉ nhận **4, 8, 12, 16**. Không dùng ngưỡng điểm để loại kết quả. |
+| Matching Score | Chỉ tồn tại trong **lượt tìm kiếm hiện tại**. Không lưu vào PersonTrack, Case hay CaseResult; không hiển thị lại khi xem Case. Không phải kết luận về danh tính. |
+| Phân quyền theo khu vực | Mỗi Operator có đúng một khu vực. Backend lấy khu vực từ phiên đăng nhập, lọc trong Milvus **trước** khi lấy top-k, và kiểm tra lại ở PostgreSQL. |
+| Camera | Khu vực gán lúc tạo và **không đổi được**. Camera ngừng vận hành thì dừng nhận luồng; dữ liệu cũ được giữ nhưng **tạm không tìm kiếm được** cho tới khi camera vận hành trở lại. Case đã lưu vẫn xem được. |
+| Case | Giao diện gọi là **vụ việc**. Có đúng một Operator phụ trách, lấy từ phiên đăng nhập. **Có trạng thái Đang xử lý (`OPEN`) / Hoàn thành (`CLOSED`)**: Case hoàn thành bị khóa (không thêm/loại kết quả, không sửa tiêu đề/ghi chú), không hiện trong “Thêm vào Case đã có”, Operator mở lại được; có thể đánh dấu hoàn thành ngay khi lưu. Không gắn khu vực. Mỗi lần lưu tạo một `CaseResult` mới, cho phép trùng track. |
+| Vai trò | Tên trên giao diện: **Quản trị viên** (Admin), **Giám sát viên** (Operator), **Quản lý** (Viewer). Admin quản trị kỹ thuật, **không** mặc định được tìm kiếm hay xem Case. Viewer (Manager/Director) chỉ đọc mọi Case, lọc theo trạng thái, xem dashboard (tổng số Case, số Case đang xử lý/hoàn thành, số CaseResult, Case gần đây). |
+| Nhất quán ba kho | Track đi theo `PENDING → READY`, chỉ tìm được khi PostgreSQL, MinIO và Milvus đều đã ghi xong. Có outbox, retry và reconciliation. |
+| Audit | Không ghi audit cho thao tác tìm kiếm của Operator. |
+
+### 2.2. Thuật ngữ
+
+- Giữ nguyên tiếng Anh, lần đầu xuất hiện kèm giải thích: *track*, *bounding box (bbox)*, *embedding*, *Matching Score (Điểm phù hợp)*, *Detector*, *Tracker*, *Image/Text Encoder*, *Case*, *CaseResult*, *top-k*, *frame sampling*.
+- Viết thống nhất các tên: “Operator”, “Viewer”, “Admin”; “khu vực giám sát”; “camera logic”; “luồng RTSP giả lập”.
+- **Cách gọi vai trò (quyết định 2026-09-27, cập nhật 2026-09-28 theo tên trên giao diện):** Chương 1–3 là tổng quan, khảo sát và lý thuyết nên **không nêu tên vai trò của ứng dụng**; chỉ mô tả khái quát (người quản trị kỹ thuật, người thực hiện tìm kiếm, người theo dõi kết quả). Vai trò được xác định lần đầu ở **Mục 4.1**, viết theo đúng tên trên giao diện: “Quản trị viên (Admin)”, “Giám sát viên (Operator)”, “Quản lý (Viewer)”; Case gọi là “vụ việc” (có thể viết “hồ sơ vụ việc” khi cần diễn giải). Từ đó dùng tên tiếng Việt trong toàn bộ báo cáo, kể cả bảng và sơ đồ; tên tiếng Anh chỉ ghi kèm trong ngoặc (lần đầu, tiêu đề cột/nhãn tác nhân) để đối chiếu với mô tả kỹ thuật. Không dùng “người vận hành”; khi nói chung thì dùng “người dùng”.
+- **Độ đo của Milvus:** trong văn bản viết “tích vô hướng (inner product)”, **không** viết tắt “IP”, vì “IP” trong danh mục viết tắt là Internet Protocol (camera IP) (quyết định 2026-09-28).
+- **Không nhắc tài liệu nội bộ trong thân báo cáo (2026-09-28):** không viết “theo đặc tả kiến trúc/tài liệu yêu cầu/usecase_detail…”; người đọc không có các tệp đó. Muốn dẫn thì dẫn tới mục trong báo cáo (ví dụ Mục 4.1.1) hoặc nguồn đã trích dẫn.
+- Mọi chữ viết tắt (RTSP, MOT, ReID, HNSW, IP, ERD, API, RBAC, E2E…) đưa vào **Danh mục từ viết tắt**.
+
+### 2.3. Hình, bảng, trích dẫn
+
+- **Kiểu bảng chung (quyết định 2026-09-28):** mọi bảng dùng `\tablestyle` khai báo trong `main.tex` (tự áp cho `table` và `longtable`): chữ `\small` (nhỏ hơn thân bài một bậc), giãn dòng đơn, đệm hàng 1,3; tên bảng cỡ thường như tên hình. **Không** chỉnh cỡ chữ/giãn dòng riêng trong từng bảng. Bảng có thể dài quá một trang dùng `longtable` với `\endfirsthead`/`\endhead` (dòng “tiếp theo Bảng x”), và chia nội dung dài thành nhiều hàng để ngắt trang được.
+
+- Mỗi chương mở đầu bằng một câu dẫn nhập in nghiêng (“Chương này trình bày …”), đặt trong `chapterN.tex` ngay sau `\label`, theo template của khoa.
+
+- Đặt tên hình theo chương, ví dụ “Hình 5.2: Luồng xử lý camera”. Mỗi hình đều được nhắc tới trong văn bản trước khi xuất hiện.
+- **Sơ đồ: Claude dựng sẵn tệp `.drawio`, SV chỉnh tay (quyết định 2026-09-28, thay quy trình SV tự vẽ từ đầu).** Claude **không** dùng Mermaid/PlantUML/Graphviz hay ảnh sinh tự động (bố cục máy móc, trông thiếu tự nhiên). Quy trình, bộ ký hiệu và mẫu đặc tả nằm trong `thesis/figures/README.md`:
+  1. Claude viết đặc tả `thesis/figures/specs/H<mã>-<tên>.md` (nội dung, điểm đối chiếu với code) **và** tạo `thesis/figures/H<mã>-<tên>.drawio` dùng đúng hình có sẵn của draw.io, đặt vị trí tay theo đặc tả;
+  2. đặt khung giữ chỗ `\hinhcho{<mã>}{<mô tả ngắn>}` trong báo cáo, ghi trạng thái `CHỜ SV CHỈNH` ở mục 7;
+  3. SV mở `.drawio`, chỉnh bố cục/khoảng cách/font/màu theo tay, xuất `.png` vào `thesis/figures/`; Claude rà soát ảnh theo đặc tả;
+  4. khi đạt, thay khung giữ chỗ bằng `\includegraphics` và chuyển `DONE`.
+- **Theo yêu cầu của thầy:** sơ đồ khối/luồng/kiến trúc/triển khai dùng **hình dạng khác nhau cho từng loại thành phần** (dữ liệu vào/ra hình bình hành, tệp hình tài liệu, xử lý chữ nhật bo góc, mô hình AI bộ não, CSDL hình trụ, kho đối tượng hình xô, hàng đợi trụ nằm ngang, camera, người dùng…), không để mọi thứ là hình chữ nhật. Sơ đồ UML (use case, sequence, trạng thái) và ERD giữ **ký hiệu chuẩn**.
+- Không yêu cầu SV vẽ hình minh họa thuật toán AI; giải thích bằng danh sách/bảng.
+- Ảnh chụp màn hình ứng dụng và ảnh sản phẩm của bên thứ ba cũng do SV cung cấp.
+- Ảnh chụp giao diện lấy từ ứng dụng chạy thật với dữ liệu WILDTRACK, không dùng dữ liệu giả.
+- Trích dẫn theo IEEE (hoặc chuẩn khoa yêu cầu). Mọi bài báo, mô hình, sản phẩm và số liệu bên ngoài đều phải có nguồn.
+- **Không đưa số đo tự bịa.** Số liệu hiệu năng và chất lượng chỉ lấy từ lần chạy thật, ghi rõ cấu hình máy.
+
+## 3. Việc cần chốt trước khi viết
+
+| # | Việc | Trạng thái |
+| --- | --- | --- |
+| Q1 | Định dạng | **Đã chốt 2026-09-27:** LaTeX (XeLaTeX), tiếng Việt, 9 chương, dựng từ template khoa |
+| Q2 | Thông tin bìa | **Đã chốt 2026-09-27**; đã điền vào bìa, trang tên và lời cam đoan |
+| Q3 | Báo cáo ĐACN giai đoạn trước | **Không có**: báo cáo ĐATN viết độc lập, không cần phần đối chiếu với giai đoạn trước |
+| Q4 | Chuẩn trích dẫn và giới hạn số trang (hướng dẫn khoa không quy định; báo cáo mẫu khoảng 120 trang, trích dẫn IEEE) | Đề xuất IEEE; hỏi GVHD nếu có yêu cầu riêng |
+| Q5 | Mốc nộp báo cáo giữa kỳ và mốc nộp cuối (theo thông báo trên elearning-cse) | TODO |
+
+## 4. Phần đầu báo cáo
+
+| Mã | Mục | Nội dung cần có | Lưu ý |
+| --- | --- | --- | --- |
+| F1 | Trang bìa và trang tên | Theo form `GD1&2_2_VI_FormTrangBia&TrangTen_DCLV_LVTN_DATN`: trường/khoa/môn/ngành/hội đồng/SV cỡ 15, tên đề tài cỡ 16–25, dòng cuối “TP. HỒ CHÍ MINH, THÁNG/NĂM (BẢO VỆ)” | Q2. File `sections/front/cover-page.tex` sinh cả hai trang |
+| F2 | Phiếu nhiệm vụ | **Bắt buộc với ĐATN**, phải có chữ ký xác nhận của GVHD | Scan bản đã ký thành `thesis/images/phieu-nhiem-vu.pdf`; `nhiem-vu.tex` tự chèn |
+| F3 | Lời cam đoan | Theo mẫu | Nêu rõ mô hình và dữ liệu bên thứ ba được sử dụng (YOLO11n, ByteTrack, RaSa, WILDTRACK) |
+| F4 | Lời cảm ơn | Tự do | — |
+| F5 | Tóm tắt đề tài | 1 trang: vấn đề → giải pháp (3 cách tìm kiếm, phân quyền theo khu vực, Case) → kiến trúc tóm tắt → kết quả chính | Viết **sau cùng**, khi đã có số liệu chương 8 |
+| F6 | Tóm tắt các chương | Mỗi chương 2–3 câu | Viết sau cùng. Đây là nơi duy nhất mô tả cấu trúc báo cáo (chương 1 không có mục “Cấu trúc báo cáo”, theo báo cáo mẫu 242_ĐATN_66). Đặt ngay sau Tóm tắt |
+| F7 | Mục lục, danh mục hình/bảng, từ viết tắt | Tự sinh | — |
+
+## 5. Chi tiết từng chương
+
+### Chương 1 — Tổng quan về đề tài (khoảng 5–7 trang; 4 mục: lý do, mục tiêu, phạm vi, những hạn chế)
+
+| Mã | Mục | Nội dung cần có | Nguồn |
+| --- | --- | --- | --- |
+| C1.1 | Bối cảnh và lý do chọn đề tài | Camera giám sát phổ biến, dữ liệu lớn; tìm người thủ công tốn thời gian; người dùng thường chỉ có ảnh, mô tả trang phục hoặc đặc điểm | requirements mục “Bối cảnh” |
+| C1.2 | Mục tiêu | Xây dựng ứng dụng web: xử lý luồng camera → lập chỉ mục người theo track → tìm bằng ảnh, văn bản hoặc thuộc tính → Operator đánh giá bằng mắt → lưu Case → Viewer theo dõi; phân quyền 3 vai trò | requirements, architect mục 1–2 |
+| C1.3 | Phạm vi | Chỉ tìm người (không tìm phương tiện); truy vấn tiếng Anh; 7 camera WILDTRACK phát thành RTSP giả lập; xử lý tuần tự; mô hình có sẵn; triển khai trên một máy (i5-11300H, 16 GB RAM, không GPU rời) | architect mục 1, 10 |
+| C1.4 | Những hạn chế của đề tài | Hạn chế của kết quả (khác phạm vi ở C1.3): phụ thuộc mô hình có sẵn, dữ liệu thử nghiệm hẹp, tốc độ trên máy không GPU, bỏ sót/đứt track do lấy mẫu, một khung hình đại diện, giới hạn ngôn ngữ/thuộc tính, điểm phù hợp tương đối, quy mô nhỏ. Đối chiếu lại ở C9.2 | architect mục 10, AI plan mục 3–4 |
+
+**Lưu ý:**
+- Tránh các cụm như “nhận diện khuôn mặt” hay “xác định danh tính”. Hệ thống **hỗ trợ tìm kiếm và xếp hạng**, còn người dùng là người ra quyết định.
+- **Chương 1 là tổng quan (quyết định 2026-09-27):** trọng tâm là **xây dựng ứng dụng** cho bài toán tìm kiếm người. Không nêu tên công nghệ, mô hình hay bộ dữ liệu cụ thể (YOLO, ByteTrack, RaSa, WILDTRACK, Flask, Milvus…); những nội dung này để dành cho Chương 3, Chương 5 và Mục 6.1. Ví dụ ở C1.3, viết “luồng camera giả lập từ bộ dữ liệu video công khai gồm 7 camera” thay vì nêu tên bộ dữ liệu. Nguồn trích dẫn cho số liệu bối cảnh (C1.1) vẫn giữ.
+
+### Chương 2 — Khảo sát các hệ thống liên quan (khoảng 6–10 trang)
+
+| Mã | Mục | Nội dung cần có |
+| --- | --- | --- |
+| C2.1 | Các hệ thống liên quan hiện có trên thị trường | 2.1.1 BriefCam, 2.1.2 Avigilon Appearance Search, 2.1.3 Verkada AI-Powered Search. Mỗi hệ thống: nhà phát triển, các hình thức tìm kiếm (ảnh / mô tả / thuộc tính), đơn vị kết quả, phân quyền, quản lý vụ việc, mô hình triển khai |
+| C2.2 | So sánh và nhận xét | Bảng so sánh: cách truy vấn, đơn vị kết quả, phân quyền theo khu vực, quản lý hồ sơ vụ việc, triển khai tại chỗ, chi phí |
+| C2.3 | Định hướng phát triển của hệ thống | Điểm kế thừa và khác biệt: mô tả đa phương thức trong một không gian biểu diễn, phân quyền theo khu vực, hồ sơ vụ việc, triển khai tại chỗ trên phần cứng phổ thông |
+
+**Lưu ý:**
+- **Bắt buộc có nguồn** (trang sản phẩm, tài liệu kỹ thuật, bài báo). Khi bạn gửi nháp, tôi sẽ tìm và kiểm tra nguồn cho từng nhận định. Không so sánh độ chính xác với sản phẩm thương mại nếu không có số liệu công bố.
+- Chương này đứng **trước** chương lý thuyết, nên dùng cách gọi thông thường (“tìm theo ảnh”, “tìm theo mô tả”, “tìm theo thuộc tính”), chưa dùng thuật ngữ ReID/TBPS.
+
+### Chương 3 — Cơ sở lý thuyết (khoảng 15–20 trang)
+
+| Mã | Mục | Nội dung cần có | Nguồn / trích dẫn |
+| --- | --- | --- | --- |
+| C3.1 | Bài toán tìm kiếm người và truy hồi đa phương thức | **Đã viết** (chuyển từ 2.1 cũ): phát biểu bài toán, ReID, TBPS, tìm theo thuộc tính, phân biệt nhận dạng khuôn mặt, hướng tiếp cận của đề tài + Bảng | Ye 2022, Xiao 2017, Li 2017, RaSa |
+| C3.2 | Phát hiện người trong ảnh | Detector một giai đoạn, họ YOLO; đầu ra bbox + lớp + độ tin cậy; NMS. Chỉ nguyên lý; lý do chọn YOLO11n để ở C6.1.4 | Tài liệu Ultralytics YOLO11 |
+| C3.3 | Theo vết nhiều đối tượng | Tracking-by-detection; ByteTrack (Kalman filter, thuật toán Hungary, liên kết detection điểm thấp); vòng đời track (xác nhận, mất dấu, timeout); BoT-SORT | Bài báo ByteTrack, BoT-SORT |
+| C3.4 | Lấy mẫu khung hình | Vì sao lấy mẫu 1/N trước Detector; đánh đổi giữa tốc độ và đứt track; giữ timestamp nguồn | architect mục 6.1, AI plan mục 3.2 |
+| C3.5 | Học biểu diễn chung ảnh–văn bản | Không gian embedding chung; kiến trúc RaSa (relation-aware, sensitivity-aware); checkpoint CUHK-PEDES; vì sao dùng được cả ảnh→ảnh | Bài báo RaSa (IJCAI 2023), repo chính thức |
+| C3.6 | Tìm kiếm vector | Chuẩn hóa L2, inner product ≈ cosine; ANN, chỉ mục HNSW; lọc metadata trước top-k | Bài báo HNSW, tài liệu Milvus |
+| C3.7 | Giao thức RTSP và giả lập luồng camera | RTSP/RTP cơ bản; nguyên lý phát tệp video thành luồng | RFC 7826, tài liệu MediaMTX |
+
+**Lưu ý:**
+- Chương này giải thích **nguyên lý**, không đi sâu vào toán hay huấn luyện, vì đồ án không nghiên cứu mô hình.
+- **Lý do chọn** từng mô hình (so với phương án khác) để ở C6.1.4, không lặp ở đây.
+
+### Chương 4 — Phân tích hệ thống (khoảng 20–25 trang)
+
+| Mã | Mục | Nội dung cần có | Nguồn |
+| --- | --- | --- | --- |
+| C4.1 | Các tác nhân | Quản trị viên (Admin), Giám sát viên (Operator), Quản lý (Viewer); định nghĩa khu vực giám sát và vụ việc; trách nhiệm và giới hạn; bảng tóm tắt; nguyên tắc phân chia vai trò | requirements mục 1–4, UC-01/02, architect mục 2, 5, 7 |
+| C4.2 | Các yêu cầu chức năng | Nhóm: chung (FR-C), Quản trị viên (FR-A), Giám sát viên (FR-O), Quản lý (FR-V), hệ thống tự động (FR-S); mỗi yêu cầu ghi UC tương ứng; môi trường danh sách `reqlist` trong main.tex | requirements mục 1–3, 5, 6; UC-01..15 |
+| C4.3 | Các yêu cầu phi chức năng | NFR-01–23 theo 7 nhóm: bảo mật và phân quyền; nhất quán và toàn vẹn dữ liệu; phục hồi và xử lý lỗi; hiệu năng và tài nguyên (máy i5-11300H/16 GB, không GPU rời); truy vết; khả năng sử dụng; bảo trì và mở rộng | architect mục 1, 3–7, 9–11, 13; requirements mục 1, 6; UC-01/03/08/15; đối chiếu code |
+| C4.4 | Sơ đồ use case tổng thể | 15 use case, 3 tác nhân | usecase_detail |
+| C4.5 | Đặc tả use case | 15 bảng longtable (Bảng 4.3–4.17) sinh từ usecase_detail.md bằng `report/tools/usecase_to_tex.py` (đổi thuật ngữ theo tên giao diện); không có dòng mã FR (liên kết FR→UC nằm ở 4.2). Sửa usecase_detail.md → chạy lại script | usecase_detail |
+| C4.6 | Ma trận phân quyền | Bảng 8 nhóm hành động × 3 vai trò kèm điều kiện phạm vi dữ liệu; 3 nguyên tắc áp dụng (kiểm tra tại máy chủ, hai căn cứ truy cập ảnh: quyền tìm kiếm hoặc quyền vụ việc, trạng thái dữ liệu thu hẹp quyền); dẫn 8.3. Chương 4 kết thúc ở 4.6 (bỏ 4.7 quy tắc nghiệp vụ vì trùng 4.2/4.3) | architect mục 4, 7 |
+
+**Lưu ý:**
+- **Use case đặt ở chương Phân tích** (không phải Thiết kế), như báo cáo mẫu; mô hình hóa use case là bước phân tích yêu cầu.
+- UC-03 có luồng **A5 – Đưa camera vận hành trở lại** (hiện chưa hiện thực, xem mục 8).
+- UC-09: `top_k ∈ {4, 8, 12, 16}`, lọc theo camera **đang vận hành**, truy vấn bù khi loại kết quả không hợp lệ.
+- Có thể rút gọn bảng đặc tả ở thân chương, đưa bản đầy đủ vào phụ lục A.
+
+### Chương 5 — Thiết kế hệ thống (khoảng 20–25 trang)
+
+| Mã | Mục | Nội dung cần có | Nguồn |
+| --- | --- | --- | --- |
+| C5.1 | Thiết kế kiến trúc hệ thống | Sơ đồ thành phần: Frontend → API; AI worker tách tiến trình; PostgreSQL / Milvus / MinIO; nguồn RTSP. Nguyên tắc phân tách trách nhiệm | architect mục 3, backend plan mục 4 |
+| C5.2 | Thiết kế các workflow chính | 5.2.1 Luồng xử lý luồng camera (sampling → detect → track → buffer → encode → công bố; vòng đời job `PENDING → RUNNING → SUCCEEDED/FAILED/CANCELLED`); 5.2.2 Chọn khung hình đại diện (hard filter + điểm chất lượng, tối đa 3 ứng viên); 5.2.3 Luồng tìm kiếm (quyền/khu vực → encode → Milvus lọc trước top-k → kiểm tra lại PostgreSQL → truy vấn bù); 5.2.4 Luồng quản lý hồ sơ vụ việc (snapshot metadata, quyền xem ảnh theo Case) | architect mục 6, AI plan mục 3.3, `services/track_search.py` |
+| C5.3 | Thiết kế cơ sở dữ liệu | 5.3.1 CSDL quan hệ: ERD + từ điển dữ liệu, ràng buộc (khu vực bất biến, không cột score, không unique `(case_id, track_id)`); 5.3.2 Lưu trữ vector: collection theo phiên bản encoder, alias, trường lọc; 5.3.3 Lưu trữ khung hình: khóa object, bucket private; 5.3.4 Nhất quán giữa các kho: `PENDING → MinIO → Milvus → READY`, outbox, retry, reconciliation | `docs/storage/*`, ADR-0001, STO-11/12 |
+| C5.4 | Thiết kế giao diện lập trình ứng dụng | Quy ước REST, error envelope, phân trang, các nhóm endpoint | backend plan mục 8 và 14, `docs/openapi-phase-*.json` |
+| C5.5 | Thiết kế bảo mật và phân quyền | Session phía server, CSRF, policy theo tài nguyên, 403/404, media qua backend, chống SSRF khi kiểm tra RTSP, rate limit | BE-02..04, BE-21 |
+| C5.6 | Thiết kế giao diện người dùng | Sơ đồ màn hình theo vai trò; wireframe hoặc ảnh màn hình chính | `frontend/src/pages/*` |
+
+**Lưu ý:** mỗi sơ đồ phải khớp với code thật (tên bảng, trạng thái, endpoint). Kiến trúc đặt trước workflow vì workflow chạy trên các thành phần của kiến trúc.
+
+### Chương 6 — Hiện thực hệ thống (khoảng 18–22 trang)
+
+| Mã | Mục | Nội dung cần có | Nguồn |
+| --- | --- | --- | --- |
+| C6.1 | Đánh giá và lựa chọn các công nghệ hiện thực | 6.1.1 Frontend (React + Vite); 6.1.2 Backend (Flask, worker Python tách tiến trình); 6.1.3 Hệ quản trị CSDL và lưu trữ (PostgreSQL, Milvus, MinIO); 6.1.4 Các mô hình AI (YOLO11n, ByteTrack, RaSa; so với YOLOX, BoT-SORT, CLIP; giấy phép AGPL-3.0). Mỗi mục: phương án so sánh và lý do chọn | architect mục 9 và 12, AI plan mục 3.5 |
+| C6.2 | Hiện thực tiến trình xử lý nền AI | Registry mô hình, preflight (mã băm, giấy phép), bộ chuyển đổi Detector/Tracker/Encoder chung giao diện, giới hạn thời gian và bộ nhớ, worker bền vững (giữ chỗ, báo hiệu, thử lại) | `ai/`, `workers/` |
+| C6.3 | Hiện thực giao diện người dùng | Công nghệ giao diện (React Router, chặn route theo vai trò, lớp gọi API gắn CSRF), dựng ảnh cắt; **ảnh chụp các màn hình chính (H10, SV chụp)** | `frontend/src/` |
+| C6.4 | Giám sát vận hành (ngắn) | Nhật ký JSON có mã yêu cầu, che trường nhạy cảm, số đo, heartbeat | `observability.py`, `workers/telemetry.py` |
+
+**Lưu ý:** chỉ trích đoạn code ngắn khi minh họa một ý thiết kế. Không dán cả file.
+
+### Chương 7 — Triển khai hệ thống (khoảng 5–8 trang)
+
+| Mã | Mục | Nội dung cần có | Phụ thuộc |
+| --- | --- | --- | --- |
+| C7.1 | Môi trường triển khai | Cấu hình máy; Docker Compose (PostgreSQL, Milvus, MinIO, MediaMTX); sơ đồ triển khai | Cần build hoàn chỉnh |
+| C7.2 | Dữ liệu và luồng camera giả lập | Bộ dữ liệu WILDTRACK (7 camera tĩnh, góc nhìn chồng lấn, 1920×1080, annotation); phát 7 video thành 7 luồng RTSP; gán camera vào khu vực; **chuẩn bị dữ liệu trình diễn** bằng chức năng tải video (FR-A07): vì sao cần (CPU chậm hơn thời gian thực ~7 lần, MediaMTX bỏ khung), cách làm, số liệu lần chạy (7 camera, số track READY) | Bài báo WILDTRACK, `datasets/wildtrack.py`; chờ O2 |
+| C7.3 | Quy trình triển khai và vận hành | Thứ tự khởi động, khởi tạo dữ liệu, xử lý tuần tự các camera, sao lưu/khôi phục | runbook STO-19, BE-25 |
+
+### Chương 8 — Kiểm thử và đánh giá hệ thống (khoảng 12–18 trang)
+
+| Mã | Mục | Nội dung cần có | Phụ thuộc |
+| --- | --- | --- | --- |
+| C8.1 | Chiến lược kiểm thử | Unit, contract, integration, security, failure injection, E2E; công cụ (pytest, ruff) | `backend/tests/`, README |
+| C8.2 | Kiểm thử chức năng | Bảng test case theo use case; số test và kết quả | Chạy lại toàn bộ trên stack thật (O4) |
+| C8.3 | Kiểm thử phân quyền và bảo mật | Cô lập khu vực, IDOR, CSRF, rate limit, Viewer chỉ đọc | — |
+| C8.4 | Đánh giá chất lượng tìm kiếm | Recall@4/8/12/16 và MRR cho ảnh→ảnh, văn bản→ảnh, thuộc tính→ảnh; ví dụ đúng và sai | **BLOCKED**: AIW-26 |
+| C8.5 | Đánh giá tần suất lấy mẫu khung hình | So sánh `N=10` và `N=20`: thời gian, FPS, số track, track đứt, RAM/CPU | **BLOCKED**: AIW-27 |
+| C8.6 | Kết quả xử lý luồng RTSP giả lập | Chạy bình thường, mất kết nối rồi kết nối lại, tắt AI giữa phiên | **BLOCKED**: AIW-28 |
+| C8.7 | Hiệu năng hệ thống | Độ trễ tìm kiếm (p50/p95), RAM toàn stack, dung lượng mỗi track | BE-24, STO-18 |
+
+**Lưu ý:** viết khung và phương pháp đo trước, điền số sau. Mọi số liệu phải kèm cấu hình máy, dữ liệu và số lần chạy.
+
+### Chương 9 — Tổng kết và đề xuất hướng phát triển (khoảng 3–5 trang)
+
+| Mã | Mục | Nội dung cần có |
+| --- | --- | --- |
+| C9.1 | Kết quả đạt được | Đối chiếu từng mục tiêu ở C1.2 |
+| C9.2 | Đánh giá | 9.2.1 Ưu điểm; 9.2.2 Nhược điểm (đối chiếu các hạn chế ở C1.4: chỉ hỗ trợ tiếng Anh, xử lý tuần tự, chất lượng tìm ảnh→ảnh phụ thuộc mô hình, máy không có GPU…) |
+| C9.3 | Hướng phát triển trong tương lai | Xử lý song song nhiều luồng, xếp hạng lại bằng image–text matching, biểu diễn từ nhiều khung hình, liên kết track xuyên camera, đa ngôn ngữ, tối ưu suy luận (OpenVINO), tìm phương tiện |
+
+## 6. Phụ lục (dự kiến)
+
+- A. Đặc tả đầy đủ 15 use case (nếu rút gọn ở chương 4).
+- B. Danh sách endpoint API.
+- C. Hướng dẫn cài đặt và chạy demo.
+- D. Bảng test case chi tiết.
+
+## 7. Sơ đồ và hình cần chuẩn bị
+
+Sơ đồ: Claude dựng sẵn `.drawio`, SV chỉnh và xuất ảnh; ảnh chụp màn hình do SV cung cấp. Trạng thái: `TODO` → `CHỜ SV CHỈNH` (đã có `.drawio`, đặc tả và khung giữ chỗ) → `DONE`. (H2 được viết đặc tả theo quy trình cũ; `.drawio` sẽ được tạo khi tới Chương 5.)
+
+| Mã | Hình | Chương | Trạng thái |
+| --- | --- | --- | --- |
+| H1 | Sơ đồ use case tổng thể | 4 | DONE — `figures/H1-use-case.png` (Hình 4.1) |
+| H2 | Kiến trúc tổng thể | 5 | DONE — `figures/H2-kien-truc.png` (Hình 5.1), sinh bằng `tools/h2_architecture_drawio.py`; SV có thể chỉnh `.drawio` rồi xuất đè |
+| H3 | Lưu đồ xử lý một công việc | 5 | DONE — `figures/H3-luu-do-xu-ly-camera.png` (Hình 5.3), `tools/h3_pipeline_flow_drawio.py`. SV muốn giữ: vẽ dạng lưu đồ chi tiết hơn Hình 5.1 (vòng lặp khung hình, 3 điểm rẽ nhánh, dữ liệu trung gian) |
+| H4 | Sequence tìm kiếm | 5 | DONE — `figures/H4-tuan-tu-tim-kiem.png` (Hình 5.4), `tools/h4_search_sequence_drawio.py` |
+| H5 | Sequence lưu hồ sơ vụ việc | 5 | DONE — `figures/H5-tuan-tu-vu-viec.png` (Hình 5.5), `tools/h5_case_sequence_drawio.py`; SV muốn có để người đọc dễ hình dung |
+| H6 | Trạng thái lần xuất hiện PENDING/READY/FAILED | 5 | DONE — `figures/H6-trang-thai-lan-xuat-hien.png` (Hình 5.7), `tools/h6_track_state_drawio.py` |
+| H7 | Trạng thái processing job | 5 | DONE — `figures/H7-trang-thai-cong-viec.png` (Hình 5.2), `tools/h7_job_state_drawio.py` |
+| H8 | ERD | 5 | DONE — `figures/H8-erd.png` (Hình 5.6, trang ngang), `tools/h8_erd_drawio.py`; 11 bảng có FK, bản số theo nullable của FK |
+| H9 | Sơ đồ triển khai (Docker Compose + MediaMTX) | 7 | TODO |
+| H10 | Ảnh chụp các màn hình chính | 5/6 | Chờ build hoàn chỉnh |
+| H12 | Sơ đồ luồng màn hình theo vai trò | 5 | DONE — `figures/H12-luong-man-hinh.png` (Mục 5.6), `tools/h12_screen_flow_drawio.py` (mã H11 đã bỏ nên không dùng lại) |
+| ~~H11~~ | ~~Hai bước liên kết của ByteTrack~~ | 3 | **Bỏ** (2026-09-28): danh sách đánh số ở 3.3.3 đã đủ rõ |
+
+## 8. Vấn đề mở ảnh hưởng tới báo cáo
+
+| # | Vấn đề | Ảnh hưởng |
+| --- | --- | --- |
+| O1 | ~~Chưa có chức năng đưa camera vận hành trở lại~~ **Đã triển khai** (`POST /admin/cameras/{id}/reactivate`, AI ở trạng thái tắt) | C4.5, C6, C8.2 |
+| O2 | ~~7 luồng RTSP và xoay vòng~~ **Đã xong** (architect mục 13 #1); lưu ý CPU chậm hơn thời gian thực ~7 lần nên dữ liệu demo lập chỉ mục từ tệp video | C5.2, C7.1, C7.2, C8.6 |
+| O3 | ~~Chạy lại đánh giá với ngưỡng 0,1~~ **Đã đo lại** (architect mục 13 #3, #5); lấy số liệu từ đó cho C8.4–C8.5 | C8.4–C8.6, F5, C1.4, C3.1 |
+| O4 | ~~E2E trên stack Docker~~ **Đã xong** cho cả tệp video (7 camera, 736 track) và phiên RTSP (architect mục 13 #6) | C8.2 |
+
+## 9. Bảng theo dõi
+
+| Mã | Mục | Trạng thái | Ghi chú |
+| --- | --- | --- | --- |
+| F1–F4 | Bìa, trang tên, phiếu nhiệm vụ, cam đoan, cảm ơn | REVIEW | Đã viết; chờ bản scan phiếu nhiệm vụ |
+| F5–F7 | Tóm tắt, tóm tắt các chương, mục lục | TODO | Viết cuối |
+| C1 | Tổng quan về đề tài | REVIEW | Đủ 4 mục 1.1–1.4 |
+| C2 | Khảo sát các hệ thống liên quan | REVIEW | Đủ 2.1–2.3, nguồn đã kiểm chứng |
+| C3 | Cơ sở lý thuyết | DRAFTING | 3.1 đã viết (REVIEW) |
+| C4 | Phân tích hệ thống | TODO | |
+| C5 | Thiết kế hệ thống | TODO | |
+| C6 | Hiện thực hệ thống | TODO | |
+| C7 | Triển khai hệ thống | TODO | Đã đủ dữ liệu (O2 xong) |
+| C8 | Kiểm thử và đánh giá | TODO | Đã có số đo (architect mục 13) |
+| C9 | Tổng kết | TODO | Viết cuối |
+
+## 10. Nhật ký góp ý
+
+Mỗi vòng góp ý thêm một dòng:
+
+| Ngày | Mục | Tóm tắt góp ý | Trạng thái sau |
+| --- | --- | --- | --- |
+| 2026-09-27 | F3 Lời cam đoan | Đổi “chúng tôi/nhóm” thành “tôi/sinh viên” (đồ án một SV); tách phần tự thực hiện và phần bên thứ ba (YOLO11, ByteTrack, RaSa, WILDTRACK); thêm cam kết tuân thủ giấy phép; thêm họ tên dưới chữ ký; ngày ký để trống chờ ngày nộp | REVISING |
+| 2026-09-27 | F4 Lời cảm ơn | Đổi “chúng tôi” thành “em” (đồ án một SV); bỏ “giai đoạn kế tiếp” (ĐATN là giai đoạn cuối); thêm cảm ơn GVPB và Hội đồng; thêm câu cảm ơn tác giả WILDTRACK/RaSa và cộng đồng mã nguồn mở; giảm lặp “Tiến sĩ …”, “đề tài này” | REVISING |
+| 2026-09-27 | C1.1 Lý do chọn đề tài | [3] sửa thành 16 triệu camera **nhập khẩu trong 5 năm** + >20 triệu camera sử dụng năm 2025 (VnExpress 26/08/2024); thay [2] (blog CUNY, không chứng minh được) bằng Piza 2019 và Ashby 2017, chuyển trọng tâm sang giá trị truy vết sau sự việc; bỏ [1] (không có nguồn, có thể trái số liệu chính thức); thuộc tính chỉnh theo app (màu áo, loại áo, màu quần, ba lô); “đối tượng” → “người”; bỏ ngôi “chúng tôi” | REVISING |
+| 2026-09-27 | C1.2 Mục tiêu | Bỏ “mô hình AI đã tinh chỉnh” (đồ án không fine-tune); đổi mục tiêu 1 từ “Nghiên cứu AI” thành “khảo sát, lựa chọn và đánh giá mô hình”; mục tiêu 2 bổ sung pipeline camera/lập chỉ mục theo track, 3 cách tìm kiếm cùng một không gian embedding, Case, phân quyền theo vai trò và khu vực, quản trị/giám sát; thay “kết quả ổn định” bằng tiêu chí đo được liên kết Chương 7 | REVISING |
+| 2026-09-27 | C1.2 Mục tiêu (viết lại) | Theo yêu cầu: trọng tâm là xây dựng ứng dụng; bỏ tên mô hình/bộ dữ liệu/công nghệ và trích dẫn khỏi chương 1; cấu trúc lại thành mục tiêu tổng quát + 6 mục tiêu cụ thể (phân tích dữ liệu camera theo lần xuất hiện, tìm kiếm đa phương thức, đánh giá và lưu hồ sơ, phân quyền theo vai trò/khu vực, quản trị/giám sát, lựa chọn và đánh giá thành phần AI có sẵn) + tiêu chí hoàn thành | REVISING |
+| 2026-09-27 | C1.2 Mục tiêu (câu chữ vai trò) | Đổi cách gọi vai trò thành Quản trị viên (Admin) / Nhân viên giám sát (Operator) / Cấp quản lý (Viewer); bỏ “người vận hành” (trùng nghĩa với quản trị) ở 1.1 và 1.2; “chế độ chỉ đọc” → “xem nhưng không được chỉnh sửa”; trau chuốt câu toàn mục | REVISING |
+| 2026-09-27 | C1.3 Phạm vi | Viết mới từ bản ĐACN: sửa “không hỗ trợ streaming” (thực tế nguồn chính là RTSP giả lập, xử lý tuần tự); bỏ “mô hình tinh chỉnh trên COCO/CUHK-PEDES” (không fine-tune, chương 1 không nêu tên); bỏ “người dùng đăng tải video” (chỉ là đường dự phòng của Admin); thuộc tính sửa theo app; bỏ “lưu lịch sử tìm kiếm” (không có, chỉ lưu kết quả vào Case); thêm chỉ tiếng Anh, đơn vị kết quả là lần xuất hiện, danh sách ngoài phạm vi | REVISING |
+| 2026-09-27 | C1.4 Giới hạn | Viết mới theo đề nghị (SV chưa có nháp): 8 hạn chế của kết quả (phụ thuộc mô hình có sẵn, dữ liệu thử nghiệm hẹp, tốc độ trên máy không GPU, bỏ sót/đứt track do lấy mẫu, một khung hình đại diện, giới hạn ngôn ngữ/thuộc tính, điểm phù hợp tương đối, quy mô nhỏ); liên kết Chương 7 và 8; cần đối chiếu lại ở C8.2 | REVISING |
+| 2026-09-27 | C1.5, C1.6 | Bỏ hai mục: 1.5 trùng Tóm tắt đề tài và C8.1; 1.6 trùng trang Tóm tắt các chương; chương 1 còn 4 mục như báo cáo mẫu 242_ĐATN_66 | DONE |
+| 2026-09-27 | C1 (đọc lại cả chương) | Thêm câu bối cảnh tổ chức ở 1.1 để dẫn dắt mục tiêu phân quyền/hồ sơ; rút câu cuối 1.1 tránh trùng 1.2; giải nghĩa RTSP lần đầu; bỏ lặp “cảnh báo tức thời” ở 1.3; 1.4 “cùng một khu vực” → “cùng quan sát một địa điểm” (tránh mâu thuẫn với khu vực giám sát); câu cuối 1.4 bớt hứa hẹn; thêm câu dẫn nhập chương | REVIEW |
+| 2026-09-27 | C2.1 Bài toán tìm kiếm người | Viết mới (6 tiểu mục): phát biểu bài toán (gallery/query/top-k, person search hai giai đoạn), ReID, TBPS (CUHK-PEDES), tìm theo thuộc tính (chuyển thành câu mô tả), phân biệt nhận dạng khuôn mặt, hướng tiếp cận của đề tài + Bảng 2.1. Thêm trích dẫn Ye 2022, Xiao 2017 (đã xác minh qua Crossref), bổ sung trang/DOI cho RaSa, CUHK-PEDES. Sửa biblatex/csquotes hiển thị IEEE tiếng Anh; thêm câu dẫn nhập chương 2 | REVIEW |
+| 2026-09-27 | Cấu trúc báo cáo | Đối chiếu hướng dẫn khoa: đổi “Danh sách bảng/hình vẽ” → “Danh mục bảng/hình ảnh” và đưa vào mục lục; TLTK dùng heading=bibintoc. Theo quyết định của SV: chuyển 2.8 Công nghệ → 6.1 Công nghệ sử dụng (như báo cáo mẫu), 2.9 → 2.8, chương 6 lùi số 6.2–6.8; đổi tên chương 2 thành “Cơ sở lý thuyết”; giữ thứ tự Lý thuyết (ch.2) trước Liên quan (ch.3) | DONE |
+| 2026-09-27 | Cấu trúc báo cáo (9 chương) | Theo đề xuất của SV: Liên quan (ch.2) trước Lý thuyết (ch.3); tách Triển khai (ch.7) và Kiểm thử–đánh giá (ch.8); 6.1 Đánh giá và lựa chọn công nghệ có 6.1.4 Các mô hình AI; ch.9 Kết quả / Đánh giá (ưu, nhược) / Hướng phát triển. Điều chỉnh: use case giữ ở ch.4 Phân tích; ch.3 đủ 7 mục lý thuyết; ch.5 kiến trúc trước workflow, thêm API, bảo mật, CSDL gồm vector/ảnh/nhất quán; WILDTRACK chuyển sang 7.2; giữ trang tên, phiếu nhiệm vụ, từ viết tắt, phụ lục. Mục 2.1 cũ → 3.1; danh mục hình ảnh đặt trước danh mục bảng | DONE |
+| 2026-09-27 | C2.1.1 BriefCam | Kiểm tra với trang chính thức (nay thuộc Milestone Systems): sửa “chủ yếu cài tại chỗ” → hỗ trợ cả tại chỗ và máy chủ đám mây, bắt buộc GPU NVIDIA, số GPU theo khối lượng video, GPU tách theo chế độ; thay ví dụ Respond không có nguồn; bổ sung Video Synopsis, tìm ngoại hình tương tự (appearance similarity), lịch sử Canon 2018 → Milestone; thêm đoạn “Liên hệ với đề tài”; thêm đoạn dẫn 2.1 và Hình 2.1; nguồn [4] thay bằng 3 trang chính thức. Cần SV xác nhận nguồn của ảnh BriefCam.png | REVIEW |
+| 2026-09-27 | C2.1.2 Avigilon, C2.1.3 Verkada | Kiểm tra với tài liệu chính thức. Avigilon: “bắt buộc mua đồng bộ phần cứng” sai → có phương án AI Appliance cho camera ONVIF hãng khác (vẫn cần ACC); “Description Search” là chọn thuộc tính, không phải câu tự do; bổ sung 3 cách bắt đầu tìm kiếm, bookmark/xuất bằng chứng (tương tự hồ sơ vụ việc), kết hợp đặc trưng khuôn mặt; bỏ “Big Data”, “similarity score” không có nguồn. Verkada: bỏ toán tử AND/OR/NOT và phần Analytics & Trajectory (không tìm thấy nguồn); “bắt buộc camera độc quyền” sai → Command Connector (2024) hỗ trợ camera hãng khác; bổ sung cơ chế CLIP + vector DB (gần đề tài nhất), cảnh báo từ câu truy vấn. Thêm đoạn “Liên hệ với đề tài”, Hình 2.2–2.3; 5 nguồn chính thức. Cần SV xác nhận nguồn ảnh | REVIEW |
+| 2026-09-27 | Hình 2.1–2.3 | SV xác nhận ảnh lấy từ website chính thức của từng hãng: gắn trích dẫn Milestone (BriefCam), avigilon.com/products/ai-video-analytics/appearance-search (Avigilon), trang giới thiệu AI-Powered Search (Verkada); mục 2.1 hết ghi chú nháp | DONE |
+| 2026-09-27 | C2.2 So sánh và nhận xét | Viết mới từ bảng ĐACN: bỏ hàng “đối tượng người dùng” và các ô không có nguồn (watchlist, lưu lịch sử truy vấn trên Cloud, “phụ thuộc hoàn toàn”); chỉ dùng thông tin đã kiểm chứng ở 2.1, ô không có thông tin ghi “không đề cập”; thêm cột Hệ thống của đề tài; 8 tiêu chí; 5 nhận xét (đa hình thức mô tả là xu hướng, chỉ Verkada có câu tự do, biểu diễn chung ảnh–văn bản, cần công cụ tổng hợp kết quả, phụ thuộc hạ tầng hãng, phạm vi rộng hơn tìm kiếm). Bảng giãn dòng đơn, cột đầu canh trái (áp dụng cả Bảng 3.1) | REVIEW |
+| 2026-09-27 | C2.2 So sánh và nhận xét | Viết mới từ bảng ĐACN: bỏ hàng “đối tượng người dùng” và các ô không có nguồn (watchlist, lưu lịch sử truy vấn trên Cloud, “phụ thuộc hoàn toàn”); chỉ dùng thông tin đã kiểm chứng ở 2.1, ô không có thông tin ghi “không đề cập”; thêm cột Hệ thống của đề tài; 8 tiêu chí; 5 nhận xét. Bảng giãn dòng đơn, cột đầu canh trái (áp dụng cả Bảng 3.1) | REVIEW |
+| 2026-09-27 | C2.3 Định hướng phát triển | Viết mới từ bản ĐACN: sửa “BriefCam chỉ lọc thuộc tính” (có tìm ngoại hình tương tự); thuộc tính theo app (bỏ giới tính/phụ kiện); bỏ “tăng mạnh tính tự nhiên”; không lặp nhận xét 2.2 mà nối mỗi khoảng trống với 1 định hướng: ba hình thức trong một không gian biểu diễn, kết quả theo lần xuất hiện + người dùng quyết định, hồ sơ vụ việc, phân quyền theo vai trò/khu vực, triển khai tại chỗ qua RTSP không GPU rời, tập trung vào tìm kiếm; câu kết: không thay thế sản phẩm thương mại, dẫn sang Chương 3 | REVIEW |
+| 2026-09-27 | C2 (review cả chương) | Thêm lý do chọn 3 sản phẩm (3 hướng tiếp cận) và phạm vi khảo sát chỉ gồm sản phẩm thương mại (nghiên cứu học thuật ở Ch.3); BriefCam: “ảnh mẫu” → “mẫu ngoại hình chọn trong video” (khác ảnh tải lên của đề tài), sửa theo ở hàng Bảng 2.1 và nhận xét 1; “người vận hành” → “người dùng”; “camera bất kỳ” → “camera bất kỳ hỗ trợ RTSP”; 2.3 thêm “trong số các hệ thống được khảo sát”, “Học hỏi từ Verkada” → “Tương tự cách tiếp cận của Verkada”, định hướng 2 dẫn về Mục 1.2 | REVIEW |
+| 2026-09-27 | C3.2 Phát hiện người | Viết mới (5 tiểu mục): bài toán phát hiện + công thức IoU; hai giai đoạn (Faster R-CNN) vs một giai đoạn (YOLO); họ YOLO (backbone–neck–head, YOLO11 09/2024, 5 kích cỡ, YOLO11n 2,6M tham số, 39,5 mAP COCO); hậu xử lý ngưỡng tin cậy + NMS; vai trò trong hệ thống (chỉ lớp person, conf 0,25, NMS IoU 0,7, tối đa 300, xác nhận track ≥2 khung — khớp config). Lý do chọn để 6.1.4. Thêm 4 nguồn (Redmon 2016, Ren 2017, Lin 2014 đã xác minh Crossref; tài liệu Ultralytics) | REVIEW |
+| 2026-09-27 | C3.2 (sửa theo code) | Theo quyết định của SV (phương án 1): hạ ngưỡng tin cậy detector 0,25 → 0,1 để khớp track_low_threshold của ByteTrack (trước đó bước liên kết lần hai của ByteTrack bị vô hiệu); 3.2.5 viết lại lý do chọn ngưỡng thấp | REVIEW |
+| 2026-09-28 | C1.2, C1.3, C2.2, C2.3 | Theo góp ý của SV: chương tổng quan không nêu vai trò cụ thể. 1.2 mục tiêu 4 đổi thành “Phân quyền truy cập và giới hạn phạm vi dữ liệu” (mô tả khái quát 3 nhóm trách nhiệm), mục tiêu 5 bỏ “Quản trị viên”; 1.3 đoạn “Người dùng” dẫn sang Chương 4; 2.3 và Bảng 2.1 bỏ “cấp quản lý”. Quy ước: vai trò định nghĩa lần đầu ở 4.1 | REVIEW |
+| 2026-09-28 | C1.2 (đánh giá lại) | Rút từ 6 xuống 5 mục tiêu ở mức “đạt được gì”: bỏ liệt kê trường hiển thị, bộ lọc camera/thời gian và 6 chức năng quản trị (để dành 4.2); bỏ câu lý giải thiết kế ở mục tiêu 1; gộp quản trị vào mục tiêu “vận hành an toàn trong môi trường nhiều người dùng”; mục tiêu tổng quát nêu rõ trọng tâm mô tả đa phương thức. Mỗi mục tiêu cần đối chiếu lại ở 9.1 | REVIEW |
+| 2026-09-28 | C1.1 | Theo câu hỏi của SV: “sở hữu lượng lớn video từ hệ thống camera” → “vận hành hệ thống camera ghi hình liên tục, tích lũy một lượng lớn dữ liệu hình ảnh” (khớp việc hệ thống xử lý luồng camera); giữ “xem lại từng đoạn video đã ghi” cho cách làm thủ công | REVIEW |
+| 2026-09-28 | C1.3 đoạn Dữ liệu camera | “phát lại video” → “phát video thành các luồng RTSP”; “mỗi camera thuộc một khu vực” → “được gán vào một khu vực … để thể hiện phân quyền” (khu vực do đề tài gán, không có sẵn trong bộ dữ liệu); “góc nhìn chồng lấn” → “cùng quan sát một địa điểm” (khớp 1.4, tránh ngụ ý liên kết xuyên camera); nêu rõ không xử lý đồng thời; thêm câu luồng giả lập có thể thay bằng camera thật | REVIEW |
+| 2026-09-28 | C1.4 | Câu hỏi bảo vệ “2 camera kết nối liên tục thì chỉ một cam được xử lý?”: đọc rtsp_scheduler.py — xử lý luân phiên round-robin, mỗi phiên 1.800 khung nguồn (~30 s ở 59,94 fps), camera lỗi cooldown 5 phút; hệ quả: hình ảnh của camera chưa tới lượt không được phân tích. Sửa mục hạn chế “Tốc độ xử lý…” thành “Không phân tích liên tục toàn bộ các camera” nêu rõ khoảng trống dữ liệu. Ghi chú: C3.4/C5.2.1 và C8.6 cần mô tả cơ chế luân phiên và độ phủ | REVIEW |
+| 2026-09-28 | Đồng bộ với 3 file nguồn | SV cập nhật requirements/usecase/architect. Sửa báo cáo: bộ thuộc tính mở rộng (1.1, 1.3, 1.4, Bảng 2.1, 2.3, Bảng 3.1); 1.3 thêm dữ liệu demo lập chỉ mục từ tệp video do CPU không kịp thời gian thực; 1.4 hạn chế đầu viết lại theo kết quả đánh giá (văn bản/thuộc tính kém hơn ảnh do khác miền), thêm chậm hơn thời gian thực, thêm không có phủ định; 3.1.6 thêm lưu ý khác miền. Plan: tên vai trò theo giao diện (Giám sát viên, Quản lý, vụ việc), Case có trạng thái, thuộc tính, xử lý AI, mô hình (BoT-SORT), thêm hàng Tên ứng dụng PRISM và Kết quả đánh giá | REVIEW |
+| 2026-09-28 | C3.1.1 | Câu “Trong video thực tế…” sửa: nêu rõ đối lập với giả định gallery gồm ảnh đã cắt (như bộ dữ liệu chuẩn ReID), chủ thể là người cần lập chỉ mục (không phải ảnh truy vấn); tách hai khái niệm: hướng một bước (Xiao 2017) và hai bước (thêm Zheng 2017, đã xác minh Crossref) — đề tài theo hướng hai bước; còn “lập chỉ mục trước, truy vấn sau” là cách tổ chức hệ thống, dẫn sang 3.1.6. Bỏ khẳng định “các hệ thống thường…” không có nguồn | REVIEW |
+| 2026-09-28 | C3.1.4 | Viết lại: ví dụ thuộc tính theo bộ mới; tách 2 cách tiếp cận (nhận dạng thuộc tính rồi lọc / chuyển thành câu mô tả), đề tài dùng cách 2; thêm ví dụ câu sinh ra (dựng đúng theo attributes_prompt: “A woman wearing a red jacket and blue jeans, carrying a handbag.”); thêm 3 đánh đổi (không lọc cứng, phụ thuộc bộ mã hóa văn bản, không phủ định). **Còn 2 \nhap chờ trích dẫn** (khảo sát PAR; nghiên cứu phủ định ở mô hình kiểu CLIP) — công cụ web hết hạn mức đến 30/09, chưa kiểm chứng được nguồn | REVISING |
+| 2026-09-28 | C3.1.4 (bổ sung nguồn) | Điền 2 trích dẫn còn thiếu: Wang et al. 2022 “Pedestrian attribute recognition: A survey”, Pattern Recognition 121:108220 (xác minh Crossref); Alhamoud et al. “Vision-Language Models Do Not Understand Negation”, CVPR 2025 (xác minh qua arXiv 2501.09425; chưa có số trang). Câu về phủ định sửa cho khớp kết luận bài báo (khó khăn đáng kể, nhiều trường hợp ở mức ngẫu nhiên) thay vì “bỏ qua từ phủ định, so khớp theo danh từ” | REVIEW |
+| 2026-09-28 | C3.1.4 (bổ sung nguồn) | Điền 2 trích dẫn còn thiếu: Wang et al. 2022 “Pedestrian attribute recognition: A survey”, Pattern Recognition 121:108220 (xác minh Crossref); Alhamoud et al. “Vision-Language Models Do Not Understand Negation”, CVPR 2025 (xác minh qua arXiv 2501.09425; chưa có số trang). Câu về phủ định sửa cho khớp kết luận bài báo (khó khăn đáng kể, nhiều trường hợp ở mức ngẫu nhiên) | REVIEW |
+| 2026-09-28 | C3.1.6 “Hai giai đoạn tách biệt” | Bỏ “độ dài video” (hệ thống xử lý luồng liên tục) và “không phụ thuộc” (quá mạnh); thay bằng: truy vấn không cần xử lý lại hình ảnh, thời gian phản hồi chủ yếu phụ thuộc số lần xuất hiện đã lập chỉ mục, tăng chậm nhờ chỉ mục tìm kiếm gần đúng (3.6 phải trình bày HNSW để hỗ trợ ý này) | REVIEW |
+| 2026-09-28 | C3.3 Theo vết nhiều đối tượng | Viết mới (5 tiểu mục): bài toán MOT, tracking-by-detection; thành phần cơ bản theo SORT (Kalman, IoU, Hungary); ByteTrack hai bước liên kết; BoT-SORT (tắt ReID, bù chuyển động camera); vòng đời track khớp config (ngưỡng cao 0,25 / thấp 0,1, xác nhận ≥2 quan sát, kết thúc khi mất dấu >3 khung được xử lý hoặc >2 s theo thời gian nguồn, flush cuối luồng, ID trong phạm vi camera/phiên). Nguồn: ByteTrack (bổ sung trang/DOI), SORT, Kalman 1960, Kuhn 1955 — đã xác minh Crossref. Hình H11 chờ SV vẽ | REVIEW |
+| 2026-09-28 | Hình H11 | SV không chuyên AI, không tự vẽ được; hình chỉ minh họa lại nội dung đã có dạng danh sách nên bỏ hình và câu dẫn tới hình ở 3.3.3 | DONE |
+| 2026-09-28 | Quy trình sơ đồ | SV tự vẽ trên draw.io/Canva, Claude không tạo hình. Viết `figures/README.md` (quy trình, 2 loại ký hiệu: UML/ERD chuẩn vs bộ ký hiệu khối theo yêu cầu thầy, bảng màu, font, xuất ảnh) và đặc tả mẫu `specs/H2-kien-truc.md` (4 cột + tầng lưu trữ, 20 khối, 24 mũi tên có nhãn, chú giải, điểm đối chiếu code) | DONE |
+| 2026-09-28 | C3.3.5 Kết thúc track | Câu “theo thời gian của video nguồn… không phụ thuộc tốc độ xử lý” chỉ đúng với tệp video (PTS); RTSP lấy mốc theo đồng hồ lúc worker đọc khung (rtsp.py) nên phụ thuộc tốc độ xử lý và có thể kết thúc track sớm khi CPU chậm. Sửa báo cáo mô tả đúng cả hai nguồn; ghi vấn đề + đề xuất (dùng PTS/RTP hoặc chỉ điều kiện số khung cho RTSP) vào architect.md mục 13 #7 | REVIEW |
+| 2026-09-28 | C3.4 Lấy mẫu khung hình | Viết mới (4 tiểu mục): sự cần thiết (≈60 fps, khung liên tiếp cách ~17 ms); quy tắc i mod N = 0, giữ chỉ số và mốc thời gian gốc, công thức f/N và N/f (N=10: ~6 khung/s, 0,17 s; N=20: ~3 khung/s, 0,33 s); đánh đổi (giảm ~N lần số lần chạy mô hình nhưng vẫn giải mã mọi khung; bỏ sót người xuất hiện ngắn hơn ~2 khoảng lấy mẫu do quy tắc xác nhận 2 lần; track dễ đứt); trong hệ thống: baseline N=10, throughput N=20 mặc định (dẫn 8.5), Admin không nhập N tùy ý, job lưu N; RTSP đếm trên khung nhận được. Khớp workers/sampling.py | REVIEW |
+| 2026-09-28 | C3.4.3 Chi phí xử lý | SV hỏi vì sao “lấy mẫu sau giải mã” trong khi lấy mẫu phải trước phát hiện: viết lại nêu rõ thứ tự đọc → giải mã → lấy mẫu → phát hiện/theo vết/mã hóa, lấy mẫu giảm ~N lần số lần chạy mô hình AI; giải mã vẫn phải làm cho mọi khung vì video nén lưu phần lớn khung dưới dạng thay đổi so với khung trước | REVIEW |
+| 2026-09-28 | C3.4.3 | SV hỏi RTSP có gọi là “video nén” không: có — RTSP chỉ là giao thức truyền/điều khiển, dữ liệu trong luồng là H.264; scripts/rtsp.ps1 dùng `-c copy` nên luồng mang nguyên H.264 của tệp (manifest: 7/7 video h264). Sửa câu nêu rõ áp dụng cho cả tệp và RTSP, dẫn tới 3.7; ghi chú yêu cầu nội dung vào đầu 3.7.tex | REVIEW |
+| 2026-09-28 | C3.5 Học biểu diễn chung ảnh–văn bản | Viết mới (4 tiểu mục): không gian biểu diễn chung + cosine (eq:cosine, L2 → tích vô hướng); học tương phản (eq:contrastive), CLIP, ALBEF (căn chỉnh trước khi kết hợp, mô hình động lượng); RaSa: kiến trúc 12/6/6 lớp, học tương phản trong/giữa phương thức (IMC → cơ sở cho ảnh→ảnh), Relation-Aware (cặp dương mạnh/yếu, p-ITM + PRD), Sensitivity-Aware (MLM + m-RTD), truy vấn hai bước top-128 + ITM, R@1 76,51 / mAP 69,38; trong hệ thống: checkpoint CUHK-PEDES, 384×384, 256 chiều L2, ba kiểu truy vấn cùng không gian, rerank ITM tắt (AIW-15), ảnh→ảnh là lựa chọn của đề tài, domain gap dẫn 8.4. Nguồn đã xác minh: RaSa (toàn văn IJCAI), CLIP (ICML/PMLR 139), ALBEF (NeurIPS 34). Không có hình | REVIEW |
+| 2026-09-28 | C3.6 Tìm kiếm vector | Viết mới (4 tiểu mục): kNN với tích vô hướng trên vector L2, vét cạn O(n·d); ANN + HNSW (đồ thị lân cận, tìm tham lam, phân tầng, độ phức tạp logarit theo Malkov — hỗ trợ 3.1.6), tham số M/efConstruction/ef; lọc sau vs lọc trước, Milvus lọc trước (docs filtered search); trong hệ thống: schema Milvus, IP, M=16/efC=128/ef=64, quy trình 4 bước (phạm vi camera đang hoạt động, lọc khu vực/camera/thời gian/READY, top_k {4,8,12,16}, Matching Score không lưu, đối chiếu PostgreSQL và bù nhân đôi tối đa 3 lượt → limit ≤ 64 = ef); nói rõ ~1.500 track thì vét cạn vẫn đủ, HNSW để mở rộng; dẫn 6.1.3. Khớp storage/milvus/vectors.py, services/track_search.py. Nguồn: HNSW (Crossref, bổ sung DOI), Milvus SIGMOD 2021 (Crossref, bổ sung đủ tác giả/trang/DOI), 2 trang tài liệu Milvus | REVIEW |
+| 2026-09-28 | C3.6.3, C3.4.4 | SV góp ý: 3.6.3 là lý thuyết nhưng lại nêu quyền của Giám sát viên. Thay bằng ví dụ chung (người dùng hệ thống giám sát chỉ được tìm trong một phạm vi / khoảng thời gian); phần lọc cụ thể của hệ thống giữ ở 3.6.4. Rà cả chương 3: 3.4.4 cũng dùng “Quản trị viên” → bỏ tên vai trò. Quy tắc: tên vai trò chỉ xuất hiện từ 4.1; ở chương 3, các tiểu mục “… trong hệ thống” chỉ mô tả cơ chế, không mô tả phân quyền theo vai trò | REVIEW |
+| 2026-09-28 | C3.7 Giao thức RTSP và giả lập luồng camera | Viết mới (4 tiểu mục): video nén H.264 (khung I/P/B, GOP → lý do giải mã mọi khung, nối 3.4.3; ví dụ 1080p60 chưa nén ≈370 MB/s); RTSP là giao thức điều khiển (DESCRIBE/SETUP/PLAY/TEARDOWN, trích RFC 2326 “network remote control”), RTP mang dữ liệu (số thứ tự, dấu thời gian, H.264 theo RFC 6184, đồng hồ 90 kHz), UDP vs TCP xen kẽ; RTSP 2.0 bỏ ANNOUNCE/RECORD nên công cụ đẩy luồng dùng 1.0; giả lập: MediaMTX + FFmpeg -re / -stream_loop -1 / -c copy (tài liệu FFmpeg: không giải mã/mã hóa lại, không giảm chất lượng), giống/khác camera thật; trong hệ thống: PyAV, TCP cả hai phía, timeout 8 s, kết nối lại ≤3 lần (0,25 s nhân đôi, ≤2 s), dải mạng cho phép (chặn loopback/link-local), URL không kèm thông tin đăng nhập + bí mật mã hóa, mốc thời gian theo đồng hồ worker (nối 3.3.5); lập lịch để 5.2.1, số đo để 8.6. Khớp scripts/rtsp.ps1, infra/compose.yaml, workers/sources/rtsp.py, services/camera_runtime.py. Nguồn: RFC 2326/3550/6184/7826 (rfc-editor, có DOI), Wiegand 2003 (Crossref), FFmpeg (ffmpeg -h full + trang tài liệu), MediaMTX GitHub. Không có hình | REVIEW |
+| 2026-09-28 | Rà soát toàn chương 3 (SV duyệt 11 mục) | (1) Sửa mô tả domain gap sai “CUHK-PEDES rõ nét, chính diện”: CUHK-PEDES gom từ 5 bộ ReID có sẵn (ảnh một người cắt gọn + mô tả viết riêng) vs ảnh đề tài cắt tự động từ khung toàn cảnh khu vực đông người, bị che khuất — sửa 3.5.4, 1.4, §2.1 của plan; (2) 3.1.1 $g_N$→$g_n$; (3) 3.4.2 $k$→$j$; (4) rút gọn 3.1.6 ý 1, dẫn 3.5.4; (5) rút gọn giải thích video nén ở 3.4.3, dẫn 3.7.1; (6) 3.4.4 dẫn thêm 3.7.3; (7) 3.7.4 “Thành phần xử lý nền của hệ thống (AI worker, Mục 5.2)”; (8) sửa thứ tự trong đoạn mở đầu chương; (9) 3.6.4 “khoảng 1.500 track”; (10) danh mục viết tắt thêm ALBEF, AVC, CLIP, COCO, GOP, IoU, mAP, NMS, RaSa, RTP, SORT, TCP, UDP, YOLO; (11) IP = Internet Protocol, quy ước viết “tích vô hướng (inner product)” (§2.2) | REVIEW |
+| 2026-09-28 | C4.1 Các tác nhân | Viết mới: giới thiệu 3 tác nhân với tên giao diện + tên tiếng Anh (lần đầu nêu tên vai trò); định nghĩa khu vực giám sát (danh mục khai báo sẵn, camera thuộc đúng 1 khu vực, không đổi) và vụ việc (tiêu đề, ghi chú, Đang xử lý/Hoàn thành, không gắn khu vực); 4.1.1 Quản trị viên (tài khoản, camera, AI, Detector/Tracker toàn hệ thống, theo dõi, audit; mặc định không tìm kiếm/xem vụ việc — theo ma trận architect §7 “Không mặc định”; không đổi encoder, khu vực camera; Admin khởi tạo khi triển khai, UI chỉ gán Operator/Viewer); 4.1.2 Giám sát viên (tìm kiếm 3 hình thức, top_k, đánh giá, vụ việc; phạm vi khu vực vs phạm vi vụ việc, đổi khu vực vẫn giữ vụ việc cũ); 4.1.3 Quản lý (dashboard, xem mọi vụ việc lọc trạng thái, chỉ đọc, không có điểm phù hợp, không giới hạn khu vực); 4.1.4 Bảng 4.1 + 4 nguyên tắc (tách quyền kỹ thuật/nghiệp vụ, quyền tối thiểu, phân quyền do máy chủ, dữ liệu độc lập vòng đời tài khoản); camera và xử lý nền không phải tác nhân. Sửa dòng C4.1 ở §5 theo tên giao diện | REVIEW |
+| 2026-09-28 | C4.1 định nghĩa vụ việc | SV hỏi “vụ việc không gắn với khu vực” có đúng không (vụ việc → Operator → khu vực). Đúng theo spec (requirements mục 2, 4; architect mục 5 ý 5, bảng Case không có area_id): liên hệ chỉ gián tiếp và thay đổi được khi Operator đổi khu vực, vụ việc có thể chứa kết quả nhiều khu vực, quyền theo người phụ trách. Viết lại định nghĩa: gắn với người phụ trách, không gắn trực tiếp với khu vực, nêu lý do và hệ quả | REVIEW |
+| 2026-09-28 | C4.2 Yêu cầu chức năng | Viết mới 35 yêu cầu có mã: FR-C01–02 (đăng nhập/đăng xuất, phiên 12 h/30 phút), FR-A01–11 (tài khoản, khu vực, camera + kiểm tra RTSP/Offline, loại/đưa lại vận hành, bật/tắt AI, tải video dự phòng, Detector/Tracker, trạng thái, chẩn đoán 2 nhóm, audit), FR-O01–14 (3 hình thức tìm kiếm, phạm vi, top_k, hiển thị kết quả dạng track, full frame, sắp xếp/lọc lại, tạo/thêm vụ việc, đánh dấu hoàn thành khi lưu, sửa/loại, hoàn thành/mở lại, xem vụ việc sau khi đổi khu vực), FR-V01–04 (dashboard, danh sách lọc trạng thái/ngày tạo/người phụ trách, chi tiết, kết quả không có điểm), FR-S01–04 (phiên RTSP xoay vòng, pipeline, lưu + READY, ghi phiên bản). Đối chiếu UI: sắp xếp/lọc kết quả, bộ lọc vụ việc, trang tải video; API camera che thông tin xác thực (rtsp_url_masked). Thêm môi trường `reqlist` vào main.tex | REVIEW |
+| 2026-09-28 | C4.3 Yêu cầu phi chức năng | Viết mới 23 yêu cầu NFR-01–23 (7 nhóm). Không đặt con số mục tiêu hiệu năng mà spec không có; số đo để Chương 8. Đã đối chiếu code: Argon2, cookie HttpOnly/SameSite=Lax, CSRF, giới hạn tần suất login/search/upload/connection_test/diagnostics, ảnh truy vấn ≤ 10 MB, video ≤ 500 MB + kiểm tra chữ ký tệp, lỗi 500 trả thông báo chung, audit che trường nhạy cảm, version cho cập nhật đồng thời. Phát hiện: architect §13 mục 3 vẫn mô tả CUHK-PEDES “ảnh crop rõ, chính diện” → SV duyệt, đã sửa architect.md cho khớp báo cáo (5 bộ ReID, ảnh cắt gọn + mô tả riêng vs ảnh cắt tự động từ khung toàn cảnh đông người) | REVIEW |
+| 2026-09-28 | C4.4 Sơ đồ use case tổng thể | Viết mới: khung giữ chỗ Hình 4.1 (H1), 4 ý giải thích (tác nhân trừu tượng Người dùng + tổng quát hóa cho UC-01/15; phân chia theo vai trò, không dùng chung UC giữa 3 tác nhân; 4 quan hệ «extend» UC-10→09, 11→10, 13→12, 14→13 theo các câu “chuyển sang” trong usecase_detail; không vẽ «include» tới đăng nhập), vì sao FR-S không thành use case, Bảng 4.2 danh sách 15 use case. Viết đặc tả `figures/specs/H1-use-case.md` (ký hiệu UML chuẩn, bố cục 3 vùng, 3+15+4 đường nối, điểm đối chiếu) | REVIEW |
+| 2026-09-28 | Quy trình sơ đồ (thay đổi) | SV thấy đọc đặc tả rồi tự vẽ tốn thời gian; chọn cách 1: Claude tạo sẵn `.drawio` bằng hình chuẩn của draw.io (không Mermaid/PlantUML), SV chỉnh tay rồi xuất PNG. Tạo `figures/H1-use-case.drawio` (ranh giới hệ thống, 4 tác nhân, 15 use case, 15 liên kết, 3 tổng quát hóa kiểu cây, 4 «extend»). Cập nhật §2.3, §7 và `figures/README.md` | DONE |
+| 2026-09-28 | H1 xem trước | SV cài draw.io desktop (Microsoft Store 31.5.3); Claude dùng CLI xuất ảnh xem trước để tự kiểm tra. Sửa H1 qua 3 lần xem: nối đường vào mép trái/phải elip (hết cắt qua elip), thu hẹp khoảng giữa hai cột, đường UC-01/15 xuất phát từ tay tác nhân (không đè chữ “Người dùng”). Ghi cách xuất ảnh vào `figures/README.md` | DONE |
+| 2026-09-28 | H1 | SV duyệt bản xem trước, không chỉnh thêm. Xuất `H1-use-case.png` (200%, border 10), thay khung giữ chỗ Hình 4.1 bằng ảnh | DONE |
+| 2026-09-28 | H1 cỡ chữ | SV thấy chữ trong hình nhỏ so với thân bài (bản cũ: chữ 15 px trên hình rộng ~1.210 px → ~5,5pt ở khổ 16 cm). Dựng lại: chữ 24 px, tên dài ngắt 2 dòng, elip 290×110, nhãn Người dùng trên đầu, nhãn Quản trị viên bên trái, hạ Giám sát viên/Quản lý để đường nối không cắt chữ; hình ~1.190 px → chữ ~9pt. Quy tắc cho mọi sơ đồ: cỡ chữ px × 16 cm / chiều rộng hình px ≥ ~9pt | DONE |
+| 2026-09-28 | C4.5 Đặc tả use case | Viết mới bằng script `report/tools/usecase_to_tex.py`: đọc bảng của 15 UC trong usecase_detail.md, giữ nguyên nội dung, đổi thuật ngữ (Operator/Admin/Viewer → tên giao diện, Case → vụ việc, Matching Score → điểm phù hợp, Image/Text Encoder → bộ mã hóa ảnh/văn bản, crop/frame/bounding box → cắt/khung hình/khung bao, backend/request → máy chủ/yêu cầu, top_k → số lượng kết quả), mỗi ngoại lệ/luồng thay thế một dòng để longtable ngắt trang được, dòng “Yêu cầu liên quan” nối FR. Đã đọc toàn bộ đầu ra và sửa luật: viết hoa sau “--”, bỏ “(vụ việc)” lặp, “tối đa số lượng kết quả đã chọn”, “từng bộ mã hóa”, “yêu cầu gửi tới máy chủ”; đánh số tay với thụt lề treo (enumerate trong ô để lại dòng trống). Phần Ghi chú của nguồn không đưa vào (đã có ở 4.2/4.3, sẽ tổng hợp ở 4.7). Lưu script sinh H1 vào `report/tools/h1_use_case_drawio.py` | REVIEW |
+| 2026-09-28 | Định dạng bảng (toàn báo cáo) | SV thấy cỡ chữ/giãn dòng bảng không đồng bộ: có 4 kiểu (Bảng 2.1 footnotesize+đơn; 3.1, 4.1 small+1,5; 4.2 và 4.3–4.17 small+đơn; viết tắt cỡ thường+1,5). SV chọn cách 1: một kiểu chung `\tablestyle` (small, giãn đơn, arraystretch 1,3, caption cỡ thường) áp qua etoolbox cho table và longtable; bỏ mọi chỉnh riêng. Hệ quả đã xử lý: Bảng 2.1 tràn đè số trang → chuyển longtable 5 cột p{} có lặp tiêu đề; bảng UC để trống nửa trang vì ô Luồng chính không ngắt được → mỗi bước một hàng. SV đề xuất bỏ dòng “Yêu cầu liên quan” (hội đồng khó tra mã FR) → đồng ý, bỏ (4.2 đã ghi UC ở cuối mỗi FR). Đã xem PDF các trang 13–14, 21, 68–69 | DONE |
+| 2026-09-28 | C4.6, bỏ C4.7 | SV hỏi 4.6/4.7 có cần không. Giữ 4.6 (ma trận là chỗ duy nhất nêu phạm vi dữ liệu theo vai trò, căn cứ kiểm thử phân quyền ở 8.3); bỏ 4.7 vì mọi quy tắc dự kiến đã có ở 4.1/4.2/4.3 (FR-A03, A05, O02, O03, O05, O10, O13, O14, V04, NFR-07). Viết 4.6: Bảng 4.18 + 3 nguyên tắc. Xóa 4.7.tex và \input, sửa câu giới thiệu chương 4, đoạn mở đầu 4.5 (dẫn 4.2, 4.3, 4.6 thay cho 4.7) qua script, chú thích reqlist | REVIEW |
+| 2026-09-28 | C4.6 | SV phát hiện “Theo đặc tả kiến trúc” (tài liệu nội bộ architect.md, dễ hiểu nhầm là Chương 5) → sửa thành “Như đã nêu ở Mục 4.1.1”. Rà toàn bộ báo cáo: không còn nhắc tài liệu nội bộ (architect/requirements/usecase_detail); “Theo đặc tả” ở 3.7 là RFC 2326 đã trích dẫn, giữ. Quy tắc: thân báo cáo không nhắc tới 3 file spec nội bộ, chỉ dẫn mục trong báo cáo hoặc nguồn đã trích dẫn | DONE |
+| 2026-09-28 | Rà soát chương 4 (SV duyệt 1, 2, 4, 5) | (1) 4.1: tên tiếng Việt dùng trong toàn báo cáo, tiếng Anh ghi kèm (sửa quy ước §2.2 theo thực tế bảng/sơ đồ); (2) 4.1.3 bộ lọc vụ việc của Quản lý khớp FR-V02/UC-13; (4) 4.1.2 “camera đang vận hành thuộc khu vực” khớp FR-O04/4.6; (5) NFR-16 “nhiều luồng camera” thay “bảy luồng”; sửa ghi chú đầu 4.2.tex. Mục 3 (thêm tải video vào 4.1.1) rút lại | REVIEW |
+| 2026-09-28 | FR-A07 tải video | SV cho biết tải video là công cụ chuẩn bị dữ liệu trình diễn (máy CPU không xử lý kịp RTSP); đã xác minh chức năng có thật (menu “Xử lý video” /admin/videos, API POST /admin/cameras/{id}/processing-jobs, chỉ Admin). SV quyết định **giữ** trong báo cáo (có thể bỏ sau nếu RTSP ổn định). Sửa FR-A07 nêu rõ mục đích: nạp dữ liệu từ tệp ghi sẵn, dùng để chuẩn bị dữ liệu trình diễn, dẫn 1.3. Chương 7 phải mô tả cách chuẩn bị dữ liệu trình diễn bằng công cụ này. Không sửa 3 spec | DONE |
+| 2026-09-28 | C5.1 Thiết kế kiến trúc + H2 | Tạo H2 bằng script (4 lần xem trước): bố cục 2 cột dọc (trái lập chỉ mục, phải tìm kiếm, lưu trữ phía dưới) để chữ ~9pt; gộp khung Máy chủ ứng dụng vào container Flask API; hàng đợi = hình Direct data; biểu tượng bộ não/camera/bucket SVG nhúng; mũi tên vào kho không nhãn; chú giải đủ 8 ký hiệu + 3 kiểu đường. Cập nhật specs/H2. Viết 5.1: Hình 5.1; 5.1.1 năm nhóm thành phần; 5.1.2 hai luồng (lập chỉ mục PENDING→READY, tìm kiếm); 5.1.3 bảy nguyên tắc (tách AI khỏi API — 6,7 s/giây video; hàng đợi trong PostgreSQL + giữ chỗ 60 s/báo hiệu, nhận lại khi hết hạn — đã xác minh services/jobs.py claim(); tuần tự một camera; mỗi kho một loại dữ liệu, PostgreSQL quyết định quyền/trạng thái; mọi truy cập qua API; dùng chung bộ mã hóa, encoder truy vấn trong tiến trình API — app.py InProcessQueryEncoder; dùng chung quy trình RTSP/tệp) | REVIEW |
+| 2026-09-28 | C5.2 Các luồng xử lý chính + H7, H4 | Viết 5.2: 5.2.1 tạo công việc (bộ lập lịch: hàng đợi trống, camera lâu nhất chưa xử lý, 1.800 khung/phiên ≈ 30 s, bỏ qua camera lỗi 5 phút; tệp tải lên), vòng đời công việc (Hình 5.2, giữ chỗ 60 s, thử lại tối đa 3 lần — lỗi nguồn/mô hình/kho theo workers/errors.py, hủy), 7 bước xử lý (cắt tạm nới 5%, ghi 3 kho PENDING→READY); 5.2.2 bộ chọn khung hình đại diện (K=3, 256 MB, lọc cứng, điểm 5 tiêu chí + phạt, đánh dấu chất lượng thấp); 5.2.3 luồng tìm kiếm (Hình 5.3; kiểm tra đầu vào, phạm vi, mã hóa, lọc trước + tìm lại; ảnh lấy riêng qua kiểm tra quyền, nới khung/làm tối); 5.2.4 vụ việc (kiểm tra READY + camera vận hành thuộc khu vực hiện tại + vụ việc OPEN của mình; bản chụp; số phiên bản chống ghi đè; khóa khi hoàn thành; đánh dấu khi lưu = 2 yêu cầu; ảnh theo quyền vụ việc). H7, H4 sinh bằng script, xem trước 3/2 lần, chữ ~9,7pt/8,7pt. Bỏ H3; đề xuất bỏ H5 | REVIEW |
+| 2026-09-28 | H3 lưu đồ xử lý | SV muốn giữ H3. Làm dạng lưu đồ để khác Hình 5.1: vòng lặp đọc khung, rẽ nhánh (hết nguồn/đủ khung/hủy; i mod N = 0; lần xuất hiện vừa kết thúc), dữ liệu trung gian (hình bình hành), nhánh phải chọn → cắt → mã hóa → ghi 3 kho → quay về; chú giải góc dưới trái. 3 lần xem trước, chữ ~8,7pt. Chèn vào 5.2.1 trước danh sách bước + câu nêu trường hợp không vẽ (kết thúc các lần xuất hiện còn dở khi nguồn hết, dẫn 3.3.5). Số hình chương 5: 5.1 kiến trúc, 5.2 trạng thái công việc, 5.3 lưu đồ, 5.4 tuần tự tìm kiếm | REVIEW |
+| 2026-09-28 | H5 tuần tự vụ việc | SV muốn thêm H5. Sơ đồ tuần tự 4 đường sống (Giám sát viên, ứng dụng web, máy chủ, PostgreSQL): khung alt [tạo mới | thêm vào vụ việc đã có], kiểm tra lần xuất hiện + tạo mục kết quả có bản chụp + nhật ký, trả số phiên bản; khung opt [đánh dấu hoàn thành khi lưu] = yêu cầu thứ hai kèm số phiên bản. Khớp api/v1/cases.py, services/cases.py. 3 lần xem trước, chữ ~9,4pt. Chèn đầu 5.2.4 (Hình 5.5) | REVIEW |
+| 2026-09-28 | C5.3.1 CSDL quan hệ + H8 | Đọc 12 model + đối chiếu 13 migration. Lập bảng quan hệ từ FK (nullable → phía cha 0..1: areas→users, users→processing_jobs, users→audit_logs; còn lại 1; phía con 0..N; RESTRICT trừ auth_sessions và case_results CASCADE, audit SET NULL). ERD 11 bảng ký hiệu chân quạ (worker_heartbeats không FK, nêu trong văn bản), trang ngang qua lscape + afterpage, chữ ~9,3pt. Viết 5.3.1: Bảng 5.1 nhóm bảng; quan hệ bắt buộc/không bắt buộc; case_results tách N–N, không unique (case_id, track_id); ràng buộc (CHECK vai trò–khu vực, RESTRICT, READY đủ tệp + vector, closed_at ⇔ CLOSED, một cấu hình ACTIVE, không cột điểm, version, idempotency, bất biến kiểm tra ở tầng ứng dụng); chỉ mục; từ điển dữ liệu 6 bảng nghiệp vụ (Bảng 5.2–5.7) + Bảng 5.8 bảng vận hành. Sửa theo code: tài khoản không bị xóa dòng (khóa/INACTIVE; DELETED dự phòng), camera RETIRED (INACTIVE dự phòng). Thêm kiểu cột P{} và gói afterpage vào main.tex; tên bảng/cột dài dùng \path (xurl) để ngắt dòng | REVIEW |
+| 2026-09-28 | C5.3.2 Lưu trữ vector | Viết mới: một collection cho mỗi phiên bản bộ mã hóa (person_track_embeddings_<phiên bản>, NFR-09), kiểm tra số chiều khi tiến trình xử lý nền khởi động (ensure_collection trong workers/production_main.py), bí danh person_track_embeddings_active; Bảng lược đồ 7 trường; lý do sao chép area_id (camera không đổi khu vực) nhưng không sao chép trạng thái camera (lọc bằng tập camera đang vận hành lấy từ PostgreSQL → ẩn/hiện ngay, FR-A05); HNSW/IP M=16/128, ef=64; upsert theo track_id (thử lại không trùng); kiểm tra số chiều, giá trị, chuẩn L2; nhất quán Strong. Không lặp quy trình tìm kiếm (dẫn 3.6.4) | REVIEW |
+| 2026-09-28 | C5.3.3 Lưu trữ khung hình | Viết mới: chỉ lưu khung hình toàn cảnh JPEG q90 (không lưu ảnh cắt, không lưu video — tệp tải lên bị xóa sau công việc), 3 lợi ích của cắt động; khóa đối tượng xác định tracks/v1/<camera>/<năm>/<tháng>/<ngày>/<track>/representative.jpg; kiểm tra toàn vẹn (định dạng, ≤ 20 MB, kích thước khớp, SHA-256 lưu ở MinIO + PostgreSQL, trùng mã băm → dùng lại, khác → xung đột, kiểm tra lại khi đọc); bảo mật (bucket riêng tư, không ẩn danh, tài khoản ứng dụng chỉ có quyền trên bucket này, Milvus dùng chung máy chủ MinIO nhưng bucket khác, trình duyệt không truy cập trực tiếp). Khớp storage/minio/frames.py, contracts.py, publication.py, infra/compose.yaml, infra/minio | REVIEW |
+| 2026-09-28 | C5.3.4 Nhất quán ba kho + H6 | Viết mới: vấn đề (không có giao dịch chung); trạng thái lần xuất hiện (Hình 5.7, 6 chuyển trạng thái theo ALLOWED_TRACK_TRANSITIONS, CHECK READY); thứ tự ghi 4 bước (PG PENDING + outbox cùng giao dịch — transactional outbox, payload có vector; MinIO; Milvus + đọc lại xác nhận; PG READY) và 2 tính chất (PG trước → phát hiện mồ côi; READY cuối → chỉ tìm được khi đủ), lặp lại an toàn; thử lại (2 s nhân đôi ≤ 300 s, 5 lần; lỗi không phục hồi: xung đột mã băm, dữ liệu không hợp lệ → FAILED, outbox DEAD, nhật ký); công cụ bảo trì retry-outbox / reconcile (mặc định chỉ báo cáo, cách ly, xóa mồ côi) / requeue-track / reindex — nói rõ chạy thủ công, chưa tự động; lớp bảo vệ khi tìm kiếm (đối chiếu PG, 3.6.4) | REVIEW |
+| 2026-09-28 | C5.4 Thiết kế API | SV duyệt giữ 5.4–5.6 bản gọn. Viết 5.4 từ code api/: 5.4.1 quy ước (tiền tố /api/v1, tài nguyên danh từ, nhóm /admin, hành động tường minh retire/lock/cancel, JSON + multipart, định dạng lỗi {code, message, details, request_id} + X-Request-ID, Bảng mã HTTP 200/201/202/401/403/404/409/422/429/503, phân trang con trỏ cho vụ việc, version → 409, Idempotency-Key); 5.4.2 Bảng 10 nhóm API × vai trò × UC + /health/live, /ready, /storage; 5.4.3 năm quyết định (phạm vi lấy từ phiên, 3 API tìm kiếm 1 dạng phản hồi, ảnh tách khỏi dữ liệu, hai bộ đường dẫn ảnh theo hai căn cứ quyền, 202 cho tác vụ dài). Lỗi phát hiện khi viết: \path bỏ dấu cách → tách phương thức ra \texttt | REVIEW |
+| 2026-09-28 | C5.5 Thiết kế bảo mật | Viết mới từ code: 5.5.1 xác thực (Argon2, ≥ 8 ký tự, băm giả khi không có tài khoản, thông báo giống nhau; mã phiên 32 byte trong cookie HttpOnly/SameSite=Lax/Secure, DB chỉ lưu SHA-256; thu hồi phiên cũ khi đăng nhập lại; kiểm tra mỗi yêu cầu: thu hồi, 12 h, 30 phút, tài khoản ACTIVE, Operator có khu vực; làm mới cấp mã mới chỉ khi có thao tác thật); 5.5.2 CSRF = HMAC-SHA256 từ mã phiên qua X-CSRF-Token, CORS danh sách nguồn, tiêu đề bảo mật; 5.5.3 phân quyền 3 lớp (vai trò → 403, phạm vi → 404 để không lộ sự tồn tại, ràng buộc DB); 5.5.4 ảnh qua máy chủ, Fernet cho thông tin xác thực RTSP (khóa ở biến môi trường), chống SSRF (chỉ IP literal thuộc dải cho phép, chặn loopback/link-local/multicast); 5.5.5 Bảng giới hạn tần suất (login 10 theo IP + tên, search 30, upload 10, kiểm tra kết nối 10, chẩn đoán 6 mỗi phút; bộ đếm trong bộ nhớ — hạn chế khi nhiều tiến trình), kiểm tra tệp tải lên, che trường nhạy cảm. **Phát hiện:** refresh() đặt hạn mới = now + 12 h nên hạn 12 h không còn tuyệt đối khi người dùng hoạt động liên tục — lệch UC-15/FR-C02/NFR-02; ghi architect.md §13 #8, chờ SV quyết định (sửa code giữ hạn gốc hoặc sửa spec thành hạn trượt); 5.5 mô tả đúng code, 4.2/4.3 chưa sửa | REVIEW |
+| 2026-09-28 | C5.6 Thiết kế giao diện (bản gọn) + H12 | Không có Figma: nói rõ thiết kế trực tiếp trên ứng dụng web. H12 sơ đồ luồng màn hình 3 làn theo vai trò (8 màn hình Quản trị viên chia nhóm Quản trị/Giám sát; Giám sát viên: Tìm kiếm người → hộp thoại chi tiết → hộp thoại tạo/thêm vụ việc, Vụ việc của tôi; Quản lý: Tổng quan → Hồ sơ vụ việc → hộp thoại chi tiết), 2 lần xem trước. Viết 5.6.1 cấu trúc màn hình (trang chủ theo vai trò, đường dẫn sai vai trò chuyển về trang chủ — guards.jsx) và 5.6.2 năm nguyên tắc (đánh giá bằng mắt, giảm thao tác lặp, phản hồi rõ, ngôn ngữ, nhiều kích thước màn hình). Ảnh chụp màn hình để ở 6.7 | REVIEW |
+| 2026-09-28 | Cấu trúc Chương 6 | Đánh giá lại: nhiều mục trùng Ch.3/Ch.5. SV quyết định bỏ cả mục cấu trúc mã nguồn (giảng viên quan tâm sản phẩm, không quan tâm tổ chức mã). Chương 6 còn 4 mục: 6.1 công nghệ và mô hình; 6.2 tiến trình xử lý nền AI; 6.3 giao diện người dùng (ảnh chụp màn hình); 6.4 giám sát vận hành. Bỏ: cấu trúc mã nguồn, backend API, tầng lưu trữ, tìm kiếm và vụ việc (đã có ở 3.6.4, 5.2–5.5). Xóa 6.5–6.8.tex, viết lại khung 6.2–6.4, sửa 5.6 dẫn sec:6.3. Ghi quyết định phiên 12 h vào architect §13 #8 (chờ SV sửa code) | DONE |
+| 2026-09-28 | C6.1 Công nghệ và mô hình | Viết đủ 6.1.1–6.1.4 + Bảng 6.2 tóm tắt. Tiêu chí chung (yêu cầu Ch.4, CPU/16 GB, mã nguồn mở/giấy phép, độ quen thuộc). 6.1.1 SPA vs sinh trang ở máy chủ → React 19, React Router, Vite 8 (proxy /api), Tailwind. 6.1.2 Python (cùng ngôn ngữ mô hình AI), Django/FastAPI/Flask → Flask 3.1 + SQLAlchemy 2.0 + Alembic, argon2, cryptography, PyAV; hàng đợi PG thay Celery. 6.1.3 PostgreSQL 17 (CHECK, chỉ mục có điều kiện, enum, JSONB, SKIP LOCKED); pgvector (lọc sau khi quét chỉ mục — README chính thức) / FAISS / Milvus → Milvus 2.6 (lọc trước), đánh đổi tài nguyên (etcd + MinIO, còn ~2 GB RAM); MinIO thay tệp cục bộ. 6.1.4 Bảng 6.1 YOLO11 n/s/m (39,5/47,0/51,5 mAP; 56,1/90,0/183,2 ms CPU; 2,6/9,4/20,1 M — docs Ultralytics), chọn n; AGPL-3.0 và YOLOX Apache-2.0 dự phòng (chưa có trọng số); ByteTrack/BoT-SORT vs DeepSORT/StrongSORT (ReID mỗi người mỗi khung, tốn CPU); RaSa vs hai mô hình riêng/CLIP (kể cả CLIP đa ngôn ngữ), theo đề xuất GVHD. Bib mới đã kiểm chứng: du2023strongsort, wojke2017deepsort (Crossref), ge2021yolox (arXiv), pgvector2026. Bỏ câu ‘tác giả quen React’ vì không có căn cứ | REVIEW |

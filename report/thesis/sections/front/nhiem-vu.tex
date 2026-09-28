@@ -1,0 +1,9 @@
+% !TEX root = ../../main.tex
+% F2 — Phiếu nhiệm vụ LVTN/ĐATN (bắt buộc, phải có chữ ký xác nhận của GVHD).
+% Scan phiếu đã ký thành PDF và lưu tại images/phieu-nhiem-vu.pdf; trang này sẽ tự chèn bản scan.
+\IfFileExists{images/phieu-nhiem-vu.pdf}{%
+    \includepdf[pages=-,pagecommand={\thispagestyle{empty}}]{images/phieu-nhiem-vu.pdf}%
+}{%
+    \chapter*{Phiếu nhiệm vụ đồ án tốt nghiệp}
+    \nhap{Chèn bản scan phiếu nhiệm vụ có chữ ký GVHD vào images/phieu-nhiem-vu.pdf.}
+}

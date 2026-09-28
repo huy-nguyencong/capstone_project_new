@@ -1,0 +1,24 @@
+% !TEX root = ../../main.tex
+% C2.3 — Định hướng phát triển của hệ thống
+% Nối các nhận xét ở 2.2 với lựa chọn của đề tài; không lặp lại nhận xét. Chương 2 đứng trước lý thuyết: chưa nêu tên mô hình (RaSa, YOLO...).
+% Phải khớp ứng dụng: thuộc tính (giới tính, loại/màu trang phục trên và dưới, vật mang theo; không phủ định), chỉ tiếng Anh, tại chỗ, không GPU rời, RTSP.
+\section{Định hướng phát triển của hệ thống}
+\label{sec:2.3}
+
+Kết quả khảo sát cho thấy các hệ thống thương mại đã hỗ trợ nhiều hình thức tìm kiếm, nhưng trong số các hệ thống được khảo sát, tìm kiếm bằng câu mô tả tự do mới chỉ xuất hiện ở một sản phẩm và vận hành trên nền tảng đám mây của hãng; đồng thời, các hệ thống này đều là giải pháp giám sát toàn diện, gắn với phần cứng hoặc hạ tầng của nhà cung cấp. Dựa trên những nhận xét tại Mục~\ref{sec:2.2}, đề tài xác định các định hướng phát triển sau.
+
+\begin{enumerate}
+    \item \textbf{Hỗ trợ đủ ba hình thức mô tả trong cùng một cơ chế tìm kiếm.} Người dùng có thể mô tả người cần tìm bằng ảnh tham chiếu, câu mô tả tự do bằng tiếng Anh hoặc tập thuộc tính chọn sẵn gồm giới tính, loại và màu trang phục phía trên, loại và màu trang phục phía dưới, và vật mang theo như ba lô, túi xách. Tương tự cách tiếp cận của Verkada, cả ba hình thức được đưa về cùng một không gian biểu diễn để so khớp; riêng tập thuộc tính được chuyển thành một câu mô tả có cấu trúc, nhờ đó không cần xây dựng thêm bộ lọc hay mô hình riêng cho từng thuộc tính.
+
+    \item \textbf{Tổ chức kết quả theo từng lần xuất hiện và để người dùng ra quyết định.} Theo mục tiêu đã đặt ra tại Mục~\ref{sec:1.2}, mỗi kết quả tương ứng với một lần xuất hiện của một người trên một camera, được sắp xếp theo mức độ phù hợp và luôn đi kèm khung hình gốc để người dùng tự đánh giá. Hệ thống chỉ hỗ trợ tìm kiếm và xếp hạng, không đưa ra kết luận về danh tính.
+
+    \item \textbf{Quản lý kết quả thành hồ sơ vụ việc.} Tương tự việc tổng hợp bằng chứng của Avigilon, các kết quả được người dùng xác nhận có thể lưu vào hồ sơ vụ việc kèm tiêu đề và ghi chú, để tiếp tục theo dõi và để những người có trách nhiệm xem lại mà không cần thực hiện lại việc tìm kiếm.
+
+    \item \textbf{Phân quyền theo vai trò và khu vực giám sát.} Xuất phát từ nhu cầu của các tổ chức có hệ thống camera trải trên nhiều khu vực (Mục~\ref{sec:1.1}), hệ thống phân tách trách nhiệm giữa việc quản trị kỹ thuật, việc thực hiện tìm kiếm và việc theo dõi kết quả; người thực hiện tìm kiếm chỉ được truy cập dữ liệu của khu vực được giao.
+
+    \item \textbf{Triển khai tại chỗ, không phụ thuộc nhà cung cấp phần cứng.} Hệ thống là ứng dụng web độc lập, tiếp nhận hình ảnh từ camera qua giao thức RTSP phổ biến nên không ràng buộc với một hãng camera cụ thể. Toàn bộ dữ liệu được xử lý và lưu trữ tại chỗ, trên một máy tính không có card đồ họa rời, phù hợp với các tổ chức quy mô nhỏ hoặc có yêu cầu giữ dữ liệu trong nội bộ.
+
+    \item \textbf{Tập trung vào bài toán tìm kiếm.} Các chức năng như cảnh báo thời gian thực, nhận diện khuôn mặt, nhận diện biển số xe hay thống kê lưu lượng không thuộc phạm vi của đề tài. Việc giới hạn phạm vi giúp hệ thống gọn nhẹ và phù hợp với điều kiện phần cứng hạn chế.
+\end{enumerate}
+
+Cần lưu ý rằng đề tài không đặt mục tiêu thay thế các sản phẩm thương mại về quy mô hay độ chính xác. Hệ thống được xây dựng như một ứng dụng hoàn chỉnh ở quy mô đồ án, nhằm hiện thực và đánh giá các định hướng trên. Các kiến thức nền tảng cho những định hướng này được trình bày tại Chương~\ref{chapter:lythuyet}.

@@ -1,0 +1,60 @@
+% !TEX root = ../../main.tex
+% C3.6 — Tìm kiếm vector
+% Nguồn: HNSW (malkov2020hnsw, TPAMI 42(4)); Milvus (wang2021milvus, SIGMOD 2021); tài liệu Milvus HNSW + filtered search.
+% Khớp app: storage/milvus/vectors.py (HNSW, IP, M=16, efConstruction=128, ef=64; schema track_id, embedding 256,
+% area_id, camera_id, appeared_at_epoch, encoder_version, index_status; filter area + READY + camera_ids + khoảng thời gian;
+% consistency Strong; kiểm tra vector chuẩn hóa L2) ; services/track_search.py (top_k ∈ {4,8,12,16}; phạm vi camera đang hoạt động;
+% đối chiếu PostgreSQL, bỏ kết quả không hợp lệ, bù bằng cách nhân đôi limit, tối đa 3 vòng → limit ≤ 64 = ef).
+\section{Tìm kiếm vector}
+\label{sec:3.6}
+
+\subsection{Bài toán tìm kiếm lân cận gần nhất}
+\label{sec:3.6.1}
+
+Sau khi lập chỉ mục, mỗi lần xuất hiện của một người được đại diện bởi một vector đặc trưng (Mục~\ref{sec:3.5}). Khi người dùng truy vấn, câu mô tả hoặc ảnh truy vấn cũng được mã hóa thành một vector $\mathbf{q}$. Việc tìm kiếm khi đó trở thành bài toán \emph{tìm $k$ lân cận gần nhất} (k-nearest neighbors): trong tập $n$ vector $\{\mathbf{x}_1, \ldots, \mathbf{x}_n\}$ đã lưu, tìm $k$ vector có độ tương đồng với $\mathbf{q}$ lớn nhất. Vì các vector đều được chuẩn hóa L2, độ tương đồng được tính bằng tích vô hướng $\mathbf{q}^\top \mathbf{x}_i$, tương đương với độ tương đồng cosine (Công thức~\ref{eq:cosine}).
+
+Cách đơn giản nhất là \emph{tìm kiếm vét cạn}: tính độ tương đồng giữa $\mathbf{q}$ và toàn bộ $n$ vector rồi chọn ra $k$ giá trị lớn nhất. Cách này luôn cho kết quả chính xác nhưng chi phí tăng tuyến tính theo $n$ và theo số chiều $d$ của vector, tức khoảng $n \times d$ phép nhân cho mỗi truy vấn. Với hệ thống giám sát chạy liên tục, số lần xuất hiện được lập chỉ mục tăng dần theo thời gian, nên thời gian phản hồi của tìm kiếm vét cạn cũng tăng theo.
+
+\subsection{Tìm kiếm gần đúng và chỉ mục HNSW}
+\label{sec:3.6.2}
+
+\emph{Tìm kiếm lân cận gần nhất gần đúng} (Approximate Nearest Neighbor -- ANN) chấp nhận khả năng bỏ sót một phần nhỏ các lân cận thực sự để đổi lấy tốc độ cao hơn nhiều. Mức độ gần đúng thường được đo bằng tỉ lệ các lân cận thực sự có mặt trong kết quả trả về. Các phương pháp ANN xây dựng trước một cấu trúc dữ liệu -- gọi là \emph{chỉ mục} -- để khi truy vấn chỉ cần xét một phần nhỏ của tập vector.
+
+HNSW (Hierarchical Navigable Small World)~\cite{malkov2020hnsw} là phương pháp ANN dựa trên đồ thị, được sử dụng rộng rãi trong các hệ quản trị cơ sở dữ liệu vector. Ý tưởng chính gồm hai phần:
+\begin{itemize}
+    \item \textbf{Đồ thị lân cận.} Mỗi vector là một đỉnh, được nối với một số vector gần nó. Khi tìm kiếm, thuật toán bắt đầu từ một đỉnh và lặp lại việc di chuyển sang đỉnh kề gần với vector truy vấn hơn, cho đến khi không còn đỉnh kề nào gần hơn. Cách tìm kiếm tham lam này chỉ phải tính độ tương đồng với các đỉnh nằm trên đường đi, thay vì với toàn bộ tập dữ liệu.
+    \item \textbf{Phân tầng.} Các đỉnh được tổ chức thành nhiều tầng: tầng dưới cùng chứa mọi vector, mỗi tầng phía trên chỉ chứa một phần nhỏ số đỉnh của tầng ngay dưới nó, được chọn ngẫu nhiên. Tầng trên thưa nên các cạnh nối những điểm cách xa nhau, giúp di chuyển nhanh đến vùng gần vector truy vấn; tầng dưới dày đặc giúp tìm chính xác trong vùng đó. Việc tìm kiếm bắt đầu từ tầng cao nhất, tìm điểm gần nhất ở mỗi tầng rồi dùng điểm đó làm điểm xuất phát cho tầng thấp hơn, tương tự như việc xem bản đồ từ mức thu phóng nhỏ đến lớn.
+\end{itemize}
+Nhờ cấu trúc phân tầng, các tác giả của HNSW chỉ ra rằng độ phức tạp tìm kiếm tăng theo hàm logarit của số phần tử, thay vì tuyến tính như tìm kiếm vét cạn~\cite{malkov2020hnsw}. Đây là cơ sở cho nhận định ở Mục~\ref{sec:3.1.6} rằng thời gian phản hồi tăng chậm khi số lần xuất hiện được lập chỉ mục tăng lên.
+
+Chỉ mục HNSW có ba tham số chính~\cite{milvus2026hnsw}:
+\begin{itemize}
+    \item $M$: số cạnh tối đa của mỗi đỉnh. $M$ lớn làm tăng độ chính xác nhưng tốn thêm bộ nhớ và làm chậm quá trình xây dựng chỉ mục.
+    \item $\mathit{efConstruction}$: số ứng viên được xem xét khi chọn lân cận cho một đỉnh mới trong lúc xây dựng chỉ mục. Giá trị lớn cho đồ thị chất lượng hơn nhưng xây dựng lâu hơn.
+    \item $\mathit{ef}$: số ứng viên được duy trì trong lúc tìm kiếm ở tầng dưới cùng. Giá trị lớn làm tăng độ chính xác nhưng làm chậm truy vấn; $\mathit{ef}$ không nên nhỏ hơn số kết quả cần lấy.
+\end{itemize}
+
+\subsection{Tìm kiếm vector kết hợp điều kiện lọc}
+\label{sec:3.6.3}
+
+Trong thực tế, truy vấn thường không chỉ dựa trên độ tương đồng mà còn kèm theo điều kiện trên các thuộc tính khác của dữ liệu. Chẳng hạn, trong một hệ thống giám sát, người dùng thường chỉ được phép tìm trong một phạm vi nhất định như một khu vực hay một nhóm camera, hoặc chỉ quan tâm đến một khoảng thời gian cụ thể. Có hai cách kết hợp điều kiện lọc với tìm kiếm vector:
+\begin{itemize}
+    \item \textbf{Lọc sau:} lấy $k$ vector gần nhất trên toàn bộ dữ liệu rồi mới loại những kết quả không thỏa điều kiện. Cách này đơn giản nhưng có thể trả về ít hơn $k$ kết quả, thậm chí không có kết quả nào, dù trong phạm vi được phép vẫn có những lần xuất hiện phù hợp. Ví dụ, nếu khu vực của người dùng chỉ chiếm một phần nhỏ dữ liệu, phần lớn $k$ kết quả gần nhất có thể thuộc khu vực khác và bị loại.
+    \item \textbf{Lọc trước:} xác định tập các vector thỏa điều kiện, sau đó chỉ tìm $k$ vector gần nhất trong tập đó. Mọi kết quả trả về đều thuộc phạm vi được phép, và số kết quả chỉ ít hơn $k$ khi phạm vi đó thực sự có ít hơn $k$ phần tử.
+\end{itemize}
+Milvus~\cite{wang2021milvus} là hệ quản trị cơ sở dữ liệu vector mã nguồn mở, hỗ trợ lưu các trường vô hướng (scalar field) bên cạnh vector và thực hiện tìm kiếm theo cách lọc trước: các thực thể thỏa điều kiện lọc được xác định trước, sau đó tìm kiếm ANN chỉ được thực hiện trong các thực thể này~\cite{milvus2026filtered}.
+
+\subsection{Tìm kiếm vector trong hệ thống}
+\label{sec:3.6.4}
+
+Hệ thống sử dụng Milvus để lưu và tìm kiếm vector đặc trưng của các track. Mỗi track tương ứng với một bản ghi gồm mã track, vector 256 chiều và các trường phục vụ lọc: khu vực, camera, thời điểm xuất hiện, phiên bản bộ mã hóa và trạng thái sẵn sàng. Vector được kiểm tra đã chuẩn hóa L2 trước khi ghi và trước khi tìm kiếm, nên độ đo tích vô hướng (inner product) cho kết quả tương đương cosine. Chỉ mục HNSW được cấu hình với $M = 16$, $\mathit{efConstruction} = 128$ và $\mathit{ef} = 64$.
+
+Quy trình của một lượt tìm kiếm như sau:
+\begin{enumerate}
+    \item Hệ thống xác định khu vực từ tài khoản người dùng và tập camera được phép tìm: các camera được chọn, hoặc mọi camera đang hoạt động trong khu vực nếu người dùng không chọn camera nào.
+    \item Điều kiện lọc gồm khu vực, tập camera, khoảng thời gian (nếu có) và trạng thái \texttt{READY} được gửi cho Milvus cùng vector truy vấn. Nhờ lọc trước, các track thuộc khu vực khác, thuộc camera đang bị tạm ngưng, hoặc chưa được ghi đầy đủ không bao giờ xuất hiện trong kết quả.
+    \item Milvus trả về tối đa $k$ track có độ tương đồng cao nhất, với $k$ thuộc tập $\{4, 8, 12, 16\}$ do người dùng chọn. Độ tương đồng này được hiển thị cho người dùng dưới dạng điểm khớp (Matching Score) và chỉ được tính khi truy vấn, không được lưu lại.
+    \item Hệ thống đối chiếu từng kết quả với dữ liệu trong PostgreSQL để lấy thông tin camera, thời điểm và khung bao, đồng thời kiểm tra lại phạm vi quyền. Kết quả không còn hợp lệ -- track không tìm thấy trong PostgreSQL hoặc không còn thuộc phạm vi được phép, do dữ liệu giữa hai kho tạm thời chưa đồng bộ -- bị loại bỏ. Nếu sau khi loại còn ít hơn $k$ kết quả, hệ thống tìm lại với số lượng gấp đôi, tối đa ba lượt; do $k \le 16$, số lượng cần lấy ở lượt cuối không vượt quá 64, bằng giá trị $\mathit{ef}$ của chỉ mục.
+\end{enumerate}
+
+Với lượng dữ liệu thử nghiệm của đề tài (khoảng 1.500 track, Mục~\ref{sec:8.4}), tìm kiếm vét cạn vẫn đủ nhanh; chỉ mục HNSW được lựa chọn để hệ thống giữ được thời gian phản hồi khi dữ liệu tích lũy từ nhiều camera trong thời gian dài. Lý do chọn Milvus so với các phương án lưu trữ vector khác được trình bày tại Mục~\ref{sec:6.1.3}.
