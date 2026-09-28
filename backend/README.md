@@ -289,7 +289,7 @@ python -m alembic upgrade head
 python -m alembic current
 ```
 
-Xem `migrations/README.md` và `../docs/storage/postgres-identity-schema.md` trước khi downgrade.
+Xem `migrations/README.md` trước khi downgrade.
 
 Từ thư mục gốc repository, có thể chạy toàn bộ kiểm tra nhanh bằng một trong hai lệnh:
 
@@ -459,7 +459,9 @@ trôi qua. Test tái lập tự động: đặt `PERSON_SEARCH_RTSP_TEST_PUBLISH
 | Worker chết giữa job | Khởi động lại worker; lease hết hạn thì job được claim lại với token mới, track đã `READY` không nhân đôi. |
 | Cần hủy job | Admin bấm hủy (`POST /api/v1/admin/processing-jobs/<id>/cancel`); job đang chạy dừng ở safe point. |
 | Track kẹt `PENDING` hoặc outbox lỗi | `person-search-storage retry-outbox`, sau đó `person-search-storage reconcile`. |
-| Frame/vector bị mất sau sự cố | `person-search-storage reconcile --quarantine-corrupt`, `person-search-storage reindex`, `person-search-storage requeue-track <id>`. |
+| Frame/vector bị mất sau sự cố | `person-search-storage reconcile --quarantine-corrupt`, `person-search-storage reindex`, `person-search-storage requeue-track <id> --actor-user-id <admin-id>`. |
+| Object/vector mồ côi (không thuộc track nào) | Chạy `person-search-storage reconcile` (dry-run, exit 2 nếu có sai lệch), đọc kết quả rồi mới `person-search-storage reconcile --delete-orphans --actor-user-id <admin-id>`. |
+| Đầy đĩa | Dừng worker; `docker system df -v`, dọn image/build cache (`docker image prune`, `docker builder prune`), **không** prune volume; xóa backup cũ đã có bản mới được verify; khởi động lại rồi `retry-outbox`. |
 | Cần khôi phục dữ liệu | `python tools/storage_backup.py restore <thư mục> --yes` trên stack đã dừng API/worker. |
 | Search báo encoder không khả dụng | Xem log JSON theo `request_id`; kiểm tra checkpoint RaSa và chạy Search Components diagnostic. |
 

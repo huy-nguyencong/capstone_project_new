@@ -1,6 +1,6 @@
 # Chi tiết Use Case
 
-> **Thẩm quyền tài liệu:** Đây là tài liệu use case chính thức, cùng với `project_requirements.md` và `architect.md` tạo thành ba tài liệu đặc tả nguồn. Các file `backend_implementation_plan.md`, `storage_database_implementation_plan.md` và `ai_worker_implementation_plan.md` là kế hoạch thực thi chi tiết dựa trên ba tài liệu nguồn và không được ghi đè tài liệu này. Các roadmap ngoài thư mục `files/`, bao gồm `docs/api-roadmap.md`, không phải nguồn yêu cầu.
+> **Thẩm quyền tài liệu:** Đây là tài liệu use case chính thức, cùng với `project_requirements.md` và `architect.md` tạo thành ba tài liệu đặc tả nguồn. Các file `backend_implementation_plan.md`, `storage_database_implementation_plan.md` và `ai_worker_implementation_plan.md` là kế hoạch thực thi chi tiết dựa trên ba tài liệu nguồn và không được ghi đè tài liệu này. Kế hoạch hoàn thiện `remaining-work-plan.md` (cùng thư mục `files/`) chỉ dùng để theo dõi thực hiện, không phải nguồn yêu cầu.
 >
 > **Quy ước nguồn camera:** Trong phạm vi đồ án, camera là các luồng RTSP giả lập phát từ 7 video WILDTRACK (FFmpeg + MediaMTX). Worker xử lý AI tuần tự, một camera tại một thời điểm. Tải tệp video lên gắn với camera là đường dự phòng đi qua cùng pipeline.
 >

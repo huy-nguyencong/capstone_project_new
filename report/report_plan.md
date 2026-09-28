@@ -4,7 +4,7 @@
 > **Ngành:** Khoa học Máy tính · **Hội đồng:** 1CC · **GVHD:** TS. Lê Thành Sách · **GVPB:** TS. Trần Tuấn Anh · **SVTH:** Nguyễn Công Huy (2113499) · **Bảo vệ:** 10/2026.
 > **Khuôn trình bày:** LaTeX, dựng từ template `report/Template_for_Capstone_Project___Thesis_Defense/` (giữ nguyên làm mẫu), viết bằng tiếng Việt, 9 chương (cấu trúc theo đề xuất của SV, chốt 2026-09-27). Mạch chương tham khảo `report/reference-reports/242_ĐATN_66.pdf`.
 > **Mã nguồn báo cáo:** `report/thesis/`.
-> **Tài liệu nguồn:** `files/architect.md`, `files/project_requirements.md`, `files/usecase_detail.md`. Các plan triển khai, `docs/` và code dùng để lấy chi tiết hiện thực và số liệu.
+> **Tài liệu nguồn:** `files/architect.md`, `files/project_requirements.md`, `files/usecase_detail.md`. Các plan triển khai trong `files/` và code dùng để lấy chi tiết hiện thực và số liệu.
 
 ## 1. Cách làm việc
 
@@ -191,8 +191,8 @@ Các điểm dưới đây rất dễ viết sai. Mỗi lần góp ý tôi sẽ 
 | --- | --- | --- | --- |
 | C5.1 | Thiết kế kiến trúc hệ thống | Sơ đồ thành phần: Frontend → API; AI worker tách tiến trình; PostgreSQL / Milvus / MinIO; nguồn RTSP. Nguyên tắc phân tách trách nhiệm | architect mục 3, backend plan mục 4 |
 | C5.2 | Thiết kế các workflow chính | 5.2.1 Luồng xử lý luồng camera (sampling → detect → track → buffer → encode → công bố; vòng đời job `PENDING → RUNNING → SUCCEEDED/FAILED/CANCELLED`); 5.2.2 Chọn khung hình đại diện (hard filter + điểm chất lượng, tối đa 3 ứng viên); 5.2.3 Luồng tìm kiếm (quyền/khu vực → encode → Milvus lọc trước top-k → kiểm tra lại PostgreSQL → truy vấn bù); 5.2.4 Luồng quản lý hồ sơ vụ việc (snapshot metadata, quyền xem ảnh theo Case) | architect mục 6, AI plan mục 3.3, `services/track_search.py` |
-| C5.3 | Thiết kế cơ sở dữ liệu | 5.3.1 CSDL quan hệ: ERD + từ điển dữ liệu, ràng buộc (khu vực bất biến, không cột score, không unique `(case_id, track_id)`); 5.3.2 Lưu trữ vector: collection theo phiên bản encoder, alias, trường lọc; 5.3.3 Lưu trữ khung hình: khóa object, bucket private; 5.3.4 Nhất quán giữa các kho: `PENDING → MinIO → Milvus → READY`, outbox, retry, reconciliation | `docs/storage/*`, ADR-0001, STO-11/12 |
-| C5.4 | Thiết kế giao diện lập trình ứng dụng | Quy ước REST, error envelope, phân trang, các nhóm endpoint | backend plan mục 8 và 14, `docs/openapi-phase-*.json` |
+| C5.3 | Thiết kế cơ sở dữ liệu | 5.3.1 CSDL quan hệ: ERD + từ điển dữ liệu, ràng buộc (khu vực bất biến, không cột score, không unique `(case_id, track_id)`); 5.3.2 Lưu trữ vector: collection theo phiên bản encoder, alias, trường lọc; 5.3.3 Lưu trữ khung hình: khóa object, bucket private; 5.3.4 Nhất quán giữa các kho: `PENDING → MinIO → Milvus → READY`, outbox, retry, reconciliation | storage plan (ADR-0001, STO-11/12), mã `backend/src/person_search/storage/` |
+| C5.4 | Thiết kế giao diện lập trình ứng dụng | Quy ước REST, error envelope, phân trang, các nhóm endpoint | backend plan mục 8 và 14, mã API trong `backend/src/person_search/api/v1/` |
 | C5.5 | Thiết kế bảo mật và phân quyền | Session phía server, CSRF, policy theo tài nguyên, 403/404, media qua backend, chống SSRF khi kiểm tra RTSP, rate limit | BE-02..04, BE-21 |
 | C5.6 | Thiết kế giao diện người dùng | Sơ đồ màn hình theo vai trò; wireframe hoặc ảnh màn hình chính | `frontend/src/pages/*` |
 

@@ -2,7 +2,7 @@
 
 > **Quy ước thuật ngữ trên giao diện:** Tài liệu dùng thuật ngữ thiết kế **Case**, **Admin**, **Operator**, **Viewer**; giao diện tiếng Việt hiển thị lần lượt là **vụ việc**, **Quản trị viên**, **Giám sát viên**, **Quản lý**. Chỉ các nội dung thuộc câu truy vấn (mô tả văn bản, giá trị thuộc tính, câu mô tả được sinh ra) dùng tiếng Anh.
 
-> Đây là tài liệu yêu cầu chính thức của dự án. Ba tài liệu đặc tả nguồn là `project_requirements.md` (tài liệu này), `usecase_detail.md` và `architect.md` (kiến trúc chung). Các file `backend_implementation_plan.md`, `storage_database_implementation_plan.md` và `ai_worker_implementation_plan.md` là kế hoạch thực thi chi tiết được xây dựng dựa trên ba tài liệu nguồn; chúng không được thay đổi hoặc ghi đè yêu cầu ở đây. Các roadmap hoặc tài liệu theo dõi tiến độ nằm ngoài thư mục `files/`, bao gồm `docs/api-roadmap.md`, chỉ dùng để theo dõi thực hiện.
+> Đây là tài liệu yêu cầu chính thức của dự án. Ba tài liệu đặc tả nguồn là `project_requirements.md` (tài liệu này), `usecase_detail.md` và `architect.md` (kiến trúc chung). Các file `backend_implementation_plan.md`, `storage_database_implementation_plan.md` và `ai_worker_implementation_plan.md` là kế hoạch thực thi chi tiết được xây dựng dựa trên ba tài liệu nguồn; chúng không được thay đổi hoặc ghi đè yêu cầu ở đây. Kế hoạch hoàn thiện `remaining-work-plan.md` (cùng thư mục `files/`) chỉ dùng để theo dõi thực hiện, không phải nguồn yêu cầu.
 
 ## Bối cảnh dự án
 

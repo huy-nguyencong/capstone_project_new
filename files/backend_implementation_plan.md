@@ -1,6 +1,6 @@
 # Kế hoạch thiết kế và hiện thực Backend
 
-> Đây là **kế hoạch thực thi chi tiết cho backend** (Flask API và các tiến trình backend) của ứng dụng tìm kiếm người qua camera, được xây dựng dựa trên ba tài liệu đặc tả nguồn `architect.md`, `project_requirements.md` và `usecase_detail.md`. Kế hoạch không được mở rộng hoặc thay đổi quyết định trong ba tài liệu nguồn. Mỗi task là một đơn vị triển khai, kiểm thử, review và commit độc lập. Sau khi hoàn thành một task, dừng để người thực hiện review; chỉ commit và chuyển task khi test đạt và review được chấp thuận. Các roadmap hoặc tài liệu theo dõi tiến độ bên ngoài thư mục `files/`, bao gồm `docs/api-roadmap.md`, không phải nguồn yêu cầu và không được ghi đè đặc tả này.
+> Đây là **kế hoạch thực thi chi tiết cho backend** (Flask API và các tiến trình backend) của ứng dụng tìm kiếm người qua camera, được xây dựng dựa trên ba tài liệu đặc tả nguồn `architect.md`, `project_requirements.md` và `usecase_detail.md`. Kế hoạch không được mở rộng hoặc thay đổi quyết định trong ba tài liệu nguồn. Mỗi task là một đơn vị triển khai, kiểm thử, review và commit độc lập. Sau khi hoàn thành một task, dừng để người thực hiện review; chỉ commit và chuyển task khi test đạt và review được chấp thuận. Các roadmap hoặc tài liệu theo dõi tiến độ bên ngoài thư mục `files/` không phải nguồn yêu cầu và không được ghi đè đặc tả này.
 
 ## 1. Mục tiêu Backend
 
@@ -183,7 +183,7 @@ Trạng thái hợp lệ: `TODO`, `IN_PROGRESS`, `READY_FOR_REVIEW`, `DONE`, `BL
 | Task | Nội dung | Dependency chính | Trạng thái | Commit |
 | --- | --- | --- | --- | --- |
 | BE-00 | Khởi tạo backend application skeleton | Không; dùng chung nền với STO-00 | DONE | `532f3e4` |
-| BE-01 | Chốt API contract và quy ước HTTP | BE-00, STO-01 | READY_FOR_REVIEW | quy ước ở mục 14; OpenAPI `docs/openapi-phase-3..8.json` |
+| BE-01 | Chốt API contract và quy ước HTTP | BE-00, STO-01 | READY_FOR_REVIEW | quy ước ở mục 14; OpenAPI theo phase đã gỡ khỏi repo (2026-09-28), contract hiện hành là mã trong `backend/src/person_search/api/v1/` |
 | BE-02 | Nền tảng password, session và CSRF | BE-01, STO-04 | READY_FOR_REVIEW | `51998f8`, `bf745c6` |
 | BE-03 | UC-01/UC-15: đăng nhập, phiên và đăng xuất | BE-02 | READY_FOR_REVIEW | `51998f8`, `bf745c6` |
 | BE-04 | Policy phân quyền tập trung | BE-03 | READY_FOR_REVIEW | `2483044` (test ma trận quyền mọi route) |
@@ -209,7 +209,7 @@ Trạng thái hợp lệ: `TODO`, `IN_PROGRESS`, `READY_FOR_REVIEW`, `DONE`, `BL
 | BE-24 | Đo hiệu năng và tài nguyên Backend | BE-23, STO-18 | TODO | — |
 | BE-25 | Đóng gói, cấu hình triển khai và runbook | BE-24, STO-19 | IN_PROGRESS | `81df802` (release check, README); runbook RTSP 7 camera chưa có |
 
-> **Đồng bộ trạng thái 2026-09-27:** bảng trên được đối chiếu với lịch sử Git và `docs/api-roadmap.md`. Các task đã có code và commit nhưng chưa có ghi nhận review trong tài liệu này được để ở `READY_FOR_REVIEW`; người thực hiện xác nhận review thì chuyển sang `DONE`.
+> **Đồng bộ trạng thái 2026-09-27:** bảng trên được đối chiếu với lịch sử Git và roadmap cũ (roadmap đã gỡ khỏi repo ngày 2026-09-28). Các task đã có code và commit nhưng chưa có ghi nhận review trong tài liệu này được để ở `READY_FOR_REVIEW`; người thực hiện xác nhận review thì chuyển sang `DONE`.
 
 ## 8. Bản đồ endpoint dự kiến
 

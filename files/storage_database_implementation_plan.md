@@ -1,6 +1,6 @@
 # Kế hoạch thiết kế và hiện thực tầng lưu trữ dữ liệu
 
-> Đây là kế hoạch triển khai tầng lưu trữ, được xây dựng dựa trên ba tài liệu đặc tả nguồn `architect.md`, `project_requirements.md`, `usecase_detail.md` và phối hợp với `backend_implementation_plan.md`. Mỗi task bên dưới là một đơn vị triển khai, review, kiểm thử và commit độc lập. Không chuyển sang task kế tiếp khi task hiện tại chưa được người thực hiện review và chấp thuận. Các roadmap bên ngoài thư mục `files/`, bao gồm `docs/api-roadmap.md`, không phải nguồn yêu cầu và không được ghi đè kế hoạch chính thức này.
+> Đây là kế hoạch triển khai tầng lưu trữ, được xây dựng dựa trên ba tài liệu đặc tả nguồn `architect.md`, `project_requirements.md`, `usecase_detail.md` và phối hợp với `backend_implementation_plan.md`. Mỗi task bên dưới là một đơn vị triển khai, review, kiểm thử và commit độc lập. Không chuyển sang task kế tiếp khi task hiện tại chưa được người thực hiện review và chấp thuận. Các roadmap bên ngoài thư mục `files/` không phải nguồn yêu cầu và không được ghi đè kế hoạch chính thức này.
 
 ## 1. Mục tiêu
 
@@ -73,8 +73,6 @@ infra/
   compose.yaml
   env.example
 scripts/
-docs/
-  storage/
 ```
 
 Cấu trúc cuối cùng có thể được tinh chỉnh ở STO-00 nhưng phải tiếp tục giữ ranh giới giữa domain, adapter lưu trữ và service điều phối.
@@ -143,7 +141,7 @@ Trạng thái hợp lệ:
 
 **Phạm vi thực hiện:**
 
-- Tạo cấu trúc `backend`, `infra`, `scripts`, `docs/storage`.
+- Tạo cấu trúc `backend`, `infra`, `scripts` (thư mục `docs/storage` tạo ở bước này đã gỡ khỏi repo ngày 2026-09-28; nội dung còn hiệu lực nằm trong code, `backend/README.md` và tài liệu này).
 - Khởi tạo package Python và Flask application factory tối thiểu.
 - Khai báo dependency runtime/dev theo một cơ chế duy nhất trong `pyproject.toml`.
 - Cấu hình `pytest`, marker `unit`, `integration`, `e2e` và coverage.
@@ -710,7 +708,7 @@ Mỗi lần làm task, thêm một mục theo mẫu:
 
 - Trạng thái: `DONE`.
 - Thay đổi chính: bổ sung namespace domain/services/storage cho PostgreSQL, Milvus và MinIO; tạo ranh giới migrations, infra, scripts và tài liệu storage; thêm bộ lệnh kiểm tra đa nền tảng và smoke test không cần dịch vụ ngoài.
-- File quan trọng: `backend/src/person_search/storage/`, `backend/tests/unit/test_storage_skeleton.py`, `scripts/check.ps1`, `scripts/check.sh`, `docs/storage/README.md`, `infra/README.md`.
+- File quan trọng: `backend/src/person_search/storage/`, `backend/tests/unit/test_storage_skeleton.py`, `scripts/check.ps1`, `scripts/check.sh`, `infra/README.md`.
 - Test đã chạy: PowerShell `scripts/check.ps1`; Git Bash `scripts/check.sh`; pytest với coverage; `git diff --check`.
 - Kết quả: 23 test đạt; coverage 79%; Ruff sạch; toàn bộ source compile thành công; package storage import được khi PostgreSQL/Milvus/MinIO không chạy.
 - Điểm cần người thực hiện review: tên các namespace, vị trí migrations, hai script kiểm tra và việc chưa thêm dependency storage trong STO-00.
@@ -721,7 +719,7 @@ Mỗi lần làm task, thêm một mục theo mẫu:
 
 - Trạng thái: `DONE`.
 - Thay đổi chính: chấp thuận ADR-0001 cho vai trò ba kho, UUIDv4, UTC/source timeline, bbox pixel, state machine, soft-delete, naming MinIO/Milvus, RaSa vector profile và write ordering; bổ sung contract executable giữa AI worker và storage service.
-- File quan trọng: `docs/storage/adr/0001-storage-architecture-and-track-contract.md`, `docs/storage/track-ingestion-contract.md`, `backend/src/person_search/storage/contracts.py`, `backend/tests/unit/test_storage_contracts.py`.
+- File quan trọng: `backend/src/person_search/storage/contracts.py`, `backend/tests/unit/test_storage_contracts.py`.
 - Test đã chạy: PowerShell `scripts/check.ps1`; pytest với branch coverage; Git Bash syntax check; `git diff --check`.
 - Kết quả: 64 test đạt; coverage tổng 89%, contract module 95%; Ruff sạch; compile thành công.
 - Điểm cần người thực hiện review: UUIDv4, retention không tự xóa, một MinIO endpoint với bucket/credential tách biệt, RaSa CUHK-PEDES 256 chiều + IP và write flow `PENDING → READY/FAILED`.
@@ -754,7 +752,7 @@ Mỗi lần làm task, thêm một mục theo mẫu:
 
 - Trạng thái: `DONE`.
 - Thay đổi chính: thêm Alembic environment và migration đầu tiên; model SQLAlchemy cho Area/User/Camera với UUIDv4, enum trạng thái, timestamp UTC, role–area check constraint, foreign key `RESTRICT`, RTSP secret reference; trigger database và guard ORM khóa `Area.code`, `Camera.code` và `Camera.area_id`; trigger đồng bộ `updated_at` cho cả ORM/raw SQL.
-- File quan trọng: `backend/alembic.ini`, `backend/migrations/versions/20260925_0001_area_user_camera.py`, `backend/src/person_search/storage/postgres/models/`, `backend/tests/integration/test_identity_schema.py`, `docs/storage/postgres-identity-schema.md`.
+- File quan trọng: `backend/alembic.ini`, `backend/migrations/versions/20260925_0001_area_user_camera.py`, `backend/src/person_search/storage/postgres/models/`, `backend/tests/integration/test_identity_schema.py`.
 - Test đã chạy: `scripts/check.ps1`; 81 unit test; migration integration trên database dùng một lần; `downgrade base → upgrade head → alembic check → constraint tests → downgrade base`; Ruff; compileall; branch coverage; `git diff --check`.
 - Kết quả: 81 unit test đạt; migration integration đạt; Alembic không phát hiện schema drift; Operator thiếu area và Admin có area bị từ chối; Camera thiếu area hoặc RTSP nhúng credential bị từ chối; đổi Camera area bị chặn ở ORM lẫn raw SQL; đổi Area code bị chặn; xóa Area đang được User/Camera tham chiếu bị FK `RESTRICT` chặn; inactive row vẫn giữ area FK; downgrade xóa sạch ba bảng/type; unit branch coverage tổng 89%.
 - Điểm cần người thực hiện review: enum/status, quy tắc uppercase và bất biến của code, role–area constraint, việc chỉ lưu `rtsp_secret_ref`, trigger PostgreSQL, tên migration và giới hạn STO-04 chưa có repository nghiệp vụ đầy đủ.
@@ -765,7 +763,7 @@ Mỗi lần làm task, thêm một mục theo mẫu:
 
 - Trạng thái: `DONE`.
 - Thay đổi chính: thêm model và migration cho phiên bản cấu hình AI, processing job, PersonTrack và transactional outbox; bảo vệ bbox/timeline/progress bằng constraint; khóa state machine track ở cả ORM và PostgreSQL; chỉ cho phép `READY` khi MinIO artifact và vector index đã được xác nhận; giữ đầy đủ lineage camera/area/job/config/encoder và không lưu Matching Score.
-- File quan trọng: `backend/migrations/versions/20260925_0002_processing_tracks.py`, `backend/src/person_search/storage/postgres/models/ai_config.py`, `processing_job.py`, `person_track.py`, `outbox.py`, `backend/tests/integration/test_processing_schema.py`, `docs/storage/postgres-processing-schema.md`.
+- File quan trọng: `backend/migrations/versions/20260925_0002_processing_tracks.py`, `backend/src/person_search/storage/postgres/models/ai_config.py`, `processing_job.py`, `person_track.py`, `outbox.py`, `backend/tests/integration/test_processing_schema.py`.
 - Test đã chạy: Ruff; 85 unit test; migration integration trên database dùng một lần; `downgrade base → upgrade head → alembic check → constraint/state-transition tests → downgrade 0001 → downgrade base`.
 - Kết quả: unit và integration đều đạt; Alembic không phát hiện schema drift; PostgreSQL từ chối sampling interval không dương, bbox vượt frame, track khởi tạo ở `READY`, `READY` thiếu artifact và chuyển ngược `READY → FAILED`; rollback giữ schema STO-04 rồi xóa sạch về base.
 - Điểm cần người thực hiện review: bộ field lineage, quy tắc một AI config `ACTIVE`, state machine `PENDING → READY/FAILED`, retry `FAILED → PENDING`, `READY` là trạng thái cuối, payload JSONB và unique `(track_id, event_type)` của outbox.
@@ -787,7 +785,7 @@ Mỗi lần làm task, thêm một mục theo mẫu:
 
 - Trạng thái: `DONE`.
 - Thay đổi chính: thêm index theo camera active, job status và timeline/status track; partial index cho track `READY`; seed Area development idempotent không chứa secret; xuất ER diagram và data dictionary; kiểm thử migration trên database đã có dữ liệu.
-- File quan trọng: `backend/migrations/versions/20260925_0004_schema_hardening.py`, `backend/src/person_search/storage/postgres/seed.py`, `backend/tests/integration/test_case_and_hardening_schema.py`, `docs/storage/postgres-er-and-data-dictionary.md`.
+- File quan trọng: `backend/migrations/versions/20260925_0004_schema_hardening.py`, `backend/src/person_search/storage/postgres/seed.py`, `backend/tests/integration/test_case_and_hardening_schema.py`.
 - Test đã chạy: seed hai lần; migration `base → 0003` với dữ liệu → `head`; `alembic check`; kiểm tra index; `EXPLAIN`; downgrade `0003` rồi upgrade lại `head`; cuối cùng downgrade base.
 - Kết quả: test đạt; lần seed thứ hai thêm 0 row; database có dữ liệu nâng cấp thành công; query READY theo camera dùng partial index; upgrade/downgrade lặp lại không lệch schema.
 - Điểm cần người thực hiện review: danh sách Area mẫu, partial index `READY`, phạm vi seed chủ động ngoài production migration và sơ đồ ER/data dictionary.
@@ -894,7 +892,7 @@ Mỗi lần làm task, thêm một mục theo mẫu:
 ### 2026-09-25 — STO-18
 
 - Trạng thái: `DONE`.
-- Thay đổi chính: `backend/tools/storage_benchmark.py` đo throughput ingestion, p50/p95/p99 search (Milvus thuần và qua service), recall@k theo `ef`, latency crop/full frame, dung lượng mỗi track, stats Docker; dữ liệu tổng hợp 7 camera/2 area; tự dọn dữ liệu. `docs/storage/performance-baseline.md` mô tả cách đo và bảng kết quả.
+- Thay đổi chính: `backend/tools/storage_benchmark.py` đo throughput ingestion, p50/p95/p99 search (Milvus thuần và qua service), recall@k theo `ef`, latency crop/full frame, dung lượng mỗi track, stats Docker; dữ liệu tổng hợp 7 camera/2 area; tự dọn dữ liệu.
 - Sửa kèm: mã Area/Camera benchmark luôn được chuẩn hóa uppercase để thỏa constraint PostgreSQL; có unit test hồi quy.
 - Test đã chạy: unit test cho percentile, vector và mã seed; smoke benchmark thật với 3 track 256 chiều, đọc ảnh và Docker stats.
 - Kết quả: 3/3 track `READY`, recall@4 = 1,0, crop/full frame thành công và thu được CPU/RAM của bốn container. Đây là smoke baseline; các mốc 1.000/5.000/10.000 track vẫn cần chạy trên máy demo trước release.
@@ -903,7 +901,7 @@ Mỗi lần làm task, thêm một mục theo mẫu:
 ### 2026-09-25 — STO-19
 
 - Trạng thái: `DONE`.
-- Thay đổi chính: `backend/tools/storage_backup.py` (`backup`/`verify`/`restore`) với `pg_dump -Fc`, export frame theo PostgreSQL kèm kiểm tra SHA-256, manifest có checksum/phiên bản/thời gian; restore theo thứ tự PostgreSQL → MinIO (kèm metadata) → reindex Milvus → reconcile; `StorageReindexer` và lệnh `person-search-storage reindex`; `docs/storage/runbook.md`; `backups/` vào `.gitignore`.
+- Thay đổi chính: `backend/tools/storage_backup.py` (`backup`/`verify`/`restore`) với `pg_dump -Fc`, export frame theo PostgreSQL kèm kiểm tra SHA-256, manifest có checksum/phiên bản/thời gian; restore theo thứ tự PostgreSQL → MinIO (kèm metadata) → reindex Milvus → reconcile; `StorageReindexer` và lệnh `person-search-storage reindex`; `backups/` vào `.gitignore` (các lệnh vận hành nay ở `backend/README.md`).
 - Quyết định: Milvus không copy mà dựng lại từ embedding trong outbox (đã nằm trong dump PostgreSQL); không dùng `mc mirror` vì mất metadata `sha256`.
 - Sửa kèm: `pg_dump`, `psql` và `pg_restore` lấy đúng user/database từ DSN thay vì luôn thao tác database mặc định của Compose; có unit test hồi quy.
 - Test đã chạy: unit test cho reindexer, verify manifest, chặn path traversal, bắt buộc `--yes`; restore drill trên database tạm sau khi xóa schema và 3 frame.
