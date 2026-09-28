@@ -8,16 +8,16 @@
 \section{Các yêu cầu phi chức năng}
 \label{sec:4.3}
 
-Bên cạnh các chức năng ở Mục~\ref{sec:4.2}, hệ thống phải đáp ứng các yêu cầu về chất lượng dưới đây. Các yêu cầu này xuất phát từ ba đặc điểm của bài toán: dữ liệu camera là dữ liệu nhạy cảm cần được bảo vệ và phân quyền chặt chẽ; mỗi lần xuất hiện của một người được lưu đồng thời ở ba kho dữ liệu khác nhau; và hệ thống được triển khai trên một máy tính cá nhân không có card đồ họa rời. Cách hệ thống đáp ứng từng yêu cầu được trình bày ở Chương~\ref{chapter:thietke} và Chương~\ref{chapter:hienthuc}, còn kết quả kiểm chứng ở Chương~\ref{chapter:kiemthu}.
+Bên cạnh các chức năng ở Mục~\ref{sec:4.2}, hệ thống phải đáp ứng các yêu cầu về chất lượng dưới đây. Các yêu cầu này xuất phát từ ba đặc điểm của bài toán: dữ liệu camera là dữ liệu nhạy cảm cần được bảo vệ và phân quyền chặt chẽ; dữ liệu của mỗi lần xuất hiện gồm nhiều phần -- thông tin mô tả, vector đặc trưng và hình ảnh -- phải được lưu đầy đủ và nhất quán; và hệ thống được triển khai trên một máy tính cá nhân không có card đồ họa rời. Cách hệ thống đáp ứng từng yêu cầu được trình bày ở Chương~\ref{chapter:thietke} và Chương~\ref{chapter:hienthuc}, còn kết quả kiểm chứng ở Chương~\ref{chapter:kiemthu}.
 
 \subsection{Bảo mật và phân quyền}
 \label{sec:4.3.1}
 
 \begin{reqlist}
     \item[NFR-01] \textbf{Kiểm tra quyền tại máy chủ.} Mọi yêu cầu gửi tới máy chủ, kể cả yêu cầu lấy ảnh người và khung hình toàn cảnh, đều được kiểm tra vai trò, khu vực và quyền sở hữu vụ việc tại máy chủ. Việc ẩn chức năng trên giao diện không được xem là biện pháp phân quyền; máy chủ không tin khu vực hay người phụ trách do trình duyệt gửi lên.
-    \item[NFR-02] \textbf{Xác thực và phiên đăng nhập.} Mật khẩu chỉ được lưu dưới dạng băm một chiều. Phiên đăng nhập được quản lý phía máy chủ, hết hạn sau 12 giờ hoặc sau 30 phút không hoạt động, và bị vô hiệu ngay ở yêu cầu kế tiếp khi tài khoản bị khóa hoặc ngừng hoạt động. Các thao tác làm thay đổi dữ liệu được bảo vệ trước tấn công giả mạo yêu cầu (CSRF).
+    \item[NFR-02] \textbf{Xác thực và phiên đăng nhập.} Mật khẩu chỉ được lưu dưới dạng băm một chiều. Phiên đăng nhập có thời hạn và bị vô hiệu theo FR-C02. Các thao tác làm thay đổi dữ liệu được bảo vệ trước tấn công giả mạo yêu cầu (CSRF).
     \item[NFR-03] \textbf{Bảo vệ dữ liệu hình ảnh.} Kho lưu khung hình không được truy cập công khai; trình duyệt chỉ nhận hình ảnh thông qua máy chủ ứng dụng sau khi quyền đã được kiểm tra.
-    \item[NFR-04] \textbf{Bảo vệ kết nối camera.} Thông tin xác thực RTSP được mã hóa khi lưu và không hiển thị lại trên giao diện. Hệ thống chỉ kết nối tới địa chỉ IP thuộc dải mạng camera được khai báo khi triển khai, từ chối địa chỉ loopback và link-local, để không bị lợi dụng truy cập các máy chủ khác trong mạng nội bộ.
+    \item[NFR-04] \textbf{Bảo vệ kết nối camera.} Thông tin xác thực RTSP được mã hóa khi lưu và không hiển thị lại trên giao diện. Hệ thống chỉ kết nối tới địa chỉ IP thuộc dải mạng camera được khai báo khi triển khai, để không bị lợi dụng truy cập các máy chủ khác trong mạng nội bộ.
     \item[NFR-05] \textbf{Hạn chế lạm dụng.} Các chức năng tốn tài nguyên hoặc nhạy cảm -- đăng nhập, tìm kiếm, tải tệp lên, kiểm tra kết nối camera và kiểm tra hoạt động AI -- được giới hạn số lần gọi trong một khoảng thời gian; ảnh truy vấn và tệp video tải lên được giới hạn kích thước và kiểm tra định dạng trước khi xử lý. Thông báo lỗi trả về cho người dùng không chứa thông tin nội bộ như đường dẫn tệp, địa chỉ dịch vụ hay thông tin xác thực.
 \end{reqlist}
 
@@ -25,8 +25,8 @@ Bên cạnh các chức năng ở Mục~\ref{sec:4.2}, hệ thống phải đáp
 \label{sec:4.3.2}
 
 \begin{reqlist}
-    \item[NFR-06] \textbf{Nhất quán giữa ba kho dữ liệu.} Mỗi lần xuất hiện được lưu ở cơ sở dữ liệu quan hệ (thông tin mô tả), cơ sở dữ liệu vector (vector đặc trưng) và kho đối tượng (khung hình toàn cảnh). Một lần xuất hiện chỉ được đưa vào kết quả tìm kiếm khi cả ba phần đã được ghi thành công; dữ liệu ghi dở dang không bao giờ được xem là kết quả hoàn chỉnh và phải có cơ chế để hoàn tất hoặc dọn dẹp về sau.
-    \item[NFR-07] \textbf{Không phá hủy dữ liệu lịch sử.} Loại camera khỏi vận hành, tắt xử lý AI, khóa, xóa hoặc ngừng hoạt động tài khoản không làm xóa dữ liệu đã tạo. Loại một kết quả khỏi vụ việc chỉ xóa mục đó, không xóa dữ liệu gốc của lần xuất hiện hay các mục khác cùng tham chiếu tới nó.
+    \item[NFR-06] \textbf{Nhất quán dữ liệu của lần xuất hiện.} Dữ liệu của mỗi lần xuất hiện gồm thông tin mô tả, vector đặc trưng và khung hình toàn cảnh. Một lần xuất hiện chỉ được đưa vào kết quả tìm kiếm khi cả ba phần đã được lưu thành công; dữ liệu ghi dở dang không bao giờ được xem là kết quả hoàn chỉnh và phải có cơ chế để hoàn tất hoặc dọn dẹp về sau.
+    \item[NFR-07] \textbf{Không phá hủy dữ liệu lịch sử.} Loại camera khỏi vận hành, tắt xử lý AI, khóa, xóa hoặc ngừng hoạt động tài khoản không làm xóa dữ liệu đã tạo. Loại một kết quả khỏi vụ việc chỉ xóa mục đó, không xóa dữ liệu gốc của lần xuất hiện hay các mục khác cùng tham chiếu tới nó. Vụ việc của một tài khoản đã bị khóa, xóa hoặc ngừng hoạt động vẫn giữ nguyên người phụ trách, không tự động được chuyển cho người khác và vẫn được Quản lý xem như bình thường.
     \item[NFR-08] \textbf{Toàn vẹn của vụ việc.} Mỗi kết quả lưu trong vụ việc giữ lại tên camera, khu vực và thời điểm xuất hiện tại thời điểm lưu, để vụ việc vẫn hiển thị được thông tin khi tên camera thay đổi hoặc hình ảnh tạm thời không truy xuất được. Các cập nhật đồng thời lên cùng một vụ việc, tài khoản, camera hay cấu hình AI không được ghi đè lẫn nhau một cách âm thầm.
     \item[NFR-09] \textbf{Không trộn không gian vector.} Vector đặc trưng được gắn với phiên bản bộ mã hóa đã tạo ra nó; hệ thống không so sánh các vector sinh bởi những phiên bản bộ mã hóa khác nhau.
 \end{reqlist}
@@ -35,17 +35,17 @@ Bên cạnh các chức năng ở Mục~\ref{sec:4.2}, hệ thống phải đáp
 \label{sec:4.3.3}
 
 \begin{reqlist}
-    \item[NFR-10] \textbf{Cô lập lỗi.} Lỗi của luồng RTSP, của một thành phần AI hay của một kho dữ liệu chỉ làm thất bại chức năng liên quan và được báo đúng thành phần gây lỗi. Lỗi ở một camera không làm dừng việc xử lý các camera khác; lỗi khi áp dụng Detector hoặc Tracker mới không làm mất cấu hình đang hoạt động.
-    \item[NFR-11] \textbf{Tự phục hồi khi mất kết nối.} Khi luồng RTSP bị gián đoạn, hệ thống tự thử kết nối lại trong giới hạn cho phép; camera có phiên xử lý thất bại được tạm bỏ qua rồi thử lại sau, không chặn các camera khác.
-    \item[NFR-12] \textbf{Không trả kết quả sai lệch khi lỗi.} Khi bộ mã hóa truy vấn hoặc cơ sở dữ liệu vector không khả dụng, hệ thống báo tìm kiếm thất bại thay vì trả về kết quả rỗng hay kết quả giả. Khi hình ảnh của một kết quả không truy xuất được, hệ thống vẫn hiển thị các thông tin còn lại và thông báo không dựng được ảnh.
-    \item[NFR-13] \textbf{Thao tác nhiều bước an toàn khi thử lại.} Các thao tác gồm nhiều bước, như ghi dữ liệu vào ba kho hay lưu kết quả rồi đánh dấu vụ việc hoàn thành, phải để lại hệ thống ở trạng thái hợp lệ nếu bị gián đoạn giữa chừng, và có thể thử lại mà không tạo dữ liệu trùng lặp ngoài ý muốn.
+    \item[NFR-10] \textbf{Cô lập lỗi.} Lỗi của luồng RTSP, của một thành phần AI hay của một kho dữ liệu chỉ làm thất bại chức năng liên quan và được báo đúng thành phần gây lỗi. Lỗi ở một camera không làm dừng việc xử lý các camera khác.
+    \item[NFR-11] \textbf{Tự phục hồi khi mất kết nối.} Khi luồng RTSP bị gián đoạn, hệ thống tự thử kết nối lại trong giới hạn cho phép.
+    \item[NFR-12] \textbf{Không trả kết quả sai lệch khi lỗi.} Khi bộ mã hóa truy vấn hoặc cơ sở dữ liệu vector không khả dụng, hệ thống báo tìm kiếm thất bại thay vì trả về kết quả rỗng hay kết quả giả. Khi hình ảnh của một kết quả không truy xuất được, hệ thống vẫn hiển thị các thông tin còn lại và thông báo không hiển thị được ảnh.
+    \item[NFR-13] \textbf{Thao tác nhiều bước an toàn khi thử lại.} Các thao tác gồm nhiều bước, như lưu dữ liệu của một lần xuất hiện hay lưu kết quả rồi đánh dấu vụ việc hoàn thành, phải để lại hệ thống ở trạng thái hợp lệ nếu bị gián đoạn giữa chừng, và có thể thử lại mà không tạo dữ liệu trùng lặp ngoài ý muốn.
 \end{reqlist}
 
 \subsection{Hiệu năng và tài nguyên}
 \label{sec:4.3.4}
 
 \begin{reqlist}
-    \item[NFR-14] \textbf{Chạy trên máy triển khai.} Toàn bộ hệ thống, gồm máy chủ ứng dụng, tiến trình xử lý AI và ba kho dữ liệu, phải chạy được trên một máy tính xách tay dùng bộ xử lý Intel Core i5-11300H, 16~GB bộ nhớ, không có card đồ họa rời. Tiến trình xử lý AI chạy tách khỏi máy chủ ứng dụng, xử lý tuần tự một camera tại một thời điểm, và không đọc toàn bộ tệp video vào bộ nhớ.
+    \item[NFR-14] \textbf{Chạy trên máy triển khai.} Toàn bộ hệ thống, gồm cả phần phân tích dữ liệu camera và phần lưu trữ dữ liệu, phải chạy được trên một máy tính xách tay dùng bộ xử lý Intel Core i5-11300H, 16~GB bộ nhớ, không có card đồ họa rời.
     \item[NFR-15] \textbf{Phản hồi tìm kiếm độc lập với việc lập chỉ mục.} Việc phân tích dữ liệu camera chạy nền và không nằm trong thời gian xử lý của yêu cầu từ người dùng. Một lượt tìm kiếm chỉ mã hóa truy vấn và so khớp với dữ liệu đã lập chỉ mục, không xử lý lại hình ảnh, nên người dùng vẫn tìm kiếm được trong khi hệ thống đang phân tích camera.
     \item[NFR-16] \textbf{Không yêu cầu xử lý thời gian thực.} Hệ thống không bắt buộc phân tích kịp mọi luồng camera theo thời gian thực, cũng không bắt buộc xử lý đồng thời nhiều luồng camera; khoảng lấy mẫu khung hình được chọn từ các cấu hình định sẵn để cân bằng giữa chất lượng và tốc độ lập chỉ mục trên máy triển khai.
 \end{reqlist}
@@ -54,8 +54,8 @@ Bên cạnh các chức năng ở Mục~\ref{sec:4.2}, hệ thống phải đáp
 \label{sec:4.3.5}
 
 \begin{reqlist}
-    \item[NFR-17] \textbf{Nhật ký kiểm toán.} Các thao tác quản trị, các thao tác trên vụ việc và các lỗi kỹ thuật quan trọng được ghi vào nhật ký hệ thống với thời gian, người thực hiện, loại sự kiện, đối tượng bị tác động và kết quả (FR-A11). Nhật ký không chỉnh sửa được từ giao diện, không chứa mật khẩu hay thông tin xác thực, và vẫn giữ thông tin người thực hiện khi tài khoản đó bị xóa hoặc ngừng hoạt động.
-    \item[NFR-18] \textbf{Tái lập nguồn gốc dữ liệu.} Mỗi lần xuất hiện ghi lại phiên bản Detector, Tracker, bộ mã hóa và khoảng lấy mẫu đã dùng để tạo ra nó (FR-S04), cho phép giải thích và so sánh kết quả khi cấu hình thay đổi.
+    \item[NFR-17] \textbf{Nhật ký kiểm toán.} Nhật ký hệ thống (FR-A11) không chỉnh sửa được, không chứa mật khẩu hay thông tin xác thực, và vẫn giữ thông tin người thực hiện khi tài khoản đó bị xóa hoặc ngừng hoạt động.
+    \item[NFR-18] \textbf{Tái lập nguồn gốc dữ liệu.} Mỗi lần xuất hiện ghi lại phiên bản Detector, Tracker, bộ mã hóa và khoảng lấy mẫu đã dùng để tạo ra nó, cho phép giải thích và so sánh kết quả khi cấu hình thay đổi.
 \end{reqlist}
 
 \subsection{Khả năng sử dụng}

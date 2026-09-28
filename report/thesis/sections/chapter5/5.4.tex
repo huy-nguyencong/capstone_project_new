@@ -17,10 +17,10 @@
     \item \textbf{Đường dẫn và phiên bản.} Mọi API nghiệp vụ nằm dưới tiền tố \path{/api/v1}; số phiên bản trong đường dẫn cho phép thay đổi API về sau mà không làm hỏng các ứng dụng đang dùng phiên bản cũ. Đường dẫn gọi tên \emph{tài nguyên} bằng danh từ số nhiều, chẳng hạn \path{/cases} hay \path{/admin/cameras}; các API chỉ dành cho Quản trị viên được gom dưới \path{/admin}.
     \item \textbf{Phương thức HTTP.} \texttt{GET} để đọc, \texttt{POST} để tạo mới, \texttt{PATCH} để cập nhật một phần, \texttt{PUT} để đặt lại toàn bộ một thiết lập (trạng thái AI của camera, cấu hình mô hình), \texttt{DELETE} để xóa. Các thao tác chuyển trạng thái có ý nghĩa nghiệp vụ riêng, như khóa tài khoản, loại camera khỏi vận hành hay hủy công việc, được thiết kế thành các hành động tường minh, ví dụ \texttt{POST} \path{/admin/cameras/{id}/retire}, thay vì sửa trực tiếp một trường trạng thái. Nhờ vậy, mỗi thao tác được kiểm tra điều kiện và ghi nhật ký riêng.
     \item \textbf{Định dạng dữ liệu.} Dữ liệu gửi và nhận ở dạng JSON; riêng ảnh truy vấn và tệp video được gửi dạng \texttt{multipart/form-data}; ảnh người và khung hình được trả về dạng ảnh JPEG. Mốc thời gian dùng định dạng ISO~8601 kèm múi giờ.
-    \item \textbf{Định dạng lỗi thống nhất.} Mọi lỗi có cùng cấu trúc gồm \emph{mã lỗi} ổn định để giao diện xử lý theo chương trình, chẳng hạn \texttt{version\_conflict} hay \texttt{case\_closed}; \emph{thông báo} tiếng Việt để hiển thị cho người dùng; \emph{chi tiết} như lỗi của từng trường dữ liệu; và \emph{mã yêu cầu} để đối chiếu với nhật ký của máy chủ. Mã yêu cầu cũng được trả về trong tiêu đề \texttt{X-Request-ID} của mọi phản hồi. Lỗi không lường trước chỉ trả về một thông báo chung, không kèm thông tin nội bộ (NFR-05).
+    \item \textbf{Định dạng lỗi thống nhất.} Mọi lỗi có cùng cấu trúc gồm \emph{mã lỗi} ổn định để giao diện xử lý theo chương trình, chẳng hạn \texttt{version\_conflict} hay \texttt{case\_closed}; \emph{thông báo} tiếng Việt để hiển thị cho người dùng; \emph{chi tiết} như lỗi của từng trường dữ liệu; và \emph{mã yêu cầu} để đối chiếu với nhật ký của máy chủ. Mã yêu cầu cũng được trả về trong tiêu đề \texttt{X-Request-ID} của mọi phản hồi. Lỗi không lường trước chỉ trả về một thông báo chung, không kèm thông tin nội bộ.
     \item \textbf{Mã trạng thái HTTP} được dùng theo ý nghĩa chuẩn, tóm tắt ở Bảng~\ref{tab:http-status}.
     \item \textbf{Phân trang.} Danh sách có thể dài, như danh sách vụ việc, dùng phân trang theo con trỏ: yêu cầu gửi số phần tử cần lấy và con trỏ của trang trước, phản hồi trả về danh sách và con trỏ của trang kế tiếp. So với phân trang theo số trang, cách này không bị trùng hay sót phần tử khi dữ liệu thay đổi trong lúc người dùng đang xem.
-    \item \textbf{Chống ghi đè và chống lặp.} Yêu cầu cập nhật tài khoản, camera và vụ việc phải kèm số phiên bản mà giao diện đang có; nếu dữ liệu đã bị thay đổi ở nơi khác, máy chủ trả mã 409 thay vì ghi đè (NFR-08). Yêu cầu tải video có thể kèm tiêu đề \texttt{Idempotency-Key}; gửi lặp lại cùng khóa không tạo thêm công việc.
+    \item \textbf{Chống ghi đè và chống lặp.} Yêu cầu cập nhật tài khoản, camera và vụ việc phải kèm số phiên bản mà giao diện đang có; nếu dữ liệu đã bị thay đổi ở nơi khác, máy chủ trả mã 409 thay vì ghi đè. Yêu cầu tải video có thể kèm tiêu đề \texttt{Idempotency-Key}; gửi lặp lại cùng khóa không tạo thêm công việc.
 \end{itemize}
 
 \begin{table}[H]
@@ -55,38 +55,38 @@
 \subsection{Các nhóm API}
 \label{sec:5.4.2}
 
-Bảng~\ref{tab:api-groups} liệt kê các nhóm API theo chức năng, cùng vai trò được phép gọi và use case tương ứng. Việc kiểm tra vai trò được khai báo cho từng API và thực hiện ở máy chủ trước mọi xử lý khác.
+Bảng~\ref{tab:api-groups} liệt kê các nhóm API theo chức năng, cùng vai trò được phép gọi. Việc kiểm tra vai trò được khai báo cho từng API và thực hiện ở máy chủ trước mọi xử lý khác.
 
-\begin{longtable}{|P{3.0cm}|P{6.2cm}|P{2.8cm}|P{2.2cm}|}
+\begin{longtable}{|P{3.0cm}|P{7.6cm}|P{3.6cm}|}
 \caption{Các nhóm API của hệ thống}\label{tab:api-groups}\\
 \hline
-\textbf{Nhóm} & \textbf{Đường dẫn chính (dưới \path{/api/v1})} & \textbf{Vai trò} & \textbf{Use case} \\
+\textbf{Nhóm} & \textbf{Đường dẫn chính (dưới \path{/api/v1})} & \textbf{Vai trò} \\
 \hline
 \endfirsthead
-\multicolumn{4}{l}{\textit{(tiếp theo Bảng~\ref{tab:api-groups})}}\\
+\multicolumn{3}{l}{\textit{(tiếp theo Bảng~\ref{tab:api-groups})}}\\
 \hline
-\textbf{Nhóm} & \textbf{Đường dẫn chính (dưới \path{/api/v1})} & \textbf{Vai trò} & \textbf{Use case} \\
+\textbf{Nhóm} & \textbf{Đường dẫn chính (dưới \path{/api/v1})} & \textbf{Vai trò} \\
 \hline
 \endhead
-Xác thực & \texttt{POST} \path{/auth/login}, \path{/auth/logout}, \path{/auth/refresh}; \texttt{GET} \path{/auth/me} & Mọi người dùng & \mbox{UC-01}, \mbox{UC-15} \\
+Xác thực & \texttt{POST} \path{/auth/login}, \path{/auth/logout}, \path{/auth/refresh}; \texttt{GET} \path{/auth/me} & Mọi người dùng \\
 \hline
-Khu vực & \texttt{GET} \path{/areas} & Quản trị viên, Giám sát viên & \mbox{UC-02} \\
+Khu vực & \texttt{GET} \path{/areas} & Quản trị viên, Giám sát viên \\
 \hline
-Tài khoản & \path{/admin/users}: xem, tạo, sửa; \path{/lock}, \path{/unlock}, \path{/deactivate} & Quản trị viên & \mbox{UC-02} \\
+Tài khoản & \path{/admin/users}: xem, tạo, sửa; \path{/lock}, \path{/unlock}, \path{/deactivate} & Quản trị viên \\
 \hline
-Camera & \path{/admin/cameras}: xem, tạo, sửa; \path{/connection-tests}, \path{/retire}, \path{/reactivate}, \path{/ai-state} & Quản trị viên & \mbox{UC-03}, \mbox{UC-04} \\
+Camera & \path{/admin/cameras}: xem, tạo, sửa; \path{/connection-tests}, \path{/retire}, \path{/reactivate}, \path{/ai-state} & Quản trị viên \\
 \hline
-Cấu hình AI & \texttt{GET} \path{/admin/ai/models}; \path{GET}, \texttt{PUT} \path{/admin/ai/config} & Quản trị viên & \mbox{UC-05} \\
+Cấu hình AI & \texttt{GET} \path{/admin/ai/models}; \path{GET}, \texttt{PUT} \path{/admin/ai/config} & Quản trị viên \\
 \hline
-Công việc xử lý & \texttt{POST} \path{/admin/cameras/{id}/processing-jobs}; \path{/admin/processing-jobs}: xem, \path{/cancel} & Quản trị viên & \mbox{UC-04} \\
+Công việc xử lý & \texttt{POST} \path{/admin/cameras/{id}/processing-jobs}; \path{/admin/processing-jobs}: xem, \path{/cancel} & Quản trị viên \\
 \hline
-Theo dõi vận hành & \texttt{GET} \path{/admin/system-status}; \texttt{POST} \path{/admin/diagnostics/camera-pipeline}, \path{/search-components}; \texttt{GET} \path{/admin/audit-logs} & Quản trị viên & \mbox{UC-06}, \mbox{UC-07}, \mbox{UC-08} \\
+Theo dõi vận hành & \texttt{GET} \path{/admin/system-status}; \texttt{POST} \path{/admin/diagnostics/camera-pipeline}, \path{/search-components}; \texttt{GET} \path{/admin/audit-logs} & Quản trị viên \\
 \hline
-Tìm kiếm & \texttt{GET} \path{/me/cameras}; \texttt{POST} \path{/searches/image}, \path{/text}, \path{/attributes}; \texttt{GET} \path{/search-results/{id}/crop}, \path{/frame} & Giám sát viên & \mbox{UC-09}, \mbox{UC-10} \\
+Tìm kiếm & \texttt{GET} \path{/me/cameras}; \texttt{POST} \path{/searches/image}, \path{/text}, \path{/attributes}; \texttt{GET} \path{/search-results/{id}/crop}, \path{/frame} & Giám sát viên \\
 \hline
-Vụ việc & \path{/cases}: xem danh sách, tạo; \path{/cases/{id}}: xem, sửa; \path{/cases/{id}/results}: thêm, xóa; \path{.../results/{id}/crop}, \path{/frame} & Giám sát viên (ghi, đọc vụ việc của mình); Quản lý (đọc mọi vụ việc) & \mbox{UC-11}, \mbox{UC-13}, \mbox{UC-14} \\
+Vụ việc & \path{/cases}: xem danh sách, tạo; \path{/cases/{id}}: xem, sửa; \path{/cases/{id}/results}: thêm, xóa; \path{.../results/{id}/crop}, \path{/frame} & Giám sát viên (ghi, đọc vụ việc của mình); Quản lý (đọc mọi vụ việc) \\
 \hline
-Tổng quan & \texttt{GET} \path{/viewer/dashboard}, \path{/viewer/operators} & Quản lý & \mbox{UC-12}, \mbox{UC-13} \\
+Tổng quan & \texttt{GET} \path{/viewer/dashboard}, \path{/viewer/operators} & Quản lý \\
 \hline
 \end{longtable}
 
@@ -96,7 +96,7 @@ Ngoài các API nghiệp vụ, máy chủ cung cấp ba đường dẫn kiểm t
 \label{sec:5.4.3}
 
 \begin{itemize}
-    \item \textbf{Phạm vi lấy từ phiên, không từ yêu cầu.} Không API nào nhận khu vực của Giám sát viên hay người phụ trách vụ việc như một tham số; máy chủ tự xác định các giá trị này từ phiên đăng nhập. Yêu cầu tìm kiếm chỉ chứa truy vấn và các bộ lọc thu hẹp thêm (camera, khoảng thời gian, số kết quả); yêu cầu lưu kết quả chỉ chứa mã lần xuất hiện, không kèm điểm phù hợp hay thông tin hiển thị. Nhờ vậy, việc sửa yêu cầu ở phía trình duyệt không thể mở rộng quyền (NFR-01).
+    \item \textbf{Phạm vi lấy từ phiên, không từ yêu cầu.} Không API nào nhận khu vực của Giám sát viên hay người phụ trách vụ việc như một tham số; máy chủ tự xác định các giá trị này từ phiên đăng nhập. Yêu cầu tìm kiếm chỉ chứa truy vấn và các bộ lọc thu hẹp thêm (camera, khoảng thời gian, số kết quả); yêu cầu lưu kết quả chỉ chứa mã lần xuất hiện, không kèm điểm phù hợp hay thông tin hiển thị. Nhờ vậy, việc sửa yêu cầu ở phía trình duyệt không thể mở rộng quyền.
     \item \textbf{Ba API tìm kiếm, một dạng phản hồi.} Mỗi hình thức truy vấn có API riêng vì dữ liệu đầu vào khác nhau (ảnh dạng \texttt{multipart}, câu mô tả và thuộc tính dạng JSON), nhưng cả ba trả về cùng một cấu trúc danh sách kết quả, nên giao diện hiển thị kết quả dùng chung.
     \item \textbf{Ảnh tách khỏi dữ liệu.} Phản hồi tìm kiếm và phản hồi xem vụ việc chỉ chứa thông tin mô tả; ảnh người và khung hình được lấy qua các đường dẫn \path{/crop} và \path{/frame} riêng, với tham số tỉ lệ khung cắt và tùy chọn làm nổi bật người được tìm thấy (Mục~\ref{sec:5.2.3}).
     \item \textbf{Hai bộ đường dẫn ảnh theo hai căn cứ quyền.} Ảnh của kết quả tìm kiếm được lấy qua \path{/search-results/...} và được cấp theo quyền tìm kiếm; ảnh của kết quả đã lưu được lấy qua \path{/cases/{id}/results/...} và được cấp theo quyền đối với vụ việc. Việc tách đường dẫn phản ánh trực tiếp hai căn cứ truy cập hình ảnh ở Mục~\ref{sec:4.6}.

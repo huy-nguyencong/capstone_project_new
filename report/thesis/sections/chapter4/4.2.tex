@@ -3,18 +3,18 @@
 % Nguồn: project_requirements.md mục 1–3, 5, 6; usecase_detail.md \mbox{UC-01}..\mbox{UC-15} (ghi chú mỗi UC); architect.md mục 2, 4, 6.
 % Đã đối chiếu giao diện: sắp xếp/lọc kết quả (features/search/SearchResults.jsx), lọc vụ việc theo trạng thái/ngày tạo/người phụ trách
 % (pages/cases/CaseBrowserPage.jsx), tải video dự phòng (pages/admin/VideoProcessingPage.jsx).
-% Mã yêu cầu: FR-C (chung), FR-A (Quản trị viên), FR-O (Giám sát viên), FR-V (Quản lý), FR-S (hệ thống tự động). Dùng lại ở Chương 8; bảng 4.5 không ghi mã FR (SV bỏ), liên kết FR→UC nằm ở cuối mỗi FR.
+% Mã yêu cầu: FR-C (chung), FR-A (Quản trị viên), FR-O (Giám sát viên), FR-V (Quản lý), FR-S (hệ thống tự động). Dùng lại ở Chương 8; bảng 4.5 không ghi mã FR (SV bỏ), đã bỏ mã UC ở cuối mỗi FR (SV yêu cầu 2026-09-28).
 \section{Các yêu cầu chức năng}
 \label{sec:4.2}
 
-Các yêu cầu chức năng được nhóm theo tác nhân đã xác định ở Mục~\ref{sec:4.1}, cùng một nhóm chức năng chung cho mọi tác nhân và một nhóm chức năng hệ thống tự thực hiện mà không do người dùng trực tiếp kích hoạt. Mỗi yêu cầu được gán một mã để thuận tiện đối chiếu với đặc tả use case (Mục~\ref{sec:4.5}) và kết quả kiểm thử (Chương~\ref{chapter:kiemthu}); use case tương ứng được ghi trong ngoặc ở cuối mỗi yêu cầu.
+Các yêu cầu chức năng được nhóm theo tác nhân đã xác định ở Mục~\ref{sec:4.1}, cùng một nhóm chức năng chung cho mọi tác nhân và một nhóm chức năng hệ thống tự thực hiện mà không do người dùng trực tiếp kích hoạt. Mỗi yêu cầu được gán một mã để thuận tiện đối chiếu với đặc tả use case (Mục~\ref{sec:4.5}) và kết quả kiểm thử (Chương~\ref{chapter:kiemthu}).
 
 \subsection{Chức năng chung}
 \label{sec:4.2.1}
 
 \begin{reqlist}
-    \item[FR-C01] Hệ thống cho phép người dùng đăng nhập bằng tên đăng nhập và mật khẩu. Sau khi xác thực, hệ thống xác định vai trò của tài khoản và đưa người dùng đến giao diện chính phù hợp với vai trò đó. Tài khoản bị khóa hoặc ngừng hoạt động bị từ chối đăng nhập. (\mbox{UC-01})
-    \item[FR-C02] Hệ thống cho phép người dùng đăng xuất để kết thúc phiên làm việc. Phiên đăng nhập tự động hết hạn sau 12 giờ kể từ khi đăng nhập hoặc sau 30 phút không hoạt động; tài khoản bị khóa hoặc ngừng hoạt động trong khi đang đăng nhập sẽ mất quyền truy cập ngay ở yêu cầu kế tiếp. (\mbox{UC-15})
+    \item[FR-C01] Hệ thống cho phép người dùng đăng nhập bằng tên đăng nhập và mật khẩu. Sau khi xác thực, hệ thống xác định vai trò của tài khoản và đưa người dùng đến giao diện chính phù hợp với vai trò đó. Tài khoản bị khóa hoặc ngừng hoạt động bị từ chối đăng nhập.
+    \item[FR-C02] Hệ thống cho phép người dùng đăng xuất để kết thúc phiên làm việc. Phiên đăng nhập tự động hết hạn sau 12 giờ kể từ khi đăng nhập hoặc sau 30 phút không hoạt động; tài khoản bị khóa hoặc ngừng hoạt động trong khi đang đăng nhập sẽ mất quyền truy cập ngay ở yêu cầu kế tiếp.
 \end{reqlist}
 
 \subsection{Chức năng của Quản trị viên}
@@ -22,29 +22,29 @@ Các yêu cầu chức năng được nhóm theo tác nhân đã xác định �
 
 \paragraph{Quản lý tài khoản.}
 \begin{reqlist}
-    \item[FR-A01] Quản trị viên tạo, cập nhật, khóa hoặc mở khóa, xóa hoặc ngừng hoạt động tài khoản người dùng, và gán hoặc thay đổi vai trò giữa Giám sát viên và Quản lý. Tên đăng nhập phải là duy nhất. Việc khóa, xóa hoặc ngừng hoạt động tài khoản không làm mất vụ việc, kết quả đã lưu hay nhật ký do tài khoản đó tạo ra. (\mbox{UC-02})
-    \item[FR-A02] Khi tạo hoặc cập nhật Giám sát viên, Quản trị viên phải gán đúng một khu vực giám sát, chọn từ danh mục khu vực đã khai báo sẵn; hệ thống từ chối lưu nếu tài khoản không có khu vực hoặc có nhiều hơn một khu vực. (\mbox{UC-02})
+    \item[FR-A01] Quản trị viên tạo, cập nhật, khóa hoặc mở khóa, xóa hoặc ngừng hoạt động tài khoản người dùng, và gán hoặc thay đổi vai trò giữa Giám sát viên và Quản lý. Tên đăng nhập phải là duy nhất.
+    \item[FR-A02] Khi tạo hoặc cập nhật Giám sát viên, Quản trị viên phải gán đúng một khu vực giám sát, chọn từ danh mục khu vực đã khai báo sẵn; hệ thống từ chối lưu nếu tài khoản không có khu vực hoặc có nhiều hơn một khu vực.
 \end{reqlist}
 
 \paragraph{Quản lý camera.}
 \begin{reqlist}
-    \item[FR-A03] Quản trị viên thêm camera với tên, địa chỉ RTSP, thông tin xác thực và khu vực lắp đặt, và cập nhật các thông tin được phép thay đổi. Khu vực của camera không thể thay đổi sau khi tạo; hệ thống không tạo bản ghi trùng với camera hay địa chỉ RTSP đã đăng ký. Thông tin xác thực được lưu ở dạng mã hóa và không hiển thị lại trên giao diện. (\mbox{UC-03})
-    \item[FR-A04] Hệ thống thử kết nối tới luồng RTSP khi thêm camera, khi thông tin kết nối thay đổi và khi Quản trị viên yêu cầu kiểm tra. Nếu kết nối không thành công, hệ thống hiển thị cảnh báo nhưng vẫn cho phép lưu camera ở trạng thái \emph{Offline/Chưa xác minh} để kiểm tra lại sau. Hệ thống chỉ kết nối tới địa chỉ IP thuộc dải mạng camera được khai báo khi triển khai. (\mbox{UC-03})
-    \item[FR-A05] Quản trị viên loại một camera khỏi vận hành hoặc đưa camera vận hành trở lại. Khi bị loại khỏi vận hành, camera không còn được nhận luồng để xử lý; dữ liệu đã tạo từ camera được giữ nguyên nhưng tạm thời không được tìm kiếm, không được chọn làm bộ lọc và không được thêm mới vào vụ việc, trong khi các kết quả đã lưu trong vụ việc vẫn xem được. Khi được đưa vận hành trở lại, camera ở trạng thái tắt xử lý AI và dữ liệu cũ được tìm kiếm lại bình thường. (\mbox{UC-03})
+    \item[FR-A03] Quản trị viên thêm camera với tên, địa chỉ RTSP, thông tin xác thực và khu vực lắp đặt, và cập nhật các thông tin được phép thay đổi. Khu vực của camera không thể thay đổi sau khi tạo; hệ thống không tạo bản ghi trùng với camera hay địa chỉ RTSP đã đăng ký.
+    \item[FR-A04] Hệ thống thử kết nối tới luồng RTSP khi thêm camera, khi thông tin kết nối thay đổi và khi Quản trị viên yêu cầu kiểm tra. Nếu kết nối không thành công, hệ thống hiển thị cảnh báo nhưng vẫn cho phép lưu camera ở trạng thái \emph{Offline/Chưa xác minh} để kiểm tra lại sau.
+    \item[FR-A05] Quản trị viên loại một camera khỏi vận hành hoặc đưa camera vận hành trở lại. Khi bị loại khỏi vận hành, camera không còn được nhận luồng để xử lý; dữ liệu đã tạo từ camera được giữ nguyên nhưng tạm thời không được tìm kiếm, không được chọn làm bộ lọc và không được thêm mới vào vụ việc, trong khi các kết quả đã lưu trong vụ việc vẫn xem được. Khi được đưa vận hành trở lại, camera ở trạng thái tắt xử lý AI và dữ liệu cũ được tìm kiếm lại bình thường.
 \end{reqlist}
 
 \paragraph{Quản lý xử lý AI.}
 \begin{reqlist}
-    \item[FR-A06] Quản trị viên bật hoặc tắt xử lý AI cho từng camera. Hệ thống từ chối bật khi camera có RTSP đang mất kết nối, camera đã bị loại khỏi vận hành, hoặc bộ mô hình hiện hành chưa sẵn sàng. Khi tắt, hệ thống ngừng tạo dữ liệu mới từ camera nhưng giữ nguyên dữ liệu đã có. (\mbox{UC-04})
-    \item[FR-A07] Quản trị viên tải lên tệp video gắn với một camera để hệ thống xử lý qua cùng quy trình phân tích như luồng RTSP. Đây là đường xử lý dự phòng, dùng để nạp dữ liệu từ tệp ghi sẵn: trong phạm vi đồ án, chức năng này được dùng để chuẩn bị dữ liệu trình diễn, vì máy triển khai không phân tích kịp luồng RTSP theo thời gian thực (Mục~\ref{sec:1.3}); đây cũng là cách duy nhất để xử lý camera không cấu hình RTSP. (\mbox{UC-04})
-    \item[FR-A08] Quản trị viên chọn mô hình phát hiện người (Detector) và thuật toán theo vết (Tracker) từ danh sách đã đăng ký sẵn; cấu hình được áp dụng chung cho toàn hệ thống. Hệ thống kiểm tra mô hình có sẵn sàng và cặp Detector--Tracker có tương thích trước khi áp dụng; nếu không áp dụng được, hệ thống giữ nguyên cấu hình hợp lệ trước đó. Bộ mã hóa ảnh và văn bản là thành phần cố định, không thay đổi được từ giao diện. (\mbox{UC-05})
+    \item[FR-A06] Quản trị viên bật hoặc tắt xử lý AI cho từng camera. Hệ thống từ chối bật khi camera có RTSP đang mất kết nối, camera đã bị loại khỏi vận hành, hoặc bộ mô hình hiện hành chưa sẵn sàng. Khi tắt, hệ thống ngừng tạo dữ liệu mới từ camera.
+    \item[FR-A07] Quản trị viên tải lên tệp video gắn với một camera để hệ thống xử lý qua cùng quy trình phân tích như luồng RTSP. Đây là đường xử lý dự phòng, dùng để nạp dữ liệu từ tệp ghi sẵn: trong phạm vi đồ án, chức năng này được dùng để chuẩn bị dữ liệu trình diễn, vì máy triển khai không phân tích kịp luồng RTSP theo thời gian thực (Mục~\ref{sec:1.3}); đây cũng là cách duy nhất để xử lý camera không cấu hình RTSP.
+    \item[FR-A08] Quản trị viên chọn mô hình phát hiện người (Detector) và thuật toán theo vết (Tracker) từ danh sách đã đăng ký sẵn; cấu hình được áp dụng chung cho toàn hệ thống. Hệ thống kiểm tra mô hình có sẵn sàng và cặp Detector--Tracker có tương thích trước khi áp dụng; nếu không áp dụng được, hệ thống giữ nguyên cấu hình hợp lệ trước đó. Bộ mã hóa ảnh và văn bản là thành phần cố định, không thay đổi được từ giao diện.
 \end{reqlist}
 
 \paragraph{Theo dõi vận hành.}
 \begin{reqlist}
-    \item[FR-A09] Quản trị viên theo dõi trạng thái kết nối của camera, trạng thái luồng RTSP và trạng thái xử lý AI của từng camera; lọc các camera đang ở trạng thái bất thường và làm mới dữ liệu trạng thái. (\mbox{UC-06})
-    \item[FR-A10] Quản trị viên kiểm tra độc lập hai nhóm thành phần AI: nhóm xử lý camera (nhận luồng RTSP, Detector, Tracker, bộ mã hóa ảnh), thực hiện trên khung hình thật của một camera được chọn; và nhóm tìm kiếm (bộ mã hóa ảnh và văn bản), không cần chọn camera. Kết quả được hiển thị theo từng thành phần; nếu khung hình kiểm tra không có người, hệ thống báo chưa thể xác minh thay vì kết luận có lỗi. (\mbox{UC-07})
-    \item[FR-A11] Quản trị viên xem nhật ký hệ thống, lọc theo người thực hiện, loại sự kiện và khoảng thời gian, và xem chi tiết từng bản ghi gồm thời gian, người thực hiện, hành động, đối tượng bị tác động và kết quả. Nhật ký ghi nhận đăng nhập, đăng xuất và đăng nhập thất bại; các thao tác quản lý tài khoản, khu vực, camera, xử lý AI và cấu hình mô hình; các thao tác tạo, cập nhật, đánh dấu hoàn thành và mở lại vụ việc; và các lỗi kỹ thuật quan trọng của RTSP hoặc quy trình xử lý AI. Nhật ký chỉ được đọc, không được sửa từ giao diện; thao tác tìm kiếm người không được ghi nhật ký. (\mbox{UC-08})
+    \item[FR-A09] Quản trị viên theo dõi trạng thái kết nối của camera, trạng thái luồng RTSP và trạng thái xử lý AI của từng camera; lọc các camera đang ở trạng thái bất thường và làm mới dữ liệu trạng thái.
+    \item[FR-A10] Quản trị viên kiểm tra độc lập hai nhóm thành phần AI: nhóm xử lý camera (nhận luồng RTSP, Detector, Tracker, bộ mã hóa ảnh), thực hiện trên khung hình thật của một camera được chọn; và nhóm tìm kiếm (bộ mã hóa ảnh và văn bản), không cần chọn camera. Kết quả được hiển thị theo từng thành phần; nếu khung hình kiểm tra không có người, hệ thống báo chưa thể xác minh thay vì kết luận có lỗi.
+    \item[FR-A11] Quản trị viên xem nhật ký hệ thống, lọc theo người thực hiện, loại sự kiện và khoảng thời gian, và xem chi tiết từng bản ghi gồm thời gian, người thực hiện, hành động, đối tượng bị tác động và kết quả. Nhật ký ghi nhận đăng nhập, đăng xuất và đăng nhập thất bại; các thao tác quản lý tài khoản, khu vực, camera, xử lý AI và cấu hình mô hình; các thao tác tạo, cập nhật, đánh dấu hoàn thành và mở lại vụ việc; và các lỗi kỹ thuật quan trọng của RTSP hoặc quy trình xử lý AI. Thao tác tìm kiếm người không được ghi nhật ký.
 \end{reqlist}
 
 \subsection{Chức năng của Giám sát viên}
@@ -52,38 +52,38 @@ Các yêu cầu chức năng được nhóm theo tác nhân đã xác định �
 
 \paragraph{Tìm kiếm người.}
 \begin{reqlist}
-    \item[FR-O01] Giám sát viên tìm kiếm bằng ảnh chứa người cần tìm, đưa vào bằng cách chọn tệp, kéo thả tệp, dán ảnh, hoặc kéo một kết quả tìm kiếm vào ô tìm kiếm để tìm tiếp bằng chính người đó. (\mbox{UC-09})
-    \item[FR-O02] Giám sát viên tìm kiếm bằng câu mô tả tiếng Anh. Hệ thống không hỗ trợ truy vấn tiếng Việt và không tự động dịch. (\mbox{UC-09})
-    \item[FR-O03] Giám sát viên tìm kiếm bằng cách chọn thuộc tính gồm giới tính, loại và màu trang phục phía trên, loại và màu trang phục phía dưới, và vật mang theo (ba lô, túi xách). Tên nhóm thuộc tính hiển thị bằng tiếng Việt, giá trị bằng tiếng Anh; không có lựa chọn phủ định. Các thuộc tính được chuyển thành một câu mô tả tiếng Anh theo mẫu cố định rồi xử lý như tìm kiếm bằng câu mô tả. (\mbox{UC-09})
-    \item[FR-O04] Phạm vi tìm kiếm được hệ thống tự động giới hạn trong khu vực giám sát của tài khoản; Giám sát viên có thể lọc thêm theo các camera đang vận hành trong khu vực và theo khoảng thời gian. Hệ thống từ chối mọi yêu cầu chứa camera hoặc khu vực ngoài quyền, kể cả khi yêu cầu được gửi trực tiếp tới máy chủ. (\mbox{UC-09})
-    \item[FR-O05] Giám sát viên chọn số kết quả cần trả về trong các giá trị 4, 8, 12 hoặc 16; giá trị khác bị từ chối. Hệ thống trả về tối đa số kết quả đó có điểm phù hợp cao nhất trong phạm vi hợp lệ, sắp xếp giảm dần theo điểm, không dùng ngưỡng điểm để loại kết quả. (\mbox{UC-09})
+    \item[FR-O01] Giám sát viên tìm kiếm bằng ảnh chứa người cần tìm, đưa vào bằng cách chọn tệp, kéo thả tệp, dán ảnh, hoặc kéo một kết quả tìm kiếm vào ô tìm kiếm để tìm tiếp bằng chính người đó.
+    \item[FR-O02] Giám sát viên tìm kiếm bằng câu mô tả tiếng Anh. Hệ thống không hỗ trợ truy vấn tiếng Việt và không tự động dịch.
+    \item[FR-O03] Giám sát viên tìm kiếm bằng cách chọn thuộc tính gồm giới tính, loại và màu trang phục phía trên, loại và màu trang phục phía dưới, và vật mang theo (ba lô, túi xách). Tên nhóm thuộc tính hiển thị bằng tiếng Việt, giá trị bằng tiếng Anh; không có lựa chọn phủ định. Các thuộc tính được chuyển thành một câu mô tả tiếng Anh theo mẫu cố định rồi xử lý như tìm kiếm bằng câu mô tả.
+    \item[FR-O04] Phạm vi tìm kiếm được hệ thống tự động giới hạn trong khu vực giám sát của tài khoản; Giám sát viên có thể lọc thêm theo các camera đang vận hành trong khu vực và theo khoảng thời gian. Hệ thống từ chối mọi yêu cầu chứa camera hoặc khu vực ngoài quyền, kể cả khi yêu cầu được gửi trực tiếp tới máy chủ.
+    \item[FR-O05] Giám sát viên chọn số kết quả cần trả về trong các giá trị 4, 8, 12 hoặc 16; giá trị khác bị từ chối. Hệ thống trả về tối đa số kết quả đó có điểm phù hợp cao nhất trong phạm vi hợp lệ, sắp xếp giảm dần theo điểm, không dùng ngưỡng điểm để loại kết quả.
 \end{reqlist}
 
 \paragraph{Xem và đánh giá kết quả.}
 \begin{reqlist}
-    \item[FR-O06] Mỗi kết quả tương ứng với một lần xuất hiện (track) của một người trên một camera, được hiển thị bằng ảnh người dựng động từ khung hình toàn cảnh và khung bao -- vùng cắt được nới rộng theo tỉ lệ khung hiển thị bằng phần cảnh xung quanh, người được tìm thấy có khung viền và phần xung quanh được làm tối -- cùng thứ hạng, camera, khu vực, thời điểm xuất hiện và điểm phù hợp. (\mbox{UC-09}, \mbox{UC-10})
-    \item[FR-O07] Khi Giám sát viên chọn ảnh của một kết quả, hệ thống hiển thị khung hình toàn cảnh đại diện có vẽ khung bao của người được tìm thấy, cùng thông tin chi tiết của kết quả. (\mbox{UC-10})
-    \item[FR-O08] Giám sát viên sắp xếp danh sách kết quả theo điểm phù hợp hoặc theo thời gian xuất hiện, và lọc lại danh sách hiện tại theo camera hoặc khoảng thời gian. (\mbox{UC-10})
+    \item[FR-O06] Mỗi kết quả tương ứng với một lần xuất hiện (track) của một người trên một camera, được hiển thị bằng ảnh người kèm đủ ngữ cảnh xung quanh để nhận ra người được tìm thấy khi trong khung hình có nhiều người, cùng thứ hạng, camera, khu vực, thời điểm xuất hiện và điểm phù hợp.
+    \item[FR-O07] Khi Giám sát viên chọn ảnh của một kết quả, hệ thống hiển thị khung hình toàn cảnh đại diện có vẽ khung bao của người được tìm thấy, cùng thông tin chi tiết của kết quả.
+    \item[FR-O08] Giám sát viên sắp xếp danh sách kết quả theo điểm phù hợp hoặc theo thời gian xuất hiện, và lọc lại danh sách hiện tại theo camera hoặc khoảng thời gian.
 \end{reqlist}
 
 \paragraph{Quản lý vụ việc.}
 \begin{reqlist}
-    \item[FR-O09] Từ một kết quả, Giám sát viên tạo vụ việc mới với tiêu đề và ghi chú; hệ thống tự động lấy tài khoản đang đăng nhập làm người phụ trách và không cho phép chỉ định người khác. (\mbox{UC-11})
-    \item[FR-O10] Từ một kết quả, Giám sát viên thêm kết quả vào một vụ việc đã có; hệ thống chỉ hiển thị các vụ việc đang xử lý do chính Giám sát viên đó phụ trách. Mỗi lần lưu tạo một mục kết quả mới, kể cả khi cùng một lần xuất hiện đã có trong vụ việc. (\mbox{UC-11})
-    \item[FR-O11] Khi tạo vụ việc mới hoặc thêm vào vụ việc đã có, Giám sát viên có thể chọn đánh dấu vụ việc hoàn thành ngay khi lưu; nếu bước đánh dấu không thành công, kết quả vẫn được lưu và Giám sát viên được thông báo để đánh dấu lại. (\mbox{UC-11})
-    \item[FR-O12] Giám sát viên sửa tiêu đề, ghi chú và loại bỏ kết quả khỏi vụ việc đang xử lý của mình; việc loại bỏ không xóa dữ liệu gốc của lần xuất hiện. (\mbox{UC-11})
-    \item[FR-O13] Giám sát viên đánh dấu vụ việc hoàn thành hoặc mở lại vụ việc đã hoàn thành. Vụ việc đã hoàn thành bị khóa: không thêm hay loại kết quả, không sửa tiêu đề và ghi chú, và không xuất hiện trong danh sách chọn khi thêm vào vụ việc đã có. (\mbox{UC-11})
-    \item[FR-O14] Giám sát viên xem danh sách và nội dung các vụ việc do mình phụ trách, kể cả sau khi được chuyển sang khu vực khác. Kết quả trong vụ việc được hiển thị như ở FR-O06 và FR-O07 nhưng không có điểm phù hợp. (\mbox{UC-11})
+    \item[FR-O09] Từ một kết quả, Giám sát viên tạo vụ việc mới với tiêu đề và ghi chú; hệ thống tự động lấy tài khoản đang đăng nhập làm người phụ trách và không cho phép chỉ định người khác.
+    \item[FR-O10] Từ một kết quả, Giám sát viên thêm kết quả vào một vụ việc đã có; hệ thống chỉ hiển thị các vụ việc đang xử lý do chính Giám sát viên đó phụ trách. Mỗi lần lưu tạo một mục kết quả mới, kể cả khi cùng một lần xuất hiện đã có trong vụ việc.
+    \item[FR-O11] Khi tạo vụ việc mới hoặc thêm vào vụ việc đã có, Giám sát viên có thể chọn đánh dấu vụ việc hoàn thành ngay khi lưu; nếu bước đánh dấu không thành công, kết quả vẫn được lưu và Giám sát viên được thông báo để đánh dấu lại.
+    \item[FR-O12] Giám sát viên sửa tiêu đề, ghi chú và loại bỏ kết quả khỏi vụ việc đang xử lý của mình.
+    \item[FR-O13] Giám sát viên đánh dấu vụ việc hoàn thành hoặc mở lại vụ việc đã hoàn thành. Vụ việc đã hoàn thành bị khóa: không thêm hay loại kết quả và không sửa tiêu đề, ghi chú.
+    \item[FR-O14] Giám sát viên xem danh sách và nội dung các vụ việc do mình phụ trách, kể cả sau khi được chuyển sang khu vực khác. Kết quả trong vụ việc được hiển thị như ở FR-O06 và FR-O07 nhưng không có điểm phù hợp.
 \end{reqlist}
 
 \subsection{Chức năng của Quản lý}
 \label{sec:4.2.4}
 
 \begin{reqlist}
-    \item[FR-V01] Quản lý xem bảng tổng quan trên toàn hệ thống gồm tổng số vụ việc, số vụ việc đang xử lý và đã hoàn thành, tổng số kết quả đã lưu vào vụ việc, và danh sách các vụ việc gần đây với tiêu đề, trạng thái, người phụ trách và thời gian cập nhật; chọn một vụ việc trong danh sách để xem chi tiết. (\mbox{UC-12})
-    \item[FR-V02] Quản lý xem danh sách mọi vụ việc trong hệ thống, lọc theo trạng thái, khoảng thời gian tạo hoặc Giám sát viên phụ trách. (\mbox{UC-13})
-    \item[FR-V03] Quản lý xem chi tiết một vụ việc gồm tiêu đề, ghi chú, trạng thái, người phụ trách, thời gian tạo và danh sách kết quả đã lưu, ở chế độ chỉ đọc. (\mbox{UC-13})
-    \item[FR-V04] Quản lý xem chi tiết một kết quả đã lưu gồm ảnh người dựng động, camera, khu vực và thời điểm xuất hiện, và mở khung hình toàn cảnh có vẽ khung bao; điểm phù hợp không được hiển thị. (\mbox{UC-14})
+    \item[FR-V01] Quản lý xem bảng tổng quan trên toàn hệ thống gồm tổng số vụ việc, số vụ việc đang xử lý và đã hoàn thành, tổng số kết quả đã lưu vào vụ việc, và danh sách các vụ việc gần đây với tiêu đề, trạng thái, người phụ trách và thời gian cập nhật; chọn một vụ việc trong danh sách để xem chi tiết.
+    \item[FR-V02] Quản lý xem danh sách mọi vụ việc trong hệ thống, lọc theo trạng thái, khoảng thời gian tạo hoặc Giám sát viên phụ trách.
+    \item[FR-V03] Quản lý xem chi tiết một vụ việc gồm tiêu đề, ghi chú, trạng thái, người phụ trách, thời gian tạo và danh sách kết quả đã lưu, ở chế độ chỉ đọc.
+    \item[FR-V04] Quản lý xem chi tiết một kết quả đã lưu gồm ảnh người, camera, khu vực và thời điểm xuất hiện, và mở khung hình toàn cảnh có vẽ khung bao; điểm phù hợp không được hiển thị.
 \end{reqlist}
 
 \subsection{Chức năng hệ thống tự động thực hiện}
@@ -91,8 +91,7 @@ Các yêu cầu chức năng được nhóm theo tác nhân đã xác định �
 
 Các chức năng dưới đây do hệ thống thực hiện nền, là điều kiện để các chức năng tìm kiếm ở Mục~\ref{sec:4.2.3} có dữ liệu.
 \begin{reqlist}
-    \item[FR-S01] Với các camera đang vận hành, đang bật xử lý AI và có cấu hình RTSP, hệ thống tự động tạo lần lượt các phiên xử lý có giới hạn số khung hình, xoay vòng giữa các camera; camera có phiên xử lý thất bại được tạm bỏ qua một khoảng thời gian trước khi thử lại. (\mbox{UC-04})
-    \item[FR-S02] Với mỗi luồng RTSP hoặc tệp video được xử lý, hệ thống lấy mẫu khung hình theo khoảng lấy mẫu đã cấu hình, phát hiện người, theo vết để gom các phát hiện thành từng lần xuất hiện, chọn một khung hình đại diện cho mỗi lần xuất hiện và tạo vector đặc trưng bằng bộ mã hóa ảnh từ vùng người được cắt tạm thời. (\mbox{UC-04}, \mbox{UC-05})
-    \item[FR-S03] Với mỗi lần xuất hiện, hệ thống lưu khung hình toàn cảnh đại diện, khung bao, vector đặc trưng và thông tin camera, khu vực, thời điểm xuất hiện; không lưu ảnh cắt của người thành tệp riêng. Một lần xuất hiện chỉ được đưa vào kết quả tìm kiếm khi toàn bộ dữ liệu này đã được ghi thành công. (\mbox{UC-09})
-    \item[FR-S04] Hệ thống ghi lại phiên bản Detector, Tracker, bộ mã hóa và khoảng lấy mẫu đã dùng để tạo dữ liệu của mỗi lần xuất hiện, phục vụ truy vết và tái lập. (\mbox{UC-05})
+    \item[FR-S01] Hệ thống tự động phân tích lần lượt dữ liệu của các camera đang vận hành, đang bật xử lý AI và có cấu hình RTSP, sao cho mọi camera đều được phân tích.
+    \item[FR-S02] Với mỗi luồng RTSP hoặc tệp video được xử lý, hệ thống lấy mẫu khung hình theo khoảng lấy mẫu đã cấu hình, phát hiện người, theo vết để gom các phát hiện thành từng lần xuất hiện, chọn một khung hình đại diện cho mỗi lần xuất hiện và tạo vector đặc trưng bằng bộ mã hóa ảnh.
+    \item[FR-S03] Với mỗi lần xuất hiện, hệ thống lưu khung hình toàn cảnh đại diện, khung bao, vector đặc trưng và thông tin camera, khu vực, thời điểm xuất hiện. Một lần xuất hiện chỉ được đưa vào kết quả tìm kiếm khi toàn bộ dữ liệu này đã được ghi thành công.
 \end{reqlist}

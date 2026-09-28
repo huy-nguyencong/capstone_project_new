@@ -35,13 +35,6 @@ Xem bảng tổng quan & Không & Không & Toàn hệ thống \\
 \end{tabularx}
 \end{table}
 
-Như đã nêu ở Mục~\ref{sec:4.1.1}, quyền quản trị kỹ thuật \emph{không mặc nhiên} kèm theo quyền nghiệp vụ; vì vậy, với tài khoản Quản trị viên, các hành động tìm kiếm và xem vụ việc được ghi là ``Không''.
-
-Ma trận được áp dụng theo các nguyên tắc sau:
-\begin{itemize}
-    \item \textbf{Kiểm tra tại máy chủ cho mọi yêu cầu.} Vai trò, khu vực hiện tại và quyền phụ trách vụ việc được lấy từ phiên đăng nhập, không lấy từ dữ liệu trình duyệt gửi lên. Yêu cầu chứa camera hoặc khu vực ngoài quyền bị từ chối, kể cả khi được gửi trực tiếp tới máy chủ mà không qua giao diện.
-    \item \textbf{Hai con đường truy cập hình ảnh.} Ảnh và khung hình của một lần xuất hiện được cấp theo một trong hai căn cứ: quyền tìm kiếm, tức lần xuất hiện thuộc camera đang vận hành trong khu vực hiện tại của Giám sát viên; hoặc quyền đối với vụ việc, tức lần xuất hiện đã được lưu trong một vụ việc mà người dùng được xem. Nhờ căn cứ thứ hai, Giám sát viên đã chuyển khu vực và Quản lý vẫn xem được ảnh trong vụ việc, dù không có quyền tìm kiếm trên camera đó.
-    \item \textbf{Trạng thái dữ liệu thu hẹp quyền.} Dữ liệu của camera đang ngừng vận hành không xuất hiện trong kết quả tìm kiếm, không được chọn làm bộ lọc và không được thêm mới vào vụ việc, nhưng vẫn xem được trong các vụ việc đã lưu. Vụ việc đã hoàn thành từ chối mọi thao tác chỉnh sửa cho tới khi được mở lại. Tài khoản bị khóa hoặc ngừng hoạt động mất toàn bộ quyền ngay ở yêu cầu kế tiếp.
-\end{itemize}
+Ảnh và khung hình của một lần xuất hiện được cấp theo một trong hai căn cứ: quyền tìm kiếm, tức lần xuất hiện thuộc camera đang vận hành trong khu vực hiện tại của Giám sát viên; hoặc quyền đối với vụ việc, tức lần xuất hiện đã được lưu trong một vụ việc mà người dùng được xem. Nhờ căn cứ thứ hai, Giám sát viên đã chuyển khu vực và Quản lý vẫn xem được ảnh trong vụ việc, dù không có quyền tìm kiếm trên camera đó. Mọi quyền trong ma trận đều được kiểm tra tại máy chủ (NFR-01).
 
 Việc kiểm thử hệ thống có thực thi đúng từng ô của ma trận này hay không được trình bày tại Mục~\ref{sec:8.3}.

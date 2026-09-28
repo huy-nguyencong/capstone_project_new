@@ -21,7 +21,7 @@ Một mô hình chỉ được xem là \emph{dùng được} khi thỏa đồng 
 
 Việc kiểm tra mã băm không chỉ diễn ra một lần khi đọc danh sách. Mỗi lần một cặp mô hình được chọn để chạy, mã băm của tệp trọng số được tính lại; nếu tệp đã bị thay đổi sau lần kiểm tra trước, cặp mô hình bị từ chối. Nhờ vậy, một tệp trọng số bị thay thế trên đĩa không thể âm thầm được dùng thay cho mô hình đã được duyệt.
 
-Khi Quản trị viên áp dụng một cấu hình Detector--Tracker mới (UC-05), máy chủ ứng dụng nạp thử toàn bộ ba thành phần Detector, Tracker và bộ mã hóa ảnh rồi đóng lại; cấu hình chỉ được lưu thành phiên bản đang áp dụng khi cả ba nạp thành công. Mỗi công việc ghi lại phiên bản cấu hình tại thời điểm được tạo và dùng đúng phiên bản đó cho tới khi kết thúc, nên việc đổi cấu hình không ảnh hưởng tới công việc đang chạy.
+Khi Quản trị viên áp dụng một cấu hình Detector--Tracker mới, máy chủ ứng dụng nạp thử toàn bộ ba thành phần Detector, Tracker và bộ mã hóa ảnh rồi đóng lại; cấu hình chỉ được lưu thành phiên bản đang áp dụng khi cả ba nạp thành công. Mỗi công việc ghi lại phiên bản cấu hình tại thời điểm được tạo và dùng đúng phiên bản đó cho tới khi kết thúc, nên việc đổi cấu hình không ảnh hưởng tới công việc đang chạy.
 
 \subsection{Giao diện chung cho các mô hình}
 \label{sec:6.2.2}
@@ -61,7 +61,7 @@ Trong lúc xử lý, công việc định kỳ ghi lại tiến độ và gia h�
 \subsection{Kiểm tra AI trên dữ liệu thật}
 \label{sec:6.2.5}
 
-Màn hình \emph{Kiểm tra AI} (UC-07) cho phép Quản trị viên kiểm tra các mô hình trên dữ liệu thật mà không cần tạo công việc xử lý. Có hai loại kiểm tra:
+Màn hình \emph{Kiểm tra AI} cho phép Quản trị viên kiểm tra các mô hình trên dữ liệu thật mà không cần tạo công việc xử lý. Có hai loại kiểm tra:
 \begin{itemize}
     \item \textbf{Kiểm tra theo camera:} đọc một đoạn ngắn từ luồng RTSP của camera, tối đa 90 khung hình nguồn, lấy 6 khung hình cách nhau 5 khung hình, rồi lần lượt chạy Detector, Tracker và bộ mã hóa ảnh theo cấu hình đang áp dụng.
     \item \textbf{Kiểm tra thành phần tìm kiếm:} mã hóa một ảnh mẫu và một câu mô tả mẫu, kiểm tra vector trả về có đúng số chiều.

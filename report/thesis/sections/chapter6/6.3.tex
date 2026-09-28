@@ -31,7 +31,7 @@ Mọi yêu cầu tới máy chủ đi qua một lớp gọi API chung, dựa tr�
     \item \textbf{Hết phiên.} Khi bất kỳ yêu cầu nào nhận mã 401, ứng dụng xóa trạng thái đăng nhập và đưa người dùng về màn hình đăng nhập, kèm thông báo nếu nguyên nhân là phiên đã hết hạn.
 \end{itemize}
 
-Phiên làm việc chỉ được làm mới khi người dùng thực sự thao tác, chẳng hạn di chuột, nhấn phím hay chạm màn hình; các yêu cầu tự động chạy nền như cập nhật tiến độ xử lý video không giữ phiên sống. Thời điểm thao tác gần nhất được chia sẻ giữa các thẻ trình duyệt, nên người dùng đang làm việc ở một thẻ không bị đăng xuất vì một thẻ khác đang để yên. Nhờ vậy, phiên của một máy bị bỏ quên vẫn hết hạn sau khoảng thời gian không hoạt động đã quy định (NFR-02).
+Phiên làm việc chỉ được làm mới khi người dùng thực sự thao tác, chẳng hạn di chuột, nhấn phím hay chạm màn hình; các yêu cầu tự động chạy nền như cập nhật tiến độ xử lý video không giữ phiên sống. Thời điểm thao tác gần nhất được chia sẻ giữa các thẻ trình duyệt, nên người dùng đang làm việc ở một thẻ không bị đăng xuất vì một thẻ khác đang để yên. Nhờ vậy, phiên của một máy bị bỏ quên vẫn hết hạn sau khoảng thời gian không hoạt động đã quy định.
 
 \subsection{Hiển thị ảnh người trong kết quả}
 \label{sec:6.3.3}
