@@ -1,5 +1,5 @@
 % !TEX root = ../../main.tex
-% C3.2 — Phát hiện người trong ảnh
+% C3.2 — Phát hiện người trong ảnh (RÚT GỌN 2026-09-29; bản cũ ở report/archive/)
 % Nguyên lý; lý do chọn YOLO11n so với phương án khác để ở Mục 6.1.4.
 % Khớp app: config/ultralytics_yolo_detector.json (conf 0.1 = track_low_threshold của ByteTrack, iou 0.7, max 300), chỉ lớp person, confidence chỉ dùng nội bộ.
 \section{Phát hiện người trong ảnh}
@@ -8,49 +8,29 @@
 \subsection{Bài toán phát hiện đối tượng}
 \label{sec:3.2.1}
 
-Phát hiện đối tượng (object detection) là bài toán xác định vị trí và loại của các đối tượng xuất hiện trong một ảnh. Với mỗi đối tượng tìm được, mô hình trả về ba thông tin: một \emph{khung bao} (bounding box) hình chữ nhật bao quanh đối tượng, thường được biểu diễn bằng tọa độ góc trên bên trái và góc dưới bên phải $(x_1, y_1, x_2, y_2)$; \emph{lớp} của đối tượng, ví dụ người hay ô tô; và một \emph{độ tin cậy} (confidence score) cho biết mức độ chắc chắn của dự đoán.
-
-Để so sánh hai khung bao, người ta thường dùng chỉ số giao trên hợp (Intersection over Union -- IoU), là tỉ lệ giữa diện tích phần giao và diện tích phần hợp của hai khung:
+Phát hiện đối tượng (object detection) xác định vị trí và loại của các đối tượng trong một ảnh. Với mỗi đối tượng, mô hình trả về một \emph{khung bao} (bounding box) hình chữ nhật, thường biểu diễn bằng tọa độ hai góc $(x_1, y_1, x_2, y_2)$, \emph{lớp} của đối tượng và một \emph{độ tin cậy} (confidence score). Hai khung bao được so sánh bằng chỉ số giao trên hợp (Intersection over Union, IoU):
 \begin{equation}
-    \mathrm{IoU}(A, B) = \frac{|A \cap B|}{|A \cup B|}.
+    \mathrm{IoU}(A, B) = \frac{|A \cap B|}{|A \cup B|},
     \label{eq:iou}
 \end{equation}
-IoU nhận giá trị từ 0 (hai khung không giao nhau) đến 1 (hai khung trùng khít). Chỉ số này được dùng cả khi đánh giá độ chính xác của mô hình, khi loại bỏ các dự đoán trùng lặp (Mục~\ref{sec:3.2.4}) và khi liên kết các phát hiện giữa những khung hình liên tiếp trong bài toán theo vết (Mục~\ref{sec:3.3}).
-
-Trong đề tài, phát hiện đối tượng là bước đầu tiên của quá trình phân tích dữ liệu camera: mô hình phát hiện chỉ cần tìm ra \emph{người} trong mỗi khung hình được xử lý, kết quả là tập khung bao làm đầu vào cho bước theo vết.
+nhận giá trị từ 0 khi hai khung không giao nhau đến 1 khi trùng khít. IoU được dùng khi loại bỏ các dự đoán trùng lặp và khi liên kết phát hiện giữa các khung hình trong bài toán theo vết (Mục~\ref{sec:3.3}).
 
 \subsection{Hướng tiếp cận hai giai đoạn và một giai đoạn}
 \label{sec:3.2.2}
 
-Các mô hình phát hiện đối tượng dựa trên học sâu thường được chia thành hai nhóm:
-\begin{itemize}
-    \item \textbf{Mô hình hai giai đoạn} như Faster R-CNN~\cite{ren2017fasterrcnn}: giai đoạn thứ nhất dùng một mạng đề xuất vùng (Region Proposal Network) để sinh ra các vùng có khả năng chứa đối tượng; giai đoạn thứ hai phân loại từng vùng và tinh chỉnh tọa độ khung bao. Cách tiếp cận này cho độ chính xác cao nhưng chi phí tính toán lớn do phải xử lý nhiều vùng đề xuất.
-    \item \textbf{Mô hình một giai đoạn} như YOLO (You Only Look Once)~\cite{redmon2016yolo}: bài toán phát hiện được xem như một bài toán hồi quy duy nhất, trong đó mạng nơ-ron dự đoán trực tiếp khung bao và lớp của mọi đối tượng chỉ trong một lần lan truyền qua ảnh. Cách tiếp cận này nhanh hơn đáng kể, phù hợp với các ứng dụng cần xử lý nhiều khung hình video.
-\end{itemize}
+Mô hình \emph{hai giai đoạn} như Faster R-CNN~\cite{ren2017fasterrcnn} trước tiên dùng một mạng đề xuất vùng để sinh các vùng có khả năng chứa đối tượng, sau đó phân loại từng vùng và tinh chỉnh khung bao; cách này chính xác nhưng tốn kém do phải xử lý nhiều vùng đề xuất. Mô hình \emph{một giai đoạn} như YOLO (You Only Look Once)~\cite{redmon2016yolo} xem phát hiện là một bài toán hồi quy duy nhất, dự đoán trực tiếp khung bao và lớp của mọi đối tượng trong một lần lan truyền qua ảnh, nên nhanh hơn đáng kể và phù hợp với việc xử lý nhiều khung hình video.
 
 \subsection{Họ mô hình YOLO}
 \label{sec:3.2.3}
 
-Phiên bản YOLO đầu tiên do Redmon và cộng sự đề xuất năm 2016 chia ảnh đầu vào thành một lưới ô, mỗi ô chịu trách nhiệm dự đoán các khung bao và xác suất lớp của những đối tượng có tâm nằm trong ô đó~\cite{redmon2016yolo}. Các phiên bản kế tiếp liên tục cải tiến kiến trúc để tăng độ chính xác trong khi vẫn giữ tốc độ xử lý nhanh. Các mô hình YOLO hiện đại thường có cấu trúc gồm ba phần:
-\begin{itemize}
-    \item \textbf{Phần trích xuất đặc trưng (backbone):} mạng tích chập trích xuất đặc trưng của ảnh ở nhiều mức độ chi tiết khác nhau.
-    \item \textbf{Phần kết hợp đặc trưng (neck):} tổng hợp các đặc trưng ở nhiều tỉ lệ, giúp phát hiện được cả đối tượng lớn gần camera lẫn đối tượng nhỏ ở xa.
-    \item \textbf{Phần dự đoán (head):} từ các đặc trưng đã tổng hợp, dự đoán khung bao, lớp và độ tin cậy của đối tượng.
-\end{itemize}
-
-YOLO11 là phiên bản do Ultralytics phát hành vào tháng 9 năm 2024, với phần trích xuất và kết hợp đặc trưng được cải tiến so với các phiên bản trước~\cite{ultralytics2024yolo11docs}. Mỗi phiên bản được cung cấp ở năm kích cỡ từ nhỏ đến lớn (n, s, m, l, x), cho phép đánh đổi giữa tốc độ và độ chính xác. Kích cỡ nhỏ nhất, YOLO11n, có khoảng 2,6 triệu tham số và đạt 39,5 mAP$_{50\text{--}95}$ trên tập kiểm định của bộ dữ liệu COCO~\cite{ultralytics2024yolo11docs}. Các mô hình được huấn luyện sẵn trên COCO~\cite{lin2014coco} -- bộ dữ liệu gồm 80 lớp đối tượng thông dụng, trong đó có lớp \emph{người} (person) -- nên có thể dùng trực tiếp để phát hiện người mà không cần huấn luyện thêm.
+Các mô hình YOLO hiện đại gồm ba phần: phần trích xuất đặc trưng (backbone) ở nhiều mức chi tiết, phần kết hợp đặc trưng (neck) ở nhiều tỉ lệ để phát hiện được cả đối tượng lớn gần camera lẫn đối tượng nhỏ ở xa, và phần dự đoán (head) cho khung bao, lớp và độ tin cậy. YOLO11 do Ultralytics phát hành năm 2024 với năm kích cỡ (n, s, m, l, x) để đánh đổi giữa tốc độ và độ chính xác~\cite{ultralytics2024yolo11docs}. Các mô hình được huấn luyện sẵn trên COCO~\cite{lin2014coco}, gồm 80 lớp đối tượng thông dụng trong đó có lớp \emph{người}, nên dùng được trực tiếp để phát hiện người mà không cần huấn luyện thêm.
 
 \subsection{Hậu xử lý: ngưỡng tin cậy và loại bỏ trùng lặp}
 \label{sec:3.2.4}
 
-Đầu ra thô của mô hình thường chứa rất nhiều khung bao, trong đó có các dự đoán với độ tin cậy thấp và nhiều khung chồng lấn cùng mô tả một đối tượng. Hai bước hậu xử lý được áp dụng để thu được kết quả cuối cùng:
-\begin{enumerate}
-    \item \textbf{Lọc theo ngưỡng tin cậy:} loại bỏ các khung bao có độ tin cậy thấp hơn một ngưỡng cho trước.
-    \item \textbf{Loại bỏ các khung không cực đại (Non-Maximum Suppression -- NMS):} sắp xếp các khung còn lại theo độ tin cậy giảm dần; lần lượt giữ lại khung có độ tin cậy cao nhất và loại bỏ mọi khung cùng lớp có IoU với nó vượt quá một ngưỡng cho trước; lặp lại cho đến khi xét hết các khung.
-\end{enumerate}
-Ngưỡng tin cậy càng thấp thì càng ít bỏ sót đối tượng nhưng càng nhiều phát hiện sai; ngưỡng IoU của NMS càng thấp thì càng loại mạnh các khung chồng lấn, nhưng có thể loại nhầm những người đứng sát nhau.
+Đầu ra thô của mô hình chứa nhiều khung bao có độ tin cậy thấp và nhiều khung chồng lấn cùng mô tả một đối tượng. Hai bước hậu xử lý được áp dụng: lọc bỏ các khung có độ tin cậy dưới một ngưỡng; và loại bỏ các khung không cực đại (Non-Maximum Suppression, NMS), tức lần lượt giữ khung có độ tin cậy cao nhất và bỏ mọi khung cùng lớp có IoU với nó vượt ngưỡng. Ngưỡng tin cậy càng thấp thì càng ít bỏ sót nhưng càng nhiều phát hiện sai; ngưỡng IoU càng thấp thì càng loại mạnh khung chồng lấn nhưng có thể loại nhầm những người đứng sát nhau.
 
 \subsection{Vai trò của bước phát hiện trong hệ thống}
 \label{sec:3.2.5}
 
-Trong hệ thống của đề tài, mô hình phát hiện được áp dụng lên các khung hình đã được lấy mẫu (Mục~\ref{sec:3.4}) và chỉ giữ lại lớp \emph{người}. Ngưỡng tin cậy được đặt ở mức thấp 0,1 và ngưỡng IoU của NMS ở mức 0,7, tối đa 300 phát hiện trên một khung hình. Ngưỡng tin cậy thấp là chủ ý: thuật toán theo vết ByteTrack được sử dụng ở bước sau cần cả những phát hiện có độ tin cậy thấp, thường là người bị che khuất một phần, để duy trì các track đang tồn tại (Mục~\ref{sec:3.3}). Phát hiện có độ tin cậy thấp không được dùng để khởi tạo track mới, và một track chỉ được xác nhận khi đối tượng được phát hiện trong ít nhất hai khung hình được xử lý, nên các phát hiện sai chỉ xuất hiện thoáng qua phần lớn bị loại ở bước theo vết. Độ tin cậy của mô hình phát hiện chỉ được dùng trong quá trình xử lý nội bộ và không hiển thị cho người dùng. Lý do lựa chọn YOLO11n so với các phương án khác được trình bày tại Mục~\ref{sec:6.1.4}.
+Mô hình phát hiện được áp dụng lên các khung hình đã được lấy mẫu (Mục~\ref{sec:3.4}) và chỉ giữ lớp \emph{người}, với ngưỡng tin cậy 0,1, ngưỡng IoU của NMS 0,7 và tối đa 300 phát hiện trên một khung hình. Ngưỡng tin cậy thấp là chủ ý: thuật toán theo vết ByteTrack ở bước sau cần cả những phát hiện có độ tin cậy thấp, thường là người bị che khuất một phần, để duy trì các track đang tồn tại (Mục~\ref{sec:3.3}). Các phát hiện này không được dùng để khởi tạo track mới, và một track chỉ được xác nhận khi đối tượng được phát hiện trong ít nhất hai khung hình được xử lý, nên phần lớn phát hiện sai thoáng qua bị loại ở bước theo vết. Lý do chọn YOLO11n được trình bày tại Mục~\ref{sec:6.1.4}.

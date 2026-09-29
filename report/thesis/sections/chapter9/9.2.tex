@@ -1,15 +1,12 @@
 % !TEX root = ../../main.tex
-% C9.2 — Đánh giá
-% Nội dung cần có: Đối chiếu với các hạn chế ở Mục 1.4.
-\section{Đánh giá}
+% C9.2 — Hạn chế (không chia ưu/nhược điểm, rút gọn 2026-09-29). Đối chiếu Mục 1.4; chỉ nêu hạn chế có căn cứ (report-data-guide.md C9):
+% Recall văn bản/thuộc tính thấp (C8.4); CPU chậm ~7 lần, xử lý tuần tự (architect §13 #1); mốc thời gian RTSP theo đồng hồ đọc (architect §13 #7, chưa sửa);
+% lần tìm đầu chậm (C8.7); các phép đo chưa có (report-data-guide.md mục 4).
+\section{Hạn chế}
 \label{sec:9.2}
 
-\subsection{Ưu điểm}
-\label{sec:9.2.1}
+Thực nghiệm xác nhận các hạn chế đã nêu ở Mục~\ref{sec:1.4}. Hạn chế lớn nhất là tìm kiếm bằng văn bản và thuộc tính chưa hiệu quả trên dữ liệu thử nghiệm: không truy vấn nào có kết quả đúng trong 16 kết quả đầu (Mục~\ref{sec:8.4}). Nguyên nhân là khác biệt miền dữ liệu giữa dữ liệu huấn luyện của RaSa và ảnh người được cắt tự động từ camera.
 
-\nhap{Chưa viết.}
+Trên máy chỉ có CPU, tốc độ xử lý chậm hơn thời gian thực khoảng bảy lần. Hệ thống phải xử lý luân phiên từng camera, một phần khung hình của luồng trực tiếp bị bỏ qua, và dữ liệu trình diễn phải được lập chỉ mục từ tệp video (Mục~\ref{sec:7.2}). Dữ liệu của luồng RTSP cũng chỉ được mã hóa và ghi khi kết thúc mỗi phiên, thay vì ngay khi từng lần xuất hiện kết thúc, nên có một khoảng trễ từ lúc người xuất hiện trước camera tới lúc tìm kiếm được (Mục~\ref{sec:5.2.1}). Tốc độ chậm còn gây thêm một vấn đề cho luồng RTSP. Mốc thời gian của khung hình được lấy theo thời điểm hệ thống đọc khung hình thay vì dấu thời gian của luồng, nên khi xử lý chậm hơn tốc độ phát, khoảng cách thời gian giữa hai khung hình được xử lý tăng lên. Khi đó track dễ bị kết thúc sớm và một lần xuất hiện có thể bị tách thành nhiều track (Mục~\ref{sec:3.3.5}). Dữ liệu lập chỉ mục từ tệp video không bị ảnh hưởng. Ngoài ra, lần tìm kiếm đầu tiên chậm do phải nạp bộ mã hóa, nên cần làm nóng hệ thống trước khi sử dụng (Mục~\ref{sec:8.7}).
 
-\subsection{Nhược điểm}
-\label{sec:9.2.2}
-
-\nhap{Chưa viết.}
+Cuối cùng, một số đánh giá chưa đầy đủ. Chất lượng tìm kiếm bằng ảnh và văn bản với ngưỡng tin cậy hiện hành, so sánh khoảng lấy mẫu với ngưỡng hiện hành, độ trễ tìm kiếm theo phân vị và mức sử dụng bộ nhớ của toàn hệ thống chưa được đo (Chương~\ref{chapter:kiemthu}). BoT-SORT đã được tích hợp nhưng chưa được dùng để lập chỉ mục hay đánh giá.

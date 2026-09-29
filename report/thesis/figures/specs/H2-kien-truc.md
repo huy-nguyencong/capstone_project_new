@@ -10,6 +10,8 @@
 
 > **Cập nhật 2026-09-28:** tệp `.drawio` được sinh bằng `report/tools/h2_architecture_drawio.py`. Bố cục đổi từ 4 cột ngang sang **2 cột dọc** để chữ in ra đạt ~9pt ở khổ 16 cm (chữ 20 px, hình rộng ~1.020 px). Các thay đổi so với bảng khối/mũi tên bên dưới: (1) khung nét đứt "Máy chủ ứng dụng" được gộp vào chính container C1 "Máy chủ ứng dụng (Flask API)" (container đã là ranh giới tiến trình); (2) A4 "Tệp video tải lên" đặt trong khung **Người dùng** (Quản trị viên tải tệp qua trình duyệt); (3) các mũi tên từ B8 vào ba kho **không có nhãn** (chú thích trong từng kho đã nói kho lưu gì); C1↔S1 và C2↔S2 dùng mũi tên hai đầu; S3→C1 "khung hình" thay cho C1→S3; (4) bỏ nhãn "luồng RTSP" trên đoạn dọc (nét đậm + chú giải đã thể hiện); (5) chú giải gồm tệp dữ liệu, xử lý, thành phần phần mềm, mô hình AI, CSDL, hàng đợi, kho đối tượng, camera, ba kiểu đường. Biểu tượng bộ não/camera/bucket là SVG nhúng trong tệp (draw.io offline không có sẵn).
 
+> **Cập nhật 2026-09-29 (góp ý GVHD + đối chiếu code):** (1) bỏ B6; thêm **BF "Bộ đệm track"** (track đang theo vết, ứng viên và khung hình đại diện) sau B5, nhãn B3 → B4 là "từng khung hình đã lấy mẫu" để thể hiện mỗi khung hình cập nhật bộ đệm, không đi thẳng xuống bước ghi (mũi tên vòng BF → B3 đã bỏ theo quyết định của SV vì dễ bị hiểu là dữ liệu đi ngược); (2) BF → B7 ghi "hết phiên hoặc hết tệp: ảnh người (cắt tạm)", vì `workers/production.py` chỉ mã hóa và ghi sau khi hết nguồn (với RTSP là hết phiên 1.800 khung hình); (3) thêm mũi tên C1 → B3 "tệp video lưu tạm" (máy chủ lưu tệp vào thư mục tạm trên ổ đĩa, `services/video_staging.py`, tiến trình nền đọc tệp đó); (4) chú giải thêm "── dữ liệu lập chỉ mục"; (5) nới rộng A1, B2 để chữ không chạm mép hình.
+
 | Vùng | Khung | Nội dung |
 | --- | --- | --- |
 | Trái, trên | **Nguồn dữ liệu camera** (nét đứt) | A1 → A2 → A3 |
@@ -87,3 +89,5 @@ Chỉ gồm các ký hiệu có trong hình: tài liệu (tệp dữ liệu), b�
 - Hàng đợi công việc thực chất là bảng trong PostgreSQL. Có thể vẽ riêng cho dễ hiểu nhưng phải có dòng phụ ghi chú.
 - Trình duyệt **không** truy cập trực tiếp MinIO: mọi ảnh đi qua Flask API.
 - Không vẽ etcd hay MinIO nội bộ của Milvus; các thành phần hạ tầng này để dành cho sơ đồ triển khai H9.
+
+> **Cập nhật 2026-09-29 (rà soát logic, SV duyệt):** (1) thêm ô Q 'Kiểm tra truy vấn, xác định phạm vi' trong C1 (bước đầu của 5.2.3); D1 → Q 'truy vấn', Q → C3 'thuộc tính', Q → C2 'ảnh, câu mô tả' (trước đây bộ mã hóa chỉ nhận đầu vào từ C3, dễ hiểu nhầm là chỉ phục vụ thuộc tính). (2) C2 → S2 đổi thành một chiều 'vector truy vấn (lọc trước)'; thêm S2 → C1 'kết quả gần nhất' (Milvus trả kết quả cho máy chủ, không cho bộ mã hóa). Giữ nguyên: hàng đợi vẽ trong khung worker có ghi '(trong PostgreSQL)'; không vẽ đường worker ↔ PostgreSQL (đã mô tả ở 5.1, 5.2); nhãn PENDING → READY (5.3 đã giải thích); 'ByteTrack / BoT-SORT'.

@@ -1,7 +1,40 @@
 % !TEX root = ../../main.tex
-% C8.1 — Chiến lược kiểm thử
-% Nội dung cần có: Unit, contract, integration, security, failure injection, E2E; công cụ.
-\section{Chiến lược kiểm thử}
+% C8.1–C8.3 — Kiểm thử phần mềm. Số liệu: report-data-guide.md mục 3, dòng C8.1–C8.3 (đều Hiện hành): unit 711 (R6), integration (R3),
+% E2E (R3), giao diện (R5), diễn tập demo (R7), phân quyền/bảo mật (tests/unit/test_hardening.py, test_cases_api.py; R2).
+% Mô tả E2E phân quyền: ai_worker_implementation_plan.md AIW-25 (chỉ mô tả, không có số).
+\section{Kiểm thử phần mềm}
 \label{sec:8.1}
+\label{sec:8.2}
+\label{sec:8.3}
 
-\nhap{Chưa viết.}
+Hệ thống được kiểm thử ở năm mức, từ từng hàm riêng lẻ tới toàn bộ kịch bản trình diễn; kết quả được tổng hợp trong Bảng~\ref{tab:test-levels}. Mã nguồn phía máy chủ được kiểm thử bằng pytest, giao diện được kiểm thử tự động bằng Playwright trên trình duyệt Edge. Các kiểm thử tích hợp và đầu cuối chỉ chạy trên một cơ sở dữ liệu dùng một lần: bộ kiểm thử tự từ chối chạy nếu tên cơ sở dữ liệu không mang hậu tố dành cho kiểm thử, để không ghi nhầm vào dữ liệu trình diễn.
+
+\begin{table}[H]
+\centering
+\caption{Kết quả kiểm thử theo từng mức}
+\label{tab:test-levels}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{2.9cm}|L|>{\raggedright\arraybackslash}p{4.4cm}|}
+\hline
+\textbf{Mức} & \textbf{Phạm vi} & \textbf{Kết quả} \\
+\hline
+Đơn vị (unit) & Từng thành phần của máy chủ và tiến trình xử lý nền, gồm cả kiểm thử hợp đồng API, bảo mật và chèn lỗi & 711 đạt \\
+\hline
+Tích hợp & Với PostgreSQL, Milvus, MinIO và MediaMTX thật: kết nối các kho; các dịch vụ nghiệp vụ; bộ chuyển đổi lưu trữ; di chuyển và lược đồ cơ sở dữ liệu; luồng RTSP & 37 đạt, 1 bỏ qua (chèn lỗi cần tắt hẳn một dịch vụ) \\
+\hline
+Đầu cuối (E2E) & Toàn bộ luồng qua API thật với các mô hình thật: tải video, lập chỉ mục, tìm kiếm, lưu vụ việc, xem với vai trò Quản lý & 2 đạt; luồng AI với đoạn video 10 giây mất 217 giây (nạp mô hình 44 giây, xử lý 154 giây, lần tìm bằng văn bản đầu tiên 16 giây) \\
+\hline
+Giao diện & 20 màn hình ở ba độ rộng 390, 768 và 1440 điểm ảnh & Không phần tử bị tràn, không lỗi trình duyệt hay lỗi HTTP; 3 lỗi được phát hiện và đã sửa \\
+\hline
+Kịch bản trình diễn & Các bước của ba vai trò, từ thêm camera RTSP tới xem hồ sơ vụ việc, chạy tự động & 2 lần liên tiếp đạt 15/15 bước, 85-88 giây thao tác \\
+\hline
+\end{tabularx}
+\end{table}
+
+Ba lỗi giao diện được phát hiện gồm: không chọn được mô hình trên màn hình mô hình AI, lần tìm kiếm đầu tiên báo mất kết nối vì thời hạn chờ ngắn hơn thời gian nạp bộ mã hóa, và trạng thái xử lý AI hiển thị sai trên màn hình camera.
+
+\paragraph{Kiểm thử phân quyền và bảo mật.} Các kiểm thử này nằm trong nhóm kiểm thử đơn vị và bao phủ ma trận phân quyền ở Mục~\ref{sec:4.6}:
+\begin{itemize}
+    \item Mọi API đều phải có quy tắc truy cập được khai báo; một kiểm thử gọi từng API với từng vai trò và với người chưa đăng nhập, và kiểm tra rằng chỉ các vai trò được phép mới không bị từ chối.
+    \item Giám sát viên mở vụ việc của người khác nhận mã 404; Quản lý chỉ đọc được vụ việc; lần xuất hiện ngoài khu vực và ảnh thuộc vụ việc khác đều bị chặn. Kiểm thử đầu cuối xác nhận thêm rằng Giám sát viên ở khu vực khác không tìm thấy và không mở được khung hình của lần xuất hiện, còn Quản lý không gọi được chức năng tìm kiếm.
+    \item Mọi thao tác ghi đều đòi mã chống giả mạo. Đăng nhập bị giới hạn tần suất theo địa chỉ IP và tên đăng nhập, còn tìm kiếm theo tài khoản. Các tiêu đề bảo mật có mặt ở cả phản hồi thành công lẫn phản hồi lỗi, và chỉ các nguồn được cấu hình mới được gọi API kèm cookie.
+\end{itemize}

@@ -1,7 +1,35 @@
 % !TEX root = ../../main.tex
-% C8.2 — Kiểm thử chức năng
-% Nội dung cần có: Bảng test case theo use case; số test và kết quả.
-\section{Kiểm thử chức năng}
-\label{sec:8.2}
+% C8.4 — Đánh giá chất lượng tìm kiếm. Số liệu: report-data-guide.md mục 3 dòng C8.4.
+% Lần 1 = CŨ (ngưỡng Detector 0,25; gallery 1.552 track; 6 truy vấn; var/evaluation/wildtrack-full.json).
+% Lần 2 = HIỆN HÀNH chỉ cho thuộc tính (ngưỡng 0,1; gallery 1.526 track; wildtrack-attributes-v2.json).
+% Recall ảnh/văn bản ở ngưỡng 0,1 CHƯA ĐO: không được ghi "Recall ảnh 0,83 trên 1.526 track". Không so sánh Recall với truy vấn demo (tập khác).
+% Định nghĩa metric: evaluation/metrics.py (recall@k = tỉ lệ truy vấn có kết quả đúng đầu tiên ở hạng <= k; MRR = trung bình 1/hạng).
+\section{Đánh giá chất lượng tìm kiếm}
+\label{sec:8.4}
 
-\nhap{Chưa viết.}
+\paragraph{Phương pháp.} Quy trình xử lý của hệ thống được chạy trên các tập khung hình có nhãn của bảy camera WILDTRACK. Mỗi track được gán nhãn là người chiếm đa số bằng cách đối chiếu khung bao với nhãn của bộ dữ liệu, chỉ để đánh giá. Bộ đánh giá gồm 6 truy vấn, mỗi truy vấn có ba dạng: ảnh cắt, câu mô tả tiếng Anh và bộ thuộc tính. Lần quan sát dùng làm ảnh truy vấn được loại khỏi tập tìm kiếm. \emph{Recall@$k$} là tỉ lệ truy vấn có ít nhất một kết quả đúng trong $k$ kết quả đầu, với $k \in \{4, 8, 12, 16\}$, còn \emph{MRR} là trung bình nghịch đảo hạng của kết quả đúng đầu tiên. Lần đánh giá 1 dùng ngưỡng tin cậy 0,25, tập tìm kiếm 1.552 track, cho cả ba hình thức. Lần 2 dùng ngưỡng 0,1 như cấu hình hiện hành, tập 1.526 track và bộ thuộc tính mở rộng, nhưng chỉ đánh giá lại tìm kiếm theo thuộc tính. Kết quả tìm bằng ảnh và văn bản ở ngưỡng 0,1 \emph{chưa được đo}.
+
+\begin{table}[H]
+\centering
+\caption{Kết quả đánh giá chất lượng tìm kiếm (6 truy vấn)}
+\label{tab:recall}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{2.6cm}|L|c|c|c|c|c|}
+\hline
+\textbf{Hình thức} & \textbf{Điều kiện đo} & \textbf{R@4} & \textbf{R@8} & \textbf{R@12} & \textbf{R@16} & \textbf{MRR} \\
+\hline
+Tìm bằng ảnh & Lần 1: ngưỡng 0,25; 1.552 track & 0,833 & 1,0 & 1,0 & 1,0 & 0,867 \\
+\hline
+Tìm bằng văn bản & Lần 1: ngưỡng 0,25; 1.552 track & 0 & 0 & 0 & 0 & 0,01 \\
+\hline
+Tìm theo thuộc tính & Lần 1: ngưỡng 0,25; 1.552 track & 0 & 0 & 0 & 0 & 0,005 \\
+\hline
+Tìm theo thuộc tính & Lần 2: ngưỡng 0,1; 1.526 track; bộ thuộc tính mở rộng & 0 & 0 & 0 & 0 & 0,0045 \\
+\hline
+\end{tabularx}
+\end{table}
+
+\paragraph{Phát hiện người.} Ở lần 1, bước phát hiện đạt độ chính xác (precision) 0,58 và độ phủ (recall) 0,54; ở lần 2, sau khi hạ ngưỡng tin cậy xuống 0,1, độ chính xác là 0,43 và độ phủ là 0,64. Hai lần đo khác nhau cả về ngưỡng lẫn bộ nhãn thuộc tính nên chỉ so sánh định tính: hạ ngưỡng giúp bỏ sót ít người hơn nhưng tạo nhiều phát hiện sai hơn, phần lớn được loại ở bước theo vết (Mục~\ref{sec:3.2.5}).
+
+\paragraph{Nhận xét.} Tìm kiếm bằng ảnh cho kết quả tốt: ở lần 1, mọi truy vấn đều có kết quả đúng trong 8 kết quả đầu. Ngược lại, tìm kiếm bằng văn bản và thuộc tính không đưa được kết quả đúng nào vào 16 kết quả đầu; ở lần 2, kết quả đúng đầu tiên của các truy vấn thuộc tính chỉ xuất hiện ở hạng 87, 241 và 365, và bộ thuộc tính mở rộng không cải thiện kết quả. Nguyên nhân chính là khác biệt về miền dữ liệu giữa CUHK-PEDES, nơi RaSa được huấn luyện, và ảnh người được cắt tự động từ khung hình toàn cảnh của WILDTRACK (Mục~\ref{sec:3.5.4}). Vì vậy, tìm kiếm bằng ảnh là hình thức chính của hệ thống, còn tìm kiếm bằng văn bản và thuộc tính đóng vai trò hỗ trợ và cần người dùng đánh giá kỹ bằng mắt.
+
+\paragraph{Kiểm tra định tính trên dữ liệu trình diễn.} Trên dữ liệu trình diễn (Mục~\ref{sec:7.2}), năm ảnh truy vấn được thử với 8 kết quả đầu và đánh giá bằng mắt: ba truy vấn có 8/8 kết quả đúng, một truy vấn 7/8 và một truy vấn 4/8; các kết quả đúng nằm trên 4 đến 5 camera khác nhau. Đây chỉ là kiểm tra định tính trên một tập dữ liệu khác với tập đánh giá, không so sánh được với các giá trị Recall ở Bảng~\ref{tab:recall}.

@@ -44,7 +44,7 @@ năng nào chưa làm.
 | R5 | Kiểm thử hồi quy giao diện (máy tính và điện thoại), đưa kịch bản vào repo | Trung bình | R1 | 2–3 giờ | XONG (2026-09-28) |
 | R6 | Chuẩn bị dữ liệu demo và đưa script lập chỉ mục vào repo | Cao | R1 | 0,5 ngày + thời gian máy chạy | XONG (2026-09-28) |
 | R7 | Kịch bản demo và bằng chứng nhận luồng RTSP | Cao | R6 | 0,5 ngày | XONG (2026-09-28); còn tự diễn tập, quay video có lời |
-| R8 | Đo RAM toàn stack (architect §13 mục 4) | Thấp | R6 | 2 giờ | TODO |
+| R8 | Đo RAM toàn stack (architect §13 mục 4) | Thấp | R6 | 2 giờ | XONG (2026-09-29) |
 | R9 | *(Tùy chọn)* Thử xếp hạng lại image–text của RaSa cho tìm bằng văn bản | Thấp | R3 | 1–2 ngày | TÙY CHỌN |
 | R10 | *(Tùy chọn)* Thử tăng tốc bằng OpenVINO | Thấp | R8 | 1–2 ngày | TÙY CHỌN |
 
@@ -270,6 +270,14 @@ IDE khi đo. Ghi kết quả vào architect §13 và dùng cho báo cáo chươn
 **Tiêu chí hoàn thành.** Có bảng số liệu ba trạng thái; kết luận có cần tách encoder truy vấn thành
 tiến trình riêng hay không.
 
+**Kết quả (2026-09-29).** Công cụ `backend/tools/measure_stack_memory.py`, kết quả
+`backend/var/benchmark/stack-memory.json`; bảng chi tiết ở `files/report-data-guide.md` (C8.7).
+Ứng dụng dùng ~3,7 GiB khi rảnh (API ~2 GiB sau khi nạp encoder truy vấn), ~8,0 GiB khi đang xử lý một
+job (pipeline ≤ 4,7 GiB). Trạng thái "đang xử lý" đo bằng pipeline production chạy qua
+`benchmark_sampling.py` thay cho worker, để không ghi vào dữ liệu demo. Kết luận: chưa cần tách encoder
+truy vấn; khi demo phải đóng ứng dụng không cần thiết vì máy 16 GB gần hết RAM khi vừa xử lý vừa mở
+IDE/trình duyệt.
+
 ### R9. *(Tùy chọn)* Xếp hạng lại image–text cho tìm bằng văn bản
 
 Kết quả đánh giá hai lần: văn bản/thuộc tính → ảnh có Recall@4–16 = 0 trên WILDTRACK. Architect §6.2 cho
@@ -310,3 +318,4 @@ ngại chính cho demo; đo trước/sau trên cùng đoạn video.
 | 2026-09-28 | R6 | +752 track (60–120 s), WILDTRACK 1.488 track `READY`, `reconcile` sạch; 4 truy vấn demo bằng ảnh đã thử (3 cái 8/8); sao lưu verify; khôi phục lần 1 mất ~24,5 phút (reindex từng vector, 1 vector timeout); sửa reindex theo lô, diễn tập lại có xóa 10 ảnh: 28,8 s, exit 0, ảnh upload lại đủ. Chi tiết ở mục R6 |
 | 2026-09-28 | R7 | `files/demo-script.md`, `npm run ui:demo` (quay video), `scripts/demo-reset.ps1`; diễn tập tự động hai lần liên tiếp đạt 15/15 bước; video dự phòng 83 s; phát hiện và xử lý tìm kiếm lần đầu chậm (~97 s) bằng bước làm nóng |
 | 2026-09-28 | R7 | Dọn dữ liệu E2E (camera `E2E-D9932C`, vụ việc "E2E case", 32 track, 32 ảnh/vector); mốc demo mới `backups/20260928T184653Z` |
+| 2026-09-29 | R8 | Đo RAM ba trạng thái, benchmark N=10/N=20 ở ngưỡng 0,1 (có RSS/CPU tiến trình con trên Windows), độ trễ tìm kiếm p50/p95; số liệu ở `report-data-guide.md` |

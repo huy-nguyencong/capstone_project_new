@@ -74,6 +74,106 @@ class GpuMemorySampler:
         self._sample()
 
 
+class ProcessTreeSampler:
+    """Sample RSS and CPU of this process and its children (psutil), for platforms without
+    ``resource`` (Windows), where the model child processes are otherwise not measured.
+
+    Values are sampled every ``interval`` seconds, so they are lower bounds: a child that exits
+    between two samples loses at most one interval of CPU time.
+    """
+
+    def __init__(self, *, interval: float = 0.25, process: Any = None) -> None:
+        self.interval = interval
+        self.available = False
+        self.peak_self: int | None = None
+        self.peak_children: int | None = None
+        self.cpu_self = 0.0
+        self.cpu_children = 0.0
+        self._baseline: dict[tuple[int, float], float] = {}
+        self._last: dict[tuple[int, float], float] = {}
+        self._stop = threading.Event()
+        self._thread: threading.Thread | None = None
+        self._lock = threading.Lock()
+        try:
+            import psutil
+        except ImportError:
+            return
+        self._errors: tuple[type[BaseException], ...] = (psutil.Error,)
+        self._process = process or psutil.Process()
+        self.available = True
+
+    @staticmethod
+    def _cpu(process: Any) -> float:
+        times = process.cpu_times()
+        return float(times.user + times.system)
+
+    def _sample(self, *, baseline: bool = False) -> None:
+        try:
+            own = self._process.memory_info().rss
+            children = self._process.children(recursive=True)
+        except self._errors:
+            return
+        total = 0
+        with self._lock:
+            self.peak_self = own if self.peak_self is None else max(self.peak_self, own)
+            for child in children:
+                try:
+                    key = (child.pid, child.create_time())
+                    cpu = self._cpu(child)
+                    total += child.memory_info().rss
+                except self._errors:
+                    continue
+                if baseline:
+                    self._baseline[key] = cpu
+                self._last[key] = cpu
+            if children:
+                self.peak_children = (
+                    total if self.peak_children is None else max(self.peak_children, total)
+                )
+
+    def _loop(self) -> None:
+        while not self._stop.wait(self.interval):
+            self._sample()
+
+    def __enter__(self) -> ProcessTreeSampler:
+        if self.available:
+            self._cpu_self_before = self._cpu(self._process)
+            self._sample(baseline=True)
+            self._thread = threading.Thread(target=self._loop, daemon=True)
+            self._thread.start()
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        if not self.available:
+            return
+        self._stop.set()
+        if self._thread is not None:
+            self._thread.join(timeout=5)
+        self._sample()
+        self.cpu_self = self._cpu(self._process) - self._cpu_self_before
+        self.cpu_children = sum(
+            cpu - self._baseline.get(key, 0.0) for key, cpu in self._last.items()
+        )
+
+
+class _NoProcessTree:
+    available = False
+
+    def __enter__(self) -> _NoProcessTree:
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        return None
+
+
+def _default_process_tree() -> Any:
+    try:
+        import resource  # noqa: F401
+    except ImportError:
+        return ProcessTreeSampler()
+    return _NoProcessTree()
+
+
 class LimitedSource:
     def __init__(self, source: Any, limit: int | None) -> None:
         self.source = source
@@ -136,13 +236,17 @@ def measure_run(
     clock: Callable[[], float] = time.perf_counter,
     usage: Callable[[], tuple[float, float, int | None, int | None]] = _rusage,
     gpu: Callable[[], Any] = GpuMemorySampler,
+    processes: Callable[[], Any] | None = None,
     short_track_ms: int = DEFAULT_SHORT_TRACK_MS,
 ) -> RunMeasurement:
+    if processes is None:
+        # An injected ``usage`` (tests) keeps full control over resource figures.
+        processes = _default_process_tree if usage is _rusage else _NoProcessTree
     cpu_self_before, cpu_children_before, _, _ = usage()
     started = clock()
     result = None
     error = None
-    with gpu() as sampler:
+    with gpu() as sampler, processes() as tree:
         try:
             pipeline = pipeline_factory(sampling_interval)
             with source_factory() as source:
@@ -151,6 +255,13 @@ def measure_run(
             error = type(exc).__name__
     wall = max(clock() - started, 1e-9)
     cpu_self_after, cpu_children_after, peak_self, peak_children = usage()
+    extra: dict[str, Any] = {}
+    if tree.available:
+        # No getrusage (Windows): use the sampled process tree, which includes model children.
+        cpu_self_before, cpu_self_after = 0.0, tree.cpu_self
+        cpu_children_before, cpu_children_after = 0.0, tree.cpu_children
+        peak_self, peak_children = tree.peak_self, tree.peak_children
+        extra["resource_method"] = f"psutil process tree, sampled every {tree.interval}s"
     tracks = short = jpeg_bytes = 0
     stage_mean: dict[str, float] = {}
     stage_total: dict[str, float] = {}
@@ -195,6 +306,7 @@ def measure_run(
         peak_gpu_memory_mib=sampler.peak_mib,
         representative_jpeg_bytes=jpeg_bytes,
         error=error,
+        extra=extra,
     )
 
 

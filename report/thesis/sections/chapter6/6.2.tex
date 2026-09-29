@@ -1,69 +1,29 @@
 % !TEX root = ../../main.tex
-% C6.2 — Hiện thực tiến trình xử lý nền AI (cấu trúc lại 2026-09-28: bỏ mục cấu trúc mã nguồn theo ý SV)
-% Khớp backend: ai/registry.py (allowlist, SHA-256, giấy phép, PRODUCTION_PREFLIGHT_IDS, lý do không dùng được, resolve() kiểm lại mã băm),
+% C6.2 — Hiện thực tiến trình xử lý nền AI (RÚT GỌN 2026-09-29; bản cũ ở report/archive/)
+% Khớp backend: ai/registry.py (allowlist, SHA-256, giấy phép, PRODUCTION_PREFLIGHT_IDS, resolve() kiểm lại mã băm),
 % config/models.example.json (4 detector, 2 tracker, 1 encoder), ai/configuration.py (ConfigApplyCoordinator: nạp thử trước khi áp dụng),
-% ai/detectors/ultralytics.py + ai/encoders/image.py (mô hình chạy trong tiến trình con, quá hạn 120 s thì dừng), ai/encoders/rasa.py (kiểm tra
-% phiên bản tiền xử lý, mã băm từ điển tokenizer, 256 chiều chuẩn hóa), config/ai_resources.json (hồ sơ local_cpu: worker chính thức chỉ áp dụng số luồng; các ngưỡng RAM/đĩa/hàng đợi/điểm ảnh chỉ dùng trong preflight của worker demo nên KHÔNG đưa vào báo cáo), ai/preflight.py
-% (apply_resource_environment: giới hạn luồng), workers/production.py (xử lý từng khung, đóng ảnh ngay, kiểm tra hạn công việc mỗi khung), workers/production_main.py (tiến trình giám sát, mỗi công việc một tiến trình con --once, hạn 3600 s,
-% heartbeat 10 s), workers/durable.py (khóa toàn cục, mã lỗi theo bước, thử lại 5 s nhân đôi tới 300 s tối đa 3 lần, RTSP không thử lại,
-% dừng êm để lại RUNNING), workers/errors.py, services/diagnostics.py (kiểm tra AI: 6 khung hình, cách 5, tối đa 90 khung hình nguồn, hạn 180 s).
+% ai/detectors/ultralytics.py + ai/encoders/image.py (mô hình chạy trong tiến trình con, quá hạn 120 s thì dừng), ai/encoders/rasa.py,
+% config/ai_resources.json (worker chính thức chỉ áp dụng số luồng = 2; các ngưỡng RAM/đĩa/hàng đợi/điểm ảnh chỉ dùng trong preflight của worker demo nên KHÔNG đưa vào báo cáo),
+% workers/production.py (xử lý từng khung, đóng ảnh ngay, kiểm tra hạn công việc mỗi khung), workers/production_main.py (mỗi công việc một tiến trình con, hạn 3600 s),
+% workers/durable.py (khóa toàn cục, mã lỗi theo bước, thử lại 5 s nhân đôi tới 300 s tối đa 3 lần, RTSP không thử lại, dừng êm để lại RUNNING),
+% services/diagnostics.py (kiểm tra AI: 6 khung hình, cách 5, tối đa 90 khung hình nguồn, hạn 180 s).
 \section{Hiện thực tiến trình xử lý nền AI}
 \label{sec:6.2}
 
-Mục~\ref{sec:5.2.1} đã trình bày các bước xử lý và vòng đời của một công việc. Mục này trình bày cách tiến trình xử lý nền được hiện thực để chạy ổn định trên một máy chỉ có CPU: cách hệ thống quản lý các mô hình được phép dùng, cách các mô hình khác nhau được đưa về cùng một giao diện, các giới hạn về thời gian và tài nguyên, cách xử lý lỗi, và công cụ kiểm tra AI dành cho Quản trị viên.
+Mục~\ref{sec:5.2.1} đã trình bày các bước xử lý và vòng đời của một công việc. Mục này trình bày cách tiến trình xử lý nền được hiện thực để chạy ổn định trên một máy chỉ có CPU.
 
-\subsection{Quản lý các mô hình được phép sử dụng}
+\subsection{Quản lý và đóng gói mô hình}
 \label{sec:6.2.1}
 
-Hệ thống chỉ nạp những mô hình được khai báo trong một \emph{danh sách đăng ký mô hình} dạng JSON. Mỗi mục trong danh sách mô tả một mô hình gồm: mã và phiên bản, loại bộ chuyển đổi dùng để chạy mô hình (Mục~\ref{sec:6.2.2}), đường dẫn tệp trọng số kèm mã băm SHA-256, thiết bị hỗ trợ, kích thước đầu vào, phiên bản tiền xử lý, và thông tin nguồn gốc gồm gói phần mềm, địa chỉ mã nguồn, địa chỉ tải trọng số, giấy phép và ghi chú phê duyệt. Với Tracker, mục đăng ký còn liệt kê các Detector tương thích; một cặp Detector--Tracker không nằm trong danh sách này bị từ chối.
+Hệ thống chỉ nạp những mô hình được khai báo trong một \emph{danh sách đăng ký mô hình}, mỗi mục ghi mã, phiên bản, tệp trọng số kèm mã băm SHA-256, phiên bản tiền xử lý và thông tin nguồn gốc, gồm cả giấy phép; với Tracker còn có danh sách Detector tương thích. Một mô hình chỉ dùng được khi tệp trọng số tồn tại, mã băm khớp, giấy phép đã được phê duyệt và mô hình đã được nạp thử thành công; mô hình không thỏa điều kiện vẫn được liệt kê trên màn hình \emph{Mô hình AI} với nhãn \emph{Không khả dụng}. Hiện YOLO11n, ByteTrack, BoT-SORT và RaSa dùng được, còn các phiên bản YOLO lớn hơn và YOLOX chưa có tệp trọng số (Mục~\ref{sec:6.1.4}). Mã băm được tính lại mỗi lần một cặp mô hình được chọn để chạy, nên một tệp trọng số bị thay trên đĩa không thể âm thầm được dùng. Khi Quản trị viên áp dụng cấu hình Detector-Tracker mới, máy chủ nạp thử cả ba thành phần trước khi lưu, và mỗi công việc dùng đúng phiên bản cấu hình tại thời điểm được tạo.
 
-Một mô hình chỉ được xem là \emph{dùng được} khi thỏa đồng thời bốn điều kiện: tệp trọng số tồn tại, mã băm của tệp khớp với mã băm đã khai báo, giấy phép đã được phê duyệt cho đồ án, và mô hình đã được nạp thử thành công trên máy trình diễn. Mô hình không thỏa điều kiện vẫn được liệt kê trên màn hình \emph{Mô hình AI} với nhãn \emph{Không khả dụng} và không chọn được. Danh sách hiện tại gồm bốn Detector: YOLO11n là mô hình duy nhất dùng được; một phiên bản YOLO lớn hơn chưa được duyệt giấy phép và chưa có tệp trọng số, còn hai phiên bản YOLOX được khai báo làm phương án dự phòng nhưng chưa có tệp trọng số (Mục~\ref{sec:6.1.4}). Hai Tracker ByteTrack và BoT-SORT cùng bộ mã hóa RaSa đều dùng được.
+Mỗi loại mô hình được bọc trong một \emph{bộ chuyển đổi} (adapter) có cùng giao diện: mở để nạp mô hình, xử lý một đầu vào, và đóng để giải phóng tài nguyên. Bộ chuyển đổi kiểm tra đầu ra trước khi chuyển cho bước sau: Detector chỉ giữ lớp người và khung bao hợp lệ; vector của RaSa phải đủ 256 chiều, không chứa giá trị không hợp lệ và đã được chuẩn hóa độ dài. Nhờ vậy, thêm một mô hình mới, chẳng hạn kích hoạt YOLOX, chỉ cần thêm tệp trọng số và mục đăng ký, cùng bộ chuyển đổi nếu mô hình thuộc loại chưa có.
 
-Việc kiểm tra mã băm không chỉ diễn ra một lần khi đọc danh sách. Mỗi lần một cặp mô hình được chọn để chạy, mã băm của tệp trọng số được tính lại; nếu tệp đã bị thay đổi sau lần kiểm tra trước, cặp mô hình bị từ chối. Nhờ vậy, một tệp trọng số bị thay thế trên đĩa không thể âm thầm được dùng thay cho mô hình đã được duyệt.
-
-Khi Quản trị viên áp dụng một cấu hình Detector--Tracker mới, máy chủ ứng dụng nạp thử toàn bộ ba thành phần Detector, Tracker và bộ mã hóa ảnh rồi đóng lại; cấu hình chỉ được lưu thành phiên bản đang áp dụng khi cả ba nạp thành công. Mỗi công việc ghi lại phiên bản cấu hình tại thời điểm được tạo và dùng đúng phiên bản đó cho tới khi kết thúc, nên việc đổi cấu hình không ảnh hưởng tới công việc đang chạy.
-
-\subsection{Giao diện chung cho các mô hình}
+\subsection{Giới hạn tài nguyên và xử lý lỗi}
 \label{sec:6.2.2}
 
-Mỗi loại mô hình được bọc trong một \emph{bộ chuyển đổi} (adapter) có cùng giao diện: mở để nạp mô hình, xử lý một đầu vào, và đóng để giải phóng tài nguyên. Phần còn lại của tiến trình xử lý nền chỉ làm việc với giao diện này nên không phụ thuộc vào thư viện cụ thể của từng mô hình:
-\begin{itemize}
-    \item \textbf{Detector} nhận một khung hình được lấy mẫu và trả về danh sách phát hiện đã được chuẩn hóa: chỉ giữ lớp người, khung bao được kiểm tra nằm trong khung hình, độ tin cậy nằm trong khoảng hợp lệ. Kết quả sai định dạng được xem là lỗi của Detector thay vì được chuyển tiếp cho bước sau.
-    \item \textbf{Tracker} nhận các phát hiện của một khung hình và trả về các cập nhật lần xuất hiện. ByteTrack và BoT-SORT dùng chung một bộ chuyển đổi, chỉ khác tệp cấu hình; trạng thái theo vết chỉ tồn tại trong phạm vi một công việc của một camera (Mục~\ref{sec:3.3}).
-    \item \textbf{Bộ mã hóa} RaSa cung cấp cả mã hóa ảnh và mã hóa văn bản trong cùng một không gian vector. Khi nạp, bộ chuyển đổi kiểm tra phiên bản tiền xử lý, mã băm của từ điển dùng để tách từ, và số chiều của không gian vector; mỗi vector trả về được kiểm tra đủ 256 chiều, không chứa giá trị không hợp lệ và đã được chuẩn hóa độ dài. Một vector không thỏa các điều kiện này không bao giờ được ghi vào Milvus.
-\end{itemize}
-Với cách tổ chức này, việc thêm một mô hình mới, chẳng hạn kích hoạt YOLOX khi cần thay YOLO11n, chỉ cần thêm tệp trọng số và mục đăng ký tương ứng, cùng bộ chuyển đổi nếu mô hình thuộc một loại chưa có; các bước còn lại của tiến trình xử lý nền không thay đổi.
+Vì máy triển khai có bộ nhớ hạn chế, tiến trình xử lý nền được giới hạn ở nhiều mức. Số luồng tính toán của các thư viện số học được đặt bằng 2, để mô hình không chiếm hết các nhân CPU mà máy chủ ứng dụng và các kho dữ liệu cũng cần. Detector và bộ mã hóa ảnh chạy trong một tiến trình con riêng; nếu một lần suy luận không trả kết quả trong 120 giây, tiến trình con bị dừng hẳn, vì một lời gọi bị treo trong thư viện gốc không thể được ngắt từ trong cùng tiến trình. Mỗi công việc được chạy trong một tiến trình riêng với thời hạn tổng mặc định 3.600 giây; khi công việc kết thúc, tiến trình kết thúc theo, nên bộ nhớ của mô hình và khung hình được hệ điều hành thu hồi hoàn toàn. Khung hình được xử lý lần lượt từng khung và giải phóng ngay, trừ các ứng viên khung hình đại diện vốn đã bị giới hạn.
 
-\subsection{Giới hạn thời gian và tài nguyên}
-\label{sec:6.2.3}
+Mỗi lỗi được gắn với bước gây ra lỗi và một mã lỗi cụ thể, lưu cùng công việc để hiển thị trên màn hình quản trị, và được xếp trước vào nhóm \emph{tạm thời} hoặc \emph{không phục hồi được}. Với tệp video, lỗi tạm thời được thử lại sau 5 giây, nhân đôi sau mỗi lần và không quá 300 giây, tối đa ba lần. Phiên RTSP không được thử lại, vì đoạn video đã trôi qua; bộ lập lịch sẽ tạo phiên mới sau 5 phút (Mục~\ref{sec:5.2.1}). Khi tiến trình nhận tín hiệu dừng, công việc đang chạy được giữ ở trạng thái \emph{Đang xử lý} để được nhận lại khi thời hạn giữ chỗ hết, thay vì bị đánh dấu thất bại ngay. Một khóa toàn cục trong PostgreSQL bảo đảm chỉ một tiến trình xử lý công việc tại một thời điểm, kể cả khi tiến trình xử lý nền vô tình được khởi động hai lần.
 
-Máy trình diễn chỉ còn khoảng 2~GB bộ nhớ trống khi toàn bộ hệ thống cùng trình duyệt đang chạy, nên tiến trình xử lý nền được giới hạn thời gian và tài nguyên ở nhiều mức:
-\begin{itemize}
-    \item \textbf{Giới hạn số luồng tính toán.} Trước khi nạp mô hình, số luồng tính toán của các thư viện số học được đặt theo một hồ sơ tài nguyên, bằng 2 với hồ sơ dành cho máy chỉ có CPU, để mô hình không chiếm hết các nhân CPU mà máy chủ ứng dụng và các kho dữ liệu cũng cần.
-    \item \textbf{Mô hình chạy trong tiến trình con.} Detector và bộ mã hóa ảnh được nạp trong một tiến trình con riêng, trao đổi dữ liệu với tiến trình xử lý nền qua một kênh truyền. Nếu một lần suy luận không trả kết quả trong 120 giây, tiến trình con bị dừng hẳn và công việc nhận mã lỗi quá thời gian. Cách làm này cần thiết vì một lời gọi suy luận bị treo bên trong thư viện gốc không thể được ngắt từ trong cùng tiến trình.
-    \item \textbf{Mỗi công việc một tiến trình.} Tiến trình giám sát không tự xử lý công việc mà tạo một tiến trình con cho mỗi công việc; tiến trình con nhận tối đa một công việc rồi kết thúc. Mỗi công việc có thời hạn tổng, mặc định 3.600 giây: tiến trình con tự kiểm tra thời hạn này sau mỗi khung hình, và nếu tiến trình con bị treo không tự dừng được, tiến trình giám sát sẽ dừng nó. Vì tiến trình con kết thúc sau mỗi công việc, toàn bộ bộ nhớ của mô hình và khung hình được hệ điều hành thu hồi, tránh tình trạng bộ nhớ tăng dần khi hệ thống chạy liên tục.
-    \item \textbf{Giới hạn dữ liệu trong bộ nhớ.} Khung hình được đọc và xử lý lần lượt từng khung một; bộ nhớ của mỗi khung hình được giải phóng ngay sau khi xử lý xong, trừ các khung hình đang là ứng viên khung hình đại diện, vốn bị giới hạn về số lượng và tổng dung lượng (Mục~\ref{sec:5.2.2}). Mỗi khung hình được nhận tối đa 300 phát hiện, và tệp video tải lên không vượt quá 500~MB.
-\end{itemize}
-
-\subsection{Xử lý lỗi và thử lại}
-\label{sec:6.2.4}
-
-Mỗi lỗi phát sinh trong tiến trình xử lý nền được gắn với \emph{bước} gây ra lỗi, gồm nguồn video, lấy mẫu, Detector, Tracker, chọn khung hình đại diện, bộ mã hóa, lưu trữ và tài nguyên, cùng một \emph{mã lỗi} cụ thể như không kết nối được nguồn, Detector quá thời gian hay vector sai định dạng. Mỗi mã lỗi được xếp trước vào một trong hai nhóm: \emph{tạm thời}, có thể thành công nếu thử lại, như mất kết nối hay kho dữ liệu tạm thời không truy cập được; và \emph{không phục hồi được}, như cấu hình sai hay đầu ra mô hình sai định dạng. Mã lỗi được lưu cùng công việc để hiển thị trên các màn hình quản trị.
-
-Việc xử lý khi công việc gặp lỗi phụ thuộc vào nguồn dữ liệu:
-\begin{itemize}
-    \item Với \textbf{tệp video tải lên}, lỗi tạm thời được thử lại sau khoảng chờ 5 giây, nhân đôi sau mỗi lần và không quá 300 giây, tối đa ba lần; sau lần thứ ba, công việc chuyển sang \emph{Thất bại} với lý do hết số lần thử.
-    \item Với \textbf{phiên RTSP}, công việc không được thử lại mà chuyển thẳng sang \emph{Thất bại}, vì đoạn video của phiên đã trôi qua và không thể đọc lại; bộ lập lịch sẽ tạo phiên mới cho camera sau thời gian chờ 5 phút (Mục~\ref{sec:5.2.1}).
-\end{itemize}
-
-Trong lúc xử lý, công việc định kỳ ghi lại tiến độ và gia hạn thời hạn giữ chỗ. Nếu lần ghi này cho thấy công việc đã bị hủy hoặc không còn thuộc về tiến trình hiện tại, công việc dừng ngay và chuyển sang \emph{Đã hủy}. Khi tiến trình xử lý nền nhận tín hiệu dừng, chẳng hạn khi người vận hành tắt hệ thống, công việc đang chạy được giữ nguyên ở trạng thái \emph{Đang xử lý} thay vì bị đánh dấu thất bại ngay. Sau khi thời hạn giữ chỗ hết, công việc được nhận lại ở lần khởi động sau: công việc từ tệp video được xử lý lại, còn phiên RTSP bị chuyển sang \emph{Thất bại} vì không thể đọc lại đoạn video đã qua. Ngoài ra, một khóa toàn cục trong PostgreSQL bảo đảm chỉ có một tiến trình xử lý công việc tại một thời điểm, kể cả khi tiến trình xử lý nền vô tình được khởi động hai lần.
-
-\subsection{Kiểm tra AI trên dữ liệu thật}
-\label{sec:6.2.5}
-
-Màn hình \emph{Kiểm tra AI} cho phép Quản trị viên kiểm tra các mô hình trên dữ liệu thật mà không cần tạo công việc xử lý. Có hai loại kiểm tra:
-\begin{itemize}
-    \item \textbf{Kiểm tra theo camera:} đọc một đoạn ngắn từ luồng RTSP của camera, tối đa 90 khung hình nguồn, lấy 6 khung hình cách nhau 5 khung hình, rồi lần lượt chạy Detector, Tracker và bộ mã hóa ảnh theo cấu hình đang áp dụng.
-    \item \textbf{Kiểm tra thành phần tìm kiếm:} mã hóa một ảnh mẫu và một câu mô tả mẫu, kiểm tra vector trả về có đúng số chiều.
-\end{itemize}
-Kết quả được trình bày thành từng bước kèm trạng thái, thời gian thực hiện và thông báo lỗi bằng tiếng Việt; khi một bước thất bại, các bước sau được đánh dấu bỏ qua kèm lý do. Mỗi lần kiểm tra bị giới hạn trong 180 giây, và chỉ một lần kiểm tra được chạy tại một thời điểm để không tranh tài nguyên với tiến trình xử lý nền.
+\paragraph{Kiểm tra AI.}\label{sec:6.2.5} Màn hình \emph{Kiểm tra AI} chạy thử các mô hình trên dữ liệu thật mà không tạo công việc: với một camera, hệ thống đọc tối đa 90 khung hình từ luồng RTSP, lấy 6 khung hình rồi lần lượt chạy Detector, Tracker và bộ mã hóa ảnh; với nhóm tìm kiếm, hệ thống mã hóa một ảnh và một câu mô tả mẫu. Mỗi lần kiểm tra giới hạn trong 180 giây, và chỉ một lần kiểm tra được chạy tại một thời điểm.

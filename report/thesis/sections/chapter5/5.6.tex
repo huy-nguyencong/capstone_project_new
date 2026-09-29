@@ -1,18 +1,17 @@
 % !TEX root = ../../main.tex
-% C5.6 — Thiết kế giao diện người dùng (bản gọn, SV duyệt: không có Figma; sơ đồ luồng màn hình + nguyên tắc; ảnh chụp màn hình ở 6.3)
-% Khớp frontend/src: constants/navigation.js (menu theo vai trò, HOME_BY_ROLE), routes/AppRoutes.jsx + guards.jsx (RequireRole -> chuyển về trang chủ của vai trò),
-% features/results/ResultViewer.jsx, CreateCaseDialog, AddToCaseDialog, features/search/ImageDropzone.jsx, SearchResults.jsx (sắp xếp, lọc, trạng thái rỗng),
-% components/person/PersonCrop.jsx (cắt động, viền, làm tối), pages/viewer/OverviewPage.jsx; architect §9 (dùng được ở 390 px).
-% Hình H12 (mã H11 đã bỏ nên không dùng lại).
+% C5.6 — Thiết kế giao diện người dùng (RÚT GỌN 2026-09-29; bỏ nguyên tắc "ngôn ngữ nhất quán" vì trùng NFR-19; bản cũ ở report/archive/)
+% Khớp frontend/src: constants/navigation.js (menu theo vai trò, HOME_BY_ROLE), routes/AppRoutes.jsx + guards.jsx,
+% features/results/ResultViewer.jsx, CreateCaseDialog, AddToCaseDialog, features/search/ImageDropzone.jsx, SearchResults.jsx,
+% components/person/PersonCrop.jsx, pages/viewer/OverviewPage.jsx; architect §9 (dùng được ở 390 px). Hình H12.
 \section{Thiết kế giao diện người dùng}
 \label{sec:5.6}
 
-Giao diện được thiết kế và xây dựng trực tiếp trên ứng dụng web, không qua bước tạo bản mẫu riêng. Mục này trình bày cấu trúc các màn hình theo vai trò và các nguyên tắc thiết kế đã áp dụng; hình ảnh của các màn hình chính được trình bày tại Mục~\ref{sec:6.3}.
+Giao diện được thiết kế và xây dựng trực tiếp trên ứng dụng web, không qua bước tạo bản mẫu riêng; hình ảnh các màn hình chính được trình bày tại Mục~\ref{sec:6.3}.
 
 \subsection{Cấu trúc màn hình theo vai trò}
 \label{sec:5.6.1}
 
-Ba vai trò dùng chung một ứng dụng web. Sau khi đăng nhập, mỗi vai trò được đưa tới trang chủ riêng và chỉ thấy menu bên trái gồm các màn hình thuộc trách nhiệm của mình; nếu người dùng mở trực tiếp một đường dẫn không thuộc vai trò, ứng dụng chuyển về trang chủ của vai trò đó. Hình~\ref{fig:screen-flow} trình bày các màn hình và cách chuyển giữa chúng.
+Sau khi đăng nhập, mỗi vai trò được đưa tới trang chủ riêng và chỉ thấy các màn hình thuộc trách nhiệm của mình (Hình~\ref{fig:screen-flow}). Trong hình, mũi tên đậm chỉ trang mở ra ngay sau khi đăng nhập, khung nét đứt là hộp thoại mở chồng lên màn hình hiện tại, còn các màn hình của cùng một vai trò chuyển qua lại bằng menu bên trái.
 
 \begin{figure}[!htbp]
 \centering
@@ -22,18 +21,16 @@ Ba vai trò dùng chung một ứng dụng web. Sau khi đăng nhập, mỗi vai
 \end{figure}
 
 \begin{itemize}
-    \item \textbf{Quản trị viên} có tám màn hình, chia thành hai nhóm trên menu: nhóm \emph{Quản trị} gồm tài khoản, camera, xử lý AI, mô hình AI và xử lý video; nhóm \emph{Giám sát} gồm trạng thái hệ thống, kiểm tra AI và nhật ký hệ thống. Mỗi màn hình ứng với một chức năng quản trị; các thao tác tạo, sửa tài khoản và camera được thực hiện trong hộp thoại ngay trên màn hình danh sách.
-    \item \textbf{Giám sát viên} làm việc chủ yếu trên màn hình \emph{Tìm kiếm người}, nơi biểu mẫu truy vấn và danh sách kết quả nằm trên cùng một trang để có thể tìm lại nhiều lần mà không chuyển màn hình. Chọn một kết quả mở hộp thoại chi tiết với khung hình toàn cảnh; từ đó có thể mở hộp thoại tạo vụ việc mới hoặc thêm vào vụ việc đã có. Màn hình \emph{Vụ việc của tôi} gồm danh sách vụ việc và chi tiết của vụ việc đang chọn trên cùng một trang, và cũng mở được hộp thoại chi tiết cho từng kết quả đã lưu.
-    \item \textbf{Quản lý} bắt đầu từ màn hình \emph{Tổng quan}; chọn một vụ việc trong danh sách gần đây sẽ mở thẳng vụ việc đó trên màn hình \emph{Hồ sơ vụ việc}, có cùng bố cục danh sách -- chi tiết như màn hình vụ việc của Giám sát viên nhưng ở chế độ chỉ đọc.
+    \item \textbf{Quản trị viên} có tám màn hình, chia thành nhóm \emph{Quản trị} (tài khoản, camera, xử lý AI, mô hình AI, xử lý video) và nhóm \emph{Giám sát} (trạng thái hệ thống, kiểm tra AI, nhật ký hệ thống).
+    \item \textbf{Giám sát viên} làm việc chủ yếu trên màn hình \emph{Tìm kiếm người}, nơi biểu mẫu truy vấn và danh sách kết quả nằm cùng một trang để có thể tìm lại nhiều lần; chọn một kết quả mở hộp thoại chi tiết, từ đó lưu kết quả vào vụ việc. Màn hình \emph{Vụ việc của tôi} gồm danh sách và chi tiết vụ việc trên cùng một trang.
+    \item \textbf{Quản lý} bắt đầu từ màn hình \emph{Tổng quan} và mở vụ việc trên màn hình \emph{Hồ sơ vụ việc}, có cùng bố cục như màn hình vụ việc của Giám sát viên nhưng ở chế độ chỉ đọc.
 \end{itemize}
 
 \subsection{Các nguyên tắc thiết kế}
 \label{sec:5.6.2}
 
-\begin{itemize}
-    \item \textbf{Hỗ trợ đánh giá bằng mắt.} Mỗi kết quả hiển thị ảnh người được cắt từ khung hình toàn cảnh, với vùng cắt nới rộng bằng phần cảnh xung quanh thay vì kéo giãn ảnh, người được tìm thấy có viền và phần xung quanh được làm tối để phân biệt khi trong khung có nhiều người. Thứ hạng, camera và giờ xuất hiện được ưu tiên hiển thị; điểm phù hợp được hiển thị ở dạng phụ, vì đây chỉ là thông tin tham khảo; độ tin cậy nội bộ của các mô hình không được hiển thị.
-    \item \textbf{Giảm thao tác lặp lại.} Ảnh truy vấn có thể đưa vào bằng chọn tệp, kéo thả, dán từ bộ nhớ tạm, hoặc kéo trực tiếp một kết quả vào ô tìm bằng ảnh để tìm tiếp chính người đó. Khu vực và ngày giống nhau cho mọi kết quả được hiển thị một lần ở đầu danh sách thay vì lặp lại trên từng kết quả; danh sách có thể được sắp xếp và lọc lại mà không cần gửi truy vấn mới.
-    \item \textbf{Phản hồi rõ ràng.} Khi không có kết quả, giao diện giải thích nguyên nhân và gợi ý cách tiếp tục, chẳng hạn mở rộng khoảng thời gian hoặc chọn thêm camera. Lỗi từ máy chủ được hiển thị bằng thông báo tiếng Việt mà máy chủ trả về; khi dữ liệu đã bị thay đổi ở nơi khác, người dùng được yêu cầu tải lại thay vì ghi đè (Mục~\ref{sec:5.4.1}).
-    \item \textbf{Ngôn ngữ nhất quán.} Toàn bộ giao diện dùng tiếng Việt với tên vai trò và thuật ngữ thống nhất; chỉ nội dung truy vấn dùng tiếng Anh: câu mô tả, và giá trị của các thuộc tính, trong khi tên nhóm thuộc tính vẫn hiển thị bằng tiếng Việt.
-    \item \textbf{Dùng được trên nhiều kích thước màn hình.} Bố cục co giãn theo độ rộng màn hình; trên điện thoại có độ rộng khoảng 390 điểm ảnh, menu bên trái thu lại thành danh sách chọn, các nhóm bộ lọc và các bảng rộng được cuộn ngang.
-\end{itemize}
+Vì kết quả tìm kiếm luôn cần người dùng xác nhận, giao diện trước hết phải hỗ trợ việc đánh giá bằng mắt. Ảnh người được đặt trong ngữ cảnh khung hình, và người được tìm thấy được làm nổi bật khi khung hình có nhiều người. Thứ hạng, camera và giờ xuất hiện được ưu tiên hiển thị. Điểm phù hợp chỉ hiển thị ở dạng phụ, còn độ tin cậy nội bộ của các mô hình không được hiển thị.
+
+Giao diện cũng giảm các thao tác lặp lại. Ảnh truy vấn có thể đưa vào bằng chọn tệp, kéo thả, dán, hoặc kéo trực tiếp một kết quả vào ô tìm kiếm để tìm tiếp chính người đó. Danh sách kết quả có thể sắp xếp và lọc lại mà không cần gửi truy vấn mới.
+
+Khi không có kết quả, giao diện giải thích nguyên nhân và gợi ý cách tiếp tục. Lỗi được hiển thị bằng thông báo tiếng Việt của máy chủ, và khi dữ liệu đã bị thay đổi ở nơi khác, người dùng được yêu cầu tải lại thay vì ghi đè. Ngoài ra, giao diện dùng được trên điện thoại có độ rộng khoảng 390 điểm ảnh: menu bên trái thu lại thành danh sách chọn và các bảng rộng được cuộn ngang.

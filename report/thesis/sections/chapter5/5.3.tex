@@ -1,16 +1,20 @@
 % !TEX root = ../../main.tex
-% C5.3 — Thiết kế cơ sở dữ liệu
+% C5.3 — Thiết kế cơ sở dữ liệu (RÚT GỌN 2026-09-29: bỏ 6 bảng từ điển dữ liệu và bảng các bảng vận hành; bản cũ ở report/archive/)
 % 5.3.1 khớp backend/src/person_search/storage/postgres/models/*.py và 13 migration (backend/migrations/versions). 12 bảng.
 % Bản số trong ERD lấy từ nullable của FK (xem tools/h8_erd_drawio.py). worker_heartbeats không có FK -> không vẽ trong ERD.
 % camera "loại khỏi vận hành" = status RETIRED + ai_enabled=false (services/cameras.py); INACTIVE có trong enum nhưng chưa dùng.
 % Bất biến areas.code, cameras.area_id và chuyển trạng thái person_tracks được kiểm tra ở tầng ứng dụng (sự kiện before_update của ORM).
+% 5.3.2 khớp storage/contracts.py, storage/milvus/vectors.py (7 trường, HNSW/IP M=16 efConstruction=128 ef=64, Strong, upsert).
+% 5.3.3 khớp storage/minio/frames.py (JPEG/PNG <= 20 MB, SHA-256, put idempotent), workers/publication.py (JPEG 90), infra/minio (bucket riêng tư).
+% 5.3.4 khớp services/track_ingestion.py (PENDING + outbox cùng giao dịch -> MinIO -> Milvus + xác minh -> READY; thử lại 2 s nhân đôi <= 300 s,
+% tối đa 5 lần) và storage/maintenance_cli.py (retry-outbox, reconcile mặc định chỉ báo cáo, requeue-track, reindex; chạy thủ công). Hình H6.
 \section{Thiết kế cơ sở dữ liệu}
 \label{sec:5.3}
 
 \subsection{Cơ sở dữ liệu quan hệ}
 \label{sec:5.3.1}
 
-PostgreSQL là nơi lưu toàn bộ dữ liệu nghiệp vụ và là nơi quyết định về quyền và trạng thái (Mục~\ref{sec:5.1.3}). Cơ sở dữ liệu gồm 12 bảng, chia thành năm nhóm theo chức năng như Bảng~\ref{tab:db-tables}.
+PostgreSQL lưu toàn bộ dữ liệu nghiệp vụ và là nơi quyết định về quyền và trạng thái. Cơ sở dữ liệu gồm 12 bảng, chia thành năm nhóm như Bảng~\ref{tab:db-tables}.
 
 \begin{table}[H]
 \centering
@@ -20,180 +24,49 @@ PostgreSQL là nơi lưu toàn bộ dữ liệu nghiệp vụ và là nơi quy�
 \hline
 \textbf{Nhóm} & \textbf{Bảng} & \textbf{Vai trò} \\
 \hline
-Tổ chức và phân quyền & \texttt{areas}, \texttt{users}, \path{auth_sessions} & Khu vực giám sát, tài khoản người dùng, phiên đăng nhập phía máy chủ \\
+Tổ chức và phân quyền & \texttt{areas}, \texttt{users}, \path{auth_sessions} & Khu vực giám sát, tài khoản người dùng, phiên đăng nhập \\
 \hline
-Camera và xử lý AI & \texttt{cameras}, \path{ai_config_versions}, \path{processing_jobs}, \path{worker_heartbeats} & Camera logic, các phiên bản cấu hình Detector--Tracker--bộ mã hóa, hàng đợi công việc, trạng thái của tiến trình xử lý nền \\
+Camera và xử lý AI & \texttt{cameras}, \path{ai_config_versions}, \path{processing_jobs}, \path{worker_heartbeats} & Camera logic, các phiên bản cấu hình Detector-Tracker-bộ mã hóa, hàng đợi công việc, trạng thái tiến trình xử lý nền \\
 \hline
-Dữ liệu tìm kiếm & \path{person_tracks}, \path{storage_outbox_events} & Thông tin mô tả của các lần xuất hiện; sự kiện đồng bộ với hai kho còn lại (Mục~\ref{sec:5.3.4}) \\
+Dữ liệu tìm kiếm & \path{person_tracks}, \path{storage_outbox_events} & Thông tin mô tả các lần xuất hiện; sự kiện đồng bộ với hai kho còn lại (Mục~\ref{sec:5.3.4}) \\
 \hline
 Nghiệp vụ vụ việc & \texttt{cases}, \path{case_results} & Vụ việc và các kết quả đã lưu \\
 \hline
-Truy vết & \path{audit_logs} & Nhật ký hệ thống \\
+Truy vết & \path{audit_logs} & Nhật ký hệ thống, chỉ được thêm, không sửa \\
 \hline
 \end{tabularx}
 \end{table}
 
-\paragraph{Sơ đồ thực thể -- liên kết.} Hình~\ref{fig:erd} trình bày sơ đồ thực thể -- liên kết của 11 bảng có quan hệ khóa ngoại, theo ký hiệu chân quạ. Để sơ đồ dễ đọc, mỗi bảng chỉ thể hiện khóa chính (PK), khóa ngoại (FK) và các thuộc tính chính; danh sách cột đầy đủ của các bảng nghiệp vụ được trình bày trong từ điển dữ liệu ở phần sau. Bảng \path{worker_heartbeats} không có khóa ngoại nên không được vẽ: mỗi dòng của bảng này lưu trạng thái hiện tại của một tiến trình xử lý nền (đang chờ, đang bận, đang dừng), thời điểm báo hiệu gần nhất và mức sử dụng bộ nhớ, CPU, phục vụ chức năng theo dõi trạng thái.
+Hình~\ref{fig:erd} trình bày sơ đồ thực thể - liên kết của 11 bảng có quan hệ khóa ngoại theo ký hiệu chân quạ; mỗi bảng chỉ thể hiện khóa chính, khóa ngoại và các thuộc tính chính. Bảng \path{worker_heartbeats} không có khóa ngoại nên không được vẽ.
 
 \afterpage{%
 \begin{landscape}
 \begin{figure}[p]
 \centering
 \includegraphics[width=\linewidth,height=0.86\textheight,keepaspectratio]{H8-erd.png}
-\caption{Sơ đồ thực thể -- liên kết của cơ sở dữ liệu quan hệ}
+\caption{Sơ đồ thực thể - liên kết của cơ sở dữ liệu quan hệ}
 \label{fig:erd}
 \end{figure}
 \end{landscape}
 }
 
-\paragraph{Các quan hệ.} Bản số ở phía bảng cha phản ánh khóa ngoại có được phép rỗng hay không:
+\paragraph{Các quan hệ.} Phần lớn khóa ngoại là bắt buộc: mỗi camera thuộc đúng một khu vực, mỗi vụ việc có đúng một người phụ trách, mỗi lần xuất hiện thuộc đúng một camera và được tạo bởi đúng một công việc với một phiên bản cấu hình AI. Ba khóa ngoại được phép rỗng: tài khoản chỉ có khu vực khi là Giám sát viên, công việc chỉ có người yêu cầu khi được tạo từ tệp tải lên, và bản ghi nhật ký có thể không gắn với người dùng, chẳng hạn khi ghi một lỗi kỹ thuật. Giữa \texttt{cases} và \path{person_tracks} là quan hệ nhiều - nhiều qua bảng \path{case_results}. Mỗi dòng của bảng này có khóa chính riêng, lưu bản chụp thông tin tại thời điểm lưu, và \emph{không} có ràng buộc duy nhất trên cặp vụ việc - lần xuất hiện, vì mỗi lần lưu tạo một mục mới.
+
+\paragraph{Các ràng buộc toàn vẹn.} Nhiều quy tắc nghiệp vụ được thể hiện trực tiếp trong cơ sở dữ liệu, để dữ liệu sai không thể được ghi vào dù tầng ứng dụng có lỗi:
 \begin{itemize}
-    \item \textbf{Bắt buộc (một và chỉ một).} Mỗi camera thuộc đúng một khu vực; mỗi vụ việc có đúng một người phụ trách; mỗi mục kết quả thuộc đúng một vụ việc và tham chiếu đúng một lần xuất hiện; mỗi lần xuất hiện thuộc đúng một camera, được tạo bởi đúng một công việc và một phiên bản cấu hình AI; mỗi công việc gắn với đúng một camera và một phiên bản cấu hình AI.
-    \item \textbf{Không bắt buộc (không hoặc một).} Tài khoản chỉ có khu vực khi là Giám sát viên; công việc chỉ có người yêu cầu khi được tạo từ tệp tải lên, còn phiên RTSP do bộ lập lịch tạo ra không có người yêu cầu; bản ghi nhật ký có thể không gắn với người dùng, chẳng hạn khi ghi một lỗi kỹ thuật của quy trình xử lý.
+    \item Tài khoản Giám sát viên luôn có khu vực, hai vai trò còn lại thì không; vụ việc có thời điểm hoàn thành khi và chỉ khi ở trạng thái \texttt{CLOSED}; chỉ một phiên bản cấu hình AI ở trạng thái \texttt{ACTIVE}; mã khu vực và khu vực của camera không đổi sau khi tạo.
+    \item Hầu hết khóa ngoại dùng quy tắc RESTRICT, nên dữ liệu còn được tham chiếu không thể bị xóa; tài khoản và camera không bị xóa dòng mà được chuyển trạng thái (\texttt{INACTIVE}, \texttt{RETIRED}). Chỉ phiên đăng nhập và mục kết quả được xóa theo bảng cha.
+    \item Một lần xuất hiện chỉ có thể ở trạng thái \texttt{READY} khi đã có đủ khóa đối tượng, mã băm và kích thước khung hình, và thời điểm ghi vector. Không bảng nào lưu điểm phù hợp.
+    \item Các bảng \texttt{users}, \texttt{cameras} và \texttt{cases} có cột số phiên bản để chống ghi đè khi cập nhật đồng thời (Mục~\ref{sec:5.2.4}); cặp người yêu cầu - khóa chống trùng của \path{processing_jobs} là duy nhất, nên một yêu cầu tải lên gửi lặp không tạo thêm công việc.
 \end{itemize}
-Giữa \texttt{cases} và \path{person_tracks} là quan hệ nhiều -- nhiều, được tách qua bảng \path{case_results}. Bảng này không phải một bảng nối thuần túy: mỗi dòng có khóa chính riêng và lưu thêm bản chụp thông tin tại thời điểm lưu, và \emph{không} có ràng buộc duy nhất trên cặp (\path{case_id}, \path{track_id}), vì mỗi lần lưu tạo một mục mới kể cả khi trùng lần xuất hiện.
-
-\paragraph{Các ràng buộc toàn vẹn.} Nhiều quy tắc nghiệp vụ ở Chương~\ref{chapter:phantich} được thể hiện trực tiếp trong cơ sở dữ liệu, để dữ liệu sai không thể được ghi vào dù có lỗi ở tầng ứng dụng:
-\begin{itemize}
-    \item \textbf{Vai trò và khu vực.} Ràng buộc kiểm tra trên bảng \texttt{users} bảo đảm tài khoản Giám sát viên luôn có khu vực, còn tài khoản Quản trị viên và Quản lý không có khu vực.
-    \item \textbf{Không xóa dữ liệu lịch sử.} Hầu hết khóa ngoại dùng quy tắc RESTRICT, nên không thể xóa một khu vực, camera, tài khoản, công việc hay lần xuất hiện khi còn dữ liệu tham chiếu tới. Tài khoản không bị xóa dòng mà được khóa hoặc chuyển sang trạng thái ngừng hoạt động (\texttt{INACTIVE}); camera bị loại khỏi vận hành được chuyển sang trạng thái \texttt{RETIRED}. Chỉ hai quan hệ dùng CASCADE: phiên đăng nhập bị xóa theo tài khoản, và mục kết quả bị xóa theo vụ việc chứa nó.
-    \item \textbf{Trạng thái nhất quán.} Một lần xuất hiện chỉ có thể ở trạng thái \texttt{READY} khi đã có đủ khóa đối tượng của khung hình, mã băm và kích thước tệp, và thời điểm ghi vector (Mục~\ref{sec:5.3.4}); khung bao phải nằm trong khung hình và các mốc thời gian phải đúng thứ tự. Vụ việc có thời điểm hoàn thành khi và chỉ khi ở trạng thái \texttt{CLOSED}. Tại mỗi thời điểm chỉ có đúng một phiên bản cấu hình AI ở trạng thái \texttt{ACTIVE}, nhờ một chỉ mục duy nhất có điều kiện.
-    \item \textbf{Không lưu điểm phù hợp.} Không bảng nào có cột lưu điểm phù hợp; điểm chỉ tồn tại trong phản hồi của lượt tìm kiếm.
-    \item \textbf{Chống ghi đè khi cập nhật đồng thời.} Các bảng \texttt{users}, \texttt{cameras} và \texttt{cases} có cột số phiên bản, tăng sau mỗi lần cập nhật (Mục~\ref{sec:5.2.4}).
-    \item \textbf{Chống tạo trùng công việc.} Cặp (người yêu cầu, khóa chống trùng) của \path{processing_jobs} là duy nhất, nên một yêu cầu tải lên bị gửi lặp lại không tạo thêm công việc.
-    \item \textbf{Bất biến.} Mã khu vực và khu vực của camera không được thay đổi sau khi tạo; địa chỉ RTSP không được chứa thông tin đăng nhập, vì thông tin này được lưu riêng ở dạng mã hóa. Một số bất biến và quy tắc chuyển trạng thái của lần xuất hiện được kiểm tra ở tầng ứng dụng, ngay trước khi ghi xuống cơ sở dữ liệu.
-\end{itemize}
-
-\paragraph{Chỉ mục.} Ngoài các chỉ mục cho khóa chính, khóa ngoại và cột duy nhất, cơ sở dữ liệu có các chỉ mục phục vụ những truy vấn thường gặp: các lần xuất hiện theo camera và thời điểm, trong đó có chỉ mục riêng chỉ chứa các lần xuất hiện đã sẵn sàng; các camera đang vận hành theo khu vực; các vụ việc theo người phụ trách và thời điểm tạo; nhật ký theo người thực hiện và theo đối tượng bị tác động.
-
-\paragraph{Từ điển dữ liệu.} Các bảng từ~\ref{tab:dd-areas} đến~\ref{tab:dd-case-results} mô tả đầy đủ các cột của sáu bảng nghiệp vụ chính. Các bảng này, trừ \path{case_results}, còn có hai cột \path{created_at} và \path{updated_at} ghi thời điểm tạo và cập nhật, không được lặp lại trong từng bảng. Mọi khóa chính có kiểu UUID; mọi mốc thời gian có kiểu \texttt{TIMESTAMPTZ} (có múi giờ, lưu theo UTC).
-
-\newcommand{\ddhead}[2]{%
-\caption{#1}\label{#2}\\
-\hline
-\textbf{Cột} & \textbf{Kiểu} & \textbf{Ràng buộc} & \textbf{Ý nghĩa} \\
-\hline
-\endfirsthead
-\multicolumn{4}{l}{\textit{(tiếp theo Bảng~\ref{#2})}}\\
-\hline
-\textbf{Cột} & \textbf{Kiểu} & \textbf{Ràng buộc} & \textbf{Ý nghĩa} \\
-\hline
-\endhead}
-
-\begin{longtable}{|P{3.7cm}|P{2.9cm}|P{2.6cm}|P{4.9cm}|}
-\ddhead{Từ điển dữ liệu bảng \texttt{areas}}{tab:dd-areas}
-\texttt{id} & UUID & PK & Mã định danh khu vực \\ \hline
-\texttt{code} & VARCHAR(50) & Duy nhất, chữ in hoa, không đổi & Mã ổn định của khu vực \\ \hline
-\texttt{name} & VARCHAR(200) & Không rỗng & Tên hiển thị \\ \hline
-\end{longtable}
-
-\begin{longtable}{|P{3.7cm}|P{2.9cm}|P{2.6cm}|P{4.9cm}|}
-\ddhead{Từ điển dữ liệu bảng \texttt{users}}{tab:dd-users}
-\texttt{id} & UUID & PK & Mã định danh tài khoản \\ \hline
-\texttt{username} & VARCHAR(100) & Duy nhất & Tên đăng nhập \\ \hline
-\path{password_hash} & VARCHAR(255) & Không rỗng & Mật khẩu đã băm \\ \hline
-\path{display_name} & VARCHAR(200) & Không rỗng & Tên hiển thị \\ \hline
-\texttt{role} & ENUM & \texttt{ADMIN}, \texttt{OPERATOR}, \texttt{VIEWER} & Vai trò: Quản trị viên, Giám sát viên, Quản lý \\ \hline
-\texttt{status} & ENUM & \texttt{ACTIVE}, \texttt{LOCKED}, \texttt{INACTIVE}, \texttt{DELETED} & Trạng thái tài khoản: hoạt động, bị khóa, ngừng hoạt động; \texttt{DELETED} được dự phòng, phiên bản hiện tại chưa dùng \\ \hline
-\path{assigned_area_id} & UUID & FK \texttt{areas}, rỗng được & Khu vực của Giám sát viên; bắt buộc có khi và chỉ khi vai trò là \texttt{OPERATOR} \\ \hline
-\path{last_login_at} & TIMESTAMPTZ & Rỗng được & Thời điểm đăng nhập gần nhất \\ \hline
-\texttt{version} & INTEGER & $> 0$ & Số phiên bản chống ghi đè \\ \hline
-\end{longtable}
-
-\begin{longtable}{|P{3.7cm}|P{2.9cm}|P{2.6cm}|P{4.9cm}|}
-\ddhead{Từ điển dữ liệu bảng \texttt{cameras}}{tab:dd-cameras}
-\texttt{id} & UUID & PK & Mã định danh camera \\ \hline
-\path{area_id} & UUID & FK \texttt{areas}, không đổi & Khu vực lắp đặt \\ \hline
-\texttt{code} & VARCHAR(50) & Duy nhất, chữ in hoa & Mã camera \\ \hline
-\texttt{name} & VARCHAR(200) & Không rỗng & Tên hiển thị \\ \hline
-\path{rtsp_url} & VARCHAR(2048) & Rỗng được; \texttt{rtsp://} hoặc \texttt{rtsps://}; không chứa thông tin đăng nhập & Địa chỉ luồng RTSP; rỗng với camera chỉ xử lý bằng tệp tải lên \\ \hline
-\path{rtsp_credentials} & TEXT & Rỗng được & Thông tin đăng nhập RTSP đã mã hóa \\ \hline
-\path{rtsp_secret_ref} & VARCHAR(500) & Rỗng được & Tham chiếu tới thông tin đăng nhập lưu ở kho bí mật bên ngoài (phương án thay thế) \\ \hline
-\texttt{status} & ENUM & \texttt{ACTIVE}, \texttt{INACTIVE}, \texttt{RETIRED} & Trạng thái vận hành; loại khỏi vận hành đặt \texttt{RETIRED}; \texttt{INACTIVE} được dự phòng, chưa dùng \\ \hline
-\path{rtsp_status} & ENUM & \texttt{UNKNOWN}, \texttt{ONLINE}, \texttt{OFFLINE}, \texttt{ERROR} & Kết quả kiểm tra kết nối gần nhất \\ \hline
-\path{last_checked_at} & TIMESTAMPTZ & Rỗng được & Thời điểm kiểm tra kết nối gần nhất \\ \hline
-\path{ai_enabled} & BOOLEAN & Mặc định \texttt{false} & Đang bật xử lý AI hay không \\ \hline
-\texttt{version} & INTEGER & $> 0$ & Số phiên bản chống ghi đè \\ \hline
-\end{longtable}
-
-\begin{longtable}{|P{3.7cm}|P{2.9cm}|P{2.6cm}|P{4.9cm}|}
-\ddhead{Từ điển dữ liệu bảng \texttt{person\_tracks}}{tab:dd-tracks}
-\texttt{id} & UUID & PK & Mã lần xuất hiện, dùng chung với Milvus và MinIO \\ \hline
-\path{camera_id} & UUID & FK \texttt{cameras} & Camera ghi nhận \\ \hline
-\path{processing_job_id} & UUID & FK \path{processing_jobs} & Công việc đã tạo ra lần xuất hiện \\ \hline
-\path{ai_config_version_id} & UUID & FK \path{ai_config_versions} & Phiên bản Detector--Tracker--bộ mã hóa đã dùng \\ \hline
-\path{appeared_at_utc} & TIMESTAMPTZ & Không rỗng & Thời điểm xuất hiện, dùng để lọc và hiển thị \\ \hline
-\path{source_frame_index} & BIGINT & Rỗng được & Chỉ số khung hình đại diện trong nguồn \\ \hline
-\path{source_started_at_ms}, \path{source_ended_at_ms} & BIGINT & $\geq 0$, kết thúc $\geq$ bắt đầu & Thời điểm bắt đầu, kết thúc trên dòng thời gian của nguồn (mili giây) \\ \hline
-\path{representative_frame_timestamp_ms} & BIGINT & Nằm trong khoảng bắt đầu -- kết thúc & Mốc thời gian của khung hình đại diện \\ \hline
-\path{bbox_x}, \path{bbox_y}, \path{bbox_width}, \path{bbox_height} & INTEGER & Nằm trong khung hình & Khung bao của người trên khung hình đại diện \\ \hline
-\path{frame_width}, \path{frame_height} & INTEGER & $> 0$ & Kích thước khung hình đại diện \\ \hline
-\path{minio_object_key} & VARCHAR(1024) & Bắt buộc khi \texttt{READY} & Khóa đối tượng của khung hình trong MinIO \\ \hline
-\path{frame_sha256}, \path{frame_size_bytes} & VARCHAR(64), BIGINT & Bắt buộc khi \texttt{READY} & Mã băm và kích thước tệp khung hình, dùng để kiểm tra toàn vẹn \\ \hline
-\path{encoder_version} & VARCHAR(100) & Không rỗng & Phiên bản bộ mã hóa đã tạo vector \\ \hline
-\path{vector_indexed_at} & TIMESTAMPTZ & Bắt buộc khi \texttt{READY} & Thời điểm vector được ghi vào Milvus \\ \hline
-\path{index_status} & ENUM & \texttt{PENDING}, \texttt{READY}, \texttt{FAILED} & Trạng thái đồng bộ ba kho (Mục~\ref{sec:5.3.4}) \\ \hline
-\path{failure_code}, \path{failure_message} & VARCHAR(100), TEXT & Rỗng được & Nguyên nhân khi ghi thất bại \\ \hline
-\end{longtable}
-
-\begin{longtable}{|P{3.7cm}|P{2.9cm}|P{2.6cm}|P{4.9cm}|}
-\ddhead{Từ điển dữ liệu bảng \texttt{cases}}{tab:dd-cases}
-\texttt{id} & UUID & PK & Mã vụ việc \\ \hline
-\path{owner_user_id} & UUID & FK \texttt{users} & Giám sát viên phụ trách, lấy từ phiên đăng nhập khi tạo \\ \hline
-\texttt{title} & VARCHAR(200) & Không rỗng & Tiêu đề \\ \hline
-\texttt{note} & TEXT & Rỗng được & Ghi chú \\ \hline
-\texttt{status} & ENUM & \texttt{OPEN}, \texttt{CLOSED} & Đang xử lý hoặc Hoàn thành \\ \hline
-\path{closed_at} & TIMESTAMPTZ & Có giá trị khi và chỉ khi \texttt{CLOSED} & Thời điểm đánh dấu hoàn thành \\ \hline
-\texttt{version} & INTEGER & $> 0$ & Số phiên bản chống ghi đè \\ \hline
-\end{longtable}
-
-\begin{longtable}{|P{3.7cm}|P{2.9cm}|P{2.6cm}|P{4.9cm}|}
-\ddhead{Từ điển dữ liệu bảng \texttt{case\_results}}{tab:dd-case-results}
-\texttt{id} & UUID & PK & Mã mục kết quả \\ \hline
-\path{case_id} & UUID & FK \texttt{cases}, xóa theo vụ việc & Vụ việc chứa mục này \\ \hline
-\path{track_id} & UUID & FK \path{person_tracks}; không duy nhất cùng \path{case_id} & Lần xuất hiện được lưu \\ \hline
-\path{camera_name_snapshot} & VARCHAR(200) & Không rỗng & Tên camera tại thời điểm lưu \\ \hline
-\path{area_name_snapshot} & VARCHAR(200) & Không rỗng & Tên khu vực tại thời điểm lưu \\ \hline
-\path{appeared_at_snapshot} & TIMESTAMPTZ & Không rỗng & Thời điểm xuất hiện tại thời điểm lưu \\ \hline
-\path{saved_at} & TIMESTAMPTZ & Mặc định thời điểm ghi & Thời điểm lưu \\ \hline
-\end{longtable}
-
-Các bảng còn lại phục vụ vận hành và được tóm tắt trong Bảng~\ref{tab:db-ops}.
-
-\begin{table}[H]
-\centering
-\caption{Các bảng phục vụ vận hành}
-\label{tab:db-ops}
-\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{3.6cm}|L|}
-\hline
-\textbf{Bảng} & \textbf{Nội dung chính} \\
-\hline
-\path{ai_config_versions} & Mỗi dòng là một tổ hợp Detector, Tracker và bộ mã hóa kèm phiên bản, số chiều vector và mã băm của tệp trọng số; trạng thái \texttt{DRAFT}, \texttt{ACTIVE} hoặc \texttt{RETIRED}, chỉ một dòng \texttt{ACTIVE} \\
-\hline
-\path{processing_jobs} & Hàng đợi công việc (Mục~\ref{sec:5.2.1}): camera, phiên bản cấu hình AI, loại nguồn (\texttt{FILE}, \texttt{RTSP}) và tham chiếu tệp, trạng thái, khoảng lấy mẫu $N$, thông tin giữ chỗ (mã giữ chỗ, thời hạn, thời điểm báo hiệu), số lần thử, tiến độ (số khung đã xử lý, số lần xuất hiện đã hoàn tất và đã công bố), mã lỗi và các số đo \\
-\hline
-\path{auth_sessions} & Phiên đăng nhập phía máy chủ: tài khoản, mã băm của mã phiên, thời điểm hoạt động gần nhất, thời điểm hết hạn, thời điểm và lý do thu hồi \\
-\hline
-\path{audit_logs} & Nhật ký hệ thống, chỉ được thêm, không sửa: người thực hiện, loại sự kiện, loại và mã đối tượng bị tác động, kết quả, thông tin bổ sung (đã che các trường nhạy cảm), thời điểm \\
-\hline
-\path{storage_outbox_events} & Sự kiện đồng bộ một lần xuất hiện sang MinIO và Milvus: nội dung cần ghi, trạng thái, số lần thử, thời điểm được phép thử lại, lỗi gần nhất (Mục~\ref{sec:5.3.4}) \\
-\hline
-\path{worker_heartbeats} & Trạng thái hiện tại của từng tiến trình xử lý nền và công việc đang chạy, phục vụ theo dõi vận hành \\
-\hline
-\end{tabularx}
-\end{table}
+Ngoài ra, các chỉ mục được tạo cho những truy vấn thường gặp, như lần xuất hiện theo camera và thời điểm (có chỉ mục riêng chỉ chứa các lần xuất hiện đã sẵn sàng), vụ việc theo người phụ trách, và nhật ký theo người thực hiện.
 
 \subsection{Lưu trữ vector đặc trưng}
 \label{sec:5.3.2}
-% Khớp storage/contracts.py (tiền tố person_track_embeddings, bí danh person_track_embeddings_active, phiên bản rasa_cuhk_pedes_v1, 256 chiều)
-% và storage/milvus/vectors.py (lược đồ 7 trường, không trường động; HNSW/IP M=16, efConstruction=128, ef=64; nhất quán Strong;
-% upsert theo track_id; kiểm tra chuẩn L2; biểu thức lọc area_id + index_status + camera_id + appeared_at_epoch).
 
-Vector đặc trưng của các lần xuất hiện được lưu trong Milvus. Kho này chỉ phục vụ một việc: tìm nhanh các vector gần nhất với vector truy vấn trong một phạm vi đã lọc (Mục~\ref{sec:3.6}); mọi thông tin khác về lần xuất hiện và mọi quyết định về quyền đều nằm ở PostgreSQL.
+Milvus chỉ phục vụ một việc: tìm nhanh các vector gần nhất với vector truy vấn trong một phạm vi đã lọc; mọi thông tin khác và mọi quyết định về quyền đều nằm ở PostgreSQL.
 
-\paragraph{Mỗi phiên bản bộ mã hóa một collection.} Milvus tổ chức dữ liệu thành các \emph{collection}, tương tự bảng trong cơ sở dữ liệu quan hệ. Hệ thống tạo một collection riêng cho mỗi phiên bản bộ mã hóa, với tên gồm tiền tố cố định và phiên bản, ví dụ \path{person_track_embeddings_rasa_cuhk_pedes_v1}. Vector do hai phiên bản bộ mã hóa khác nhau tạo ra thuộc hai không gian biểu diễn khác nhau và không thể so sánh với nhau; việc tách collection theo phiên bản bảo đảm hệ thống không bao giờ trộn chúng trong cùng một lượt tìm kiếm. Mỗi khi tiến trình xử lý nền khởi động, collection của phiên bản đang dùng được tạo nếu chưa có, hoặc được kiểm tra số chiều nếu đã có; nếu số chiều không khớp với cấu hình, tiến trình từ chối sử dụng collection đó. Ngoài ra, một bí danh (alias) cố định, \path{person_track_embeddings_active}, luôn được trỏ tới collection của phiên bản đang dùng.
-
-\paragraph{Lược đồ dữ liệu.} Mỗi lần xuất hiện ứng với một bản ghi trong collection, gồm các trường ở Bảng~\ref{tab:milvus-schema}. Collection không cho phép thêm trường ngoài lược đồ.
+\paragraph{Mỗi phiên bản bộ mã hóa một collection.} Milvus tổ chức dữ liệu thành các \emph{collection}, tương tự bảng. Hệ thống tạo một collection riêng cho mỗi phiên bản bộ mã hóa, ví dụ \path{person_track_embeddings_rasa_cuhk_pedes_v1}, vì vector của hai phiên bản khác nhau thuộc hai không gian biểu diễn không so sánh được với nhau. Một bí danh cố định luôn trỏ tới collection của phiên bản đang dùng; khi tiến trình xử lý nền khởi động, số chiều của collection được kiểm tra khớp với cấu hình. Mỗi lần xuất hiện ứng với một bản ghi gồm các trường ở Bảng~\ref{tab:milvus-schema}.
 
 \begin{table}[H]
 \centering
@@ -207,11 +80,9 @@ Vector đặc trưng của các lần xuất hiện được lưu trong Milvus. 
 \hline
 \path{embedding} & FLOAT\_VECTOR, 256 chiều & Vector đặc trưng, đã chuẩn hóa L2 \\
 \hline
-\path{area_id} & VARCHAR(36) & Khu vực của camera, dùng để lọc theo phạm vi của Giám sát viên \\
+\path{area_id}, \path{camera_id} & VARCHAR(36) & Khu vực và camera, dùng để lọc theo phạm vi \\
 \hline
-\path{camera_id} & VARCHAR(36) & Camera ghi nhận, dùng để lọc theo camera \\
-\hline
-\path{appeared_at_epoch} & INT64 & Thời điểm xuất hiện (giây, tính từ mốc Unix), dùng để lọc theo khoảng thời gian \\
+\path{appeared_at_epoch} & INT64 & Thời điểm xuất hiện (giây Unix), dùng để lọc theo thời gian \\
 \hline
 \path{encoder_version} & VARCHAR(64) & Phiên bản bộ mã hóa đã tạo vector \\
 \hline
@@ -220,42 +91,29 @@ Vector đặc trưng của các lần xuất hiện được lưu trong Milvus. 
 \end{tabularx}
 \end{table}
 
-Các trường khu vực, camera và thời điểm là bản sao của dữ liệu trong PostgreSQL, được lưu kèm vector để Milvus có thể lọc trước khi tìm (Mục~\ref{sec:3.6.3}). Việc sao chép khu vực là an toàn vì khu vực của một camera không bao giờ thay đổi sau khi tạo (Mục~\ref{sec:5.3.1}), nên bản sao này không thể trở nên sai lệch. Ngược lại, trạng thái vận hành của camera không được sao chép, vì trạng thái này thay đổi theo thao tác của Quản trị viên; thay vào đó, mỗi lượt tìm kiếm lấy danh sách camera đang vận hành từ PostgreSQL và đưa vào điều kiện lọc dưới dạng một tập mã camera. Nhờ vậy, khi một camera bị loại khỏi vận hành hay được đưa vận hành trở lại, dữ liệu của nó lập tức bị ẩn hoặc hiện lại trong kết quả tìm kiếm mà không phải cập nhật hàng loạt bản ghi trong Milvus. Milvus không lưu tên camera, tên khu vực hay bất kỳ thông tin hiển thị nào.
+Các trường khu vực, camera và thời điểm được sao từ PostgreSQL để Milvus lọc trước khi tìm (Mục~\ref{sec:3.6.3}); vì khu vực của camera không thay đổi sau khi tạo, bản sao này không thể sai lệch. Trạng thái vận hành của camera thì thay đổi theo thao tác của Quản trị viên nên không được sao chép: mỗi lượt tìm kiếm lấy danh sách camera đang vận hành từ PostgreSQL và đưa vào điều kiện lọc, nên dữ liệu của một camera bị loại khỏi vận hành được ẩn ngay mà không phải cập nhật Milvus.
 
-\paragraph{Chỉ mục và thao tác.} Trường vector được đánh chỉ mục HNSW với độ đo tích vô hướng, $M = 16$ và $\mathit{efConstruction} = 128$; khi tìm kiếm dùng $\mathit{ef} = 64$ (Mục~\ref{sec:3.6.4}). Vector được ghi bằng thao tác \emph{upsert} theo mã lần xuất hiện, tức ghi đè nếu đã tồn tại, nên việc thử lại một bước ghi bị gián đoạn không tạo bản ghi trùng. Trước mỗi lần ghi và mỗi lần tìm kiếm, hệ thống kiểm tra vector có đúng số chiều, không chứa giá trị không hợp lệ và có độ dài bằng 1; vector không đạt bị từ chối. Mọi thao tác đọc, ghi và tìm kiếm đều dùng mức nhất quán mạnh (strong consistency) của Milvus, để một vector vừa được ghi sẽ xuất hiện ngay trong lần tìm kiếm tiếp theo.
+\paragraph{Chỉ mục và thao tác.} Trường vector được đánh chỉ mục HNSW với độ đo tích vô hướng, $M = 16$, \textit{ef\-Con\-struc\-tion}~$= 128$, và $\mathit{ef} = 64$ khi tìm (Mục~\ref{sec:3.6.4}). Vector được ghi bằng thao tác \emph{upsert} theo mã lần xuất hiện, nên thử lại không tạo bản ghi trùng, và được kiểm tra đúng số chiều, không chứa giá trị không hợp lệ và có độ dài bằng 1 trước khi ghi hoặc tìm. Mọi thao tác dùng mức nhất quán mạnh (strong consistency) để vector vừa ghi xuất hiện ngay trong lần tìm tiếp theo.
 
 \subsection{Lưu trữ khung hình}
 \label{sec:5.3.3}
-% Khớp storage/contracts.py (FRAME_OBJECT_PREFIX tracks/v1; frame_object_key), storage/minio/frames.py (JPEG/PNG <= 20 MB,
-% kích thước khớp thông tin mô tả, SHA-256 trong metadata, put idempotent: cùng mã băm -> dùng lại, khác -> xung đột; get kiểm tra mã băm),
-% workers/publication.py (JPEG chất lượng 90), infra/compose.yaml (một MinIO dùng chung với Milvus, bucket Milvus riêng),
-% infra/minio/bootstrap.sh + app-policy.json (bucket person-search-frames, anonymous none, user ứng dụng chỉ có quyền trên bucket này).
 
-Khung hình toàn cảnh đại diện của các lần xuất hiện được lưu trong kho đối tượng MinIO. Dữ liệu ảnh có dung lượng lớn và chỉ được đọc nguyên khối khi hiển thị, nên được tách khỏi cơ sở dữ liệu quan hệ; PostgreSQL chỉ lưu khóa đối tượng cùng mã băm và kích thước của tệp (Mục~\ref{sec:5.3.1}).
+Mỗi lần xuất hiện có đúng một tệp ảnh trong MinIO: khung hình toàn cảnh đại diện, định dạng JPEG chất lượng 90; PostgreSQL chỉ lưu khóa đối tượng, mã băm và kích thước tệp. Hệ thống không lưu ảnh người đã cắt thành tệp riêng: ảnh người trong danh sách kết quả được dựng từ khung hình toàn cảnh và khung bao khi được yêu cầu (Mục~\ref{sec:6.3.3}). Nhờ vậy một tệp phục vụ cả hai cách xem, cách cắt có thể thay đổi mà không phải tạo lại dữ liệu, và không phát sinh tệp ảnh người độc lập có thể bị sao chép ngoài kiểm soát. Video gốc không được lưu.
 
-\paragraph{Chỉ lưu khung hình toàn cảnh.} Mỗi lần xuất hiện có đúng một tệp ảnh: khung hình toàn cảnh đại diện, lưu ở định dạng JPEG chất lượng 90. Hệ thống không lưu ảnh người đã cắt như một tệp riêng; ảnh người hiển thị trong danh sách kết quả được cắt động từ khung hình toàn cảnh và khung bao mỗi khi được yêu cầu (Mục~\ref{sec:5.2.3}). Cách làm này có ba lợi ích: một tệp duy nhất phục vụ cả ảnh người lẫn chế độ xem toàn cảnh; giao diện có thể thay đổi cách cắt, chẳng hạn tỉ lệ ô hiển thị hay cách làm nổi bật người được tìm thấy, mà không phải tạo lại dữ liệu; và không phát sinh tệp ảnh người độc lập có thể bị sao chép hay truy cập ngoài kiểm soát. Hệ thống cũng không lưu lại video gốc.
-
-\paragraph{Tổ chức khóa đối tượng.} Khóa của mỗi tệp được xác định hoàn toàn từ thông tin của lần xuất hiện, theo mẫu
+Khóa của mỗi tệp được sinh xác định từ thông tin của lần xuất hiện, theo mẫu
 \begin{center}
 \texttt{tracks/v1/}\allowbreak \textit{mã camera}\texttt{/}\allowbreak \textit{năm}\texttt{/}\allowbreak \textit{tháng}\texttt{/}\allowbreak \textit{ngày}\texttt{/}\allowbreak \textit{mã lần xuất hiện}\texttt{/}\allowbreak \texttt{representative.jpg}
 \end{center}
-Khóa được sinh xác định, tức cùng một lần xuất hiện luôn ứng với cùng một khóa, nên việc ghi lại khi thử lại không tạo tệp mới. Tiền tố có số phiên bản (\texttt{v1}) cho phép thay đổi cách tổ chức về sau mà không lẫn với dữ liệu cũ; việc nhóm theo camera và ngày giúp liệt kê và dọn dẹp dữ liệu theo từng camera hoặc khoảng thời gian.
+nên ghi lại khi thử lại không tạo tệp mới; tiền tố có số phiên bản cho phép đổi cách tổ chức về sau, và việc nhóm theo camera và ngày giúp dọn dẹp theo camera hoặc khoảng thời gian.
 
-\paragraph{Kiểm tra toàn vẹn.} Trước khi ghi, hệ thống kiểm tra tệp đúng định dạng ảnh đã khai báo (JPEG hoặc PNG), có dung lượng không quá 20~MB, có kích thước trùng với kích thước khung hình trong thông tin mô tả, và giải mã được. Mã băm SHA-256 của tệp được lưu kèm đối tượng trong MinIO và trong bản ghi của lần xuất hiện ở PostgreSQL. Nếu khóa đã tồn tại với cùng mã băm, tệp cũ được dùng lại; nếu khác mã băm, thao tác ghi bị từ chối như một xung đột thay vì ghi đè âm thầm. Khi đọc, mã băm được tính lại và so sánh với giá trị đã lưu, nên một tệp bị hỏng hay bị thay đổi sẽ được phát hiện thay vì bị hiển thị.
-
-\paragraph{Bảo mật.} Tệp được lưu trong một bucket riêng tư của ứng dụng, không cho phép truy cập ẩn danh. Ứng dụng truy cập MinIO bằng một tài khoản riêng chỉ có quyền đọc, ghi, xóa và liệt kê trong đúng bucket này. Trong triển khai của đề tài, Milvus cũng dùng chính máy chủ MinIO này để lưu dữ liệu nội bộ của nó nhưng ở một bucket khác, và tài khoản của ứng dụng không có quyền truy cập bucket đó. Trình duyệt không bao giờ nhận địa chỉ trực tiếp tới MinIO; mọi ảnh đều do máy chủ ứng dụng đọc và trả về sau khi kiểm tra quyền.
+Trước khi ghi, tệp được kiểm tra đúng định dạng, không quá 20~MB và có kích thước khớp thông tin mô tả; mã băm SHA-256 được lưu ở cả MinIO và PostgreSQL. Ghi trùng khóa với cùng mã băm thì tệp cũ được dùng lại, khác mã băm thì bị từ chối như một xung đột; khi đọc, mã băm được tính lại để phát hiện tệp hỏng. Tệp nằm trong một bucket riêng tư, ứng dụng truy cập bằng tài khoản chỉ có quyền trên đúng bucket này, và trình duyệt không nhận địa chỉ trực tiếp tới MinIO.
 
 \subsection{Đảm bảo nhất quán giữa các kho dữ liệu}
 \label{sec:5.3.4}
-% Khớp services/track_ingestion.py (_register: PersonTrack PENDING + outbox cùng giao dịch; _upload_frame; upsert + _verify_vector; _publish READY;
-% _record_failure: lỗi tạm thời -> giữ PENDING, hẹn available_at 2 s nhân đôi tối đa 300 s, tối đa 5 lần; hết lượt/không phục hồi -> FAILED, outbox DEAD, audit;
-% payload outbox chứa vector), models/person_track.py (ALLOWED_TRACK_TRANSITIONS, CHECK READY), services/storage_maintenance.py +
-% storage/maintenance_cli.py (retry-outbox, reconcile mặc định chỉ báo cáo, --delete-orphans, --quarantine-corrupt, reindex, requeue-track).
-% Đây là công cụ bảo trì chạy theo lệnh, KHÔNG chạy nền tự động. Hình H6.
 
-Một lần xuất hiện được lưu thành ba phần ở ba kho khác nhau, liên kết với nhau bằng cùng một mã: bản ghi thông tin mô tả trong PostgreSQL, khung hình trong MinIO và vector trong Milvus. Ba kho không có giao dịch chung, nên việc ghi không thể thành công hoặc thất bại đồng thời ở cả ba nơi; tiến trình có thể dừng giữa chừng, hoặc một kho có thể tạm thời không truy cập được. Mục này trình bày cách hệ thống bảo đảm rằng dữ liệu dở dang không bao giờ xuất hiện trong kết quả tìm kiếm, và có thể được hoàn tất hoặc phát hiện về sau.
+Một lần xuất hiện được lưu thành ba phần ở ba kho, liên kết bằng cùng một mã. Ba kho không có giao dịch chung, nên tiến trình có thể dừng giữa chừng hoặc một kho có thể tạm thời không truy cập được. Hệ thống bảo đảm dữ liệu dở dang không xuất hiện trong kết quả tìm kiếm, và có thể được hoàn tất hoặc phát hiện về sau.
 
-\paragraph{Trạng thái của lần xuất hiện.} Mỗi bản ghi lần xuất hiện trong PostgreSQL có một trạng thái đồng bộ, với các chuyển trạng thái được phép như Hình~\ref{fig:track-state}. Chỉ những lần xuất hiện ở trạng thái \emph{Sẵn sàng} mới được đưa vào kết quả tìm kiếm. Cơ sở dữ liệu từ chối đặt trạng thái này nếu bản ghi chưa có đủ khóa đối tượng, mã băm, kích thước của khung hình và thời điểm ghi vector (Mục~\ref{sec:5.3.1}); các chuyển trạng thái không có trong hình bị tầng ứng dụng từ chối trước khi ghi.
+\paragraph{Trạng thái của lần xuất hiện.} Mỗi bản ghi lần xuất hiện có một trạng thái đồng bộ, với các chuyển trạng thái được phép như Hình~\ref{fig:track-state}. Chỉ những lần xuất hiện ở trạng thái \emph{Sẵn sàng} mới được tìm kiếm; các chuyển trạng thái không có trong hình bị tầng ứng dụng từ chối.
 
 \begin{figure}[!htbp]
 \centering
@@ -266,22 +124,13 @@ Một lần xuất hiện được lưu thành ba phần ở ba kho khác nhau, 
 
 \paragraph{Thứ tự ghi.} Việc ghi một lần xuất hiện theo thứ tự cố định:
 \begin{enumerate}
-    \item Trong \emph{một giao dịch} của PostgreSQL, tạo bản ghi lần xuất hiện ở trạng thái \emph{Chờ} và một sự kiện trong bảng \path{storage_outbox_events}. Sự kiện này lưu đủ những gì cần ghi sang hai kho còn lại, kể cả vector đặc trưng. Đây là mẫu thiết kế \emph{transactional outbox}: ý định ghi sang hệ thống khác được lưu cùng giao dịch với dữ liệu chính, nên không thể có bản ghi mà thiếu ý định ghi, hay ngược lại.
-    \item Ghi khung hình vào MinIO theo khóa xác định (Mục~\ref{sec:5.3.3}).
-    \item Ghi vector vào Milvus theo mã lần xuất hiện, rồi đọc lại để xác nhận bản ghi đã tồn tại với đúng khu vực và camera.
-    \item Trong một giao dịch mới, chuyển bản ghi sang trạng thái \emph{Sẵn sàng}, lưu mã băm và kích thước khung hình, thời điểm ghi vector, và đánh dấu sự kiện outbox đã hoàn tất.
+    \item Trong \emph{một giao dịch} của PostgreSQL, tạo bản ghi ở trạng thái \emph{Chờ} và một sự kiện trong bảng \path{storage_outbox_events} lưu đủ những gì cần ghi sang hai kho còn lại, kể cả vector. Đây là mẫu thiết kế \emph{transactional outbox}: ý định ghi sang hệ thống khác được lưu cùng giao dịch với dữ liệu chính.
+    \item Ghi khung hình vào MinIO theo khóa xác định.
+    \item Ghi vector vào Milvus, rồi đọc lại để xác nhận bản ghi đã tồn tại với đúng khu vực và camera.
+    \item Trong một giao dịch mới, chuyển bản ghi sang \emph{Sẵn sàng}, lưu mã băm, kích thước khung hình và thời điểm ghi vector, và đánh dấu sự kiện outbox đã hoàn tất.
 \end{enumerate}
-Thứ tự này có hai tính chất quan trọng. Thứ nhất, PostgreSQL luôn được ghi \emph{trước}, nên mọi khung hình trong MinIO và mọi vector trong Milvus đều có thể đối chiếu với một bản ghi đã biết; phần nào không có bản ghi tương ứng là phần mồ côi và có thể được phát hiện. Thứ hai, trạng thái \emph{Sẵn sàng} được đặt \emph{cuối cùng}, sau khi hai kho kia đã ghi xong, nên một lần xuất hiện chỉ có thể được tìm thấy khi đầy đủ dữ liệu. Ngoài ra, bước ghi MinIO và Milvus đều có thể lặp lại an toàn: khóa đối tượng xác định kèm kiểm tra mã băm, và thao tác upsert theo mã lần xuất hiện, nên chạy lại một bước đã hoàn tất không tạo dữ liệu trùng.
+Vì PostgreSQL luôn được ghi \emph{trước}, mọi khung hình và vector đều đối chiếu được với một bản ghi đã biết, và phần nào không có bản ghi tương ứng là dữ liệu mồ côi. Vì trạng thái \emph{Sẵn sàng} được đặt \emph{cuối cùng}, một lần xuất hiện chỉ được tìm thấy khi đã đủ dữ liệu. Bước 2 và 3 đều lặp lại được an toàn nhờ khóa xác định và thao tác upsert.
 
-\paragraph{Xử lý lỗi và thử lại.} Nếu bước 2 hoặc 3 thất bại do lỗi tạm thời, chẳng hạn một kho không phản hồi, bản ghi giữ trạng thái \emph{Chờ} và sự kiện outbox được hẹn thời điểm thử lại, với khoảng chờ bắt đầu từ 2 giây và tăng gấp đôi sau mỗi lần, tối đa 300 giây. Sau năm lần thử không thành công, hoặc khi gặp lỗi không thể phục hồi như dữ liệu không hợp lệ hay xung đột mã băm, bản ghi chuyển sang \emph{Thất bại}, sự kiện outbox được đánh dấu dừng hẳn và sự cố được ghi vào nhật ký hệ thống. Vì mọi thông tin cần thiết đã nằm trong sự kiện outbox, việc thử lại có thể tiếp tục từ bước còn dở mà không cần chạy lại quy trình phân tích video.
+\paragraph{Xử lý lỗi và công cụ bảo trì.} Nếu bước 2 hoặc 3 thất bại do lỗi tạm thời, bản ghi giữ trạng thái \emph{Chờ} và sự kiện outbox được hẹn thử lại, với khoảng chờ bắt đầu từ 2 giây, tăng gấp đôi sau mỗi lần và tối đa 300 giây. Sau năm lần không thành công, hoặc khi gặp lỗi không thể phục hồi như xung đột mã băm, bản ghi chuyển sang \emph{Thất bại} và sự cố được ghi vào nhật ký hệ thống. Vì sự kiện outbox chứa đủ dữ liệu, việc thử lại không cần chạy lại quy trình phân tích video. Người vận hành có thêm một công cụ dòng lệnh để hoàn tất các lần xuất hiện còn dở, đối soát ba kho nhằm tìm bản ghi chờ quá lâu, bản ghi sẵn sàng nhưng thiếu khung hình hoặc vector, và dữ liệu mồ côi (mặc định chỉ báo cáo; khi được yêu cầu thì cách ly bản ghi hỏng và xóa dữ liệu mồ côi), đưa một lần xuất hiện thất bại về trạng thái chờ, và dựng lại dữ liệu Milvus từ các sự kiện outbox. Các lệnh này hiện được chạy thủ công.
 
-\paragraph{Công cụ bảo trì và đối soát.} Hệ thống cung cấp một công cụ dòng lệnh cho người vận hành, gồm các lệnh:
-\begin{itemize}
-    \item \path{retry-outbox}: xử lý các sự kiện outbox đã đến hạn thử lại, hoàn tất những lần xuất hiện còn dở.
-    \item \path{reconcile}: đối soát ba kho. Lệnh này tìm các lần xuất hiện ở trạng thái \emph{Chờ} quá lâu (mặc định 30 phút); các lần xuất hiện \emph{Sẵn sàng} mà thiếu khung hình, sai mã băm hoặc thiếu vector; và các khung hình hay vector mồ côi. Mặc định lệnh chỉ báo cáo; khi được yêu cầu rõ, lệnh chuyển các lần xuất hiện hỏng sang \emph{Thất bại} để ẩn khỏi tìm kiếm (cách ly), và xóa dữ liệu mồ côi.
-    \item \path{requeue-track}: đưa một lần xuất hiện đang \emph{Thất bại} trở lại trạng thái \emph{Chờ} để thử lại.
-    \item \path{reindex}: dựng lại vector trong Milvus từ các sự kiện outbox lưu trong PostgreSQL, phục vụ trường hợp dữ liệu Milvus bị mất.
-\end{itemize}
-Việc cách ly chỉ thay đổi trạng thái của bản ghi; bản ghi cùng các mục kết quả đã lưu trong vụ việc tham chiếu tới nó vẫn được giữ nguyên, và các thao tác cách ly hay xóa dữ liệu mồ côi đều được ghi vào nhật ký hệ thống. Trong phiên bản hiện tại, các lệnh này được chạy thủ công, chẳng hạn sau khi một công việc bị gián đoạn; chúng chưa được lên lịch chạy tự động.
-
-\paragraph{Lớp bảo vệ khi tìm kiếm.} Kể cả khi ba kho tạm thời không khớp, người dùng vẫn không nhìn thấy dữ liệu sai: mỗi kết quả Milvus trả về đều được đối chiếu lại với PostgreSQL, và kết quả không tồn tại hoặc không còn thuộc phạm vi được phép bị loại bỏ trước khi hiển thị (Mục~\ref{sec:3.6.4}).
+\paragraph{Lớp bảo vệ khi tìm kiếm.} Kể cả khi ba kho tạm thời không khớp, người dùng vẫn không thấy dữ liệu sai: mỗi kết quả Milvus trả về đều được đối chiếu lại với PostgreSQL, và kết quả không tồn tại hoặc ngoài phạm vi được phép bị loại trước khi hiển thị (Mục~\ref{sec:3.6.4}).

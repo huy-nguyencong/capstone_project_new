@@ -1,0 +1,66 @@
+% !TEX root = ../../main.tex
+% C4.4 — Sơ đồ use case tổng thể
+% Nguồn: usecase_detail.md (dòng Actors + các câu "chuyển sang UC-xx"). Hình H1: SV vẽ theo figures/specs/H1-use-case.md.
+% Quan hệ «extend»: UC-10→UC-09, UC-11→UC-10, UC-13→UC-12, UC-14→UC-13. Không vẽ «include» tới Đăng nhập (tiền điều kiện).
+\section{Sơ đồ use case tổng thể}
+\label{sec:4.4}
+
+Các yêu cầu chức năng ở Mục~\ref{sec:4.2} được tổ chức thành 15 use case. Hình~\ref{fig:usecase} thể hiện toàn bộ các use case của hệ thống cùng quan hệ giữa chúng và các tác nhân, còn Bảng~\ref{tab:usecases} liệt kê từng use case với tác nhân và mục đích tương ứng.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{H1-use-case.png}
+\caption{Sơ đồ use case tổng thể của hệ thống}
+\label{fig:usecase}
+\end{figure}
+
+Sơ đồ được tổ chức theo các điểm sau:
+\begin{itemize}
+    \item \textbf{Tác nhân trừu tượng \emph{Người dùng}.} Ba tác nhân Quản trị viên, Giám sát viên và Quản lý đều dùng chung chức năng đăng nhập (UC-01) và đăng xuất (UC-15). Thay vì nối cả ba tác nhân tới hai use case này, sơ đồ dùng một tác nhân trừu tượng \emph{Người dùng} liên kết với UC-01 và UC-15, và ba tác nhân cụ thể được tổng quát hóa về tác nhân này.
+    \item \textbf{Phân chia theo vai trò.} Mỗi tác nhân cụ thể chỉ liên kết với nhóm use case thuộc trách nhiệm của mình (Mục~\ref{sec:4.1}): Quản trị viên với bảy use case quản trị kỹ thuật từ UC-02 đến UC-08; Giám sát viên với ba use case nghiệp vụ tìm kiếm và quản lý vụ việc từ UC-09 đến UC-11; Quản lý với ba use case chỉ đọc từ UC-12 đến UC-14. Không có use case nào được dùng chung giữa hai trong ba tác nhân này.
+    \item \textbf{Quan hệ mở rộng giữa các use case.} Một số use case là bước tiếp theo, không bắt buộc, của một use case khác, nên được mô hình hóa bằng quan hệ «extend». Với Giám sát viên, sau khi tìm kiếm (UC-09), người dùng có thể xem và đánh giá chi tiết kết quả (UC-10), và từ một kết quả có thể chuyển sang lưu vào vụ việc (UC-11). Với Quản lý, từ màn hình tổng quan (UC-12) có thể mở một vụ việc (UC-13), và từ vụ việc có thể xem chi tiết một kết quả đã lưu (UC-14). Các use case mở rộng này vẫn được liên kết trực tiếp với tác nhân, vì tác nhân cũng có thể bắt đầu chúng từ giao diện, chẳng hạn Giám sát viên mở danh sách vụ việc của mình mà không cần tìm kiếm trước.
+    \item \textbf{Đăng nhập là tiền điều kiện.} Mọi use case ngoài UC-01 đều yêu cầu người dùng đã đăng nhập. Điều kiện này được ghi trong phần tiền điều kiện của đặc tả use case (Mục~\ref{sec:4.5}) thay vì vẽ quan hệ «include» tới UC-01, vì đăng nhập không phải là một bước bên trong các use case đó.
+\end{itemize}
+
+Các chức năng hệ thống tự động thực hiện (Mục~\ref{sec:4.2.5}) không có use case riêng vì không do tác nhân nào kích hoạt; chúng diễn ra khi Quản trị viên bật xử lý AI trong UC-04.
+
+\begin{table}[H]
+\centering
+\caption{Danh sách use case của hệ thống}
+\label{tab:usecases}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{1.4cm}|>{\raggedright\arraybackslash}p{3.8cm}|>{\raggedright\arraybackslash}p{2.4cm}|L|}
+\hline
+\textbf{Mã} & \textbf{Tên use case} & \textbf{Tác nhân} & \textbf{Mục đích} \\
+\hline
+UC-01 & Đăng nhập hệ thống & Cả ba tác nhân & Xác thực và truy cập các chức năng theo vai trò \\
+\hline
+UC-02 & Quản lý tài khoản người dùng & Quản trị viên & Tạo, cập nhật, khóa, xóa tài khoản; gán vai trò và khu vực \\
+\hline
+UC-03 & Quản lý camera & Quản trị viên & Thêm, cập nhật camera, kiểm tra kết nối RTSP, loại khỏi và đưa lại vận hành \\
+\hline
+UC-04 & Quản lý xử lý AI trên camera & Quản trị viên & Bật, tắt xử lý AI cho từng camera; xử lý tệp video dự phòng \\
+\hline
+UC-05 & Cấu hình mô hình AI & Quản trị viên & Chọn Detector và Tracker áp dụng cho toàn hệ thống \\
+\hline
+UC-06 & Theo dõi trạng thái hệ thống & Quản trị viên & Theo dõi trạng thái camera, luồng RTSP và xử lý AI \\
+\hline
+UC-07 & Kiểm tra hoạt động của AI & Quản trị viên & Kiểm tra nhóm xử lý camera và nhóm tìm kiếm \\
+\hline
+UC-08 & Xem nhật ký hệ thống & Quản trị viên & Tra cứu nhật ký thao tác và sự kiện kỹ thuật \\
+\hline
+UC-09 & Tìm kiếm người bằng AI & Giám sát viên & Tìm người bằng ảnh, câu mô tả hoặc thuộc tính trong khu vực được gán \\
+\hline
+UC-10 & Xem và đánh giá kết quả tìm kiếm & Giám sát viên & Xem chi tiết, đối chiếu và đánh giá từng kết quả \\
+\hline
+UC-11 & Quản lý hồ sơ vụ việc & Giám sát viên & Tạo vụ việc, lưu kết quả, cập nhật, đánh dấu hoàn thành, mở lại \\
+\hline
+UC-12 & Xem thông tin tổng quan & Quản lý & Xem các chỉ số và vụ việc gần đây trên toàn hệ thống \\
+\hline
+UC-13 & Xem hồ sơ vụ việc & Quản lý & Xem mọi vụ việc ở chế độ chỉ đọc \\
+\hline
+UC-14 & Xem thông tin kết quả tìm kiếm đã lưu & Quản lý & Xem chi tiết kết quả đã lưu trong vụ việc \\
+\hline
+UC-15 & Đăng xuất hệ thống & Cả ba tác nhân & Kết thúc phiên làm việc \\
+\hline
+\end{tabularx}
+\end{table}

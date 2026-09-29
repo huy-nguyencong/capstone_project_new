@@ -10,6 +10,7 @@ from PIL import Image
 from person_search.evaluation.benchmark import (
     GpuMemorySampler,
     LimitedSource,
+    ProcessTreeSampler,
     measure_run,
     measurements_as_dicts,
     run_benchmark,
@@ -242,3 +243,70 @@ def test_limited_source_closes_frames_beyond_the_limit():
     assert len(frames) == 2
     assert is_closed(source.images[2])
     assert source.closed
+
+
+class FakeProcess:
+    """psutil.Process stand-in: RSS/CPU values advance on each read."""
+
+    def __init__(self, pid, rss, cpu, children=()):
+        self.pid = pid
+        self.rss = list(rss)
+        self.cpu = list(cpu)
+        self._children = list(children)
+
+    def memory_info(self):
+        value = self.rss.pop(0) if len(self.rss) > 1 else self.rss[0]
+        return SimpleNamespace(rss=value)
+
+    def cpu_times(self):
+        value = self.cpu.pop(0) if len(self.cpu) > 1 else self.cpu[0]
+        return SimpleNamespace(user=value, system=0.0)
+
+    def create_time(self):
+        return 1.0
+
+    def children(self, recursive=False):
+        return self._children
+
+
+def test_process_tree_sampler_includes_model_children():
+    child = FakeProcess(2, rss=[400, 700], cpu=[0.0, 6.0])
+    parent = FakeProcess(1, rss=[100, 250], cpu=[1.0, 4.0], children=[child])
+    sampler = ProcessTreeSampler(interval=60, process=parent)
+    assert sampler.available
+
+    with sampler:
+        pass
+
+    assert (sampler.peak_self, sampler.peak_children) == (250, 700)
+    assert sampler.cpu_self == 3.0 and sampler.cpu_children == 6.0
+
+
+def test_measure_run_uses_process_tree_figures_when_available():
+    class Tree:
+        available = True
+        interval = 0.25
+        cpu_self, cpu_children, peak_self, peak_children = 1.5, 9.0, 111, 999
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return None
+
+    measurement = measure_run(
+        video="cam1.mp4",
+        sampling_interval=20,
+        repeat=1,
+        cold=False,
+        pipeline_factory=lambda interval: Pipeline(interval, []),
+        source_factory=lambda: Source(3),
+        clock=Clock(1.0),
+        usage=usage_sequence((0.0, 0.0, None, None), (0.0, 0.0, None, None)),
+        gpu=NoGpu,
+        processes=Tree,
+    )
+
+    assert (measurement.cpu_seconds_self, measurement.cpu_seconds_children) == (1.5, 9.0)
+    assert (measurement.peak_rss_bytes_self, measurement.peak_rss_bytes_children) == (111, 999)
+    assert measurement.extra["resource_method"].startswith("psutil")

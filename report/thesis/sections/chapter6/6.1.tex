@@ -1,5 +1,5 @@
 % !TEX root = ../../main.tex
-% C6.1 — Đánh giá và lựa chọn công nghệ, mô hình
+% C6.1 — Đánh giá và lựa chọn công nghệ, mô hình (RÚT GỌN 2026-09-29; bản cũ ở report/archive/)
 % Phiên bản lấy từ frontend/package.json, backend/pyproject.toml + requirements lock, infra/compose.yaml.
 % Lịch sử lựa chọn: architect.md mục 9, 12 (FastAPI + pgvector + tệp cục bộ được gợi ý ban đầu -> Flask + Milvus + MinIO + PostgreSQL;
 % RaSa theo đề xuất của giảng viên; CLIP đa ngôn ngữ từng được cân nhắc; OpenVINO để sau). AI plan: YOLOX dự phòng giấy phép (đăng ký, chưa có trọng số).
@@ -8,49 +8,56 @@
 \section{Đánh giá và lựa chọn công nghệ, mô hình}
 \label{sec:6.1}
 
-Mục này trình bày các phương án đã được cân nhắc cho từng thành phần của hệ thống và lý do lựa chọn. Các tiêu chí chung gồm: đáp ứng được các yêu cầu ở Chương~\ref{chapter:phantich}; chạy được trên máy triển khai chỉ có CPU và 16~GB bộ nhớ; là phần mềm mã nguồn mở, miễn phí, có giấy phép phù hợp với một đồ án phi thương mại; và mức độ quen thuộc của tác giả, nhằm giảm rủi ro trong thời gian thực hiện có hạn. Bảng~\ref{tab:tech-summary} ở cuối mục tóm tắt các lựa chọn.
+Các lựa chọn được đánh giá theo bốn tiêu chí chung: đáp ứng các yêu cầu ở Chương~\ref{chapter:phantich}; chạy được trên máy chỉ có CPU và 16~GB bộ nhớ; là phần mềm mã nguồn mở có giấy phép phù hợp với một đồ án phi thương mại; và mức độ quen thuộc của tác giả, nhằm giảm rủi ro trong thời gian có hạn. Bảng~\ref{tab:tech-summary} tóm tắt các lựa chọn, và các mục dưới đây giải thích những lựa chọn quan trọng.
+
+\begin{table}[H]
+\centering
+\caption{Tóm tắt các lựa chọn công nghệ và mô hình}
+\label{tab:tech-summary}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{3.0cm}|>{\raggedright\arraybackslash}p{3.1cm}|>{\raggedright\arraybackslash}p{3.4cm}|L|}
+\hline
+\textbf{Thành phần} & \textbf{Lựa chọn} & \textbf{Phương án đã cân nhắc} & \textbf{Lý do chính} \\
+\hline
+Giao diện & React 19, Vite, Tailwind CSS & Sinh trang ở máy chủ; Angular, Vue & Nhiều tương tác trên một màn hình; tách giao diện và máy chủ qua API \\
+\hline
+Máy chủ & Python, Flask 3.1, SQLAlchemy, Alembic & Django, FastAPI & Cùng ngôn ngữ với các mô hình AI; gọn, tường minh \\
+\hline
+Hàng đợi & Bảng trong PostgreSQL & Celery kèm Redis hoặc RabbitMQ & Một tiến trình xử lý tuần tự; ít thành phần hạ tầng \\
+\hline
+CSDL quan hệ & PostgreSQL 17 & MySQL & Ràng buộc CHECK, chỉ mục có điều kiện, JSONB, \texttt{SKIP LOCKED} \\
+\hline
+Lưu trữ vector & Milvus 2.6 & pgvector, FAISS & Lọc trước khi tìm, lưu trữ bền vững, tách collection theo phiên bản \\
+\hline
+Lưu trữ khung hình & MinIO & Tệp trên ổ đĩa & Phân quyền theo bucket, mã băm, dùng chung với Milvus \\
+\hline
+Phát hiện người & YOLO11n & YOLO11s, YOLO11m, YOLOX, Faster R-CNN & Nhanh nhất trên CPU; YOLOX dự phòng về giấy phép \\
+\hline
+Theo vết & ByteTrack (mặc định), BoT-SORT & DeepSORT, StrongSORT & Không cần đặc trưng ngoại hình cho mỗi người mỗi khung hình \\
+\hline
+Bộ mã hóa & RaSa & Hai mô hình riêng; CLIP & Một không gian chung cho ba hình thức truy vấn \\
+\hline
+\end{tabularx}
+\end{table}
 
 \subsection{Công nghệ phía giao diện}
 \label{sec:6.1.1}
 
-Có hai hướng xây dựng giao diện web: \emph{sinh trang ở máy chủ}, trong đó máy chủ trả về trang HTML hoàn chỉnh cho mỗi thao tác, và \emph{ứng dụng một trang} (single-page application), trong đó trình duyệt tải ứng dụng một lần rồi chỉ trao đổi dữ liệu với máy chủ qua API. Giao diện của đề tài có nhiều tương tác phức tạp trên cùng một màn hình: kéo thả và dán ảnh truy vấn, kéo một kết quả vào ô tìm kiếm, sắp xếp và lọc lại danh sách kết quả mà không gửi truy vấn mới, mở các hộp thoại chồng lên danh sách, và làm mới phiên theo hoạt động của người dùng (Mục~\ref{sec:5.6}). Những tương tác này phù hợp với hướng ứng dụng một trang hơn; hướng này cũng phù hợp với việc tách giao diện và máy chủ qua API đã thiết kế ở Mục~\ref{sec:5.4}.
-
-Đề tài chọn \textbf{React} (phiên bản 19) để xây dựng giao diện theo thành phần (component), kết hợp \textbf{React Router} cho điều hướng và chặn trang theo vai trò. Công cụ \textbf{Vite} (phiên bản 8) được dùng để phát triển và đóng gói; trong lúc phát triển, Vite chuyển tiếp các yêu cầu \path{/api} tới máy chủ Flask, nên giao diện và máy chủ chạy như cùng một nguồn. Giao diện được định kiểu bằng \textbf{Tailwind CSS}, giúp giữ thống nhất khoảng cách, màu sắc và bố cục co giãn trên điện thoại. Các thư viện khác như Angular hay Vue cũng đáp ứng được yêu cầu; React được chọn nhờ hệ sinh thái lớn với nhiều thư viện hỗ trợ sẵn cho điều hướng, gọi API và định kiểu.
+Giao diện có nhiều tương tác trên cùng một màn hình, như kéo thả và dán ảnh truy vấn, sắp xếp và lọc lại kết quả mà không gửi truy vấn mới, hay mở các hộp thoại chồng lên danh sách. Những tương tác này phù hợp với hướng \emph{ứng dụng một trang}, trong đó trình duyệt tải ứng dụng một lần rồi chỉ trao đổi dữ liệu qua API, hơn là hướng sinh trang HTML ở máy chủ. Đề tài chọn React nhờ hệ sinh thái lớn với nhiều thư viện có sẵn cho điều hướng, gọi API và định kiểu, cùng Vite để phát triển và đóng gói, và Tailwind CSS để giữ bố cục thống nhất, co giãn được trên điện thoại.
 
 \subsection{Công nghệ phía máy chủ}
 \label{sec:6.1.2}
 
-\paragraph{Ngôn ngữ.} Toàn bộ máy chủ và tiến trình xử lý nền được viết bằng \textbf{Python} (phiên bản 3.11 trở lên). Lý do chính là các mô hình AI của đề tài -- YOLO11 qua thư viện Ultralytics, RaSa trên PyTorch -- đều được cung cấp cho Python. Dùng chung một ngôn ngữ cho phép máy chủ ứng dụng nạp trực tiếp bộ mã hóa truy vấn trong cùng tiến trình (Mục~\ref{sec:5.1.3}), và cho phép tiến trình xử lý nền dùng chung mã nguồn truy cập dữ liệu với máy chủ.
-
-\paragraph{Khung ứng dụng web.} Ba phương án phổ biến cho Python đã được cân nhắc:
-\begin{itemize}
-    \item \textbf{Django} cung cấp sẵn nhiều thành phần như trang quản trị và ORM riêng, nhưng nặng hơn nhu cầu của một máy chủ chỉ cung cấp API, và các thành phần có sẵn phần lớn không được dùng tới.
-    \item \textbf{FastAPI} hỗ trợ xử lý bất đồng bộ và tự sinh tài liệu API. Tuy nhiên, trong kiến trúc của đề tài, các tác vụ chậm nhất -- phân tích video -- đã được tách khỏi máy chủ, nên lợi thế bất đồng bộ không đáng kể.
-    \item \textbf{Flask} gọn nhẹ và tường minh: mỗi thành phần như xác thực, kiểm tra quyền hay xử lý lỗi được viết rõ ràng thay vì nằm ẩn trong khung ứng dụng. Flask cũng là công nghệ tác giả đã học và sử dụng.
-\end{itemize}
-Đề tài chọn \textbf{Flask} (phiên bản 3.1). Truy cập cơ sở dữ liệu dùng \textbf{SQLAlchemy} 2.0, và lược đồ cơ sở dữ liệu được quản lý bằng các tệp di chuyển (migration) của \textbf{Alembic}, để mọi thay đổi lược đồ đều có phiên bản và tái lập được. Các thư viện bảo mật gồm \texttt{argon2-cffi} cho băm mật khẩu và \texttt{cryptography} cho mã hóa thông tin xác thực camera (Mục~\ref{sec:5.5}); đọc và giải mã video dùng \textbf{PyAV}, một giao diện Python của thư viện FFmpeg.
-
-\paragraph{Hàng đợi công việc.} Cách phổ biến để chạy tác vụ nền trong ứng dụng Python là dùng Celery cùng một hệ thống trung gian như Redis hay RabbitMQ. Đề tài không dùng cách này mà lưu hàng đợi ngay trong PostgreSQL (Mục~\ref{sec:5.1.3}): chỉ có một tiến trình xử lý nền chạy tuần tự, nên không cần năng lực phân phối công việc của Celery, trong khi mỗi thành phần hạ tầng thêm vào đều tốn bộ nhớ trên máy triển khai và làm phức tạp việc vận hành.
+Máy chủ và tiến trình xử lý nền được viết bằng Python vì các mô hình AI của đề tài đều được cung cấp cho Python. Dùng chung một ngôn ngữ cho phép máy chủ nạp trực tiếp bộ mã hóa truy vấn và dùng chung mã truy cập dữ liệu với tiến trình xử lý nền. Trong ba khung ứng dụng phổ biến, Django nặng hơn nhu cầu của một máy chủ chỉ cung cấp API, còn lợi thế xử lý bất đồng bộ của FastAPI không đáng kể vì tác vụ chậm nhất là phân tích video đã được tách khỏi máy chủ (Mục~\ref{sec:5.1.3}). Flask gọn nhẹ, tường minh và là công nghệ tác giả đã sử dụng. Hàng đợi được đặt trong PostgreSQL thay vì dùng Celery cùng Redis hay RabbitMQ, vì chỉ có một tiến trình xử lý tuần tự, trong khi mỗi thành phần hạ tầng thêm vào đều tốn bộ nhớ trên máy triển khai.
 
 \subsection{Hệ quản trị cơ sở dữ liệu và lưu trữ}
 \label{sec:6.1.3}
 
-\paragraph{Cơ sở dữ liệu quan hệ.} Dữ liệu nghiệp vụ có nhiều quan hệ và ràng buộc toàn vẹn (Mục~\ref{sec:5.3.1}), nên được lưu trong một hệ quản trị cơ sở dữ liệu quan hệ. Đề tài chọn \textbf{PostgreSQL} (phiên bản 17) thay vì MySQL, vì PostgreSQL hỗ trợ tốt các tính năng mà thiết kế sử dụng trực tiếp: ràng buộc kiểm tra (CHECK) phức tạp, chỉ mục có điều kiện (ví dụ chỉ mục duy nhất cho cấu hình AI đang hoạt động), kiểu liệt kê, kiểu dữ liệu JSON có đánh chỉ mục (JSONB) cho nhật ký và số đo, và khóa dòng có bỏ qua dòng đang bị khóa (\texttt{SKIP LOCKED}) để nhận công việc từ hàng đợi an toàn.
-
-\paragraph{Lưu trữ vector.} Ba phương án đã được cân nhắc:
-\begin{itemize}
-    \item \textbf{pgvector}, phần mở rộng tìm kiếm vector cho PostgreSQL~\cite{pgvector2026}, là phương án được gợi ý ban đầu vì chỉ cần một hệ quản trị cơ sở dữ liệu. Tuy nhiên, theo tài liệu của pgvector, khi dùng chỉ mục gần đúng, điều kiện lọc được áp dụng \emph{sau} khi quét chỉ mục, nên truy vấn có điều kiện có thể trả về ít kết quả hơn yêu cầu -- đúng tình huống ``lọc sau'' đã phân tích ở Mục~\ref{sec:3.6.3} -- trừ khi dùng thêm cơ chế quét lặp để mở rộng phạm vi tìm.
-    \item \textbf{FAISS} và các thư viện tìm kiếm vector tương tự cho tốc độ cao, nhưng chỉ là thư viện chạy trong bộ nhớ của một tiến trình: ứng dụng phải tự lo việc lưu xuống đĩa, cập nhật, xóa, lọc theo thuộc tính và truy cập đồng thời từ hai tiến trình.
-    \item \textbf{Milvus} là hệ quản trị cơ sở dữ liệu vector chuyên dụng~\cite{wang2021milvus}: có lưu trữ bền vững, hỗ trợ lọc trước khi tìm kiếm~\cite{milvus2026filtered}, chỉ mục HNSW, và các khái niệm collection, bí danh thuận tiện cho việc tách không gian vector theo phiên bản bộ mã hóa (Mục~\ref{sec:5.3.2}).
-\end{itemize}
-Đề tài chọn \textbf{Milvus} (phiên bản 2.6, bản Standalone), vì cơ chế lọc trước đáp ứng trực tiếp yêu cầu phân quyền theo khu vực: mọi kết quả trả về đều thuộc phạm vi được phép, và số kết quả chỉ ít hơn $k$ khi phạm vi đó thực sự có ít dữ liệu. Milvus cũng là công nghệ tác giả đã được học. Đổi lại, Milvus là thành phần tốn tài nguyên nhất của hệ thống: bản Standalone cần thêm etcd để lưu siêu dữ liệu và một kho đối tượng để lưu dữ liệu; khi chạy toàn bộ hệ thống cùng trình duyệt và công cụ phát triển, máy triển khai 16~GB chỉ còn khoảng 2~GB bộ nhớ trống.
-
-\paragraph{Lưu trữ khung hình.} Khung hình có thể được lưu thành tệp trên ổ đĩa của máy chủ. Đề tài chọn kho đối tượng \textbf{MinIO}, tương thích giao diện Amazon S3, vì ba lý do: quyền truy cập được kiểm soát theo từng bucket và theo tài khoản riêng của ứng dụng (Mục~\ref{sec:5.3.3}); mã băm được lưu kèm từng đối tượng; và cùng mã nguồn có thể chuyển sang một dịch vụ lưu trữ tương thích S3 khác mà không phải sửa. Ngoài ra, Milvus vốn đã cần một kho đối tượng, nên ứng dụng dùng chung máy chủ MinIO đó ở một bucket riêng thay vì thêm một hệ thống lưu trữ mới.
+PostgreSQL được chọn vì hỗ trợ tốt các tính năng mà thiết kế dùng trực tiếp: ràng buộc CHECK phức tạp, chỉ mục có điều kiện, kiểu JSONB cho nhật ký và số đo, và khóa dòng có bỏ qua dòng đang bị khóa (\texttt{SKIP LOCKED}) để nhận công việc an toàn. Với lưu trữ vector, pgvector~\cite{pgvector2026} được gợi ý ban đầu vì chỉ cần một hệ quản trị cơ sở dữ liệu, nhưng khi dùng chỉ mục gần đúng, điều kiện lọc được áp dụng \emph{sau} khi quét chỉ mục nên truy vấn có thể trả về ít kết quả hơn yêu cầu (Mục~\ref{sec:3.6.3}). FAISS chỉ là thư viện chạy trong bộ nhớ, nên ứng dụng phải tự lo lưu trữ, lọc và truy cập đồng thời. Milvus~\cite{wang2021milvus} được chọn vì hỗ trợ lọc trước khi tìm~\cite{milvus2026filtered}, đáp ứng trực tiếp yêu cầu phân quyền theo khu vực; đổi lại, đây là thành phần tốn tài nguyên nhất vì cần thêm etcd và một kho đối tượng (Mục~\ref{sec:8.7}). Khung hình được lưu trong MinIO thay vì tệp trên ổ đĩa để kiểm soát quyền theo bucket và lưu mã băm theo từng đối tượng. Milvus vốn đã cần một kho đối tượng, nên ứng dụng dùng chung máy chủ MinIO đó ở một bucket riêng.
 
 \subsection{Các mô hình AI}
 \label{sec:6.1.4}
 
-\paragraph{Mô hình phát hiện người.} Hướng tiếp cận hai giai đoạn như Faster R-CNN cho độ chính xác cao nhưng quá chậm để chạy trên CPU cho nhiều khung hình (Mục~\ref{sec:3.2.2}), nên đề tài chọn họ mô hình một giai đoạn YOLO. Trong họ YOLO11, kích cỡ mô hình quyết định trực tiếp tốc độ trên CPU, như Bảng~\ref{tab:yolo11-sizes}.
+\paragraph{Phát hiện người.} Hướng hai giai đoạn như Faster R-CNN quá chậm trên CPU, nên đề tài chọn họ YOLO. Trong họ YOLO11, kích cỡ mô hình quyết định trực tiếp tốc độ trên CPU (Bảng~\ref{tab:yolo11-sizes}); ngay với YOLO11n, quy trình xử lý đã chậm hơn thời gian thực khoảng bảy lần (Mục~\ref{sec:7.2}), nên đề tài chọn kích cỡ nhỏ nhất và bù độ chính xác bằng ngưỡng tin cậy thấp kết hợp theo vết. YOLO11 dùng giấy phép AGPL-3.0, phù hợp với đồ án phi thương mại nhưng một sản phẩm thương mại sẽ cần mua giấy phép; vì vậy YOLOX~\cite{ge2021yolox}, giấy phép Apache-2.0, được đăng ký sẵn làm phương án dự phòng.
 
 \begin{table}[H]
 \centering
@@ -69,44 +76,6 @@ YOLO11m & 51,5 & 183,2 & 20,1 \\
 \end{tabularx}
 \end{table}
 
-Đề tài chọn \textbf{YOLO11n}, kích cỡ nhỏ nhất. Ngay cả với mô hình này, toàn bộ quy trình xử lý trên máy triển khai vẫn chậm hơn thời gian thực khoảng bảy lần (Mục~\ref{sec:1.4}); các kích cỡ lớn hơn sẽ làm việc lập chỉ mục chậm thêm đáng kể. Độ chính xác thấp hơn của YOLO11n được bù một phần nhờ ngưỡng tin cậy thấp kết hợp với bước theo vết (Mục~\ref{sec:3.2.5}).
+\paragraph{Theo vết.} Các thuật toán kết hợp đặc trưng ngoại hình như DeepSORT~\cite{wojke2017deepsort} và StrongSORT~\cite{du2023strongsort} giữ track tốt hơn khi bị che khuất lâu, nhưng phải chạy thêm một mô hình cho mỗi người trên mỗi khung hình, một gánh nặng lớn trên CPU với cảnh đông người. Với camera cố định, đề tài chọn ByteTrack~\cite{zhang2022bytetrack} làm mặc định và tích hợp BoT-SORT~\cite{aharon2022botsort} làm phương án thay thế với ReID và bù chuyển động camera được tắt.
 
-YOLO11 được phát hành theo giấy phép AGPL-3.0 hoặc giấy phép thương mại của Ultralytics~\cite{ultralytics2024yolo11docs}. AGPL-3.0 yêu cầu công khai mã nguồn của toàn bộ ứng dụng khi phân phối hoặc cung cấp ứng dụng qua mạng; điều kiện này phù hợp với một đồ án học thuật phi thương mại, nhưng một sản phẩm thương mại sẽ cần mua giấy phép hoặc thay mô hình. Vì vậy, YOLOX~\cite{ge2021yolox}, được phát hành theo giấy phép Apache-2.0, đã được đăng ký sẵn trong danh sách mô hình như một phương án dự phòng; trong phiên bản hiện tại, mô hình này chưa được tích hợp trọng số nên hiển thị là không khả dụng.
-
-\paragraph{Thuật toán theo vết.} Các thuật toán theo vết hiện đại chia thành hai nhóm: nhóm chỉ dựa trên vị trí và chuyển động, như SORT và ByteTrack, và nhóm kết hợp thêm đặc trưng ngoại hình (ReID), như DeepSORT~\cite{wojke2017deepsort} và StrongSORT~\cite{du2023strongsort}. Nhóm thứ hai giữ track tốt hơn khi đối tượng bị che khuất lâu, nhưng phải chạy thêm một mô hình trích xuất đặc trưng cho \emph{mỗi người được phát hiện trên mỗi khung hình}, làm chi phí tính toán tăng theo số người trong cảnh -- một gánh nặng lớn trên CPU với các cảnh đông người. Với camera cố định và khung hình đã được lấy mẫu, đề tài chọn \textbf{ByteTrack}~\cite{zhang2022bytetrack} làm thuật toán mặc định nhờ tận dụng được các phát hiện có độ tin cậy thấp mà không cần đặc trưng ngoại hình (Mục~\ref{sec:3.3.3}). \textbf{BoT-SORT}~\cite{aharon2022botsort} được tích hợp làm phương án thay thế, với chức năng ReID và bù chuyển động camera được tắt (Mục~\ref{sec:3.3.4}); Quản trị viên có thể chuyển giữa hai thuật toán mà không cần sửa mã nguồn.
-
-\paragraph{Bộ mã hóa ảnh và văn bản.} Hai hướng đã được cân nhắc:
-\begin{itemize}
-    \item \textbf{Dùng hai mô hình riêng}: một mô hình tái nhận dạng người cho truy vấn bằng ảnh và một mô hình tìm kiếm bằng văn bản cho truy vấn bằng câu mô tả. Cách này buộc phải lưu hai vector cho mỗi lần xuất hiện trong hai không gian khác nhau, chạy hai mô hình khi lập chỉ mục, và tốn thêm bộ nhớ.
-    \item \textbf{Dùng một mô hình ảnh -- văn bản} với không gian biểu diễn chung. Mô hình tổng quát như CLIP~\cite{radford2021clip}, kể cả các phiên bản đa ngôn ngữ từng được cân nhắc để hỗ trợ tiếng Việt, được huấn luyện trên ảnh và chú thích thông thường nên kém phân biệt các chi tiết nhỏ về trang phục của người đi bộ. RaSa~\cite{bai2023rasa} được thiết kế riêng cho bài toán tìm kiếm người bằng văn bản và đạt kết quả tốt trên CUHK-PEDES (Mục~\ref{sec:3.5.3}).
-\end{itemize}
-Đề tài chọn \textbf{RaSa} theo hướng thứ hai, theo đề xuất của giảng viên hướng dẫn: một mô hình duy nhất phục vụ cả ba hình thức truy vấn, mỗi lần xuất hiện chỉ cần một vector (Mục~\ref{sec:3.5.4}). Hai đánh đổi của lựa chọn này đã được nêu: việc dùng bộ mã hóa ảnh cho truy vấn ảnh -- ảnh là lựa chọn của đề tài chứ không phải kết quả đã được công bố, và truy vấn chỉ hỗ trợ tiếng Anh vì RaSa được huấn luyện trên câu mô tả tiếng Anh. Kết quả đánh giá thực tế trên dữ liệu của đề tài được trình bày ở Mục~\ref{sec:8.4}.
-
-\begin{table}[H]
-\centering
-\caption{Tóm tắt các lựa chọn công nghệ và mô hình}
-\label{tab:tech-summary}
-\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{3.0cm}|>{\raggedright\arraybackslash}p{3.1cm}|>{\raggedright\arraybackslash}p{3.4cm}|L|}
-\hline
-\textbf{Thành phần} & \textbf{Lựa chọn} & \textbf{Phương án đã cân nhắc} & \textbf{Lý do chính} \\
-\hline
-Giao diện & React, Vite, Tailwind CSS & Sinh trang ở máy chủ; Angular, Vue & Nhiều tương tác trên một màn hình; tách giao diện và máy chủ qua API \\
-\hline
-Máy chủ & Python, Flask, SQLAlchemy, Alembic & Django, FastAPI & Cùng ngôn ngữ với các mô hình AI; gọn, tường minh \\
-\hline
-Hàng đợi & Bảng trong PostgreSQL & Celery kèm Redis hoặc RabbitMQ & Một tiến trình xử lý tuần tự; ít thành phần hạ tầng \\
-\hline
-CSDL quan hệ & PostgreSQL 17 & MySQL & Ràng buộc, chỉ mục có điều kiện, JSONB, \texttt{SKIP LOCKED} \\
-\hline
-Lưu trữ vector & Milvus 2.6 & pgvector, FAISS & Lọc trước khi tìm, lưu trữ bền vững, tách collection theo phiên bản \\
-\hline
-Lưu trữ khung hình & MinIO & Tệp trên ổ đĩa & Phân quyền theo bucket, mã băm, dùng chung với Milvus \\
-\hline
-Phát hiện người & YOLO11n & YOLO11s, YOLO11m, YOLOX, Faster R-CNN & Nhanh nhất trên CPU; YOLOX dự phòng về giấy phép \\
-\hline
-Theo vết & ByteTrack (mặc định), BoT-SORT & DeepSORT, StrongSORT & Không cần đặc trưng ngoại hình cho mỗi người mỗi khung hình \\
-\hline
-Bộ mã hóa & RaSa & Hai mô hình riêng; CLIP & Một không gian chung cho ba hình thức truy vấn; chuyên cho tìm người bằng văn bản \\
-\hline
-\end{tabularx}
-\end{table}
+\paragraph{Bộ mã hóa.} Dùng hai mô hình riêng cho truy vấn ảnh và truy vấn văn bản buộc phải lưu hai vector cho mỗi lần xuất hiện và chạy hai mô hình khi lập chỉ mục. Mô hình ảnh-văn bản tổng quát như CLIP~\cite{radford2021clip}, kể cả các phiên bản đa ngôn ngữ từng được cân nhắc để hỗ trợ tiếng Việt, kém phân biệt các chi tiết nhỏ về trang phục. Đề tài chọn RaSa~\cite{bai2023rasa} theo đề xuất của giảng viên hướng dẫn: một mô hình duy nhất phục vụ cả ba hình thức truy vấn với một vector cho mỗi lần xuất hiện (Mục~\ref{sec:3.5.4}). Hạn chế là truy vấn chỉ hỗ trợ tiếng Anh. Kết quả đánh giá trên dữ liệu của đề tài được trình bày ở Mục~\ref{sec:8.4}.

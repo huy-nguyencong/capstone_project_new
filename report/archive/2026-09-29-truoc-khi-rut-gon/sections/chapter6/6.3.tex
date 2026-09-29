@@ -1,0 +1,121 @@
+% !TEX root = ../../main.tex
+% C6.3 — Hiện thực giao diện người dùng (ảnh chụp các màn hình chính H10 do SV chụp; 5.6 dẫn tới mục này)
+% Khớp frontend/src: routes/guards.jsx (RequireAuth: chờ phiên -> vòng xoay, chưa đăng nhập -> /login; RequireRole -> trang chủ của vai trò),
+% services/apiService.js (baseURL /api/v1, timeout 15 s, withCredentials, X-CSRF-Token cho mọi phương thức không an toàn, CSRF chỉ giữ trong bộ nhớ,
+% lỗi 5xx kèm "Mã tra cứu" = 8 ký tự đầu request id, 401 -> xóa phiên), services/api/auth.js (csrf_token từ phản hồi phiên),
+% store/AppStoreProvider.jsx (làm mới phiên chỉ khi có thao tác thật, chia sẻ giữa các tab, thông báo hết hạn),
+% components/person/PersonCrop.jsx (khung 3:5, ?aspect=0.60&mark=1, "Không còn ảnh"), backend services/track_imagery.py (nới khung theo tỉ lệ bằng
+% điểm ảnh thật, làm tối 0.6, viền; khung toàn cảnh vẽ khung đỏ; cạnh dài tối đa 1920; Cache-Control private, no-store; kiểm tra quyền như kết quả).
+\section{Hiện thực giao diện người dùng}
+\label{sec:6.3}
+
+Mục~\ref{sec:5.6} đã trình bày cấu trúc màn hình và các nguyên tắc thiết kế giao diện. Mục này trình bày cách ứng dụng web được hiện thực: điều hướng theo vai trò, giao tiếp với máy chủ, cách hiển thị ảnh người trong kết quả, và hình ảnh các màn hình chính.
+
+\subsection{Điều hướng theo vai trò}
+\label{sec:6.3.1}
+
+Ứng dụng web là một ứng dụng một trang (single-page application) xây dựng bằng React; việc chuyển màn hình do React Router đảm nhận mà không tải lại trang. Các đường dẫn được chia thành ba nhóm theo vai trò, mỗi nhóm được bọc trong hai lớp kiểm tra:
+\begin{itemize}
+    \item \textbf{Kiểm tra đăng nhập.} Khi ứng dụng mở, thông tin phiên hiện tại được lấy từ máy chủ; trong lúc chờ, giao diện chỉ hiển thị biểu tượng đang tải. Nếu chưa đăng nhập hoặc phiên đã hết hạn, người dùng được chuyển tới màn hình đăng nhập.
+    \item \textbf{Kiểm tra vai trò.} Nếu người dùng mở một đường dẫn không thuộc vai trò của mình, ứng dụng chuyển về trang chủ của vai trò đó thay vì hiển thị trang lỗi.
+\end{itemize}
+Hai lớp kiểm tra này chỉ nhằm tránh hiển thị màn hình mà người dùng không dùng được. Quyền truy cập thực sự luôn được máy chủ kiểm tra ở từng yêu cầu (Mục~\ref{sec:5.5}); một người dùng tự gửi yêu cầu vượt quyền vẫn bị từ chối dù giao diện đã bị vượt qua.
+
+\subsection{Giao tiếp với máy chủ}
+\label{sec:6.3.2}
+
+Mọi yêu cầu tới máy chủ đi qua một lớp gọi API chung, dựa trên thư viện axios, đảm nhận các việc sau:
+\begin{itemize}
+    \item \textbf{Phiên và CSRF.} Cookie phiên được trình duyệt tự gửi kèm mọi yêu cầu. Mã CSRF nhận được khi đăng nhập hoặc khi lấy thông tin phiên chỉ được giữ trong bộ nhớ của trang, không lưu vào bộ nhớ trình duyệt, và được tự động gắn vào header \texttt{X-CSRF-Token} của mọi yêu cầu làm thay đổi dữ liệu (Mục~\ref{sec:5.5.2}).
+    \item \textbf{Chuyển lỗi thành thông báo.} Phản hồi lỗi theo định dạng thống nhất (Mục~\ref{sec:5.4.1}) được chuyển thành thông báo tiếng Việt do máy chủ trả về. Với lỗi phía máy chủ, thông báo kèm thêm một \emph{mã tra cứu} gồm tám ký tự đầu của mã yêu cầu, để Quản trị viên tìm đúng dòng nhật ký tương ứng (Mục~\ref{sec:6.4}). Khi không kết nối được tới máy chủ, người dùng nhận thông báo yêu cầu thử lại sau.
+    \item \textbf{Hết phiên.} Khi bất kỳ yêu cầu nào nhận mã 401, ứng dụng xóa trạng thái đăng nhập và đưa người dùng về màn hình đăng nhập, kèm thông báo nếu nguyên nhân là phiên đã hết hạn.
+\end{itemize}
+
+Phiên làm việc chỉ được làm mới khi người dùng thực sự thao tác, chẳng hạn di chuột, nhấn phím hay chạm màn hình; các yêu cầu tự động chạy nền như cập nhật tiến độ xử lý video không giữ phiên sống. Thời điểm thao tác gần nhất được chia sẻ giữa các thẻ trình duyệt, nên người dùng đang làm việc ở một thẻ không bị đăng xuất vì một thẻ khác đang để yên. Nhờ vậy, phiên của một máy bị bỏ quên vẫn hết hạn sau khoảng thời gian không hoạt động đã quy định.
+
+\subsection{Hiển thị ảnh người trong kết quả}
+\label{sec:6.3.3}
+
+Hệ thống chỉ lưu khung hình đại diện toàn cảnh cùng khung bao của người (Mục~\ref{sec:5.3.3}); ảnh người trong danh sách kết quả được máy chủ tạo khi có yêu cầu hiển thị. Thẻ kết quả trên giao diện có tỉ lệ 3:5, nên giao diện gửi kèm tỉ lệ mong muốn, và máy chủ thực hiện:
+\begin{enumerate}
+    \item \textbf{Nới vùng cắt theo tỉ lệ.} Vùng cắt được nới rộng từ khung bao của người bằng phần cảnh thật xung quanh cho tới khi đạt tỉ lệ yêu cầu: người đứng cao được nới thêm chiều ngang, người nằm ngang được nới thêm chiều dọc. Vùng cắt chỉ được nới ra chứ không bao giờ cắt vào người; gần mép khung hình, tỉ lệ được đáp ứng gần nhất có thể và giao diện hiển thị trọn ảnh thay vì cắt bớt.
+    \item \textbf{Đánh dấu người được tìm thấy.} Vì vùng cắt rộng có thể chứa cả người khác, phần xung quanh được giảm độ sáng còn 60\% và người được tìm thấy được viền bằng màu nhấn của giao diện.
+    \item \textbf{Trả ảnh an toàn.} Ảnh được giới hạn cạnh dài 1.920 điểm ảnh, gửi kèm chỉ dẫn không lưu vào bộ nhớ đệm, và chỉ được trả khi người yêu cầu có quyền xem kết quả tương ứng; ảnh ngoài phạm vi được trả lỗi không tìm thấy giống như chính kết quả đó (Mục~\ref{sec:5.5.3}).
+\end{enumerate}
+Khung hình toàn cảnh trong hộp thoại chi tiết được vẽ thêm khung bao màu đỏ quanh người được tìm thấy. Nếu khung hình không còn trong kho, thẻ kết quả hiển thị biểu tượng \emph{Không còn ảnh} thay vì một ảnh lỗi.
+
+Cách làm này giúp không phải lưu thêm ảnh cắt cho mỗi lần xuất hiện, và cho phép thay đổi cách hiển thị, như tỉ lệ thẻ hay cách đánh dấu, mà không cần xử lý lại dữ liệu đã có.
+
+\subsection{Các màn hình chính}
+\label{sec:6.3.4}
+
+Phần này trình bày các màn hình chính của ứng dụng theo từng vai trò, chụp trên dữ liệu trình diễn.
+
+\paragraph{Giám sát viên.} Hình~\ref{fig:ui-search-image} là màn hình \emph{Tìm kiếm người} với truy vấn bằng ảnh: biểu mẫu truy vấn ở trên, danh sách kết quả xếp hạng ở dưới, thông tin khu vực và ngày chung được hiển thị một lần ở đầu danh sách. Hình~\ref{fig:ui-search-attr} là cùng màn hình với truy vấn theo thuộc tính. Chọn một kết quả mở hộp thoại chi tiết ở Hình~\ref{fig:ui-result}, từ đó kết quả được lưu vào vụ việc; các vụ việc đã tạo được quản lý trên màn hình ở Hình~\ref{fig:ui-cases}.
+
+\begin{figure}[!htbp]
+\centering
+\hinhcho{H10a}{Màn hình Tìm kiếm người, chế độ Hình ảnh: đã chọn ảnh truy vấn, khu vực, khoảng ngày; phía dưới là danh sách kết quả có thứ hạng, camera, giờ xuất hiện.}
+\caption{Màn hình tìm kiếm người bằng ảnh}
+\label{fig:ui-search-image}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\hinhcho{H10b}{Màn hình Tìm kiếm người, chế độ Thuộc tính: đã chọn vài thuộc tính (ví dụ màu áo, màu quần) và danh sách kết quả tương ứng.}
+\caption{Màn hình tìm kiếm người theo thuộc tính}
+\label{fig:ui-search-attr}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\hinhcho{H10c}{Hộp thoại chi tiết kết quả: khung hình toàn cảnh có khung đỏ quanh người, thông tin camera, thời gian, và nút lưu vào vụ việc.}
+\caption{Hộp thoại chi tiết một kết quả tìm kiếm}
+\label{fig:ui-result}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\hinhcho{H10d}{Màn hình Vụ việc của tôi: danh sách vụ việc bên trái, chi tiết vụ việc đang chọn cùng các kết quả đã lưu bên phải.}
+\caption{Màn hình quản lý vụ việc của Giám sát viên}
+\label{fig:ui-cases}
+\end{figure}
+
+\paragraph{Quản lý.} Hình~\ref{fig:ui-overview} là màn hình \emph{Tổng quan} với các số liệu tổng hợp về vụ việc và danh sách vụ việc gần đây; màn hình \emph{Hồ sơ vụ việc} có cùng bố cục như Hình~\ref{fig:ui-cases} nhưng ở chế độ chỉ đọc.
+
+\begin{figure}[!htbp]
+\centering
+\hinhcho{H10e}{Màn hình Tổng quan của Quản lý: bốn thẻ số liệu (tổng số vụ việc, kết quả đã lưu, vụ việc đang xử lý, đã hoàn thành) và danh sách vụ việc gần đây.}
+\caption{Màn hình tổng quan của Quản lý}
+\label{fig:ui-overview}
+\end{figure}
+
+\paragraph{Quản trị viên.} Hình~\ref{fig:ui-cameras} là màn hình quản lý camera. Hình~\ref{fig:ui-video} là màn hình \emph{Xử lý video}, nơi tải lên tệp video cho một camera và theo dõi tiến độ của công việc được tạo ra. Hình~\ref{fig:ui-status} và Hình~\ref{fig:ui-diagnostics} là hai màn hình giám sát: trạng thái hệ thống (Mục~\ref{sec:6.4}) và kiểm tra AI (Mục~\ref{sec:6.2.5}).
+
+\begin{figure}[!htbp]
+\centering
+\hinhcho{H10f}{Màn hình Camera: bảng danh sách camera với khu vực, trạng thái, kết nối RTSP, xử lý AI; có thể mở kèm hộp thoại sửa camera.}
+\caption{Màn hình quản lý camera}
+\label{fig:ui-cameras}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\hinhcho{H10g}{Màn hình Xử lý video: biểu mẫu chọn camera, thời điểm bắt đầu ghi, chế độ lấy mẫu; bảng công việc với tiến độ của một công việc đang chạy.}
+\caption{Màn hình xử lý video tải lên}
+\label{fig:ui-video}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\hinhcho{H10h}{Màn hình Trạng thái hệ thống: bốn thẻ tổng hợp, bảng camera với kết nối, tiến trình AI, FPS xử lý, độ trễ; khung trạng thái kho dữ liệu, encoder tìm kiếm và worker.}
+\caption{Màn hình trạng thái hệ thống}
+\label{fig:ui-status}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\hinhcho{H10i}{Màn hình Kiểm tra hoạt động của AI: kết quả từng bước (nguồn khung hình, Detector, Tracker, Image Encoder, Text Encoder) với trạng thái và thời gian.}
+\caption{Màn hình kiểm tra hoạt động của AI}
+\label{fig:ui-diagnostics}
+\end{figure}

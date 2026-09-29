@@ -1,6 +1,11 @@
 % !TEX root = ../../main.tex
-% F5 — Tóm tắt đề tài (viết sau cùng, khi đã có số liệu chương 7).
+% F5 — Tóm tắt đề tài (viết 2026-09-29). Số liệu chỉ lấy số "Hiện hành" đã dùng ở Chương 7–9 (report-data-guide.md mục 3):
+% 1.488 track (C7.2), 711 unit + 15/15 bước x2 (C8.1–C8.3), chậm ~7 lần thời gian thực (C7.2). Recall chỉ nêu định tính (lần 1 là số "Cũ").
 \chapter*{Tóm tắt đề tài}
 \addcontentsline{toc}{chapter}{Tóm tắt đề tài}
 
-\nhap{Viết sau cùng: vấn đề, giải pháp, kiến trúc, kết quả chính.}
+Khi cần tìm một người trong dữ liệu của hệ thống camera giám sát, người vận hành thường phải xem lại video thủ công, một việc tốn nhiều thời gian và dễ bỏ sót khi số camera và thời lượng ghi hình tăng lên. Đề tài xây dựng một ứng dụng web hỗ trợ tìm kiếm người trong dữ liệu camera, cho phép mô tả người cần tìm bằng một trong ba hình thức: ảnh tham chiếu, câu mô tả tiếng Anh, hoặc các thuộc tính ngoại hình chọn sẵn. Hệ thống chỉ đề xuất và xếp hạng kết quả, còn quyết định một kết quả có đúng là người cần tìm hay không vẫn thuộc về người dùng.
+
+Hệ thống gồm hai luồng xử lý. Luồng lập chỉ mục do một tiến trình xử lý nền đảm nhận: video từ luồng RTSP hoặc tệp tải lên được lấy mẫu, phát hiện người bằng YOLO11n, theo vết bằng ByteTrack để gom các khung hình của cùng một người thành một lần xuất hiện, rồi mã hóa khung hình đại diện thành vector bằng mô hình RaSa. Dữ liệu được ghi vào ba kho: PostgreSQL cho dữ liệu nghiệp vụ, Milvus cho vector và MinIO cho khung hình. Luồng tìm kiếm chạy trong máy chủ ứng dụng Flask: truy vấn được mã hóa vào cùng không gian vector, rồi được so khớp chỉ trong phạm vi camera mà người dùng được phép xem. Ứng dụng web React phục vụ ba vai trò Quản trị viên, Giám sát viên và Quản lý, với các chức năng quản lý camera và mô hình AI, tìm kiếm, xem kết quả trong khung hình gốc và lưu kết quả thành hồ sơ vụ việc.
+
+Hệ thống được triển khai trên một máy tính xách tay chỉ có CPU và thử nghiệm với bảy camera của bộ dữ liệu WILDTRACK, trong đó 1.488 track từ 120 giây đầu của mỗi video được lập chỉ mục không lỗi. Ứng dụng vượt qua 711 kiểm thử đơn vị cùng các kiểm thử tích hợp và đầu cuối, và kịch bản trình diễn cho cả ba vai trò chạy tự động hai lần liên tiếp đều đạt 15/15 bước. Tìm kiếm bằng ảnh cho kết quả tốt, trong khi tìm kiếm bằng văn bản và thuộc tính còn hạn chế do khác biệt giữa dữ liệu huấn luyện của mô hình và ảnh người cắt từ camera. Quá trình phân tích chậm hơn thời gian thực khoảng bảy lần, nên hệ thống xử lý luân phiên từng camera. Các kết quả này cho thấy có thể xây dựng một hệ thống tìm kiếm người đa phương thức hoàn chỉnh từ các mô hình có sẵn trên phần cứng phổ thông, đồng thời chỉ ra các hướng cần cải thiện về chất lượng tìm kiếm bằng văn bản và tốc độ xử lý.

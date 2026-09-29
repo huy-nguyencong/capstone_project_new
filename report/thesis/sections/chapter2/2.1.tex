@@ -1,80 +1,49 @@
 % !TEX root = ../../main.tex
-% C2.1 — Các hệ thống liên quan hiện có trên thị trường
-% Nội dung cần có: Mỗi hệ thống: nhà phát triển, các hình thức tìm kiếm (ảnh / mô tả / thuộc tính), đơn vị kết quả, phân quyền, quản lý vụ việc, mô hình triển khai. BẮT BUỘC có nguồn. Dùng cách gọi thông thường, chưa dùng thuật ngữ ReID/TBPS (định nghĩa ở Chương 3).
-% Mỗi hệ thống kết thúc bằng đoạn "liên hệ với đề tài" để làm dữ liệu cho bảng so sánh ở Mục 2.2.
+% C2.1 — Các hệ thống liên quan hiện có trên thị trường (RÚT GỌN 2026-09-29; bản cũ ở report/archive/)
+% Mỗi hệ thống: nhà phát triển, các hình thức tìm kiếm, triển khai, liên hệ với đề tài. BẮT BUỘC có nguồn. Chưa dùng thuật ngữ ReID/TBPS (định nghĩa ở Chương 3).
 \section{Các hệ thống liên quan hiện có trên thị trường}
 \label{sec:2.1}
 
-Mục này khảo sát ba sản phẩm thương mại có chức năng tìm kiếm người trong dữ liệu camera giám sát. Ba sản phẩm được lựa chọn vì mỗi sản phẩm đại diện cho một hướng tiếp cận khác nhau: BriefCam là bộ phân tích video toàn diện với tìm kiếm theo thuộc tính là chức năng cốt lõi, Avigilon Appearance Search tập trung vào tìm kiếm theo ngoại hình của đối tượng, còn Verkada AI-Powered Search cho phép tìm kiếm bằng câu mô tả tự nhiên trên nền tảng đám mây. Với mỗi sản phẩm, báo cáo tập trung vào các hình thức tìm kiếm được hỗ trợ, cách tổ chức kết quả và mô hình triển khai -- những khía cạnh liên quan trực tiếp đến đề tài. Các công trình nghiên cứu học thuật về bài toán tìm kiếm người được trình bày tại Chương~\ref{chapter:lythuyet}.
+Mục này khảo sát ba sản phẩm thương mại đại diện cho ba hướng tiếp cận tìm kiếm người trong dữ liệu camera: phân tích video toàn diện (BriefCam), tìm theo ngoại hình (Avigilon) và tìm bằng câu mô tả trên nền tảng đám mây (Verkada); các công trình học thuật được trình bày tại Chương~\ref{chapter:lythuyet}.
 
 \subsection{BriefCam}
 \label{sec:2.1.1}
 
-BriefCam là phần mềm phân tích nội dung video ứng dụng học sâu, có mục đích chuyển dữ liệu video thô từ camera giám sát thành thông tin có thể tìm kiếm, cảnh báo và thống kê. Sản phẩm được phát triển bởi công ty cùng tên, được Canon mua lại vào năm 2018~\cite{briefcam2018canon}, và hiện được phát triển, phân phối như một sản phẩm của Milestone Systems, cũng thuộc tập đoàn Canon~\cite{milestone2026briefcam}. Thay vì xem lại hàng giờ video theo cách thủ công, người dùng có thể lọc và truy xuất nhanh các đối tượng như người và phương tiện xuất hiện trong video. Hình~\ref{fig:briefcam} minh họa giao diện tìm kiếm của sản phẩm.
+BriefCam là phần mềm phân tích nội dung video ứng dụng học sâu, được Canon mua lại năm 2018~\cite{briefcam2018canon} và hiện được phân phối như một sản phẩm của Milestone Systems~\cite{milestone2026briefcam}. Chức năng được chia thành ba module: \emph{Review} phục vụ điều tra trên video đã ghi, cho phép lọc người và phương tiện theo thuộc tính như màu sắc, kích thước, tốc độ, hướng di chuyển, tìm đối tượng có ngoại hình tương tự một đối tượng mẫu, và tóm tắt hàng giờ video thành một đoạn ngắn (Video Synopsis); \emph{Respond} phát cảnh báo thời gian thực theo quy tắc; và \emph{Research} cung cấp thống kê, bản đồ nhiệt và đếm người~\cite{milestone2026briefcam}. Hình~\ref{fig:briefcam} minh họa giao diện tìm kiếm của sản phẩm. BriefCam có thể cài đặt tại chỗ hoặc trên đám mây, nhưng máy chủ xử lý bắt buộc phải có card đồ họa NVIDIA~\cite{milestone2026briefcamfaq}.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.85\textwidth]{briefcam.png}
+    \includegraphics[width=0.6\textwidth]{briefcam.png}
     \caption{Giao diện tìm kiếm và lọc đối tượng của BriefCam~\cite{milestone2026briefcam}}
     \label{fig:briefcam}
 \end{figure}
 
-Chức năng của BriefCam được tổ chức thành ba module, mỗi module giải quyết một nhu cầu khác nhau~\cite{milestone2026briefcam}:
-\begin{itemize}
-    \item \textbf{Review (tìm kiếm và điều tra).} Module phục vụ việc điều tra sau sự việc trên video đã ghi. Người dùng có thể lọc đối tượng theo loại (người, phương tiện), thuộc tính ngoại hình như màu sắc, cùng kích thước, tốc độ và hướng di chuyển. Module còn hỗ trợ tìm các đối tượng có \emph{ngoại hình tương tự} với một đối tượng mẫu (appearance similarity), và các chức năng tùy chọn như nhận diện khuôn mặt và nhận diện biển số xe. Điểm đặc trưng của module là công nghệ \emph{Video Synopsis}, cho phép nén hàng giờ video thành một đoạn ngắn bằng cách hiển thị đồng thời nhiều sự kiện nhưng vẫn giữ nguyên thời điểm và bối cảnh gốc của chúng.
-    \item \textbf{Respond (cảnh báo thời gian thực).} Module phân tích luồng video trực tiếp và phát cảnh báo khi xảy ra sự kiện thỏa các quy tắc do người dùng thiết lập, chẳng hạn khi số người trong một khu vực vượt ngưỡng hoặc khi phát hiện đám đông tụ tập.
-    \item \textbf{Research (phân tích và thống kê).} Module chuyển nội dung video thành dữ liệu định lượng, cung cấp bảng điều khiển (dashboard) theo dõi xu hướng theo thời gian, bản đồ nhiệt (heatmap) thể hiện mật độ hoạt động và các đường di chuyển phổ biến, đếm người và đo thời gian lưu lại tại một khu vực.
-\end{itemize}
-
-Về triển khai, BriefCam hỗ trợ cả mô hình cài đặt tại chỗ (on-premises) lẫn cài đặt trên máy chủ đám mây. Máy chủ xử lý bắt buộc phải có card đồ họa NVIDIA; số lượng card phụ thuộc vào độ phân giải và số giờ video cần xử lý mỗi ngày, và mỗi card chỉ được dùng cho một chế độ, hoặc xử lý theo yêu cầu (Review, Research) hoặc xử lý thời gian thực (Respond)~\cite{milestone2026briefcamfaq}.
-
-\paragraph{Liên hệ với đề tài.} BriefCam hỗ trợ tìm theo thuộc tính ngoại hình và tìm theo mẫu ngoại hình, trong đó mẫu là một đối tượng được chọn trong video đã ghi thay vì một ảnh tham chiếu tải lên từ bên ngoài như trong đề tài. Tài liệu công bố của sản phẩm không đề cập đến việc tìm kiếm bằng câu mô tả ngôn ngữ tự nhiên. Đây là một hệ thống toàn diện, bao gồm cả cảnh báo và thống kê, đổi lại yêu cầu phần cứng có card đồ họa chuyên dụng cho việc xử lý video.
+\paragraph{Liên hệ với đề tài.} BriefCam hỗ trợ tìm theo thuộc tính và theo mẫu ngoại hình, trong đó mẫu là một đối tượng chọn trong video đã ghi thay vì một ảnh tải lên từ bên ngoài như trong đề tài; tài liệu công bố không đề cập tìm kiếm bằng câu mô tả tự nhiên.
 
 \subsection{Avigilon Appearance Search}
 \label{sec:2.1.2}
 
-Avigilon Appearance Search là công nghệ tìm kiếm video dựa trên học sâu của Avigilon, hiện thuộc Motorola Solutions. Chức năng chính của công nghệ là nhanh chóng tìm ra một người hoặc một phương tiện cụ thể trong nhiều giờ video đã ghi, trên nhiều camera và nhiều địa điểm khác nhau~\cite{motorola2021appearance}. Hình~\ref{fig:avigilon} minh họa giao diện phần mềm quản lý video của hãng khi đánh dấu một người trong khung hình.
+Avigilon Appearance Search là công nghệ tìm kiếm video dựa trên học sâu của Avigilon, thuộc Motorola Solutions, dùng để tìm một người hay phương tiện trong nhiều giờ video trên nhiều camera~\cite{motorola2021appearance}. Người dùng có thể bắt đầu tìm kiếm bằng cách chọn đặc điểm ngoại hình từ danh sách có sẵn như màu quần áo, giới tính, nhóm tuổi; bằng cách tải lên một bức ảnh; hoặc bằng cách chọn một đối tượng trong video làm mẫu~\cite{motorola2021appearance}. Kết quả giúp lần theo lộ trình của đối tượng và có thể được đánh dấu, trích xuất thành bộ bằng chứng về diễn biến sự việc. Hình~\ref{fig:avigilon} minh họa giao diện khi đánh dấu một người. Công nghệ được tích hợp trong phần mềm quản lý video Avigilon Control Center, chạy trên camera và đầu ghi của hãng hoặc trên thiết bị Avigilon AI Appliance cho camera ONVIF của hãng khác.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.6\textwidth]{avigilon.png}
+    \includegraphics[width=0.45\textwidth]{avigilon.png}
     \caption{Giao diện phần mềm Avigilon Control Center với đối tượng được đánh dấu~\cite{avigilon2026appearance}}
     \label{fig:avigilon}
 \end{figure}
 
-Theo tài liệu của hãng~\cite{motorola2021appearance}, người dùng có thể bắt đầu một lượt tìm kiếm theo ba cách:
-\begin{itemize}
-    \item \textbf{Tìm theo đặc điểm mô tả.} Người dùng chọn các đặc điểm ngoại hình từ danh sách có sẵn, như màu quần áo, giới tính và nhóm tuổi đối với người, hoặc loại và màu xe đối với phương tiện. Đây là hình thức chọn thuộc tính, không phải nhập câu mô tả tự do.
-    \item \textbf{Tìm bằng ảnh tải lên.} Người dùng tải lên một bức ảnh của người cần tìm.
-    \item \textbf{Tìm theo mẫu trong video.} Người dùng chọn một người hoặc phương tiện xuất hiện trong video đã ghi làm mẫu; hệ thống tìm các lần xuất hiện có ngoại hình tương tự trên các camera khác.
-\end{itemize}
-
-Kết quả tìm kiếm giúp người dùng lần theo lộ trình hoặc vị trí xuất hiện cuối cùng của đối tượng, đồng thời có thể được đánh dấu (bookmark) và trích xuất để tổng hợp thành bộ bằng chứng về diễn biến sự việc. Công nghệ này so khớp dựa trên ngoại hình như quần áo, màu sắc và dáng người, khác với nhận dạng khuôn mặt sinh trắc học; tuy nhiên, hệ thống có kết hợp thêm đặc trưng khuôn mặt để nhận biết cùng một người ngay cả khi trang phục thay đổi.
-
-Về triển khai, Appearance Search được tích hợp trong phần mềm quản lý video Avigilon Control Center (ACC). Hãng đưa ra hai phương án: dùng camera Avigilon có sẵn khả năng phân tích video kết hợp đầu ghi hình của hãng, hoặc dùng thiết bị Avigilon AI Appliance để bổ sung khả năng phân tích và tìm kiếm cho các camera tuân thủ chuẩn ONVIF của hãng khác~\cite{motorola2021appearance}. Như vậy, người dùng không bắt buộc thay toàn bộ camera, nhưng vẫn cần phần mềm và thiết bị xử lý của Avigilon.
-
-\paragraph{Liên hệ với đề tài.} Avigilon Appearance Search hỗ trợ hai hình thức mô tả của đề tài là chọn thuộc tính và dùng ảnh tham chiếu, đồng thời có khả năng tổng hợp kết quả thành bằng chứng về diễn biến sự việc, tương tự chức năng hồ sơ vụ việc của đề tài. Tài liệu của hãng không đề cập đến việc tìm kiếm bằng câu mô tả tự do. Hệ thống gắn chặt với hệ sinh thái phần mềm và thiết bị của Avigilon.
+\paragraph{Liên hệ với đề tài.} Avigilon hỗ trợ hai hình thức mô tả của đề tài là chọn thuộc tính và dùng ảnh tham chiếu, và cho phép tổng hợp kết quả thành bằng chứng, tương tự hồ sơ vụ việc của đề tài; tài liệu không đề cập tìm bằng câu mô tả tự do, và hệ thống gắn với phần mềm, thiết bị của hãng.
 
 \subsection{Verkada AI-Powered Search}
 \label{sec:2.1.3}
 
-Verkada AI-Powered Search là chức năng tìm kiếm video trên nền tảng quản lý an ninh Command của Verkada, một nền tảng quản lý tập trung trên điện toán đám mây. Chức năng này được giới thiệu năm 2024, cho phép người dùng tìm người và phương tiện trong video bằng ngôn ngữ đời thường thay vì phải chọn từ danh sách thuộc tính định sẵn~\cite{verkada2024aisearch}. Hình~\ref{fig:verkada} minh họa kết quả của một truy vấn bằng câu mô tả.
+Verkada AI-Powered Search, giới thiệu năm 2024 trên nền tảng quản lý an ninh đám mây Command, cho phép tìm người và phương tiện bằng ngôn ngữ đời thường, ví dụ ``person wearing helmet'', thay vì chọn từ danh sách thuộc tính~\cite{verkada2024aisearch}, và tìm bằng ảnh tải lên của người, phương tiện hay đồ vật~\cite{verkada2024reverse}. Theo bài viết kỹ thuật của hãng~\cite{verkada2025scaling}, camera tạo các ảnh cắt của đối tượng; trên đám mây, ảnh cắt được mã hóa thành vector bằng mô hình CLIP, vốn đưa ảnh và văn bản vào cùng một không gian biểu diễn, và lưu vào một cơ sở dữ liệu vector; câu truy vấn được mã hóa theo cùng cách để tìm các ảnh gần nhất. Hình~\ref{fig:verkada} minh họa kết quả của một truy vấn bằng câu mô tả. Hệ thống vận hành tốt nhất với camera của Verkada; camera hãng khác kết nối qua thiết bị Command Connector với độ trễ cao hơn~\cite{verkada2024connector}.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.75\textwidth]{verkada.png}
+    \includegraphics[width=0.52\textwidth]{verkada.png}
     \caption{Kết quả tìm kiếm bằng câu mô tả trên nền tảng Verkada Command~\cite{verkada2024aisearch}}
     \label{fig:verkada}
 \end{figure}
 
-Hệ thống hỗ trợ hai hình thức tìm kiếm chính:
-\begin{itemize}
-    \item \textbf{Tìm kiếm bằng ngôn ngữ tự nhiên.} Người dùng nhập trực tiếp câu mô tả vào ô tìm kiếm, ví dụ ``person wearing helmet'' hay ``person operating a forklift''. Câu truy vấn cũng có thể được dùng để tạo cảnh báo tự động khi có đối tượng phù hợp xuất hiện~\cite{verkada2024aisearch}.
-    \item \textbf{Tìm kiếm bằng hình ảnh (reverse image search).} Người dùng tải lên ảnh của người, phương tiện hoặc đồ vật để truy xuất các đoạn video có đối tượng tương tự; chẳng hạn, từ ảnh một chiếc túi bị bỏ lại, hệ thống có thể tìm những người đã từng mang chiếc túi đó. Chức năng này hữu ích khi khuôn mặt của người cần tìm không nhìn thấy rõ~\cite{verkada2024reverse}.
-\end{itemize}
-
-Theo bài viết kỹ thuật của Verkada~\cite{verkada2025scaling}, camera phát hiện người và phương tiện rồi tạo các ảnh cắt chất lượng cao của đối tượng. Trên đám mây, các ảnh cắt này được mã hóa thành vector bằng mô hình CLIP -- mô hình đưa ảnh và văn bản vào cùng một không gian biểu diễn -- và lưu vào một cơ sở dữ liệu vector chuyên dụng; câu truy vấn được mã hóa theo cùng cách để tìm các ảnh có vector gần nhất.
-
-Về triển khai, hệ thống vận hành tốt nhất với camera của Verkada. Từ năm 2024, thiết bị Command Connector cho phép kết nối camera của hãng khác vào nền tảng và sử dụng một phần tính năng phân tích, trong đó có tìm kiếm bằng AI, với độ trễ cao hơn so với camera của Verkada~\cite{verkada2024connector}.
-
-\paragraph{Liên hệ với đề tài.} Verkada là hệ thống gần với đề tài nhất về mặt kỹ thuật: cùng hỗ trợ tìm bằng câu mô tả và bằng ảnh, và cùng dựa trên ý tưởng mã hóa ảnh người và văn bản vào một không gian biểu diễn chung rồi tìm kiếm trên cơ sở dữ liệu vector. Khác biệt nằm ở mô hình triển khai: Verkada xử lý trên hạ tầng đám mây của hãng, trong khi đề tài hướng tới triển khai tại chỗ trên máy tính phổ thông.
+\paragraph{Liên hệ với đề tài.} Verkada gần với đề tài nhất về kỹ thuật: cùng hỗ trợ tìm bằng câu mô tả và bằng ảnh dựa trên không gian biểu diễn chung và cơ sở dữ liệu vector. Khác biệt nằm ở mô hình triển khai: Verkada xử lý trên hạ tầng đám mây của hãng, còn đề tài triển khai tại chỗ trên máy tính phổ thông.

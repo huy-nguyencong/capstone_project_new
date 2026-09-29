@@ -1,0 +1,54 @@
+% !TEX root = ../../main.tex
+% C3.3 — Theo vết nhiều đối tượng
+% Nguyên lý; lý do chọn ByteTrack/BoT-SORT để ở Mục 6.1.4.
+% Khớp app: config/bytetrack_tracker.json và botsort_tracker.json (cùng ngưỡng: high 0,25, low 0,1, new 0,25,
+% match 0,8, fuse_score, xác nhận sau 2 lần quan sát, kết thúc khi mất dấu > 3 khung hình được xử lý hoặc > 2000 ms).
+% Logic kết thúc track: ai/trackers/bytetrack.py (sample_gap/time_gap), flush ở cuối luồng chỉ trả track đã xác nhận.
+% Mốc thời gian: tệp video dùng PTS (workers/sources/file.py); RTSP dùng đồng hồ lúc worker đọc khung (workers/sources/rtsp.py) -> phụ thuộc tốc độ xử lý.
+\section{Theo vết nhiều đối tượng}
+\label{sec:3.3}
+
+\subsection{Bài toán theo vết nhiều đối tượng}
+\label{sec:3.3.1}
+
+Mô hình phát hiện (Mục~\ref{sec:3.2}) xử lý từng khung hình một cách độc lập: nó cho biết trong khung hình có những người nào và ở đâu, nhưng không cho biết người được phát hiện ở khung hình này có phải là người đã xuất hiện ở khung hình trước hay không. Bài toán theo vết nhiều đối tượng (Multi-Object Tracking -- MOT) giải quyết vấn đề này bằng cách gán cho mỗi đối tượng một mã định danh (ID) và duy trì mã đó nhất quán qua các khung hình liên tiếp. Chuỗi các khung bao của cùng một đối tượng theo thời gian được gọi là một \emph{track}.
+
+Hướng tiếp cận phổ biến hiện nay là \emph{theo vết dựa trên phát hiện} (tracking-by-detection): ở mỗi khung hình, mô hình phát hiện cung cấp tập khung bao, sau đó thuật toán theo vết liên kết các khung bao mới với các track đang tồn tại. Trong đề tài, theo vết là bước biến các phát hiện rời rạc thành các \emph{lần xuất hiện} của một người trên một camera -- đơn vị kết quả tìm kiếm của hệ thống (Mục~\ref{sec:3.1.6}).
+
+\subsection{Các thành phần cơ bản của thuật toán theo vết}
+\label{sec:3.3.2}
+
+Thuật toán SORT~\cite{bewley2016sort} đặt nền tảng cho nhiều phương pháp theo vết dựa trên phát hiện, với ba thành phần chính:
+\begin{itemize}
+    \item \textbf{Dự đoán chuyển động.} Mỗi track được gắn với một bộ lọc Kalman~\cite{kalman1960}, mô hình hóa vị trí, kích thước và vận tốc của khung bao theo giả định chuyển động gần như đều giữa hai khung hình. Trước khi liên kết, bộ lọc dự đoán vị trí của track ở khung hình hiện tại; sau khi liên kết, vị trí dự đoán được hiệu chỉnh bằng phát hiện thực tế.
+    \item \textbf{Đo độ tương đồng.} Mức độ khớp giữa một track và một phát hiện được đo bằng IoU (Công thức~\ref{eq:iou}) giữa khung bao dự đoán của track và khung bao được phát hiện. Từ đó xây dựng ma trận chi phí, trong đó chi phí càng thấp thì cặp track--phát hiện càng khớp.
+    \item \textbf{Ghép cặp tối ưu.} Bài toán gán mỗi phát hiện cho tối đa một track sao cho tổng chi phí nhỏ nhất được giải bằng thuật toán Hungary~\cite{kuhn1955hungarian}. Các cặp có chi phí vượt ngưỡng bị loại; phát hiện chưa được ghép có thể khởi tạo track mới, còn track chưa được ghép được xem là đang mất dấu.
+\end{itemize}
+
+\subsection{Thuật toán ByteTrack}
+\label{sec:3.3.3}
+
+Các phương pháp trước đây thường loại bỏ những phát hiện có độ tin cậy thấp ngay từ đầu để tránh phát hiện sai. Tuy nhiên, một người bị che khuất một phần thường chỉ được phát hiện với độ tin cậy thấp, nên việc loại bỏ các phát hiện này dễ làm track bị đứt. ByteTrack~\cite{zhang2022bytetrack} giải quyết vấn đề bằng cách tận dụng mọi khung bao được phát hiện, thông qua hai bước liên kết:
+\begin{enumerate}
+    \item \textbf{Liên kết lần thứ nhất:} các phát hiện có độ tin cậy cao được ghép với toàn bộ track hiện có dựa trên vị trí dự đoán của bộ lọc Kalman.
+    \item \textbf{Liên kết lần thứ hai:} các track chưa được ghép ở bước trước tiếp tục được ghép với các phát hiện có độ tin cậy thấp. Nhờ đó, một người đang bị che khuất một phần vẫn giữ được track của mình. Những phát hiện độ tin cậy thấp còn lại sau bước này bị loại bỏ, vì phần lớn chúng là nền hoặc phát hiện sai.
+\end{enumerate}
+Chỉ những phát hiện có độ tin cậy cao chưa được ghép mới được dùng để khởi tạo track mới. Các track mất dấu được giữ lại thêm một số khung hình để có thể nối lại khi đối tượng xuất hiện trở lại sau một thời gian bị che khuất ngắn.
+
+\subsection{Thuật toán BoT-SORT}
+\label{sec:3.3.4}
+
+BoT-SORT~\cite{aharon2022botsort} mở rộng cách tiếp cận của ByteTrack với các cải tiến như điều chỉnh lại trạng thái của bộ lọc Kalman, bù chuyển động của camera và kết hợp đặc trưng tái nhận dạng ngoại hình (ReID) vào bước liên kết. Các cải tiến này hữu ích khi camera di chuyển hoặc khi đối tượng bị che khuất lâu. Trong đề tài, BoT-SORT được tích hợp như một thuật toán theo vết thay thế, với cùng các ngưỡng như ByteTrack; chức năng bù chuyển động camera và đặc trưng ReID được tắt vì các camera là camera tĩnh và để giữ chi phí xử lý thấp trên máy không có card đồ họa rời.
+
+\subsection{Vòng đời track trong hệ thống}
+\label{sec:3.3.5}
+
+Trong hệ thống của đề tài, thuật toán theo vết nhận các phát hiện trên những khung hình đã được lấy mẫu (Mục~\ref{sec:3.4}), riêng cho từng camera, và quản lý vòng đời của mỗi track theo các quy tắc sau:
+\begin{itemize}
+    \item \textbf{Ngưỡng độ tin cậy:} phát hiện có độ tin cậy từ 0,25 trở lên được xem là độ tin cậy cao và có thể khởi tạo track mới; phát hiện từ 0,1 đến dưới 0,25 chỉ được dùng trong bước liên kết thứ hai. Ngưỡng 0,1 cũng chính là ngưỡng lọc của mô hình phát hiện (Mục~\ref{sec:3.2.5}).
+    \item \textbf{Xác nhận track:} một track chỉ được xác nhận sau khi đối tượng được quan sát trong ít nhất hai khung hình được xử lý. Track chưa được xác nhận không tạo ra kết quả, giúp loại bỏ các phát hiện sai chỉ xuất hiện thoáng qua.
+    \item \textbf{Kết thúc track:} một track được xem là kết thúc khi đối tượng mất dấu quá ba khung hình được xử lý liên tiếp hoặc quá hai giây kể từ lần cuối được quan sát, tùy điều kiện nào xảy ra trước. Mốc thời gian của mỗi khung hình được xác định theo nguồn dữ liệu: với tệp video, đó là dấu thời gian ghi trong tệp, nên quy tắc không phụ thuộc vào tốc độ xử lý của máy; với luồng RTSP, đó là thời điểm hệ thống nhận được khung hình, nên khi tốc độ xử lý chậm hơn tốc độ phát của luồng, khoảng cách thời gian giữa hai khung hình được xử lý tăng lên và điều kiện hai giây có thể khiến track kết thúc sớm hơn. Khi luồng dữ liệu kết thúc, mọi track đã được xác nhận cũng được kết thúc.
+    \item \textbf{Phạm vi của mã định danh:} mã định danh chỉ có ý nghĩa trong phạm vi một camera và một phiên xử lý. Một người xuất hiện trở lại sau khi track đã kết thúc, hoặc xuất hiện ở camera khác, sẽ tạo thành một track mới; hệ thống không liên kết các track của cùng một người giữa nhiều camera.
+\end{itemize}
+
+Khi một track kết thúc, hệ thống chọn một khung hình đại diện cho track đó để tạo vector đặc trưng và lưu trữ phục vụ tìm kiếm; quy trình này được trình bày tại Mục~\ref{sec:5.2}.

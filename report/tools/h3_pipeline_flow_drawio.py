@@ -60,62 +60,49 @@ ICON_B = 'shape=image;html=1;imageAspect=0;aspect=fixed;verticalLabelPosition=bo
 A = 'endArrow=block;endFill=1;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;labelBackgroundColor=#ffffff;jumpStyle=arc;'
 E = 'exitX={};exitY={};exitDx=0;exitDy=0;entryX={};entryY={};entryDx=0;entryDy=0;'
 
-# --- Cột trái: vòng lặp theo khung hình ---
+# --- Cột trái: vòng lặp theo khung hình (khớp workers/production.py ProductionPipeline.run) ---
+# Sửa 2026-09-29: mã hóa và ghi dữ liệu diễn ra SAU vòng lặp (selector.flush -> encode -> publish ở workers/durable.py),
+# không phải ngay khi từng lần xuất hiện kết thúc. Hủy/quá hạn giữa chừng -> không ghi lần xuất hiện nào (mô tả trong văn bản 5.2.1).
 v('L0', 'Công việc xử lý<br>(camera, nguồn, N)', DATA, 50, 0, 330, 70)
 v('L1', 'Đọc, giải mã khung hình kế tiếp', PROC, 50, 110, 330, 64)
-v('L2', 'Hết nguồn, đủ số khung<br>hoặc bị hủy?', DEC, 45, 215, 340, 130)
+v('L2', 'Hết nguồn hoặc<br>đủ số khung của phiên?', DEC, 45, 215, 340, 130)
 v('L3', 'i mod N = 0 ?', DEC, 80, 385, 270, 100)
 v('L4', 'Phát hiện người<br>(YOLO11n)', ICON_R + BRAIN + ';', 185, 525, 60, 60)
 v('L5', 'Khung bao người', DATA, 85, 620, 260, 56)
 v('L6', 'Theo vết<br>(ByteTrack /<br>BoT-SORT)', ICON_R + BRAIN + ';', 185, 715, 60, 60)
-v('L7', 'Có lần xuất hiện<br>vừa kết thúc?', DEC, 60, 830, 310, 130)
-v('L8', 'Cập nhật ứng viên<br>khung hình đại diện (≤ 3)', PROC, 65, 1000, 300, 76)
-v('END', 'Kết thúc công việc', TERM, 560, 250, 220, 60)
-# --- Cột phải: xử lý lần xuất hiện vừa kết thúc ---
-v('R1', 'Chọn khung hình đại diện<br>(lọc cứng + điểm chất lượng)', PROC, 470, 855, 330, 80)
-v('R2', 'Cắt tạm vùng người<br>(nới 5%)', PROC, 510, 975, 250, 70)
-v('R2b', 'Mã hóa ảnh<br>(RaSa)', ICON_R + BRAIN + ';', 605, 1085, 60, 60)
-v('R3', 'Vector 256 chiều, khung hình,<br>khung bao', DATA, 470, 1185, 330, 70)
-v('R4', 'Ghi vào ba kho<br>(PENDING → READY, thử lại)', PROC, 470, 1295, 330, 76)
+v('L8', 'Cập nhật ứng viên khung<br>hình đại diện (tối đa 3);<br>lần xuất hiện kết thúc:<br>chọn và giữ khung hình đại diện', PROC, 20, 830, 390, 130)
+# --- Cột phải: sau khi đọc hết nguồn ---
+v('R0', 'Kết thúc các lần xuất hiện<br>còn đang theo vết', PROC, 470, 240, 330, 80)
+v('R1', 'Với mỗi lần xuất hiện: cắt tạm<br>vùng người (nới 5%)', PROC, 470, 370, 330, 80)
+v('R2b', 'Mã hóa ảnh<br>(RaSa)', ICON_R + BRAIN + ';', 605, 490, 60, 60)
+v('R3', 'Vector 256 chiều, khung hình,<br>khung bao', DATA, 470, 590, 330, 70)
+v('R4', 'Ghi từng lần xuất hiện vào ba kho<br>(PENDING → READY, thử lại)', PROC, 470, 700, 330, 76)
+v('END', 'Kết thúc công việc', TERM, 525, 830, 220, 60)
 # --- Kho dữ liệu ---
-v('S1', '<b>PostgreSQL</b><br>thông tin mô tả', DB, 930, 1060, 190, 90)
-v('S3', '<b>MinIO</b><br>khung hình', ICON_R + BUCKET + ';', 935, 1180, 60, 60)
-v('S2', '<b>Milvus</b><br>vector', DB, 930, 1288, 190, 90)
+v('S1', '<b>PostgreSQL</b><br>thông tin mô tả', DB, 930, 560, 190, 90)
+v('S3', '<b>MinIO</b><br>khung hình', ICON_R + BUCKET + ';', 935, 700, 60, 60)
+v('S2', '<b>Milvus</b><br>vector', DB, 930, 800, 190, 90)
 
 e('L0', 'L1', A + E.format(.5, 1, .5, 0))
 e('L1', 'L2', A + E.format(.5, 1, .5, 0))
-e('L2', 'END', A + E.format(1, .5, 0, .5), 'Có')
+e('L2', 'R0', A + E.format(1, .5, 0, .5), 'Có')
 e('L2', 'L3', A + E.format(.5, 1, .5, 0), 'Không')
-e('L3', 'L1', A + E.format(0, .5, 0, .5), 'Không', [(20, 435), (20, 142)], -0.85)
+e('L3', 'L1', A + E.format(0, .5, 0, .5), 'Không', [(0, 435), (0, 142)], -0.85)
 e('L3', 'L4', A + E.format(.5, 1, .5, 0), 'Có')
 e('L4', 'L5', A + E.format(.5, 1, .5, 0))
 e('L5', 'L6', A + E.format(.5, 1, .5, 0))
-e('L6', 'L7', A + E.format(.5, 1, .5, 0))
-e('L7', 'L8', A + E.format(.5, 1, .5, 0), 'Không')
-e('L8', 'L1', A + E.format(0, .5, 0, .5), '', [(20, 1038), (20, 142)])
-e('L7', 'R1', A + E.format(1, .5, 0, .5), 'Có')
-e('R1', 'R2', A + E.format(.5, 1, .5, 0))
-e('R2', 'R2b', A + E.format(.5, 1, .5, 0))
+e('L6', 'L8', A + E.format(.5, 1, .5, 0))
+e('L8', 'L1', A + E.format(0, .5, 0, .5), '', [(0, 895), (0, 142)])
+e('R0', 'R1', A + E.format(.5, 1, .5, 0))
+e('R1', 'R2b', A + E.format(.5, 1, .5, 0))
 e('R2b', 'R3', A + E.format(.5, 1, .5, 0))
 e('R3', 'R4', A + E.format(.5, 1, .5, 0))
-e('R4', 'S1', A + E.format(1, .5, 0, .5), '', [(870, 1333), (870, 1105)])
-e('R4', 'S3', A + E.format(1, .5, 0, .5), '', [(870, 1333), (870, 1210)])
-e('R4', 'S2', A + E.format(1, .5, 0, .5))
-e('R4', 'L1', A + E.format(0, .5, 1, .5), 'lần xuất hiện<br>sẵn sàng', [(440, 1333), (440, 142)], 0.1)
+e('R4', 'END', A + E.format(.5, 1, .5, 0))
+e('R4', 'S1', A + E.format(1, .5, 0, .5), '', [(870, 738), (870, 605)])
+e('R4', 'S3', A + E.format(1, .5, 0, .5), '', [(870, 738), (870, 730)])
+e('R4', 'S2', A + E.format(1, .5, 0, .5), '', [(870, 738), (870, 845)])
 
-# Chú giải (góc dưới bên trái)
-FRAME = 'rounded=0;whiteSpace=wrap;html=1;dashed=1;fillColor=none;verticalAlign=top;align=left;spacingLeft=8;fontStyle=1;'
-LG = 'text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;'
-v('LG', 'Chú giải', FRAME, 0, 1120, 405, 260)
-v('g1', 'Dữ liệu', DATA, 15, 1165, 120, 40)
-v('g2', 'Xử lý', PROC, 15, 1220, 120, 40)
-v('g3', '', DEC, 20, 1275, 70, 46)
-v('g3t', 'Rẽ nhánh', LG, 96, 1283, 110, 30)
-v('g7', 'Kết thúc', TERM, 15, 1333, 120, 34)
-v('g4', 'Mô hình AI', ICON_R + BRAIN + ';', 225, 1165, 40, 40)
-v('g5', '', DB, 227, 1220, 36, 46)
-v('g5t', 'CSDL', LG, 272, 1228, 100, 30)
-v('g6', 'Kho đối tượng', ICON_R + BUCKET + ';', 225, 1280, 40, 40)
+# Không vẽ chú giải (SV quyết định 2026-09-29: nhãn trên hình đã đủ rõ).
 
 xml = ('<mxfile host="app.diagrams.net"><diagram name="H3 - Lưu đồ xử lý camera" id="h3"><mxGraphModel dx="1400" dy="1100" '
        'grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" '

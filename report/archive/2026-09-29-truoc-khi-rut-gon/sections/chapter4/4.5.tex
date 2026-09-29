@@ -1,0 +1,434 @@
+% !TEX root = ../../main.tex
+% C4.5 — Đặc tả use case. Sinh từ files/usecase_detail.md bằng report/tools/usecase_to_tex.py, thuật ngữ theo tên giao diện, rồi rà soát tay.
+% Không có dòng mã FR (SV bỏ 2026-09-28: hội đồng khó tra); 4.2 cũng không còn ghi mã UC ở cuối mỗi yêu cầu.
+% SỬA TAY 2026-09-28 (bỏ chi tiết thiết kế nói trước, SV duyệt): UC-04 "khởi động/dừng tiến trình xử lý AI" -> "bắt đầu/ngừng đưa camera vào
+% quá trình phân tích", bỏ mô tả phiên xử lý/xoay vòng ở A1; UC-05, UC-06 "tiến trình" -> "quá trình xử lý AI"; UC-09/10/14 "ảnh người cắt/dựng
+% động từ khung hình toàn cảnh và khung bao" -> "ảnh người", E2 "không hiển thị được ảnh"; UC-15 bỏ bước xóa thông tin xác thực phía người dùng.
+% SỬA TAY 2026-09-28 (bỏ nội dung lặp, SV yêu cầu): xem nhật ký report_plan.md — UC-02, 03, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14. Phần "Ghi chú" của nguồn đã được đưa vào 4.2 và 4.3 (không có mục quy tắc nghiệp vụ riêng, SV duyệt bỏ 4.7).
+% Nếu sửa usecase_detail.md: chạy lại script rồi rà soát lại các chỗ đã sửa tay (xem nhật ký report_plan.md).
+\section{Đặc tả use case}
+\label{sec:4.5}
+
+Mục này đặc tả chi tiết 15 use case đã liệt kê ở Bảng~\ref{tab:usecases}. Mỗi đặc tả gồm tác nhân, mục đích, tiền điều kiện, hậu điều kiện, luồng chính, các ngoại lệ (ký hiệu E) và các luồng thay thế (ký hiệu A). Các ràng buộc dùng chung giữa nhiều use case đã được nêu trong các yêu cầu ở Mục~\ref{sec:4.2} và Mục~\ref{sec:4.3}; phạm vi dữ liệu mà mỗi vai trò được truy cập được tổng hợp trong ma trận phân quyền ở Mục~\ref{sec:4.6}.
+
+\begin{longtable}{|>{\raggedright\arraybackslash}p{2.9cm}|p{12.3cm}|}
+\caption{Đặc tả use case UC-01: Đăng nhập hệ thống}\label{tab:uc01}\\
+\hline
+\endfirsthead
+\multicolumn{2}{l}{\textit{(tiếp theo Bảng~\ref{tab:uc01})}}\\
+\hline
+\endhead
+\textbf{Tác nhân} & Quản trị viên, Giám sát viên, Quản lý \\ \hline
+\textbf{Mục đích} & Cho phép người dùng xác thực tài khoản để truy cập vào hệ thống và sử dụng các chức năng phù hợp với vai trò và phạm vi quyền được cấp. \\ \hline
+\textbf{Tiền điều kiện} & Người dùng đã có tài khoản hợp lệ trong hệ thống và tài khoản đang ở trạng thái hoạt động. \\ \hline
+\textbf{Hậu điều kiện} & Người dùng đăng nhập thành công, hệ thống tạo phiên đăng nhập và cho phép truy cập các chức năng tương ứng với vai trò và quyền của tài khoản. \\ \hline
+\textbf{Luồng chính} & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{1.}Người dùng truy cập vào trang đăng nhập của hệ thống. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{2.}Hệ thống hiển thị biểu mẫu đăng nhập. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{3.}Người dùng nhập tên đăng nhập và mật khẩu. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{4.}Người dùng gửi yêu cầu đăng nhập. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{5.}Hệ thống kiểm tra thông tin đăng nhập. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{6.}Hệ thống xác định tài khoản hợp lệ, đang hoạt động và lấy thông tin vai trò, quyền truy cập của người dùng. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{7.}Hệ thống tạo phiên đăng nhập cho người dùng. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{8.}Hệ thống chuyển người dùng đến giao diện chính phù hợp với vai trò của tài khoản. \\ \hline
+\textbf{Ngoại lệ} & \textbf{E1 -- Sai thông tin đăng nhập:} Nếu tên đăng nhập hoặc mật khẩu không chính xác, hệ thống thông báo đăng nhập không thành công và yêu cầu người dùng nhập lại. \\ \cline{2-2}
+ & \textbf{E2 -- Tài khoản bị khóa hoặc ngừng hoạt động:} Hệ thống từ chối đăng nhập và thông báo tài khoản không có quyền truy cập hệ thống. \\ \cline{2-2}
+ & \textbf{E3 -- Lỗi hệ thống:} Nếu xảy ra lỗi trong quá trình xác thực hoặc truy cập dữ liệu tài khoản, hệ thống thông báo không thể đăng nhập tại thời điểm hiện tại. \\ \hline
+\textbf{Luồng thay thế} & Không có. \\ \hline
+\end{longtable}
+
+\begin{longtable}{|>{\raggedright\arraybackslash}p{2.9cm}|p{12.3cm}|}
+\caption{Đặc tả use case UC-02: Quản lý tài khoản người dùng}\label{tab:uc02}\\
+\hline
+\endfirsthead
+\multicolumn{2}{l}{\textit{(tiếp theo Bảng~\ref{tab:uc02})}}\\
+\hline
+\endhead
+\textbf{Tác nhân} & Quản trị viên \\ \hline
+\textbf{Mục đích} & Cho phép Quản trị viên tạo, cập nhật, khóa/mở khóa, xóa hoặc ngừng hoạt động tài khoản người dùng; gán vai trò phù hợp và gán khu vực giám sát cho Giám sát viên. \\ \hline
+\textbf{Tiền điều kiện} & Quản trị viên đã đăng nhập vào hệ thống và có quyền quản lý tài khoản người dùng. \\ \hline
+\textbf{Hậu điều kiện} & Thông tin tài khoản người dùng được tạo mới, cập nhật, khóa, xóa hoặc thay đổi vai trò theo thao tác của Quản trị viên; các thay đổi được lưu lại trong hệ thống. \\ \hline
+\textbf{Luồng chính} & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{1.}Quản trị viên truy cập chức năng quản lý tài khoản người dùng. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{2.}Hệ thống hiển thị danh sách các tài khoản hiện có cùng các thông tin cơ bản như tên tài khoản, vai trò và trạng thái hoạt động. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{3.}Quản trị viên lựa chọn thao tác quản lý phù hợp đối với tài khoản người dùng. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{4.}Hệ thống hiển thị biểu mẫu hoặc thông tin tương ứng với thao tác được lựa chọn. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{5.}Quản trị viên nhập hoặc cập nhật các thông tin cần thiết và xác nhận thao tác. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{6.}Hệ thống kiểm tra tính hợp lệ của dữ liệu và quyền thực hiện của Quản trị viên. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{7.}Hệ thống thực hiện thay đổi đối với tài khoản người dùng. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{8.}Hệ thống lưu thông tin thay đổi và cập nhật lại danh sách tài khoản. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{9.}Hệ thống thông báo thao tác được thực hiện thành công. \\ \hline
+\textbf{Ngoại lệ} & \textbf{E1 -- Thông tin tài khoản không hợp lệ:} Nếu dữ liệu được nhập thiếu, sai định dạng hoặc không đáp ứng yêu cầu của hệ thống, hệ thống từ chối lưu và yêu cầu Quản trị viên kiểm tra lại thông tin. \\ \cline{2-2}
+ & \textbf{E2 -- Tên đăng nhập đã tồn tại:} Khi tạo tài khoản mới, nếu tên đăng nhập đã được sử dụng, hệ thống thông báo và yêu cầu Quản trị viên lựa chọn tên đăng nhập khác. \\ \cline{2-2}
+ & \textbf{E3 -- Không tìm thấy tài khoản:} Nếu tài khoản cần cập nhật, khóa hoặc xóa không còn tồn tại, hệ thống thông báo không thể thực hiện thao tác. \\ \cline{2-2}
+ & \textbf{E4 -- Lỗi hệ thống:} Nếu xảy ra lỗi trong quá trình lưu hoặc cập nhật dữ liệu, hệ thống thông báo thao tác không thành công và không áp dụng thay đổi chưa hoàn tất. \\ \cline{2-2}
+ & \textbf{E5 -- Khu vực của Giám sát viên không hợp lệ:} Khi tạo hoặc chỉnh sửa Giám sát viên, nếu chưa gán khu vực hoặc yêu cầu gán nhiều khu vực, hệ thống từ chối lưu và yêu cầu Quản trị viên chọn đúng một khu vực. \\ \hline
+\textbf{Luồng thay thế} & \textbf{A1 -- Tạo tài khoản mới:} Quản trị viên lựa chọn tạo tài khoản, nhập thông tin người dùng, thiết lập thông tin đăng nhập và gán vai trò Giám sát viên hoặc Quản lý. Hệ thống kiểm tra dữ liệu và tạo tài khoản mới. \\ \cline{2-2}
+ & \textbf{A2 -- Cập nhật tài khoản:} Quản trị viên lựa chọn một tài khoản hiện có, chỉnh sửa các thông tin được phép thay đổi và lưu lại. Hệ thống cập nhật thông tin tài khoản. \\ \cline{2-2}
+ & \textbf{A3 -- Khóa hoặc mở khóa tài khoản:} Quản trị viên thay đổi trạng thái hoạt động của tài khoản. Tài khoản bị khóa không thể đăng nhập cho đến khi được mở khóa. \\ \cline{2-2}
+ & \textbf{A4 -- Thay đổi vai trò người dùng:} Quản trị viên thay đổi vai trò của tài khoản giữa Giám sát viên và Quản lý; quyền truy cập của người dùng được cập nhật theo vai trò mới. \\ \cline{2-2}
+ & \textbf{A5 -- Xóa/Ngừng hoạt động tài khoản:} Quản trị viên lựa chọn tài khoản không còn sử dụng và thực hiện xóa hoặc ngừng hoạt động theo chính sách của hệ thống. Tài khoản không còn có thể đăng nhập hoặc thực hiện nghiệp vụ mới. Các dữ liệu nghiệp vụ đã được tạo trước đó, bao gồm vụ việc, kết quả tìm kiếm đã lưu và nhật ký hệ thống, vẫn được giữ nguyên và tiếp tục có thể được truy xuất theo quyền của các tài khoản khác. \\ \cline{2-2}
+ & \textbf{A6 -- Gán khu vực giám sát:} Khi tạo hoặc chỉnh sửa Giám sát viên, Quản trị viên gán đúng một khu vực giám sát cho tài khoản. Hệ thống không cho phép gán nhiều khu vực và sử dụng khu vực này để xác định các camera mà Giám sát viên được phép tìm kiếm và các kết quả có thể được hiển thị. \\ \hline
+\end{longtable}
+
+\begin{longtable}{|>{\raggedright\arraybackslash}p{2.9cm}|p{12.3cm}|}
+\caption{Đặc tả use case UC-03: Quản lý camera}\label{tab:uc03}\\
+\hline
+\endfirsthead
+\multicolumn{2}{l}{\textit{(tiếp theo Bảng~\ref{tab:uc03})}}\\
+\hline
+\endhead
+\textbf{Tác nhân} & Quản trị viên \\ \hline
+\textbf{Mục đích} & Cho phép Quản trị viên quản lý các camera được sử dụng trong hệ thống, bao gồm thêm mới, cập nhật thông tin, loại camera khỏi vận hành và kiểm tra khả năng kết nối tới luồng RTSP. \\ \hline
+\textbf{Tiền điều kiện} & Quản trị viên đã đăng nhập vào hệ thống và có quyền quản lý camera. \\ \hline
+\textbf{Hậu điều kiện} & Thông tin camera được tạo mới, cập nhật hoặc chuyển sang trạng thái không còn vận hành theo thao tác của Quản trị viên; trạng thái kết nối RTSP của camera được hệ thống ghi nhận và hiển thị. \\ \hline
+\textbf{Luồng chính} & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{1.}Quản trị viên truy cập chức năng quản lý camera. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{2.}Hệ thống hiển thị danh sách các camera hiện có cùng các thông tin cơ bản như tên camera, khu vực, địa chỉ RTSP và trạng thái kết nối. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{3.}Quản trị viên lựa chọn thao tác quản lý phù hợp đối với camera. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{4.}Hệ thống hiển thị biểu mẫu hoặc thông tin tương ứng với thao tác được lựa chọn. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{5.}Quản trị viên nhập hoặc cập nhật các thông tin cần thiết của camera. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{6.}Hệ thống kiểm tra tính hợp lệ của dữ liệu được cung cấp. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{7.}Hệ thống kiểm tra khả năng kết nối tới luồng RTSP của camera khi cần thiết và xác định trạng thái kết nối. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{8.}Hệ thống thực hiện thao tác quản lý camera theo yêu cầu của Quản trị viên. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{9.}Hệ thống lưu thay đổi và cập nhật lại danh sách camera. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{10.}Hệ thống thông báo kết quả thực hiện cho Quản trị viên. \\ \hline
+\textbf{Ngoại lệ} & \textbf{E1 -- Thông tin camera không hợp lệ:} Nếu thiếu thông tin bắt buộc hoặc dữ liệu không đúng định dạng, hệ thống từ chối lưu và yêu cầu Quản trị viên kiểm tra lại. \\ \cline{2-2}
+ & \textbf{E2 -- Không thể kết nối tới luồng RTSP:} Nếu hệ thống không thể kết nối tới camera do địa chỉ RTSP, thông tin xác thực, trạng thái camera hoặc kết nối mạng, hệ thống hiển thị cảnh báo. Quản trị viên có thể chỉnh sửa cấu hình và thử lại hoặc vẫn lưu camera ở trạng thái \emph{Offline/Chưa xác minh} để kiểm tra lại sau. \\ \cline{2-2}
+ & \textbf{E3 -- Camera đã tồn tại:} Nếu camera hoặc địa chỉ RTSP đã được đăng ký trong hệ thống theo chính sách kiểm tra trùng lặp, hệ thống thông báo và không tạo bản ghi mới. \\ \cline{2-2}
+ & \textbf{E4 -- Không tìm thấy camera:} Nếu camera cần cập nhật hoặc loại khỏi vận hành không còn tồn tại trong hệ thống, hệ thống thông báo không thể thực hiện thao tác. \\ \cline{2-2}
+ & \textbf{E5 -- Lỗi hệ thống:} Nếu xảy ra lỗi trong quá trình kiểm tra kết nối hoặc lưu dữ liệu, hệ thống thông báo thao tác không thành công và không áp dụng thay đổi chưa hoàn tất. \\ \hline
+\textbf{Luồng thay thế} & \textbf{A1 -- Thêm camera mới:} Quản trị viên lựa chọn thêm camera, nhập tên camera, địa chỉ RTSP, thông tin xác thực, khu vực lắp đặt và các thông tin cần thiết khác. Hệ thống kiểm tra tính hợp lệ của dữ liệu và thử kết nối tới luồng RTSP. Nếu kết nối không thành công, xử lý như ngoại lệ E2. \\ \cline{2-2}
+ & \textbf{A2 -- Cập nhật thông tin camera:} Quản trị viên lựa chọn một camera hiện có, chỉnh sửa các thông tin được phép thay đổi và lưu lại. Nếu thông tin kết nối RTSP thay đổi, hệ thống thực hiện kiểm tra kết nối lại trước khi lưu. \\ \cline{2-2}
+ & \textbf{A3 -- Kiểm tra kết nối camera:} Quản trị viên yêu cầu kiểm tra kết nối đối với một camera. Hệ thống thử kết nối tới luồng RTSP bằng cấu hình hiện tại và trả về trạng thái kết nối cho Quản trị viên. \\ \cline{2-2}
+ & \textbf{A4 -- Loại camera khỏi vận hành:} Quản trị viên lựa chọn camera cần ngừng vận hành và xác nhận thao tác. Hệ thống loại camera khỏi vận hành nhưng vẫn giữ dữ liệu lịch sử theo chính sách dữ liệu của hệ thống. \\ \cline{2-2}
+ & \textbf{A5 -- Đưa camera vận hành trở lại:} Quản trị viên chọn một camera đang ngừng vận hành và xác nhận đưa camera vào vận hành trở lại. Camera trở về trạng thái vận hành với xử lý AI ở trạng thái tắt (Quản trị viên bật lại theo UC-04); dữ liệu đã tạo trước đó được tìm kiếm lại bình thường. \\ \hline
+\end{longtable}
+
+\begin{longtable}{|>{\raggedright\arraybackslash}p{2.9cm}|p{12.3cm}|}
+\caption{Đặc tả use case UC-04: Quản lý xử lý AI trên camera}\label{tab:uc04}\\
+\hline
+\endfirsthead
+\multicolumn{2}{l}{\textit{(tiếp theo Bảng~\ref{tab:uc04})}}\\
+\hline
+\endhead
+\textbf{Tác nhân} & Quản trị viên \\ \hline
+\textbf{Mục đích} & Cho phép Quản trị viên xác định camera nào được đưa vào quá trình phân tích AI bằng cách bật hoặc tắt xử lý AI cho từng camera. \\ \hline
+\textbf{Tiền điều kiện} & Quản trị viên đã đăng nhập vào hệ thống và có quyền quản lý xử lý AI; camera cần cấu hình đã được thêm vào hệ thống và đang vận hành. Camera có RTSP cần có cấu hình RTSP hợp lệ; camera không có RTSP chỉ được xử lý bằng tệp video tải lên (đường dự phòng). \\ \hline
+\textbf{Hậu điều kiện} & Trạng thái xử lý AI của camera được cập nhật theo lựa chọn của Quản trị viên; hệ thống bắt đầu hoặc ngừng đưa camera vào quá trình phân tích. \\ \hline
+\textbf{Luồng chính} & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{1.}Quản trị viên truy cập chức năng quản lý xử lý AI trên camera. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{2.}Hệ thống hiển thị danh sách camera cùng trạng thái xử lý AI hiện tại. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{3.}Quản trị viên lựa chọn camera cần thay đổi trạng thái xử lý AI. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{4.}Quản trị viên bật hoặc tắt xử lý AI cho camera. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{5.}Quản trị viên xác nhận thay đổi. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{6.}Hệ thống kiểm tra trạng thái camera và cấu hình mô hình AI hiện hành. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{7.}Hệ thống lưu trạng thái xử lý AI mới. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{8.}Hệ thống bắt đầu hoặc ngừng đưa camera vào quá trình phân tích. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{9.}Hệ thống cập nhật trạng thái và thông báo kết quả cho Quản trị viên. \\ \hline
+\textbf{Ngoại lệ} & \textbf{E1 -- Camera không khả dụng:} Nếu camera đang mất kết nối hoặc luồng RTSP không thể truy cập khi Quản trị viên bật xử lý AI, hệ thống không đưa camera vào quá trình phân tích và thông báo cho Quản trị viên. \\ \cline{2-2}
+ & \textbf{E2 -- Mô hình AI chưa sẵn sàng:} Nếu bộ mô hình AI hiện hành chưa được cấu hình đầy đủ hoặc không khả dụng, hệ thống không thể bật xử lý AI và thông báo cho Quản trị viên. \\ \cline{2-2}
+ & \textbf{E3 -- Không thể bắt đầu phân tích:} Nếu quá trình phân tích không thể bắt đầu do lỗi tài nguyên hoặc lỗi thành phần xử lý, hệ thống giữ trạng thái không hoạt động và thông báo lỗi cho Quản trị viên. \\ \cline{2-2}
+ & \textbf{E4 -- Camera không còn được vận hành:} Nếu camera đã bị loại khỏi vận hành, hệ thống không cho phép bật/tắt xử lý AI và thông báo không thể thực hiện thao tác. \\ \cline{2-2}
+ & \textbf{E5 -- Lỗi hệ thống:} Nếu xảy ra lỗi trong quá trình lưu hoặc áp dụng thay đổi, hệ thống thông báo thao tác không thành công và giữ lại trạng thái hợp lệ gần nhất. \\ \hline
+\textbf{Luồng thay thế} & \textbf{A1 -- Bật xử lý AI cho camera:} Quản trị viên bật trạng thái xử lý AI. Hệ thống kiểm tra camera (từ chối nếu camera có RTSP đang mất kết nối) và bộ mô hình AI hiện hành, sau đó đưa camera vào quá trình phân tích nếu các điều kiện hợp lệ; camera được phân tích lần lượt cùng các camera khác đang bật xử lý AI. \\ \cline{2-2}
+ & \textbf{A2 -- Tắt xử lý AI cho camera:} Quản trị viên tắt trạng thái xử lý AI. Hệ thống ngừng phân tích dữ liệu mới của camera nhưng vẫn giữ thông tin camera và dữ liệu đã được phân tích trước đó. \\ \hline
+\end{longtable}
+
+\begin{longtable}{|>{\raggedright\arraybackslash}p{2.9cm}|p{12.3cm}|}
+\caption{Đặc tả use case UC-05: Cấu hình mô hình AI}\label{tab:uc05}\\
+\hline
+\endfirsthead
+\multicolumn{2}{l}{\textit{(tiếp theo Bảng~\ref{tab:uc05})}}\\
+\hline
+\endhead
+\textbf{Tác nhân} & Quản trị viên \\ \hline
+\textbf{Mục đích} & Cho phép Quản trị viên lựa chọn và áp dụng các mô hình xử lý AI có thể cấu hình trong hệ thống, gồm Detector và Tracker. Bộ mã hóa ảnh và bộ mã hóa văn bản là các thành phần cố định của hệ thống và không cho phép thay đổi từ giao diện quản trị. \\ \hline
+\textbf{Tiền điều kiện} & Quản trị viên đã đăng nhập vào hệ thống và có quyền cấu hình mô hình AI; hệ thống đã đăng ký sẵn các Detector và Tracker được hỗ trợ. \\ \hline
+\textbf{Hậu điều kiện} & Bộ mô hình AI được lựa chọn được lưu thành cấu hình hiện hành của hệ thống; quá trình xử lý AI sử dụng cấu hình mới sau khi cấu hình được áp dụng thành công. \\ \hline
+\textbf{Luồng chính} & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{1.}Quản trị viên truy cập chức năng cấu hình mô hình AI. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{2.}Hệ thống hiển thị Detector và Tracker đang được sử dụng. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{3.}Hệ thống hiển thị danh sách các Detector và Tracker đã được đăng ký sẵn và được phép lựa chọn. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{4.}Quản trị viên lựa chọn Detector và/hoặc Tracker cần sử dụng. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{5.}Hệ thống kiểm tra tính hợp lệ và khả năng tương thích giữa Detector và Tracker được lựa chọn. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{6.}Quản trị viên xác nhận áp dụng cấu hình mới. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{7.}Hệ thống lưu cấu hình và áp dụng cho quá trình xử lý AI. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{8.}Hệ thống thông báo kết quả cho Quản trị viên. \\ \hline
+\textbf{Ngoại lệ} & \textbf{E1 -- Mô hình không khả dụng:} Nếu Detector hoặc Tracker được lựa chọn bị thiếu, không thể tải hoặc không ở trạng thái sẵn sàng, hệ thống từ chối áp dụng và thông báo cho Quản trị viên. \\ \cline{2-2}
+ & \textbf{E2 -- Detector và Tracker không tương thích:} Nếu tổ hợp được lựa chọn không đáp ứng yêu cầu tương thích của quy trình xử lý, hệ thống không cho phép áp dụng và yêu cầu Quản trị viên lựa chọn cấu hình khác. \\ \cline{2-2}
+ & \textbf{E3 -- Không thể áp dụng cấu hình:} Nếu xảy ra lỗi khi áp dụng mô hình cho quá trình xử lý AI, hệ thống thông báo lỗi và tiếp tục sử dụng cấu hình hợp lệ trước đó. \\ \cline{2-2}
+ & \textbf{E4 -- Lỗi hệ thống:} Nếu xảy ra lỗi trong quá trình đọc, lưu hoặc kiểm tra cấu hình, hệ thống thông báo thao tác không thành công. \\ \hline
+\textbf{Luồng thay thế} & Không có. \\ \hline
+\end{longtable}
+
+\begin{longtable}{|>{\raggedright\arraybackslash}p{2.9cm}|p{12.3cm}|}
+\caption{Đặc tả use case UC-06: Theo dõi trạng thái hệ thống}\label{tab:uc06}\\
+\hline
+\endfirsthead
+\multicolumn{2}{l}{\textit{(tiếp theo Bảng~\ref{tab:uc06})}}\\
+\hline
+\endhead
+\textbf{Tác nhân} & Quản trị viên \\ \hline
+\textbf{Mục đích} & Cho phép Quản trị viên theo dõi tình trạng hoạt động của các camera, luồng RTSP và quá trình xử lý AI nhằm kịp thời phát hiện các thành phần đang gặp sự cố hoặc không hoạt động bình thường. \\ \hline
+\textbf{Tiền điều kiện} & Quản trị viên đã đăng nhập vào hệ thống và có quyền theo dõi trạng thái hệ thống; các camera liên quan đã được cấu hình trong hệ thống. \\ \hline
+\textbf{Hậu điều kiện} & Quản trị viên nắm được trạng thái hoạt động hiện tại của các thành phần hệ thống; các trạng thái bất thường được hệ thống hiển thị để phục vụ việc kiểm tra và xử lý sự cố. \\ \hline
+\textbf{Luồng chính} & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{1.}Quản trị viên truy cập chức năng theo dõi trạng thái hệ thống. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{2.}Hệ thống hiển thị danh sách các camera cùng trạng thái kết nối hiện tại. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{3.}Hệ thống hiển thị trạng thái luồng RTSP của từng camera. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{4.}Hệ thống hiển thị trạng thái xử lý AI của từng camera đang được bật phân tích. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{5.}Hệ thống hiển thị các thông tin kỹ thuật cần thiết để Quản trị viên đánh giá tình trạng hoạt động. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{6.}Quản trị viên theo dõi và xác định các camera hoặc thành phần đang ở trạng thái bất thường. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{7.}Quản trị viên có thể làm mới dữ liệu trạng thái để kiểm tra lại tình trạng hiện tại. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{8.}Hệ thống cập nhật và hiển thị trạng thái mới nhất cho Quản trị viên. \\ \hline
+\textbf{Ngoại lệ} & \textbf{E1 -- Không lấy được trạng thái camera:} Nếu hệ thống không thể xác định trạng thái của một camera, trạng thái của camera được hiển thị là không xác định hoặc không khả dụng. \\ \cline{2-2}
+ & \textbf{E2 -- Luồng RTSP bị gián đoạn:} Nếu luồng RTSP không thể truy cập hoặc bị mất kết nối, hệ thống hiển thị camera ở trạng thái lỗi kết nối. \\ \cline{2-2}
+ & \textbf{E3 -- Xử lý AI không hoạt động:} Nếu việc xử lý AI của một camera bị dừng hoặc gặp lỗi, hệ thống hiển thị trạng thái xử lý AI bất thường để Quản trị viên nhận biết. \\ \cline{2-2}
+ & \textbf{E4 -- Không thể tải dữ liệu trạng thái:} Nếu xảy ra lỗi khi lấy thông tin trạng thái hệ thống, hệ thống thông báo cho Quản trị viên và giữ lại dữ liệu gần nhất nếu có. \\ \cline{2-2}
+ & \textbf{E5 -- Lỗi hệ thống:} Nếu thành phần giám sát trạng thái gặp lỗi, hệ thống thông báo không thể cung cấp đầy đủ thông tin tại thời điểm hiện tại. \\ \hline
+\textbf{Luồng thay thế} & \textbf{A1 -- Xem trạng thái theo camera:} Quản trị viên lựa chọn một camera cụ thể để xem chi tiết trạng thái kết nối RTSP và trạng thái xử lý AI của camera đó. \\ \cline{2-2}
+ & \textbf{A2 -- Lọc theo trạng thái:} Quản trị viên lọc danh sách để chỉ hiển thị các camera đang ở trạng thái lỗi, mất kết nối hoặc ngừng xử lý. \\ \hline
+\end{longtable}
+
+\begin{longtable}{|>{\raggedright\arraybackslash}p{2.9cm}|p{12.3cm}|}
+\caption{Đặc tả use case UC-07: Kiểm tra hoạt động của AI}\label{tab:uc07}\\
+\hline
+\endfirsthead
+\multicolumn{2}{l}{\textit{(tiếp theo Bảng~\ref{tab:uc07})}}\\
+\hline
+\endhead
+\textbf{Tác nhân} & Quản trị viên \\ \hline
+\textbf{Mục đích} & Cho phép Quản trị viên kiểm tra độc lập hai nhóm thành phần AI của hệ thống: nhóm xử lý camera và nhóm tìm kiếm, nhằm xác minh từng nhóm đang hoạt động đúng theo cấu hình hiện tại. \\ \hline
+\textbf{Tiền điều kiện} & Quản trị viên đã đăng nhập và có quyền kiểm tra hoạt động AI; các mô hình cần thiết đã được cấu hình. Đối với kiểm tra nhóm xử lý camera, camera phải được cấu hình và bật xử lý AI. Đối với kiểm tra nhóm tìm kiếm, không yêu cầu lựa chọn camera. \\ \hline
+\textbf{Hậu điều kiện} & Quản trị viên nhận được kết quả kiểm tra cho biết quy trình xử lý AI đang hoạt động bình thường hoặc xác định được thành phần gặp lỗi để phục vụ quá trình xử lý sự cố. \\ \hline
+\textbf{Luồng chính} & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{1.}Quản trị viên truy cập chức năng kiểm tra hoạt động của AI. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{2.}Hệ thống hiển thị hai nhóm kiểm tra: \textbf{Nhóm xử lý camera} và \textbf{Nhóm tìm kiếm}. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{3.}Quản trị viên lựa chọn nhóm cần kiểm tra. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{4.}Hệ thống thực hiện luồng kiểm tra tương ứng với nhóm được lựa chọn. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{5.}Hệ thống tổng hợp trạng thái của từng thành phần trong nhóm kiểm tra. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{6.}Hệ thống hiển thị kết quả cho Quản trị viên, bao gồm thành phần hoạt động bình thường và thành phần gặp lỗi. \\ \hline
+\textbf{Ngoại lệ} & \textbf{E1 -- Không nhận được khung hình từ camera:} Áp dụng khi kiểm tra nhóm xử lý camera. Nếu hệ thống không lấy được dữ liệu từ RTSP, hệ thống thông báo lỗi nguồn dữ liệu và không tiếp tục các bước phụ thuộc vào khung hình. \\ \cline{2-2}
+ & \textbf{E2 -- Detector không hoạt động:} Nếu Detector không thể được tải hoặc thực thi, hệ thống thông báo lỗi thành phần phát hiện. \\ \cline{2-2}
+ & \textbf{E3 -- Tracker không hoạt động:} Nếu Tracker không thể khởi tạo hoặc xử lý dữ liệu từ Detector, hệ thống thông báo lỗi thành phần theo dõi. \\ \cline{2-2}
+ & \textbf{E4 -- Bộ mã hóa ảnh không hoạt động:} Nếu bộ mã hóa ảnh không thể được tải hoặc thực thi trong nhóm xử lý camera hoặc nhóm tìm kiếm, hệ thống thông báo lỗi tương ứng. \\ \cline{2-2}
+ & \textbf{E5 -- Bộ mã hóa văn bản không hoạt động:} Áp dụng khi kiểm tra nhóm tìm kiếm. Nếu bộ mã hóa văn bản không thể được tải hoặc thực thi, hệ thống thông báo lỗi tương ứng. \\ \cline{2-2}
+ & \textbf{E6 -- Không có người trong khung hình kiểm tra:} Nếu camera đang hoạt động nhưng khung hình hiện tại không chứa người, hệ thống thông báo chưa thể xác minh đầy đủ Detector/Tracker/bộ mã hóa ảnh nhưng không kết luận quy trình xử lý bị lỗi. \\ \cline{2-2}
+ & \textbf{E7 -- Lỗi hệ thống:} Nếu xảy ra lỗi ngoài các trường hợp trên, hệ thống dừng kiểm tra và thông báo cho Quản trị viên. \\ \hline
+\textbf{Luồng thay thế} & \textbf{A1 -- Kiểm tra nhóm xử lý camera:} Quản trị viên lựa chọn một camera đang bật xử lý AI. Hệ thống lần lượt kiểm tra khả năng nhận dữ liệu RTSP, Detector, Tracker và bộ mã hóa ảnh theo luồng RTSP $\rightarrow$ Detector $\rightarrow$ Tracker $\rightarrow$ bộ mã hóa ảnh. Kết quả được hiển thị theo từng thành phần. \\ \cline{2-2}
+ & \textbf{A2 -- Kiểm tra nhóm tìm kiếm:} Quản trị viên không cần lựa chọn camera. Hệ thống kiểm tra khả năng tải và thực thi của bộ mã hóa ảnh và bộ mã hóa văn bản bằng dữ liệu kiểm tra phù hợp, sau đó hiển thị trạng thái của từng bộ mã hóa. \\ \hline
+\end{longtable}
+
+\begin{longtable}{|>{\raggedright\arraybackslash}p{2.9cm}|p{12.3cm}|}
+\caption{Đặc tả use case UC-08: Xem nhật ký hệ thống}\label{tab:uc08}\\
+\hline
+\endfirsthead
+\multicolumn{2}{l}{\textit{(tiếp theo Bảng~\ref{tab:uc08})}}\\
+\hline
+\endhead
+\textbf{Tác nhân} & Quản trị viên \\ \hline
+\textbf{Mục đích} & Cho phép Quản trị viên xem và tra cứu nhật ký hệ thống của các thao tác quản trị và sự kiện kỹ thuật quan trọng trong hệ thống để phục vụ kiểm tra, truy vết và bảo trì. \\ \hline
+\textbf{Tiền điều kiện} & Quản trị viên đã đăng nhập vào hệ thống và có quyền xem nhật ký hệ thống; hệ thống đã ghi nhận dữ liệu nhật ký. \\ \hline
+\textbf{Hậu điều kiện} & Quản trị viên xem được các bản ghi nhật ký phù hợp với điều kiện tra cứu; không làm thay đổi dữ liệu hoặc trạng thái vận hành của hệ thống. \\ \hline
+\textbf{Luồng chính} & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{1.}Quản trị viên truy cập chức năng xem nhật ký hệ thống. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{2.}Hệ thống hiển thị danh sách các bản ghi nhật ký gần nhất. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{3.}Quản trị viên thiết lập các điều kiện tra cứu nếu cần, chẳng hạn khoảng thời gian, người thực hiện, hoặc loại sự kiện như đăng nhập, quản lý tài khoản, thay đổi cấu hình camera, thay đổi cấu hình AI hay lỗi hệ thống. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{4.}Quản trị viên gửi yêu cầu tra cứu. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{5.}Hệ thống kiểm tra các điều kiện tìm kiếm. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{6.}Hệ thống truy xuất các bản ghi nhật ký phù hợp. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{7.}Hệ thống hiển thị danh sách kết quả theo thứ tự thời gian. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{8.}Quản trị viên lựa chọn một bản ghi để xem thông tin chi tiết khi cần. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{9.}Hệ thống hiển thị nội dung chi tiết của bản ghi được lựa chọn. \\ \hline
+\textbf{Ngoại lệ} & \textbf{E1 -- Không có dữ liệu phù hợp:} Nếu không có bản ghi nào thỏa mãn điều kiện tra cứu, hệ thống thông báo không tìm thấy dữ liệu. \\ \cline{2-2}
+ & \textbf{E2 -- Điều kiện tra cứu không hợp lệ:} Nếu khoảng thời gian hoặc tham số lọc không hợp lệ, hệ thống yêu cầu Quản trị viên điều chỉnh lại điều kiện. \\ \cline{2-2}
+ & \textbf{E3 -- Không thể truy xuất nhật ký:} Nếu hệ thống không thể đọc dữ liệu nhật ký tại thời điểm tra cứu, hệ thống thông báo thao tác không thành công. \\ \cline{2-2}
+ & \textbf{E4 -- Lỗi hệ thống:} Nếu xảy ra lỗi trong quá trình tải hoặc hiển thị dữ liệu, hệ thống thông báo cho Quản trị viên và không làm thay đổi dữ liệu nhật ký hiện có. \\ \hline
+\textbf{Luồng thay thế} & Không có. \\ \hline
+\end{longtable}
+
+\begin{longtable}{|>{\raggedright\arraybackslash}p{2.9cm}|p{12.3cm}|}
+\caption{Đặc tả use case UC-09: Tìm kiếm người bằng AI}\label{tab:uc09}\\
+\hline
+\endfirsthead
+\multicolumn{2}{l}{\textit{(tiếp theo Bảng~\ref{tab:uc09})}}\\
+\hline
+\endhead
+\textbf{Tác nhân} & Giám sát viên \\ \hline
+\textbf{Mục đích} & Cho phép Giám sát viên tìm kiếm một người xuất hiện trong dữ liệu đã được hệ thống AI phân tích bằng ba phương thức tương tác: ảnh chứa người do Giám sát viên cung cấp, mô tả bằng văn bản hoặc bộ lọc thuộc tính ngoại hình. Phạm vi tìm kiếm được hệ thống tự động giới hạn theo \textbf{khu vực giám sát} đã được gán cho tài khoản Giám sát viên; Giám sát viên chỉ có thể lọc thêm theo các camera thuộc khu vực giám sát đó và khoảng thời gian. \\ \hline
+\textbf{Tiền điều kiện} & Giám sát viên đã đăng nhập vào hệ thống và có quyền sử dụng chức năng tìm kiếm; tài khoản Giám sát viên đã được Quản trị viên gán đúng một khu vực giám sát; hệ thống đã có dữ liệu người được phân tích từ ít nhất một camera thuộc khu vực giám sát được gán cho Giám sát viên; các thành phần AI cần thiết cho phương thức tìm kiếm đang ở trạng thái khả dụng. \\ \hline
+\textbf{Hậu điều kiện} & Hệ thống trả về tối đa số lượng kết quả Giám sát viên chọn (top-$k$) có mức phù hợp cao nhất trong phạm vi tìm kiếm hợp lệ, sắp xếp theo điểm phù hợp để Giám sát viên tự quan sát và đánh giá. \\ \hline
+\textbf{Luồng chính} & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{1.}Giám sát viên truy cập chức năng tìm kiếm người. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{2.}Hệ thống hiển thị giao diện tìm kiếm và các phương thức tìm kiếm được hỗ trợ. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{3.}Giám sát viên lựa chọn một phương thức tìm kiếm và cung cấp thông tin về người cần tìm. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{4.}Hệ thống tự động giới hạn phạm vi tìm kiếm theo khu vực đã gán cho tài khoản; Giám sát viên có thể tiếp tục lọc theo camera thuộc khu vực giám sát đó hoặc khoảng thời gian nếu cần. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{5.}Giám sát viên chọn số lượng kết quả muốn hiển thị (top-$k$) trong các mốc 4, 8, 12 hoặc 16 và gửi yêu cầu tìm kiếm. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{6.}Hệ thống kiểm tra tính hợp lệ của dữ liệu truy vấn và số lượng kết quả. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{7.}Hệ thống xử lý truy vấn bằng bộ mã hóa ảnh đối với tìm kiếm bằng ảnh hoặc bộ mã hóa văn bản đối với tìm kiếm bằng văn bản và tìm kiếm thông qua bộ lọc thuộc tính. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{8.}Hệ thống so sánh truy vấn với dữ liệu người đã được phân tích và lưu trữ. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{9.}Hệ thống tính toán điểm phù hợp giữa truy vấn và các dữ liệu trong phạm vi tìm kiếm. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{10.}Hệ thống sắp xếp kết quả theo điểm phù hợp từ cao xuống thấp. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{11.}Hệ thống lấy tối đa số lượng kết quả đã chọn có điểm phù hợp cao nhất trong phạm vi hợp lệ. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{12.}Hệ thống hiển thị ảnh người cho từng kết quả, cùng thông tin camera, khu vực, thời gian và điểm phù hợp để Giám sát viên quan sát và đánh giá. \\ \hline
+\textbf{Ngoại lệ} & \textbf{E1 -- Dữ liệu truy vấn không hợp lệ:} Nếu ảnh, văn bản hoặc thuộc tính được cung cấp không hợp lệ, hệ thống thông báo và yêu cầu Giám sát viên điều chỉnh dữ liệu đầu vào. Truy vấn văn bản không phải tiếng Anh là đầu vào không được hỗ trợ. \\ \cline{2-2}
+ & \textbf{E2 -- Không có dữ liệu trong phạm vi tìm kiếm:} Nếu không có dữ liệu đã được phân tích trong camera được chọn hoặc khoảng thời gian được lựa chọn trong khu vực của Giám sát viên, hệ thống thông báo không có dữ liệu phù hợp để thực hiện tìm kiếm. \\ \cline{2-2}
+ & \textbf{E3 -- Mô hình AI cần thiết không khả dụng:} Nếu bộ mã hóa ảnh, bộ mã hóa văn bản hoặc thành phần liên quan đến phương thức tìm kiếm không hoạt động, hệ thống thông báo không thể thực hiện truy vấn tại thời điểm hiện tại. \\ \cline{2-2}
+ & \textbf{E4 -- Không có dữ liệu có thể truy vấn:} Nếu phạm vi tìm kiếm hợp lệ nhưng không có vector đặc trưng khả dụng để thực hiện so sánh, hệ thống thông báo không có dữ liệu để trả kết quả. \\ \cline{2-2}
+ & \textbf{E5 -- Lỗi xử lý truy vấn:} Nếu xảy ra lỗi trong quá trình tạo đặc trưng, truy vấn dữ liệu hoặc xếp hạng kết quả, hệ thống thông báo tìm kiếm không thành công. \\ \cline{2-2}
+ & \textbf{E6 -- Yêu cầu ngoài phạm vi khu vực:} Nếu yêu cầu gửi trực tiếp chứa camera không thuộc khu vực giám sát đã gán cho Giám sát viên, máy chủ từ chối truy vấn ngoài quyền và không trả về dữ liệu ngoài khu vực. \\ \cline{2-2}
+ & \textbf{E7 -- Số lượng kết quả không hợp lệ:} Nếu số lượng kết quả không thuộc tập $\{4, 8, 12, 16\}$, máy chủ từ chối yêu cầu và yêu cầu Giám sát viên chọn lại. \\ \hline
+\textbf{Luồng thay thế} & \textbf{A1 -- Tìm kiếm bằng hình ảnh:} Giám sát viên chọn phương thức tìm kiếm bằng hình ảnh và đưa vào ảnh chứa người cần tìm (chọn tệp, kéo thả tệp, dán ảnh, hoặc kéo một kết quả tìm kiếm vào để tìm tiếp bằng người đó). Hệ thống kiểm tra ảnh đầu vào, sử dụng bộ mã hóa ảnh để trích xuất đặc trưng hình ảnh và sử dụng đặc trưng này làm truy vấn tìm kiếm. \\ \cline{2-2}
+ & \textbf{A2 -- Tìm kiếm bằng mô tả văn bản:} Giám sát viên chọn phương thức tìm kiếm bằng văn bản và nhập câu hoặc đoạn mô tả bằng tiếng Anh, ví dụ “a person wearing a red shirt, black pants, and a backpack”. Hệ thống sử dụng bộ mã hóa văn bản để mã hóa nội dung mô tả và sử dụng biểu diễn thu được làm truy vấn tìm kiếm. \\ \cline{2-2}
+ & \textbf{A3 -- Tìm kiếm theo thuộc tính:} Giám sát viên chọn phương thức tìm kiếm theo thuộc tính; tên nhóm thuộc tính hiển thị bằng tiếng Việt, các giá trị lựa chọn bằng tiếng Anh. Hệ thống chuyển các thuộc tính đã lựa chọn thành một câu mô tả tiếng Anh có cấu trúc. Câu mô tả này được đưa vào bộ mã hóa văn bản để tạo biểu diễn truy vấn và thực hiện tìm kiếm tương tự phương thức tìm kiếm bằng mô tả văn bản. \\ \hline
+\end{longtable}
+
+\begin{longtable}{|>{\raggedright\arraybackslash}p{2.9cm}|p{12.3cm}|}
+\caption{Đặc tả use case UC-10: Xem và đánh giá kết quả tìm kiếm}\label{tab:uc10}\\
+\hline
+\endfirsthead
+\multicolumn{2}{l}{\textit{(tiếp theo Bảng~\ref{tab:uc10})}}\\
+\hline
+\endhead
+\textbf{Tác nhân} & Giám sát viên \\ \hline
+\textbf{Mục đích} & Cho phép Giám sát viên xem chi tiết các kết quả do hệ thống trả về sau khi tìm kiếm người bằng AI, đánh giá mức độ phù hợp của từng kết quả và xác định các kết quả liên quan đến người cần tìm. \\ \hline
+\textbf{Tiền điều kiện} & Giám sát viên đã đăng nhập vào hệ thống; Giám sát viên đã thực hiện UC-09 -- Tìm kiếm người bằng AI và hệ thống đã trả về ít nhất một kết quả tìm kiếm. \\ \hline
+\textbf{Hậu điều kiện} & Giám sát viên đã xem và đánh giá kết quả; đối với kết quả muốn lưu lại, Giám sát viên có thể tạo vụ việc mới hoặc thêm kết quả vào một vụ việc đã có. Dữ liệu kết quả gốc không bị thay đổi. \\ \hline
+\textbf{Luồng chính} & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{1.}Hệ thống hiển thị danh sách kết quả sau khi hoàn tất tìm kiếm. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{2.}Giám sát viên xem các thông tin tổng quan của từng kết quả, bao gồm ảnh người, camera phát hiện, khu vực, thời gian xuất hiện và điểm phù hợp. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{3.}Giám sát viên bấm vào ảnh người của một kết quả cần xem chi tiết. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{4.}Hệ thống hiển thị khung hình toàn cảnh đại diện của kết quả và vẽ khung bao của người trên khung hình, cùng các thông tin chi tiết của kết quả. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{5.}Giám sát viên đối chiếu ảnh và các thông tin của kết quả với tiêu chí tìm kiếm ban đầu. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{6.}Giám sát viên đánh giá kết quả có phù hợp với người cần tìm hay không. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{7.}Giám sát viên có thể tiếp tục xem các kết quả khác trong danh sách để so sánh. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{8.}Giám sát viên xác định một hoặc nhiều kết quả phù hợp để sử dụng cho bước xử lý tiếp theo. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{9.}Với một kết quả muốn lưu, Giám sát viên lựa chọn \textbf{Tạo vụ việc mới} hoặc \textbf{Thêm vào vụ việc đã có}. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{10.}Hệ thống chuyển sang luồng tương ứng của UC-11 -- Quản lý hồ sơ vụ việc. \\ \hline
+\textbf{Ngoại lệ} & \textbf{E1 -- Kết quả không còn khả dụng:} Nếu dữ liệu của một kết quả không thể truy xuất hoặc đã bị loại bỏ theo chính sách lưu trữ, hệ thống thông báo kết quả không còn khả dụng. \\ \cline{2-2}
+ & \textbf{E2 -- Không hiển thị được ảnh kết quả:} Nếu hình ảnh của kết quả không còn khả dụng, hệ thống vẫn hiển thị các thông tin mô tả còn lại và thông báo không hiển thị được ảnh người. \\ \cline{2-2}
+ & \textbf{E3 -- Lỗi tải dữ liệu:} Nếu xảy ra lỗi khi truy xuất thông tin chi tiết của kết quả, hệ thống thông báo và cho phép Giám sát viên thử lại. \\ \hline
+\textbf{Luồng thay thế} & \textbf{A1 -- Sắp xếp kết quả:} Giám sát viên thay đổi cách sắp xếp danh sách theo điểm phù hợp hoặc thời gian xuất hiện để thuận tiện cho việc đánh giá. \\ \cline{2-2}
+ & \textbf{A2 -- Lọc lại danh sách kết quả:} Giám sát viên áp dụng thêm các điều kiện lọc trên tập kết quả hiện tại, chẳng hạn camera hoặc khoảng thời gian, để thu hẹp danh sách cần xem. \\ \hline
+\end{longtable}
+
+\begin{longtable}{|>{\raggedright\arraybackslash}p{2.9cm}|p{12.3cm}|}
+\caption{Đặc tả use case UC-11: Quản lý hồ sơ vụ việc}\label{tab:uc11}\\
+\hline
+\endfirsthead
+\multicolumn{2}{l}{\textit{(tiếp theo Bảng~\ref{tab:uc11})}}\\
+\hline
+\endhead
+\textbf{Tác nhân} & Giám sát viên \\ \hline
+\textbf{Mục đích} & Cho phép Giám sát viên tạo và quản lý các vụ việc do chính mình phụ trách để lưu các kết quả tìm kiếm liên quan đến một sự việc, kèm theo tiêu đề và ghi chú, và theo dõi trạng thái xử lý (Đang xử lý/Hoàn thành) của vụ việc. \\ \hline
+\textbf{Tiền điều kiện} & Giám sát viên đã đăng nhập. Đối với thao tác thêm kết quả, kết quả phải là dữ liệu mà Giám sát viên có quyền truy cập từ chức năng tìm kiếm. \\ \hline
+\textbf{Hậu điều kiện} & Vụ việc được tạo hoặc cập nhật, có đúng một Giám sát viên phụ trách và gồm các nội dung nghiệp vụ chính: \textbf{tiêu đề}, \textbf{ghi chú}, \textbf{trạng thái} và \textbf{các kết quả tìm kiếm đã lưu}. \\ \hline
+\textbf{Luồng chính} & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{1.}Giám sát viên thực hiện tìm kiếm và chọn một kết quả muốn lưu. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{2.}Hệ thống cung cấp hai lựa chọn: \textbf{Tạo vụ việc mới} hoặc \textbf{Thêm vào vụ việc đã có}. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{3.}Nếu Giám sát viên chọn \textbf{Tạo vụ việc mới}, hệ thống yêu cầu nhập tiêu đề và ghi chú; kết quả đang chọn được đưa vào vụ việc mới; hệ thống tự động lấy Giám sát viên đang đăng nhập làm người phụ trách vụ việc, không yêu cầu chọn người phụ trách. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{4.}Nếu Giám sát viên chọn \textbf{Thêm vào vụ việc đã có}, hệ thống chỉ hiển thị các vụ việc \textbf{đang xử lý} do chính Giám sát viên hiện tại phụ trách. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{5.}Giám sát viên chọn một vụ việc; hệ thống thêm kết quả tìm kiếm đang chọn vào vụ việc đó. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{6.}Giám sát viên có thể tiếp tục thêm các kết quả tìm kiếm khác vào vụ việc trong các lần tìm kiếm tiếp theo. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{7.}Giám sát viên có thể cập nhật tiêu đề hoặc ghi chú của vụ việc. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{8.}Khi xử lý xong, Giám sát viên đánh dấu vụ việc \textbf{Hoàn thành}. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{9.}Hệ thống lưu thay đổi. \\ \hline
+\textbf{Ngoại lệ} & \textbf{E1 -- Kết quả không còn khả dụng:} Nếu kết quả được chọn không thể truy xuất tại thời điểm lưu vào vụ việc, hệ thống thông báo và không thêm kết quả đó. \\ \cline{2-2}
+ & \textbf{E2 -- Kết quả ngoài quyền truy cập:} Nếu yêu cầu gửi trực tiếp cố thêm một kết quả mà Giám sát viên không có quyền truy cập, hệ thống từ chối thao tác. \\ \cline{2-2}
+ & \textbf{E3 -- Vụ việc không còn khả dụng:} Nếu vụ việc được chọn không thể truy xuất tại thời điểm thêm kết quả hoặc cập nhật, hệ thống thông báo và tải lại danh sách các vụ việc do Giám sát viên hiện tại phụ trách. \\ \cline{2-2}
+ & \textbf{E4 -- Lỗi lưu dữ liệu:} Nếu xảy ra lỗi khi tạo hoặc cập nhật vụ việc, hệ thống thông báo thao tác không thành công và không ghi nhận thay đổi chưa hoàn tất. \\ \cline{2-2}
+ & \textbf{E5 -- Vụ việc đã hoàn thành:} Nếu Giám sát viên thêm, loại kết quả hoặc sửa tiêu đề/ghi chú của một vụ việc đã hoàn thành, hệ thống từ chối và yêu cầu mở lại vụ việc trước. \\ \hline
+\textbf{Luồng thay thế} & \textbf{A1 -- Đánh dấu hoàn thành ngay khi lưu:} Khi tạo vụ việc mới hoặc thêm vào vụ việc đã có, nếu Giám sát viên bật tùy chọn \textbf{Đánh dấu vụ việc đã hoàn thành}, vụ việc được chuyển sang Hoàn thành ngay sau khi lưu; nếu bước này không thành công, kết quả vẫn được lưu và hệ thống thông báo để Giám sát viên đánh dấu lại. \\ \cline{2-2}
+ & \textbf{A2 -- Cập nhật vụ việc:} Giám sát viên thay đổi tiêu đề hoặc ghi chú của vụ việc và lưu lại. \\ \cline{2-2}
+ & \textbf{A3 -- Loại kết quả khỏi vụ việc:} Giám sát viên loại bỏ một kết quả tìm kiếm khỏi vụ việc. Dữ liệu kết quả gốc trong hệ thống không bị xóa. \\ \cline{2-2}
+ & \textbf{A4 -- Đánh dấu vụ việc hoàn thành:} Giám sát viên xác nhận đánh dấu vụ việc hoàn thành. Hệ thống chuyển vụ việc sang trạng thái \textbf{Hoàn thành}, ghi nhận thời điểm hoàn thành và khóa vụ việc. \\ \cline{2-2}
+ & \textbf{A5 -- Mở lại vụ việc:} Giám sát viên mở lại một vụ việc đã hoàn thành. Hệ thống chuyển vụ việc về \textbf{Đang xử lý}; Giám sát viên tiếp tục chỉnh sửa và thêm kết quả như bình thường. \\ \hline
+\end{longtable}
+
+\begin{longtable}{|>{\raggedright\arraybackslash}p{2.9cm}|p{12.3cm}|}
+\caption{Đặc tả use case UC-12: Xem thông tin tổng quan}\label{tab:uc12}\\
+\hline
+\endfirsthead
+\multicolumn{2}{l}{\textit{(tiếp theo Bảng~\ref{tab:uc12})}}\\
+\hline
+\endhead
+\textbf{Tác nhân} & Quản lý \\ \hline
+\textbf{Mục đích} & Cho phép Quản lý xem nhanh thông tin tổng quan về các vụ việc, tình trạng xử lý và kết quả đã được lưu trên toàn hệ thống mà không thực hiện thao tác tìm kiếm hoặc chỉnh sửa dữ liệu. \\ \hline
+\textbf{Tiền điều kiện} & Quản lý đã đăng nhập vào hệ thống và có quyền truy cập giao diện tổng quan. \\ \hline
+\textbf{Hậu điều kiện} & Quản lý xem được các chỉ số tổng quan và danh sách vụ việc gần đây trên toàn hệ thống; không có dữ liệu nào bị thay đổi sau khi thực hiện use case. \\ \hline
+\textbf{Luồng chính} & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{1.}Quản lý truy cập giao diện tổng quan của hệ thống. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{2.}Hệ thống tổng hợp dữ liệu vụ việc và kết quả đã lưu trên toàn hệ thống. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{3.}Hệ thống hiển thị tổng số vụ việc, số vụ việc đang xử lý và số vụ việc đã hoàn thành. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{4.}Hệ thống hiển thị tổng số kết quả tìm kiếm đã được lưu vào vụ việc. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{5.}Hệ thống hiển thị danh sách các vụ việc gần đây, bao gồm tối thiểu tiêu đề vụ việc, trạng thái, Giám sát viên phụ trách và thời gian cập nhật gần nhất. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{6.}Quản lý lựa chọn một vụ việc trong danh sách gần đây nếu muốn xem chi tiết. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{7.}Hệ thống chuyển sang UC-13 -- Xem hồ sơ vụ việc. \\ \hline
+\textbf{Ngoại lệ} & \textbf{E1 -- Chưa có dữ liệu vụ việc:} Nếu hệ thống chưa có vụ việc nào, các chỉ số được hiển thị bằng 0 và danh sách vụ việc gần đây hiển thị trạng thái không có dữ liệu. \\ \cline{2-2}
+ & \textbf{E2 -- Không thể tải dữ liệu tổng quan:} Nếu hệ thống gặp lỗi khi tổng hợp hoặc truy xuất dữ liệu, hệ thống thông báo không thể tải thông tin tại thời điểm hiện tại và không làm thay đổi dữ liệu. \\ \cline{2-2}
+ & \textbf{E3 -- Vụ việc trong danh sách gần đây không thể truy xuất:} Nếu vụ việc không thể truy xuất khi Quản lý lựa chọn, hệ thống thông báo không thể mở vụ việc tại thời điểm hiện tại và tải lại danh sách. \\ \hline
+\textbf{Luồng thay thế} & \textbf{A1 -- Làm mới dữ liệu tổng quan:} Quản lý yêu cầu làm mới; hệ thống tổng hợp lại các chỉ số và danh sách vụ việc gần đây từ dữ liệu hiện tại. \\ \hline
+\end{longtable}
+
+\begin{longtable}{|>{\raggedright\arraybackslash}p{2.9cm}|p{12.3cm}|}
+\caption{Đặc tả use case UC-13: Xem hồ sơ vụ việc}\label{tab:uc13}\\
+\hline
+\endfirsthead
+\multicolumn{2}{l}{\textit{(tiếp theo Bảng~\ref{tab:uc13})}}\\
+\hline
+\endhead
+\textbf{Tác nhân} & Quản lý \\ \hline
+\textbf{Mục đích} & Cho phép Quản lý xem các hồ sơ vụ việc đã được Giám sát viên tạo, bao gồm tiêu đề, ghi chú, trạng thái và các kết quả tìm kiếm đã được lưu trong hồ sơ. \\ \hline
+\textbf{Tiền điều kiện} & Quản lý đã đăng nhập vào hệ thống và có quyền xem hồ sơ vụ việc. \\ \hline
+\textbf{Hậu điều kiện} & Quản lý xem được thông tin chi tiết của vụ việc và các kết quả liên quan; không có dữ liệu nào bị thay đổi sau khi thực hiện use case. \\ \hline
+\textbf{Luồng chính} & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{1.}Quản lý truy cập chức năng xem hồ sơ vụ việc. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{2.}Hệ thống hiển thị danh sách các vụ việc hiện có trong hệ thống. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{3.}Quản lý lựa chọn một vụ việc cần xem. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{4.}Hệ thống hiển thị thông tin chi tiết của vụ việc, bao gồm tiêu đề, ghi chú, trạng thái, Giám sát viên phụ trách và thời gian tạo. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{5.}Hệ thống hiển thị danh sách các kết quả tìm kiếm đã được lưu trong vụ việc. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{6.}Quản lý xem nội dung vụ việc và các kết quả liên quan. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{7.}Quản lý có thể lựa chọn một kết quả để xem chi tiết; hệ thống chuyển sang UC-14 -- Xem thông tin kết quả tìm kiếm đã lưu. \\ \hline
+\textbf{Ngoại lệ} & \textbf{E1 -- Không có vụ việc khả dụng:} Nếu hệ thống chưa có vụ việc nào, hệ thống hiển thị trạng thái không có dữ liệu. \\ \cline{2-2}
+ & \textbf{E2 -- Vụ việc không thể truy xuất:} Nếu vụ việc không thể truy xuất tại thời điểm yêu cầu, hệ thống thông báo không thể hiển thị hồ sơ. \\ \cline{2-2}
+ & \textbf{E3 -- Không thể tải dữ liệu vụ việc:} Nếu xảy ra lỗi khi truy xuất thông tin vụ việc hoặc danh sách kết quả liên quan, hệ thống thông báo cho Quản lý và cho phép thử lại. \\ \cline{2-2}
+ & \textbf{E4 -- Một số kết quả trong vụ việc không còn khả dụng:} Hệ thống vẫn hiển thị vụ việc và các dữ liệu còn lại, đồng thời đánh dấu những kết quả không thể truy xuất. \\ \hline
+\textbf{Luồng thay thế} & \textbf{A1 -- Xem vụ việc từ màn hình tổng quan:} Quản lý lựa chọn một vụ việc được hiển thị trong UC-12 -- Xem thông tin tổng quan; hệ thống mở trực tiếp nội dung chi tiết của vụ việc. \\ \cline{2-2}
+ & \textbf{A2 -- Lọc danh sách vụ việc:} Quản lý lọc danh sách vụ việc theo trạng thái, khoảng thời gian hoặc Giám sát viên phụ trách để dễ tra cứu. \\ \hline
+\end{longtable}
+
+\begin{longtable}{|>{\raggedright\arraybackslash}p{2.9cm}|p{12.3cm}|}
+\caption{Đặc tả use case UC-14: Xem thông tin kết quả tìm kiếm đã lưu}\label{tab:uc14}\\
+\hline
+\endfirsthead
+\multicolumn{2}{l}{\textit{(tiếp theo Bảng~\ref{tab:uc14})}}\\
+\hline
+\endhead
+\textbf{Tác nhân} & Quản lý \\ \hline
+\textbf{Mục đích} & Cho phép Quản lý xem chi tiết các kết quả tìm kiếm đã được Giám sát viên lựa chọn và lưu vào vụ việc, bao gồm ảnh người, camera phát hiện, khu vực và thời gian xuất hiện. \\ \hline
+\textbf{Tiền điều kiện} & Quản lý đã đăng nhập vào hệ thống; kết quả tìm kiếm đã được Giám sát viên lưu vào một vụ việc. \\ \hline
+\textbf{Hậu điều kiện} & Quản lý xem được thông tin chi tiết của kết quả tìm kiếm đã lưu; dữ liệu kết quả không bị thay đổi sau khi thực hiện use case. \\ \hline
+\textbf{Luồng chính} & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{1.}Quản lý mở một vụ việc trong UC-13 -- Xem hồ sơ vụ việc. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{2.}Hệ thống hiển thị danh sách các kết quả tìm kiếm đã được lưu trong vụ việc. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{3.}Quản lý lựa chọn một kết quả cần xem chi tiết. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{4.}Hệ thống truy xuất thông tin chi tiết của kết quả được lựa chọn. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{5.}Hệ thống hiển thị ảnh người, tên camera, khu vực và thời gian phát hiện; không hiển thị điểm phù hợp. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{6.}Khi Quản lý bấm vào ảnh người, hệ thống hiển thị khung hình toàn cảnh và vẽ khung bao của người trên khung hình; Quản lý xem thông tin chi tiết của kết quả. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{7.}Quản lý có thể quay lại vụ việc để tiếp tục xem các kết quả khác. \\ \hline
+\textbf{Ngoại lệ} & \textbf{E1 -- Kết quả không còn khả dụng:} Nếu kết quả đã bị loại bỏ hoặc dữ liệu tương ứng không còn tồn tại, hệ thống thông báo không thể hiển thị kết quả. \\ \cline{2-2}
+ & \textbf{E2 -- Không hiển thị được ảnh người:} Nếu hình ảnh của kết quả không còn khả dụng, hệ thống vẫn hiển thị các thông tin mô tả còn lại và thông báo không hiển thị được ảnh người. \\ \cline{2-2}
+ & \textbf{E3 -- Lỗi tải dữ liệu:} Nếu xảy ra lỗi khi truy xuất thông tin kết quả, hệ thống thông báo và cho phép Quản lý thử lại. \\ \hline
+\textbf{Luồng thay thế} & \textbf{A1 -- Chuyển sang kết quả tiếp theo:} Quản lý lựa chọn kết quả kế tiếp trong cùng vụ việc; hệ thống tải và hiển thị thông tin chi tiết tương ứng. \\ \hline
+\end{longtable}
+
+\begin{longtable}{|>{\raggedright\arraybackslash}p{2.9cm}|p{12.3cm}|}
+\caption{Đặc tả use case UC-15: Đăng xuất hệ thống}\label{tab:uc15}\\
+\hline
+\endfirsthead
+\multicolumn{2}{l}{\textit{(tiếp theo Bảng~\ref{tab:uc15})}}\\
+\hline
+\endhead
+\textbf{Tác nhân} & Quản trị viên, Giám sát viên, Quản lý \\ \hline
+\textbf{Mục đích} & Cho phép người dùng kết thúc phiên làm việc hiện tại và rời khỏi hệ thống một cách an toàn. \\ \hline
+\textbf{Tiền điều kiện} & Người dùng đã đăng nhập vào hệ thống và đang có phiên làm việc hợp lệ. \\ \hline
+\textbf{Hậu điều kiện} & Phiên đăng nhập hiện tại của người dùng bị hủy hoặc vô hiệu hóa; người dùng không thể tiếp tục truy cập các chức năng yêu cầu xác thực bằng phiên đăng nhập cũ. \\ \hline
+\textbf{Luồng chính} & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{1.}Người dùng lựa chọn chức năng đăng xuất. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{2.}Hệ thống tiếp nhận yêu cầu đăng xuất. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{3.}Hệ thống xác định phiên đăng nhập hiện tại của người dùng. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{4.}Hệ thống hủy hoặc vô hiệu hóa phiên đăng nhập. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{5.}Hệ thống chuyển người dùng về màn hình đăng nhập. \\ 
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{6.}Hệ thống thông báo đăng xuất thành công nếu cần. \\ \hline
+\textbf{Ngoại lệ} & \textbf{E1 -- Phiên đăng nhập đã hết hạn:} Nếu phiên làm việc đã hết hạn trước khi người dùng thực hiện đăng xuất, hệ thống chuyển trực tiếp người dùng về màn hình đăng nhập. \\ \cline{2-2}
+ & \textbf{E2 -- Không thể hủy phiên đăng nhập:} Nếu xảy ra lỗi trong quá trình vô hiệu hóa phiên ở phía máy chủ, hệ thống vẫn đưa người dùng về màn hình đăng nhập và yêu cầu đăng nhập lại khi truy cập hệ thống. \\ \cline{2-2}
+ & \textbf{E3 -- Lỗi hệ thống:} Nếu xảy ra lỗi trong quá trình xử lý yêu cầu đăng xuất, hệ thống đảm bảo người dùng không tiếp tục sử dụng phiên cũ nếu cơ chế xác thực cho phép. \\ \hline
+\textbf{Luồng thay thế} & \textbf{A1 -- Tự động đăng xuất do hết phiên:} Khi phiên đăng nhập hết thời hạn, hệ thống tự động kết thúc phiên và chuyển người dùng về màn hình đăng nhập mà không cần thao tác đăng xuất thủ công. \\ \hline
+\end{longtable}
+

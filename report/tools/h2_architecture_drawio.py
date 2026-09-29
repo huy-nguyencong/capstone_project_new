@@ -67,37 +67,44 @@ RTSP = DATA + 'strokeWidth=3;'
 SEARCH = 'strokeColor=#1F4E9A;fontColor=#1F4E9A;'
 
 # --- Cột trái: nguồn camera ---
-v('A', 'Nguồn dữ liệu camera', FRAME, 0, 0, 470, 230)
-v('A1', '7 tệp video<br>WILDTRACK', MDOC, 15, 75, 135, 90)
-v('A2', 'FFmpeg +<br>MediaMTX', PROC, 185, 80, 135, 80)
-v('A3', '7 camera logic', ICON_T + CAMERA + ';', 395, 90, 70, 53)
+# 2026-09-29: cột phải dời sang phải 70 px (khe giữa hai cột 130 px) để nhãn của các đường nối
+# giữa máy chủ và tiến trình nền không đè lên khung; nhãn vòng lặp viết dọc.
+v('A', 'Nguồn dữ liệu camera', FRAME, 0, 0, 530, 230)
+v('A1', '7 tệp video<br>WILDTRACK', MDOC, 12, 70, 162, 100)
+v('A2', 'FFmpeg +<br>MediaMTX', PROC, 214, 80, 124, 80)
+v('A3', '7 camera<br>logic', ICON_T + CAMERA + ';', 425, 110, 70, 53)
 # --- Cột trái: xử lý nền ---
-v('B', 'Tiến trình xử lý nền (AI worker)', FRAME, 0, 270, 470, 690)
-v('B1', 'Bộ lập lịch phiên RTSP<br>(xoay vòng camera)', PROC, 15, 320, 185, 76)
-v('B2', 'Hàng đợi công việc<br>(trong PostgreSQL)', QUEUE, 210, 320, 205, 76)
-v('B3', 'Lấy mẫu khung hình (1/N)', PROC, 110, 445, 250, 56)
-v('B4', 'Phát hiện người<br>YOLO11n', ICON_R + BRAIN + ';', 205, 535, 60, 60)
-v('B5', 'Theo vết<br>ByteTrack / BoT-SORT', ICON_R + BRAIN + ';', 205, 630, 60, 60)
-v('B6', 'Chọn khung hình đại diện', PROC, 110, 725, 250, 56)
-v('B7', 'Mã hóa ảnh<br>RaSa', ICON_R + BRAIN + ';', 205, 815, 60, 60)
-v('B8', 'Ghi dữ liệu lần xuất hiện<br>(PENDING → READY)', PROC, 110, 895, 250, 56)
+# 2026-09-29 (góp ý GVHD): khung hình không đi thẳng xuống bước ghi; mỗi khung hình được lấy mẫu,
+# phát hiện, theo vết rồi cập nhật BỘ ĐỆM TRACK (SV bỏ mũi tên vòng lặp, thay bằng nhãn 'từng khung hình'). Chỉ khi hết phiên
+# RTSP (1.800 khung hình nguồn) hoặc hết tệp, các track mới được cắt ảnh, mã hóa và ghi (production.py).
+v('B', 'Tiến trình xử lý nền (AI worker)', FRAME, 0, 270, 530, 815)
+v('B1', 'Bộ lập lịch phiên RTSP<br>(xoay vòng camera)', PROC, 12, 320, 172, 76)
+v('B2', 'Hàng đợi công việc<br>(trong PostgreSQL)', QUEUE + 'spacingRight=30;', 224, 320, 218, 76)
+v('B3', 'Lấy mẫu khung hình (1/N)', PROC, 45, 440, 230, 56)
+v('B4', 'Phát hiện người<br>YOLO11n', ICON_R + BRAIN + ';', 130, 545, 60, 60)
+v('B5', 'Theo vết<br>ByteTrack / BoT-SORT', ICON_R + BRAIN + ';', 130, 645, 60, 60)
+v('BF', '<b>Bộ đệm track</b><br>track đang theo vết,<br>ứng viên khung hình đại diện', PROC, 35, 758, 250, 96)
+v('B7', 'Mã hóa ảnh<br>RaSa', ICON_R + BRAIN + ';', 130, 925, 60, 60)
+v('B8', 'Ghi dữ liệu lần xuất hiện<br>(PENDING → READY)', PROC, 45, 1015, 230, 56)
 # --- Cột phải: người dùng ---
-v('D', 'Người dùng', FRAME, 530, 0, 470, 230)
-v('D2a', 'Quản trị viên', ACT, 575, 40, 30, 56)
-v('D2b', 'Giám sát viên', ACT, 700, 40, 30, 56)
-v('D2c', 'Quản lý', ACT, 820, 40, 30, 56)
-v('D1', 'Ứng dụng web (React)', COMP, 560, 150, 250, 56)
-v('A4', 'Tệp video tải lên', DOC, 840, 140, 140, 70)
+v('D', 'Người dùng', FRAME, 660, 0, 470, 230)
+v('D2a', 'Quản trị viên', ACT, 705, 40, 30, 56)
+v('D2b', 'Giám sát viên', ACT, 830, 40, 30, 56)
+v('D2c', 'Quản lý', ACT, 950, 40, 30, 56)
+v('D1', 'Ứng dụng web (React)', COMP, 690, 150, 250, 56)
+v('A4', 'Tệp video tải lên', DOC, 970, 135, 140, 80)
 # --- Cột phải: máy chủ ứng dụng (container = ranh giới tiến trình) ---
-v('C1', 'Máy chủ ứng dụng (Flask API)', CONT, 530, 300, 470, 600)
-v('C1t', '<i>xác thực, phân quyền, tìm kiếm,<br>vụ việc, quản trị</i>', 'text;html=1;align=center;verticalAlign=middle;', 545, 345, 440, 60)
-v('C3', 'Tạo câu mô tả<br>từ thuộc tính', PROC, 560, 470, 190, 76)
-v('C2', 'Mã hóa truy vấn<br>RaSa ảnh / văn bản', ICON_L + BRAIN + ';', 845, 620, 60, 60)
+v('C1', 'Máy chủ ứng dụng (Flask API)', CONT, 660, 300, 470, 700)
+v('C1t', '<i>xác thực, phân quyền, tìm kiếm,<br>vụ việc, quản trị</i>', 'text;html=1;align=center;verticalAlign=middle;', 675, 345, 440, 60)
+# 2026-09-29: truy vấn đi qua bước kiểm tra và xác định phạm vi (5.2.3), rồi tách: thuộc tính -> tạo câu, ảnh/câu mô tả -> bộ mã hóa.
+v('Q', 'Kiểm tra truy vấn,<br>xác định phạm vi', PROC, 690, 425, 240, 70)
+v('C3', 'Tạo câu mô tả<br>từ thuộc tính', PROC, 690, 560, 190, 76)
+v('C2', 'Mã hóa truy vấn<br>RaSa ảnh / văn bản', ICON_L + BRAIN + ';', 975, 740, 60, 60)
 # --- Tầng lưu trữ ---
-v('S', 'Tầng lưu trữ', FRAME, 0, 1030, 1000, 200)
-v('S1', '<b>PostgreSQL</b><br>tài khoản, camera, lần xuất hiện,<br>vụ việc, nhật ký, hàng đợi', DB, 20, 1075, 290, 135)
-v('S2', '<b>Milvus</b> (vector)<br>vector 256 chiều + khu vực,<br>camera, thời gian', DB, 350, 1075, 290, 135)
-v('S3', '<b>MinIO</b><br>khung hình đại diện<br>(bucket riêng tư)', ICON_R + BUCKET + ';', 700, 1100, 80, 80)
+v('S', 'Tầng lưu trữ', FRAME, 0, 1150, 1130, 200)
+v('S1', '<b>PostgreSQL</b><br>tài khoản, camera, lần xuất hiện,<br>vụ việc, nhật ký, hàng đợi', DB, 20, 1195, 290, 135)
+v('S2', '<b>Milvus</b> (vector)<br>vector 256 chiều + khu vực,<br>camera, thời gian', DB, 390, 1195, 290, 135)
+v('S3', '<b>MinIO</b><br>khung hình đại diện<br>(bucket riêng tư)', ICON_R + BUCKET + ';', 820, 1220, 80, 80)
 
 n = 0
 
@@ -113,41 +120,34 @@ BOTH = 'startArrow=block;startFill=1;'
 # Lập chỉ mục (đen)
 e(nid(), 'A1', 'A2', DATA + E.format(1, .5, 0, .5))
 e(nid(), 'A2', 'A3', RTSP + E.format(1, .5, 0, .5), 'RTSP')
-e(nid(), 'A3', 'B3', RTSP + E.format(.5, 1, 1, .5), '', [(430, 473)])
+e(nid(), 'A3', 'B3', RTSP + E.format(.5, 1, 1, .3), '', [(460, 457)])
 e(nid(), 'B1', 'B2', CTRL + E.format(1, .5, 0, .5))
-e(nid(), 'B2', 'B3', CTRL + E.format(.5, 1, .5, 0), 'công việc kế tiếp', [(320, 425), (235, 425)])
-e(nid(), 'B3', 'B4', DATA + E.format(.5, 1, .5, 0), 'khung hình đã lấy mẫu')
+e(nid(), 'B2', 'B3', CTRL + E.format(.5, 1, .5, 0), 'công việc kế tiếp', [(333, 420), (160, 420)])
+e(nid(), 'B3', 'B4', DATA + E.format(.5, 1, .5, 0), 'từng khung hình đã lấy mẫu')
 e(nid(), 'B4', 'B5', DATA + E.format(.5, 1, .5, 0), 'khung bao người')
-e(nid(), 'B5', 'B6', DATA + E.format(.5, 1, .5, 0), 'lần xuất hiện đã kết thúc')
-e(nid(), 'B6', 'B7', DATA + E.format(.5, 1, .5, 0), 'ảnh người (cắt tạm)')
+e(nid(), 'B5', 'BF', DATA + E.format(.5, 1, .5, 0), 'cập nhật track')
+e(nid(), 'BF', 'B7', DATA + E.format(.5, 1, .5, 0), 'hết phiên hoặc hết tệp:<br>ảnh người (cắt tạm)')
 e(nid(), 'B7', 'B8', DATA + E.format(.5, 1, .5, 0), 'vector đặc trưng')
-e(nid(), 'B8', 'S1', DATA + E.format(.2, 1, .5, 0), '', [(160, 1000)])
-e(nid(), 'B8', 'S2', DATA + E.format(.5, 1, .3, 0), '', [(235, 990), (437, 990)])
-e(nid(), 'B8', 'S3', DATA + E.format(.8, 1, .5, 0), '', [(310, 980), (740, 980)])
-# Công việc từ tệp tải lên
-e(nid(), 'C1', 'B2', CTRL + E.format(0, .3, 1, .5), 'tạo công việc<br>(tệp tải lên)', [(495, 480), (495, 358)])
+e(nid(), 'B8', 'S1', DATA + E.format(.2, 1, .5, 0), '', [(91, 1108), (165, 1108)])
+e(nid(), 'B8', 'S2', DATA + E.format(.5, 1, .3, 0), '', [(160, 1100), (477, 1100)])
+e(nid(), 'B8', 'S3', DATA + E.format(.8, 1, .5, 0), '', [(229, 1092), (860, 1092)])
+# Tệp tải lên: máy chủ lưu tạm trên ổ đĩa (video_staging.py), tiến trình nền đọc tệp đó
+e(nid(), 'C1', 'B2', CTRL + E.format(0, .257, 1, .5), 'tạo công việc<br>(tệp tải lên)', [(595, 480), (595, 358)])
+e(nid(), 'C1', 'B3', DATA + E.format(0, .369, 1, .75), 'tệp video<br>lưu tạm', [(490, 558), (490, 482)], -0.72)
 # Tìm kiếm và truy cập dữ liệu (xanh)
-e(nid(), 'D1', 'C1', DATA + SEARCH + E.format(.3, 1, .22, 0), 'truy vấn')
+e(nid(), 'D1', 'Q', DATA + SEARCH + E.format(.25, 1, .258, 0), 'truy vấn', None, -0.5)
+e(nid(), 'Q', 'C3', DATA + SEARCH + E.format(.4, 1, .5, 0), 'thuộc tính')
+e(nid(), 'Q', 'C2', DATA + SEARCH + E.format(1, .5, 1, .5), 'ảnh, câu mô tả', [(1080, 460), (1080, 770)], -0.69)
 e(nid(), 'C1', 'D1', DATA + SEARCH + E.format(.5, 0, .82, 1), 'kết quả')
 e(nid(), 'A4', 'C1', DATA + SEARCH + E.format(.5, 1, .81, 0), 'tải lên')
-e(nid(), 'C3', 'C2', DATA + SEARCH + E.format(1, .5, .5, 0), 'câu tiếng Anh', [(875, 508)])
-e(nid(), 'C1', 'S1', DATA + SEARCH + BOTH + E.format(.06, 1, .85, 0), 'quyền, thông tin mô tả', [(558, 1010), (266, 1010)])
-e(nid(), 'C2', 'S2', DATA + SEARCH + BOTH + E.format(.5, 1, .8, 0), 'tìm vector gần nhất<br>(lọc trước)', [(875, 1018), (582, 1018)], -0.55)
-e(nid(), 'S3', 'C1', DATA + SEARCH + E.format(.75, 0, .49, 1), 'khung hình', [(760, 960)], 0.6)
+e(nid(), 'C3', 'C2', DATA + SEARCH + E.format(1, .5, .5, 0), 'câu tiếng Anh', [(1005, 598)])
+e(nid(), 'C1', 'S1', DATA + SEARCH + BOTH + E.format(.02, 1, .85, 0), 'quyền, thông tin mô tả', [(669, 1125), (266, 1125)])
+# Bộ mã hóa chỉ tạo vector; Milvus trả kết quả về máy chủ (không về bộ mã hóa).
+e(nid(), 'C2', 'S2', DATA + SEARCH + E.format(.5, 1, .8, 0), 'vector truy vấn<br>(lọc trước)', [(1005, 1135), (622, 1135)], -0.32)
+e(nid(), 'S2', 'C1', DATA + SEARCH + E.format(1, .5, .128, 1), 'kết quả<br>gần nhất', [(720, 1262)], 0.7)
+e(nid(), 'S3', 'C1', DATA + SEARCH + E.format(.75, 0, .468, 1), 'khung hình', None, 0.6)
 
-# Chú giải (chỉ các ký hiệu có trong hình)
-LG = 'text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;'
-v('L', 'Chú giải', FRAME, 0, 1250, 1000, 185)
-v('L1', 'Tệp dữ liệu', DOC, 20, 1292, 120, 50)
-v('L2', 'Xử lý', PROC, 160, 1295, 80, 45)
-v('L3', 'Thành phần phần mềm', COMP, 260, 1295, 210, 45)
-v('L4', 'Mô hình AI', ICON_R + BRAIN + ';', 495, 1295, 45, 45)
-v('L5', '', DB, 20, 1365, 36, 50)
-v('L5t', 'CSDL', LG, 62, 1375, 60, 30)
-v('L6', 'Hàng đợi', QUEUE, 140, 1370, 100, 40)
-v('L7', 'Kho đối tượng', ICON_R + BUCKET + ';', 262, 1368, 45, 45)
-v('L8', 'Camera', ICON_R + CAMERA + ';', 495, 1373, 50, 38)
-v('L9', '<b>━</b> luồng RTSP<br>- - - điều khiển<br><font color="#1F4E9A">──</font> tìm kiếm, truy cập dữ liệu', LG, 720, 1300, 275, 110)
+# Không vẽ chú giải (SV quyết định 2026-09-29: nhãn trên hình đã đủ rõ).
 
 xml = ('<mxfile host="app.diagrams.net"><diagram name="H2 - Kiến trúc" id="h2"><mxGraphModel dx="1400" dy="1100" grid="1" '
        'gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" '

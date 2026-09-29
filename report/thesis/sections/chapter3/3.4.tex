@@ -1,43 +1,16 @@
 % !TEX root = ../../main.tex
-% C3.4 — Lấy mẫu khung hình
-% Khớp app: workers/sampling.py (giữ khung có chỉ số i với i mod N = 0, sample_sequence = i div N;
-% profile baseline N=10, throughput N=20 mặc định); lấy mẫu sau bước giải mã (FrameSampler nhận SourceFrame đã giải mã).
-% Video WILDTRACK 59,94 fps. Quy tắc xác nhận/kết thúc track ở Mục 3.3.5. Số đo so sánh N ở Mục 8.5.
+% C3.4 — Lấy mẫu khung hình (RÚT GỌN 2026-09-29: một mục ngắn, không chia tiểu mục; bản cũ ở report/archive/)
+% Khớp app: workers/sampling.py (giữ khung có chỉ số i với i mod N = 0; profile baseline N=10, throughput N=20 mặc định);
+% lấy mẫu sau bước giải mã. Video WILDTRACK 59,94 fps. Số đo so sánh N ở Mục 8.5.
 \section{Lấy mẫu khung hình}
 \label{sec:3.4}
+\label{sec:3.4.3}
 
-\subsection{Sự cần thiết của việc lấy mẫu}
-\label{sec:3.4.1}
-
-Video từ camera giám sát thường có tốc độ từ vài chục khung hình mỗi giây trở lên; các video của bộ dữ liệu được dùng trong đề tài có tốc độ khoảng 60 khung hình mỗi giây. Nếu chạy mô hình phát hiện, thuật toán theo vết và các bước xử lý phía sau trên mọi khung hình, chi phí tính toán sẽ rất lớn, đặc biệt trên máy tính không có card đồ họa rời. Trong khi đó, hai khung hình liên tiếp chỉ cách nhau khoảng 17 mili giây, nên nội dung gần như giống hệt nhau; việc xử lý toàn bộ chúng mang lại rất ít thông tin mới cho bài toán tìm kiếm, vốn chỉ cần biết một người đã xuất hiện ở đâu và vào khoảng thời gian nào.
-
-Lấy mẫu khung hình (frame sampling) là kỹ thuật chỉ đưa một phần các khung hình vào các bước xử lý tốn kém, nhằm giảm chi phí tính toán mà vẫn giữ được thông tin cần thiết cho việc lập chỉ mục.
-
-\subsection{Quy tắc lấy mẫu}
-\label{sec:3.4.2}
-
-Đề tài sử dụng cách lấy mẫu đều theo chỉ số khung hình. Gọi $i = 0, 1, 2, \ldots$ là chỉ số của khung hình trong nguồn dữ liệu và $N$ là khoảng lấy mẫu. Một khung hình được chọn khi và chỉ khi
+Video giám sát thường có vài chục khung hình mỗi giây; video của bộ dữ liệu trong đề tài có khoảng 60 khung hình mỗi giây, nên hai khung hình liên tiếp chỉ cách nhau khoảng 17 mili giây và gần như giống hệt nhau. Chạy các mô hình trên mọi khung hình vì vậy rất tốn kém mà mang lại ít thông tin mới. Đề tài lấy mẫu đều theo chỉ số khung hình: với chỉ số $i$ và khoảng lấy mẫu $N$, khung hình được chọn khi và chỉ khi
 \begin{equation}
     i \bmod N = 0,
     \label{eq:sampling}
 \end{equation}
-tức là chọn các khung hình có chỉ số $0, N, 2N, \ldots$. Khung hình được chọn thứ $j = \lfloor i / N \rfloor$ vẫn giữ nguyên chỉ số $i$ và mốc thời gian gốc của nó trong nguồn dữ liệu, nhờ đó thời điểm xuất hiện của người trong kết quả tìm kiếm được xác định theo đúng dòng thời gian của camera chứ không theo số thứ tự của khung hình đã lấy mẫu.
+và vẫn giữ nguyên chỉ số cùng mốc thời gian gốc, để thời điểm xuất hiện của người được xác định theo đúng dòng thời gian của camera. Với nguồn $f$ khung hình mỗi giây, hai khung hình được xử lý cách nhau $N/f$ giây: khoảng 0,17 giây với $N = 10$ và 0,33 giây với $N = 20$.
 
-Với nguồn có tốc độ $f$ khung hình mỗi giây, số khung hình được xử lý mỗi giây là $f/N$, và khoảng thời gian giữa hai khung hình được xử lý liên tiếp là $N/f$. Chẳng hạn, với video khoảng 60 khung hình mỗi giây, khoảng lấy mẫu $N = 10$ cho khoảng 6 khung hình được xử lý mỗi giây, cách nhau khoảng 0,17 giây; còn $N = 20$ cho khoảng 3 khung hình mỗi giây, cách nhau khoảng 0,33 giây.
-
-\subsection{Đánh đổi khi chọn khoảng lấy mẫu}
-\label{sec:3.4.3}
-
-Khoảng lấy mẫu $N$ ảnh hưởng đồng thời đến chi phí xử lý và chất lượng của các track:
-\begin{itemize}
-    \item \textbf{Chi phí xử lý.} Trong hệ thống, thứ tự xử lý là: đọc dữ liệu, giải mã video thành ảnh, lấy mẫu, rồi mới đến phát hiện, theo vết và mã hóa đặc trưng. Nhờ lấy mẫu đứng trước mô hình phát hiện, số lần chạy các mô hình trí tuệ nhân tạo -- phần tốn kém nhất -- giảm khoảng $N$ lần. Riêng bước giải mã vẫn phải thực hiện trên mọi khung hình, vì trong video nén H.264 -- dù đọc từ tệp hay nhận qua luồng RTSP -- phần lớn khung hình chỉ giải mã được khi đã giải mã các khung hình trước đó (Mục~\ref{sec:3.7.1}); do đó, phần chi phí giải mã không giảm theo $N$.
-    \item \textbf{Khả năng bỏ sót người.} Vì một track chỉ được xác nhận khi người được quan sát trong ít nhất hai khung hình được xử lý (Mục~\ref{sec:3.3.5}), người chỉ xuất hiện trong khoảng thời gian ngắn hơn khoảng hai lần khoảng cách lấy mẫu có thể không tạo thành track, và vì vậy không thể được tìm thấy. $N$ càng lớn thì khoảng thời gian tối thiểu này càng dài.
-    \item \textbf{Độ liên tục của track.} Khi khoảng cách giữa hai khung hình được xử lý tăng, người di chuyển được quãng đường xa hơn giữa hai lần quan sát, khiến khung bao ở hai lần quan sát chồng lấn ít hơn và việc liên kết theo IoU (Mục~\ref{sec:3.3.2}) khó khăn hơn. Hệ quả là track dễ bị đứt và một lần xuất hiện có thể bị tách thành nhiều track. Vì vậy, các điều kiện kết thúc track được tính theo số khung hình \emph{đã được xử lý} và theo thời gian, thay vì theo số khung hình của nguồn.
-\end{itemize}
-
-\subsection{Lấy mẫu khung hình trong hệ thống}
-\label{sec:3.4.4}
-
-Hệ thống cung cấp hai cấu hình lấy mẫu được định nghĩa sẵn: cấu hình \emph{baseline} với $N = 10$, ưu tiên chất lượng track, và cấu hình \emph{throughput} với $N = 20$, ưu tiên tốc độ lập chỉ mục. Cấu hình \emph{throughput} được chọn làm mặc định dựa trên kết quả đo đạc trên máy triển khai (Mục~\ref{sec:8.5}). Giá trị $N$ không được nhập tùy ý mà chỉ được chọn trong các cấu hình đã được kiểm chứng, và mỗi công việc xử lý lưu lại giá trị $N$ thực tế đã dùng để kết quả có thể được đối chiếu và tái lập.
-
-Đối với luồng RTSP, chỉ số khung hình được đếm trên những khung hình mà hệ thống thực sự nhận được. Khi tốc độ xử lý chậm hơn tốc độ phát của luồng, một phần khung hình bị bỏ qua trước khi đến bước lấy mẫu, nên khoảng thời gian thực giữa hai khung hình được xử lý có thể lớn hơn $N/f$ (Mục~\ref{sec:3.7.3} và Mục~\ref{sec:1.4}).
+Khoảng lấy mẫu là một đánh đổi. Lấy mẫu đứng trước mô hình phát hiện nên số lần chạy các mô hình AI giảm khoảng $N$ lần; riêng bước giải mã vẫn phải thực hiện trên mọi khung hình, vì phần lớn khung hình H.264 chỉ giải mã được khi đã giải mã các khung trước đó (Mục~\ref{sec:3.7.1}). Ngược lại, $N$ càng lớn thì người xuất hiện quá ngắn càng dễ bị bỏ sót, vì track cần ít nhất hai lần quan sát, và người di chuyển càng xa giữa hai lần quan sát, khiến việc liên kết theo IoU khó hơn và track dễ bị đứt. Hệ thống cung cấp hai cấu hình định sẵn: \emph{baseline} với $N = 10$ ưu tiên chất lượng track, và \emph{throughput} với $N = 20$ ưu tiên tốc độ, được chọn làm mặc định dựa trên đo đạc trên máy triển khai (Mục~\ref{sec:8.5}). Mỗi công việc lưu lại giá trị $N$ đã dùng để kết quả có thể được đối chiếu và tái lập.

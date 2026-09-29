@@ -41,12 +41,25 @@ camera `RTSP Cam 1` (35 track) và 1 vụ việc có sẵn ("Tìm người để
 2. **Nếu IP in ra khác `PERSON_SEARCH_RTSP_NETWORKS` trong `backend/.env`** (đổi mạng Wi-Fi): sửa dòng
    này thành `<IP-LAN>/32`. Camera `RTSP Cam 1` cũ vẫn trỏ IP cũ; không cần sửa vì nó đang tắt AI và
    không dùng trong kịch bản.
-3. Ba terminal, mỗi terminal trong `backend` đã kích hoạt `.venv`:
+3. Mở ba terminal PowerShell, bắt đầu từ thư mục gốc repo:
    ```powershell
-   python -m person_search                # API
-   person-search-production-worker        # worker
+   # Terminal 1 — API
+   cd backend
+   .\.venv\Scripts\Activate.ps1
+   python -m person_search
+
+   # Terminal 2 — worker
+   cd backend
+   .\.venv\Scripts\Activate.ps1
+   person-search-production-worker
+
+   # Terminal 3 — giao diện
+   cd frontend
+   npm run dev
    ```
-   và trong `frontend`: `npm run dev`. Mở `http://localhost:5173`.
+   Kích hoạt thành công thì đầu dòng lệnh hiện `(.venv)`. Nếu PowerShell báo không được chạy script
+   (`running scripts is disabled`), chạy `Set-ExecutionPolicy -Scope Process Bypass` trong terminal đó
+   rồi kích hoạt lại; lệnh chỉ có hiệu lực cho terminal hiện tại. Mở `http://localhost:5173`.
 4. **Làm nóng tìm kiếm (bắt buộc):** đăng nhập `operator`, tìm bằng ảnh `WT-Q006.jpg` một lần. Lần tìm
    đầu sau khi API khởi động phải nạp encoder RaSa (~30 giây); nếu để đến lúc demo, cùng lúc worker
    đang xử lý RTSP, lần tìm đầu mất tới ~100 giây. Sau đó đăng xuất.

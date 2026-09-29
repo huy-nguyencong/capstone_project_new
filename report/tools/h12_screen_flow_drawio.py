@@ -76,12 +76,7 @@ e('o4', 'o1', A + E.format(0, .3, 0, .5), 'tìm kiếm', [(360, 681), (360, 210)
 e('v1', 'v2', A + E.format(.5, 1, .5, 0), 'chọn vụ việc gần đây')
 e('v2', 'v3', A + E.format(.5, 1, .5, 0), 'chọn kết quả')
 
-# Chú giải
-LG = 'text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;'
-v('LG', 'Chú giải', LANE + 'align=left;spacingLeft=8;', 0, 830, 1000, 110)
-v('g1', 'Màn hình', SCREEN, 20, 875, 130, 44)
-v('g2', 'Hộp thoại', DIALOG, 175, 875, 130, 44)
-v('g3', 'mũi tên đậm: trang mở ra sau khi đăng nhập;<br>mũi tên thường: chuyển màn hình;<br>các màn hình trong cùng một làn chuyển qua lại bằng menu bên trái', LG, 330, 850, 660, 85)
+# Không vẽ chú giải (SV quyết định 2026-09-29: nhãn trên hình đã đủ rõ).
 
 xml = ('<mxfile host="app.diagrams.net"><diagram name="H12 - Luồng màn hình" id="h12"><mxGraphModel dx="1400" dy="1100" '
        'grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" '

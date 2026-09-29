@@ -1,64 +1,28 @@
 % !TEX root = ../../main.tex
-% C3.7 — Giao thức RTSP và giả lập luồng camera
-% Nguồn: RFC 2326 (RTSP 1.0), RFC 7826 (RTSP 2.0, bỏ RECORD/ANNOUNCE — mục 17204/17556 của văn bản RFC),
-% RFC 3550 (RTP), RFC 6184 (RTP payload H.264, đồng hồ 90 kHz), Wiegand 2003 (H.264), tài liệu FFmpeg (-re, -stream_loop, stream copy), MediaMTX.
-% Khớp app: scripts/rtsp.ps1 (FFmpeg -re -stream_loop -1 -i camN.mp4 -c copy -f rtsp -rtsp_transport tcp rtsp://<ip>:8554/camN;
-% MediaMTX 1.12.3 trong infra/compose.yaml, profile rtsp) ; workers/sources/rtsp.py (PyAV, rtsp_transport tcp,
-% timeout kết nối/đọc 8 s, kết nối lại tối đa 3 lần, chờ 0,25 s nhân đôi đến 2 s, URL lưu không kèm thông tin đăng nhập,
-% mốc thời gian theo đồng hồ worker) ; mạng được phép PERSON_SEARCH_RTSP_NETWORKS, từ chối loopback.
-% Lập lịch xoay vòng camera ở Mục 5.2.1 — không trình bày ở đây.
+% C3.7 — Giao thức RTSP và giả lập luồng camera (RÚT GỌN 2026-09-29; bản cũ ở report/archive/)
+% Nguồn: RFC 2326 (RTSP 1.0), RFC 7826 (RTSP 2.0, bỏ RECORD/ANNOUNCE), RFC 3550 (RTP), RFC 6184 (RTP payload H.264, đồng hồ 90 kHz),
+% Wiegand 2003 (H.264), tài liệu FFmpeg (-re, -stream_loop, stream copy), MediaMTX.
+% Khớp app: scripts/rtsp.ps1 (FFmpeg -re -stream_loop -1 -i camN.mp4 -c copy -f rtsp -rtsp_transport tcp); workers/sources/rtsp.py (PyAV, tcp,
+% timeout kết nối/đọc 8 s, kết nối lại tối đa 3 lần, chờ 0,25 s nhân đôi đến 2 s, mốc thời gian theo đồng hồ worker).
 \section{Giao thức RTSP và giả lập luồng camera}
 \label{sec:3.7}
 
-\subsection{Video nén từ camera giám sát}
+\subsection{Video nén H.264}
 \label{sec:3.7.1}
 
-Camera giám sát nối mạng (camera IP) không gửi đi từng ảnh riêng lẻ mà mã hóa hình ảnh thu được thành video nén trước khi truyền, vì dữ liệu ảnh chưa nén có dung lượng quá lớn. Một khung hình 1920$\times$1080 điểm ảnh với ba kênh màu chiếm khoảng 6~MB; ở tốc độ 60 khung hình mỗi giây, lượng dữ liệu chưa nén lên tới khoảng 370~MB mỗi giây, vượt xa khả năng của mạng thông thường.
-
-H.264 (còn gọi là AVC)~\cite{wiegand2003h264} là chuẩn nén video phổ biến trong các hệ thống camera giám sát và cũng là định dạng của các video được dùng trong đề tài. Chuẩn này tận dụng hai loại dư thừa:
-\begin{itemize}
-    \item \textbf{Dư thừa trong một khung hình:} các vùng lân cận trong ảnh thường giống nhau, nên một khối điểm ảnh có thể được dự đoán từ các khối đã mã hóa bên cạnh. Khung hình chỉ dùng loại dự đoán này được gọi là \emph{khung I} (intra frame); khung I có thể được giải mã độc lập.
-    \item \textbf{Dư thừa giữa các khung hình:} hai khung hình liên tiếp gần như giống nhau, nhất là với camera cố định có nền tĩnh. Thay vì lưu lại toàn bộ ảnh, bộ mã hóa chỉ lưu vectơ dịch chuyển của các khối và phần sai khác so với khung hình tham chiếu đã mã hóa trước đó. Các khung hình loại này (\emph{khung P}, \emph{khung B}) chỉ giải mã được khi đã có khung tham chiếu.
-\end{itemize}
-Chuỗi khung hình bắt đầu từ một khung I và tiếp nối bằng các khung dự đoán được gọi là một nhóm ảnh (Group of Pictures -- GOP). Đặc điểm này là lý do bước giải mã phải được thực hiện trên mọi khung hình dù hệ thống chỉ xử lý một phần trong số đó (Mục~\ref{sec:3.4.3}), và cũng là lý do một bộ giải mã bắt đầu nhận luồng giữa chừng phải đợi đến khung I kế tiếp mới tạo ra được ảnh hoàn chỉnh.
+Camera IP mã hóa hình ảnh thành video nén trước khi truyền, vì một khung hình 1920$\times$1080 chưa nén chiếm khoảng 6~MB, tức khoảng 370~MB mỗi giây ở 60 khung hình mỗi giây. H.264~\cite{wiegand2003h264} là chuẩn nén phổ biến của camera giám sát và cũng là định dạng video của đề tài. \emph{Khung I} chỉ dùng dự đoán trong chính khung hình nên giải mã được độc lập; \emph{khung P} và \emph{khung B} chỉ lưu dịch chuyển và phần sai khác so với khung tham chiếu, nên chỉ giải mã được khi đã có khung tham chiếu. Vì vậy bước giải mã phải thực hiện trên mọi khung hình dù hệ thống chỉ phân tích một phần (Mục~\ref{sec:3.4}), và một bộ giải mã bắt đầu nhận luồng giữa chừng phải đợi tới khung I kế tiếp.
 
 \subsection{Giao thức RTSP và RTP}
 \label{sec:3.7.2}
 
-Việc truyền video từ camera tới phía nhận thường sử dụng hai giao thức phối hợp với nhau:
-\begin{itemize}
-    \item \textbf{RTSP} (Real Time Streaming Protocol)~\cite{rfc2326} là giao thức \emph{điều khiển}. Theo đặc tả, RTSP thiết lập và điều khiển các luồng dữ liệu đa phương tiện nhưng thường không tự mang dữ liệu đó, và đóng vai trò như một ``bộ điều khiển từ xa qua mạng'' của máy chủ phát. Phía nhận xác định luồng bằng một địa chỉ dạng \texttt{rtsp://<máy chủ>:<cổng>/<đường dẫn>} và trao đổi các lệnh dạng văn bản: \texttt{DESCRIBE} để lấy mô tả luồng (loại mã hóa, độ phân giải\ldots), \texttt{SETUP} để thỏa thuận cách truyền dữ liệu, \texttt{PLAY} để bắt đầu nhận và \texttt{TEARDOWN} để kết thúc phiên.
-    \item \textbf{RTP} (Real-time Transport Protocol)~\cite{rfc3550} là giao thức \emph{mang dữ liệu}. Video nén được chia thành các gói RTP; mỗi gói có số thứ tự để phía nhận phát hiện gói bị mất hoặc đến sai thứ tự, và có dấu thời gian cho biết thời điểm lấy mẫu của dữ liệu. Với video H.264, cách chia dữ liệu nén vào các gói RTP được quy định riêng~\cite{rfc6184}, trong đó dấu thời gian dùng đồng hồ tần số 90~kHz.
-\end{itemize}
-Gói RTP có thể được gửi qua UDP -- độ trễ thấp nhưng có thể mất gói -- hoặc được xen kẽ (interleaved) ngay trên kết nối TCP của phiên RTSP, khi đó dữ liệu không bị mất trên đường truyền nhưng có thể đến chậm hơn khi mạng hoặc phía nhận bị nghẽn. Như vậy, dữ liệu hình ảnh mà phía nhận nhận được qua RTSP vẫn là video nén H.264, giống như khi đọc từ tệp; RTSP chỉ thay đổi cách dữ liệu được chuyển tới.
-
-RTSP phiên bản 1.0~\cite{rfc2326} về sau được thay thế bởi phiên bản 2.0~\cite{rfc7826}. Tuy nhiên, phiên bản 2.0 đã loại bỏ các lệnh \texttt{ANNOUNCE} và \texttt{RECORD} dùng để đẩy luồng \emph{lên} máy chủ, trong khi cơ chế giả lập của đề tài (Mục~\ref{sec:3.7.3}) cần đến các lệnh này; các công cụ được dùng trong đề tài hoạt động theo phiên bản 1.0.
+RTSP (Real Time Streaming Protocol)~\cite{rfc2326} là giao thức \emph{điều khiển}: phía nhận xác định luồng bằng một địa chỉ dạng \texttt{rtsp://<máy chủ>:<cổng>/<đường dẫn>} và trao đổi các lệnh \texttt{DESCRIBE}, \texttt{SETUP}, \texttt{PLAY}, \texttt{TEARDOWN} để lấy mô tả, thiết lập, bắt đầu và kết thúc phiên. Dữ liệu được mang bởi RTP (Real-time Transport Protocol)~\cite{rfc3550}: video nén được chia thành các gói có số thứ tự và dấu thời gian; với H.264, dấu thời gian dùng đồng hồ 90~kHz~\cite{rfc6184}. Gói RTP có thể gửi qua UDP, độ trễ thấp nhưng có thể mất gói, hoặc xen kẽ trên kết nối TCP của phiên RTSP, không mất gói nhưng có thể đến chậm khi nghẽn. RTSP 2.0~\cite{rfc7826} đã bỏ các lệnh dùng để đẩy luồng lên máy chủ, nên các công cụ giả lập của đề tài dùng phiên bản 1.0.
 
 \subsection{Giả lập camera bằng máy chủ phát luồng}
 \label{sec:3.7.3}
 
-Đề tài không có hệ thống camera thực; dữ liệu thử nghiệm là các tệp video đã được ghi sẵn. Để hệ thống được kiểm tra với đúng giao thức mà camera IP sử dụng, mỗi tệp video được phát lại thành một luồng RTSP, đóng vai trò một camera. Cơ chế giả lập gồm hai thành phần:
-\begin{itemize}
-    \item \textbf{Máy chủ phát luồng MediaMTX}~\cite{mediamtx2026}: phần mềm mã nguồn mở cho phép \emph{đẩy} (publish) luồng video lên và \emph{đọc} (read) luồng video xuống qua nhiều giao thức, trong đó có RTSP. Mỗi luồng được xác định bằng một đường dẫn riêng, ví dụ \texttt{/cam1}; phía nhận kết nối tới MediaMTX giống hệt như kết nối tới một camera IP.
-    \item \textbf{Công cụ FFmpeg}~\cite{ffmpeg2026docs}: đọc tệp video và đẩy nội dung lên MediaMTX theo giao thức RTSP. Ba tùy chọn quyết định tính chất của luồng giả lập:
-    \begin{itemize}
-        \item \texttt{-re}: đọc dữ liệu đầu vào theo đúng tốc độ khung hình gốc, nhờ đó luồng phát ra với nhịp độ như camera thật, thay vì phát nhanh nhất có thể.
-        \item \texttt{-stream\_loop -1}: lặp lại tệp đầu vào vô hạn lần, tạo ra một luồng liên tục không kết thúc như camera hoạt động suốt ngày.
-        \item \texttt{-c copy}: sao chép nguyên các gói dữ liệu nén của tệp mà không giải mã và mã hóa lại. Theo tài liệu của FFmpeg, cách này rất nhanh và không làm giảm chất lượng hình ảnh. Vì vậy luồng RTSP mang đúng dữ liệu H.264 của tệp gốc, và máy phát luồng gần như không tốn tài nguyên tính toán.
-    \end{itemize}
-\end{itemize}
-
-Luồng giả lập theo cách này giống camera thật ở những điểm quan trọng đối với hệ thống: cùng giao thức, cùng định dạng dữ liệu nén, và đặc biệt là luồng \emph{không chờ} phía nhận. Nếu phía nhận xử lý chậm hơn tốc độ phát, dữ liệu mới vẫn tiếp tục được phát ra và phía nhận không thể xử lý toàn bộ. Tuy nhiên, luồng giả lập cũng có những khác biệt: nội dung lặp lại theo chu kỳ độ dài của tệp, kết nối nằm trong cùng một máy hoặc một mạng nội bộ nên hầu như không có hiện tượng mất gói hay mất kết nối như mạng camera thực tế.
+Để hệ thống được kiểm tra với đúng giao thức của camera IP, mỗi tệp video được phát lại thành một luồng RTSP đóng vai trò một camera. Máy chủ phát luồng MediaMTX~\cite{mediamtx2026} cho phép đẩy luồng lên và đọc luồng xuống qua RTSP, mỗi luồng ở một đường dẫn riêng như \texttt{/cam1}. Công cụ FFmpeg~\cite{ffmpeg2026docs} đọc tệp và đẩy lên MediaMTX với ba tùy chọn: \texttt{-re} để phát theo đúng tốc độ khung hình gốc, \texttt{-stream\_loop -1} để lặp vô hạn như camera chạy liên tục, và \texttt{-c copy} để sao chép nguyên dữ liệu nén mà không mã hóa lại, nên luồng mang đúng dữ liệu H.264 của tệp gốc và gần như không tốn tài nguyên. Luồng giả lập giống camera thật ở chỗ cùng giao thức, cùng định dạng và \emph{không chờ} phía nhận: nếu phía nhận xử lý chậm, dữ liệu mới vẫn tiếp tục được phát. Khác biệt là nội dung lặp theo chu kỳ và hầu như không có mất gói hay mất kết nối như mạng camera thực tế.
 
 \subsection{Tiếp nhận luồng RTSP trong hệ thống}
 \label{sec:3.7.4}
 
-Trong hệ thống, mỗi tệp video của bộ dữ liệu được phát thành một luồng RTSP riêng trên MediaMTX, tương ứng với một camera. Thành phần xử lý nền của hệ thống (AI worker, Mục~\ref{sec:5.2}) đọc luồng thông qua thư viện PyAV, vốn sử dụng các thư viện giải mã của FFmpeg, với các đặc điểm sau:
-\begin{itemize}
-    \item \textbf{Truyền qua TCP:} cả phía đẩy luồng lẫn phía đọc luồng đều yêu cầu dữ liệu RTP được xen kẽ trên kết nối TCP, để tránh mất gói làm hỏng ảnh sau khi giải mã.
-    \item \textbf{Giới hạn thời gian và kết nối lại:} việc kết nối và việc chờ dữ liệu mới đều có giới hạn 8 giây. Khi luồng bị gián đoạn, hệ thống thử kết nối lại tối đa ba lần, thời gian chờ giữa các lần tăng dần từ 0,25 giây và không quá 2 giây; nếu vẫn không thành công, lượt xử lý camera đó được ghi nhận là lỗi.
-    \item \textbf{Bảo vệ địa chỉ và thông tin đăng nhập:} hệ thống chỉ chấp nhận địa chỉ RTSP thuộc các dải mạng được cấu hình cho phép, nhằm tránh việc hệ thống bị lợi dụng để kết nối tới các máy chủ khác trong mạng nội bộ. Địa chỉ camera được lưu không kèm thông tin đăng nhập; thông tin đăng nhập (nếu có) được lưu riêng ở dạng mã hóa và chỉ được ghép vào địa chỉ tại thời điểm kết nối.
-    \item \textbf{Mốc thời gian:} mỗi khung hình được gắn mốc thời gian theo thời điểm hệ thống nhận được nó, như đã nêu ở Mục~\ref{sec:3.3.5}, thay vì dùng dấu thời gian RTP của luồng.
-\end{itemize}
-
-Do tốc độ xử lý trên máy triển khai chậm hơn nhiều so với tốc độ phát của luồng, hệ thống không thể phân tích liên tục toàn bộ dữ liệu của mọi camera. Cách hệ thống phân chia thời gian xử lý giữa các camera được trình bày tại Mục~\ref{sec:5.2.1}, còn kết quả đo khi xử lý luồng RTSP giả lập được trình bày tại Mục~\ref{sec:8.6}.
+Tiến trình xử lý nền đọc luồng qua thư viện PyAV, vốn dùng các thư viện giải mã của FFmpeg, với dữ liệu RTP xen kẽ trên TCP để tránh mất gói làm hỏng ảnh. Việc kết nối và chờ dữ liệu đều giới hạn 8 giây; khi luồng gián đoạn, hệ thống thử kết nối lại tối đa ba lần với thời gian chờ tăng dần từ 0,25 giây đến 2 giây, sau đó ghi nhận lượt xử lý là lỗi. Mỗi khung hình được gắn mốc thời gian theo thời điểm hệ thống nhận được, thay vì dấu thời gian RTP của luồng (Mục~\ref{sec:3.3.5}). Vì tốc độ xử lý chậm hơn nhiều so với tốc độ phát, hệ thống không thể phân tích liên tục mọi camera; cách phân chia thời gian xử lý giữa các camera được trình bày ở Mục~\ref{sec:5.2.1}.

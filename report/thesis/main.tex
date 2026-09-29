@@ -80,6 +80,8 @@
 }
 
 \titleformat{\chapter}[display]{\normalfont\huge\bfseries}{\chaptertitlename\ \thechapter}{20pt}{\Huge}
+% Đưa tiêu đề chương lên cao hơn mặc định (trước 50pt -> 10pt), giữ khoảng cách sau tiêu đề 40pt
+\titlespacing*{\chapter}{0pt}{10pt}{40pt}
 
 \begin{document}
 
@@ -88,7 +90,7 @@
 
 \clearpage
 \pagenumbering{roman}
-\input{sections/front/nhiem-vu}
+% \input{sections/front/nhiem-vu} % bỏ 2026-09-29: khoa không yêu cầu phiếu nhiệm vụ trong báo cáo
 \input{sections/front/decl-of-authen}
 \input{sections/front/ack}
 \input{sections/front/abstract}

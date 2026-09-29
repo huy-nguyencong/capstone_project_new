@@ -1,16 +1,17 @@
 % !TEX root = ../../main.tex
-% F6 — Tóm tắt các chương (viết sau cùng). Đây là nơi duy nhất mô tả cấu trúc báo cáo.
+% F6 — Tóm tắt các chương (viết 2026-09-29). Đây là nơi duy nhất mô tả cấu trúc báo cáo.
+% Số liệu chỉ dùng số "Hiện hành" đã có trong Chương 7–9 (report-data-guide.md mục 3); không nêu số "Cũ" ở đây.
 \chapter*{Tóm tắt các chương}
 \addcontentsline{toc}{chapter}{Tóm tắt các chương}
 
 \begin{description}[style=nextline]
-    \item[Chương 1: Tổng quan về đề tài] \nhap{...}
-    \item[Chương 2: Khảo sát các hệ thống liên quan] \nhap{...}
-    \item[Chương 3: Cơ sở lý thuyết] \nhap{...}
-    \item[Chương 4: Phân tích hệ thống] \nhap{...}
-    \item[Chương 5: Thiết kế hệ thống] \nhap{...}
-    \item[Chương 6: Hiện thực hệ thống] \nhap{...}
-    \item[Chương 7: Triển khai hệ thống] \nhap{...}
-    \item[Chương 8: Kiểm thử và đánh giá hệ thống] \nhap{...}
-    \item[Chương 9: Tổng kết và đề xuất hướng phát triển] \nhap{...}
+    \item[Chương 1: Tổng quan về đề tài] Chương này trình bày khó khăn của việc tìm một người trong lượng lớn video giám sát bằng cách xem lại thủ công, từ đó đặt ra mục tiêu xây dựng một ứng dụng hỗ trợ tìm kiếm người bằng hình ảnh, câu mô tả hoặc đặc điểm ngoại hình. Chương cũng xác định phạm vi thực hiện và các hạn chế của đề tài.
+    \item[Chương 2: Khảo sát các hệ thống liên quan] Chương này khảo sát ba hệ thống thương mại có chức năng tìm kiếm người trong video là BriefCam, Avigilon và Verkada, so sánh chúng theo các tiêu chí liên quan tới đề tài, và rút ra các định hướng cho hệ thống.
+    \item[Chương 3: Cơ sở lý thuyết] Chương này trình bày bài toán tìm kiếm người và truy hồi đa phương thức, cùng các kỹ thuật mà hệ thống sử dụng: phát hiện người, theo vết nhiều đối tượng, lấy mẫu khung hình, học biểu diễn chung ảnh-văn bản với mô hình RaSa, tìm kiếm vector với chỉ mục HNSW, và giao thức RTSP dùng để giả lập camera.
+    \item[Chương 4: Phân tích hệ thống] Chương này xác định ba tác nhân của hệ thống là Quản trị viên, Giám sát viên và Quản lý, liệt kê các yêu cầu chức năng và phi chức năng, trình bày sơ đồ và đặc tả các use case chính, và kết thúc bằng ma trận phân quyền.
+    \item[Chương 5: Thiết kế hệ thống] Chương này trình bày kiến trúc tách tiến trình xử lý AI khỏi máy chủ ứng dụng, hai luồng xử lý chính là lập chỉ mục và tìm kiếm, thiết kế dữ liệu trên ba kho PostgreSQL, Milvus và MinIO, giao diện lập trình ứng dụng, cơ chế bảo mật và thiết kế giao diện người dùng.
+    \item[Chương 6: Hiện thực hệ thống] Chương này giải thích việc lựa chọn công nghệ và mô hình, mô tả cách hiện thực tiến trình xử lý nền AI và ứng dụng web, trình bày các màn hình chính theo từng vai trò, và các công cụ giám sát vận hành dành cho Quản trị viên.
+    \item[Chương 7: Triển khai hệ thống] Chương này mô tả môi trường triển khai trên một máy tính xách tay chỉ có CPU, quy trình khởi động, sao lưu và khôi phục, cùng cách chuẩn bị dữ liệu trình diễn từ bảy camera của bộ dữ liệu WILDTRACK.
+    \item[Chương 8: Kiểm thử và đánh giá hệ thống] Chương này trình bày kết quả kiểm thử ở năm mức, từ kiểm thử đơn vị tới kịch bản trình diễn, đánh giá chất lượng của ba hình thức tìm kiếm, và các số đo về tần suất lấy mẫu, xử lý luồng RTSP, độ trễ tìm kiếm và dung lượng lưu trữ. Các phép đo chưa thực hiện được nêu rõ cùng phương pháp đo.
+    \item[Chương 9: Tổng kết và đề xuất hướng phát triển] Chương này đối chiếu kết quả đạt được với các mục tiêu ban đầu, nêu các hạn chế đã được thực nghiệm xác nhận và đề xuất hướng phát triển tiếp theo.
 \end{description}

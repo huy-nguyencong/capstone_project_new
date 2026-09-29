@@ -1,7 +1,14 @@
 % !TEX root = ../../main.tex
-% C9.1 — Kết quả đạt được
-% Nội dung cần có: Đối chiếu từng mục tiêu ở Mục 1.2.
+% C9.1 — Kết quả đạt được: đối chiếu 5 mục tiêu ở Mục 1.2. Số liệu dẫn lại từ Chương 7, 8 (report-data-guide.md).
 \section{Kết quả đạt được}
 \label{sec:9.1}
 
-\nhap{Chưa viết.}
+Đối chiếu với năm mục tiêu đặt ra ở Mục~\ref{sec:1.2}, đề tài đã đạt được các kết quả sau:
+\begin{enumerate}
+    \item Hệ thống chuyển được dữ liệu camera thành dữ liệu có thể tìm kiếm. Luồng RTSP và tệp video đi qua cùng một quy trình lấy mẫu, phát hiện, theo vết, chọn khung hình đại diện và mã hóa, với cơ chế ghi nhất quán vào ba kho dữ liệu. Dữ liệu trình diễn gồm 1.488 track từ bảy camera WILDTRACK đã được lập chỉ mục không lỗi (Mục~\ref{sec:7.2}).
+    \item Cả ba hình thức truy vấn bằng ảnh, câu mô tả tiếng Anh và thuộc tính đều được hiện thực trên cùng một không gian vector. Tìm kiếm bằng ảnh cho kết quả tốt, còn tìm kiếm bằng văn bản và thuộc tính hoạt động nhưng chất lượng còn thấp trên dữ liệu thử nghiệm (Mục~\ref{sec:8.4}).
+    \item Người dùng xem được từng kết quả trong khung hình toàn cảnh và lưu kết quả vào hồ sơ vụ việc có trạng thái và bản chụp thông tin. Quản lý theo dõi được các hồ sơ này ở chế độ chỉ đọc.
+    \item Ba vai trò được phân quyền theo ma trận ở Mục~\ref{sec:4.6}, với phạm vi tìm kiếm giới hạn theo khu vực, và quy tắc truy cập được kiểm thử cho mọi API (Mục~\ref{sec:8.1}). Quản trị viên có các công cụ theo dõi trạng thái, kiểm tra AI và nhật ký hệ thống.
+    \item Đề tài đã đo chất lượng tìm kiếm, tốc độ xử lý và dung lượng lưu trữ khi tích hợp YOLO11n, ByteTrack và RaSa trên máy chỉ có CPU (Chương~\ref{chapter:kiemthu}). Kết quả cho thấy rõ điểm mạnh của tìm kiếm bằng ảnh và giới hạn của tìm kiếm bằng văn bản do khác biệt miền dữ liệu.
+\end{enumerate}
+Ứng dụng đã vận hành trọn vẹn luồng nghiệp vụ từ tiếp nhận camera, tìm kiếm, đánh giá tới lưu hồ sơ vụ việc. Kịch bản trình diễn chạy tự động hai lần liên tiếp đều đạt 15/15 bước, và bộ kiểm thử gồm 711 kiểm thử đơn vị cùng các kiểm thử tích hợp và đầu cuối đều đạt.

@@ -51,28 +51,9 @@ Quản lý là người ở cấp quản lý của đơn vị, như trưởng b�
 
 Quản lý chỉ có quyền đọc và không tìm kiếm người. Khác với Giám sát viên, Quản lý không bị giới hạn theo khu vực, vì phạm vi xem của Quản lý là các vụ việc, vốn không gắn với khu vực.
 
-\subsection{Tổng hợp và nguyên tắc phân chia vai trò}
+\subsection{Nguyên tắc phân chia vai trò}
 \label{sec:4.1.4}
 
-Bảng~\ref{tab:actors} tóm tắt trách nhiệm và giới hạn của ba tác nhân. Ma trận phân quyền chi tiết theo từng hành động được trình bày tại Mục~\ref{sec:4.6}.
-
-\begin{table}[H]
-\centering
-\caption{Tóm tắt các tác nhân của hệ thống}
-\label{tab:actors}
-\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{2.8cm}|L|L|L|}
-\hline
-\textbf{Tác nhân} & \textbf{Đối tượng người dùng} & \textbf{Trách nhiệm chính} & \textbf{Giới hạn} \\
-\hline
-Quản trị viên (Admin) & Người quản trị kỹ thuật của hệ thống & Tài khoản, camera, xử lý AI, lựa chọn Detector/Tracker, theo dõi vận hành, nhật ký hệ thống & Mặc định không tìm kiếm người, không xem vụ việc; không đổi bộ mã hóa và khu vực của camera \\
-\hline
-Giám sát viên (Operator) & Nhân viên trực tiếp tra cứu dữ liệu camera & Tìm kiếm người, đánh giá kết quả, quản lý vụ việc do mình phụ trách & Chỉ tìm trong khu vực được gán; chỉ thao tác trên vụ việc của mình; không có quyền quản trị \\
-\hline
-Quản lý (Viewer) & Cấp quản lý như trưởng bộ phận, giám đốc & Xem tổng quan, xem mọi vụ việc và kết quả đã lưu & Chỉ đọc; không tìm kiếm, không chỉnh sửa dữ liệu nghiệp vụ, không có quyền quản trị \\
-\hline
-\end{tabularx}
-\end{table}
-
-Cách phân chia trên tuân theo hai nguyên tắc: \textbf{tách quyền kỹ thuật khỏi quyền nghiệp vụ}, để người cấu hình hệ thống không mặc nhiên truy cập được dữ liệu tìm kiếm và người sử dụng dữ liệu không can thiệp được vào cấu hình; và \textbf{quyền tối thiểu}, để mỗi tác nhân chỉ có những quyền cần cho công việc của mình.
+Cách phân chia trên tuân theo hai nguyên tắc: \textbf{tách quyền kỹ thuật khỏi quyền nghiệp vụ}, để người cấu hình hệ thống không mặc nhiên truy cập được dữ liệu tìm kiếm và người sử dụng dữ liệu không can thiệp được vào cấu hình; và \textbf{quyền tối thiểu}, để mỗi tác nhân chỉ có những quyền cần cho công việc của mình. Quyền của từng vai trò theo từng nhóm hành động được tổng hợp trong ma trận phân quyền ở Mục~\ref{sec:4.6}.
 
 Các luồng camera và việc xử lý AI chạy nền không được xem là tác nhân: camera là nguồn dữ liệu do Quản trị viên cấu hình, còn việc phân tích dữ liệu camera được hệ thống thực hiện tự động khi xử lý AI được bật, không do người dùng trực tiếp kích hoạt.

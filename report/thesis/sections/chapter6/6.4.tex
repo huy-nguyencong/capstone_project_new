@@ -1,44 +1,13 @@
 % !TEX root = ../../main.tex
-% C6.4 — Giám sát vận hành (bản ngắn)
+% C6.4 — Giám sát vận hành (RÚT GỌN 2026-09-29; bản cũ ở report/archive/)
 % Khớp backend: observability.py (JSON, trường đối chiếu request_id/worker_id/job_id/camera_id/ai_config_version_id/track_id, che khóa nhạy cảm
-% + che trong văn bản: thông tin xác thực trong URL, tham số chữ ký, dãy số dài, base64, bytes; chuỗi <= 2000 ký tự),
-% api/errors.py (X-Request-ID, gắn request_id vào ngữ cảnh nhật ký), workers/durable.py (ngữ cảnh job_id/camera_id/ai_config_version_id),
-% services/audit.py (32 loại sự kiện, che metadata), workers/telemetry.py (số đo mỗi 2 s, heartbeat 10 s, giữ 7 ngày),
-% services/monitoring.py (heartbeat cũ sau 45 s, số đo cũ sau 30 s, trạng thái RTSP cũ sau 5 phút, lỗi 24 giờ, 4 nhóm camera,
-% độ trễ = detector_ms + tracker_ms), frontend pages/monitor/SystemStatusPage.jsx (nút Làm mới). Tìm kiếm KHÔNG ghi nhật ký hệ thống.
+% + che trong văn bản), api/errors.py (X-Request-ID), services/audit.py (32 loại sự kiện), workers/telemetry.py (số đo mỗi 2 s, heartbeat 10 s, giữ 7 ngày),
+% services/monitoring.py (heartbeat cũ sau 45 s, số đo cũ sau 30 s, 4 nhóm camera, độ trễ = detector_ms + tracker_ms). Tìm kiếm KHÔNG ghi nhật ký hệ thống.
 \section{Giám sát vận hành}
 \label{sec:6.4}
 
-Tiến trình xử lý nền chạy liên tục và không có người theo dõi trực tiếp, nên hệ thống cần cho Quản trị viên biết kịp thời khi có sự cố và đủ thông tin để tìm nguyên nhân. Mục này trình bày bốn công cụ phục vụ việc đó: nhật ký kỹ thuật, nhật ký hệ thống, các số đo và tín hiệu hoạt động của tiến trình xử lý nền, và màn hình trạng thái hệ thống.
+\paragraph{Nhật ký kỹ thuật.} Máy chủ ứng dụng và tiến trình xử lý nền ghi nhật ký dưới dạng JSON, mỗi dòng một sự kiện, được gắn tự động các mã đối chiếu của ngữ cảnh: mã yêu cầu với máy chủ ứng dụng; mã công việc, mã camera và phiên bản cấu hình AI với tiến trình xử lý nền. Từ \emph{mã tra cứu} trong thông báo lỗi trên giao diện (Mục~\ref{sec:6.3.2}) hoặc mã của một công việc thất bại, có thể lọc ra toàn bộ các dòng nhật ký liên quan. Trước khi ghi, một bộ lọc thay giá trị của các trường nhạy cảm, như mật khẩu, mã phiên, địa chỉ RTSP, vector đặc trưng, ảnh hay câu truy vấn, bằng \texttt{[REDACTED]}, và che thông tin xác thực, dãy số dạng vector hay dữ liệu mã hóa nằm lẫn trong văn bản tự do.
 
-\subsection{Nhật ký kỹ thuật}
-\label{sec:6.4.1}
+\paragraph{Nhật ký hệ thống.} Các thao tác quan trọng của người dùng và các sự kiện kỹ thuật có ý nghĩa vận hành được lưu trong PostgreSQL theo 32 loại sự kiện, gồm đăng nhập và hết phiên, quản lý tài khoản, camera và cấu hình AI, lỗi xử lý và lỗi kiểm tra AI, công việc, vụ việc và công cụ bảo trì dữ liệu. Quản trị viên tra cứu trên màn hình \emph{Nhật ký hệ thống}, lọc theo khoảng ngày, loại sự kiện, người thực hiện và kết quả.
 
-Máy chủ ứng dụng và tiến trình xử lý nền ghi nhật ký kỹ thuật dưới dạng JSON, mỗi dòng một sự kiện, gồm thời điểm, mức độ, nơi phát sinh, nội dung và thông tin lỗi nếu có. Mỗi dòng được gắn tự động các \emph{mã đối chiếu} của ngữ cảnh đang xử lý: mã yêu cầu với máy chủ ứng dụng; mã tiến trình, mã công việc, mã camera và phiên bản cấu hình AI với tiến trình xử lý nền. Nhờ đó, từ \emph{mã tra cứu} hiển thị trong thông báo lỗi trên giao diện (Mục~\ref{sec:6.3.2}), hoặc từ mã của một công việc thất bại, có thể lọc ra toàn bộ các dòng nhật ký liên quan.
-
-Trước khi ghi, mọi dòng nhật ký đi qua một bộ lọc che dữ liệu nhạy cảm. Giá trị của các trường có tên gợi ý dữ liệu nhạy cảm, như mật khẩu, mã phiên, cookie, địa chỉ RTSP, thông tin xác thực, vector đặc trưng, ảnh, câu truy vấn hay mô tả, được thay bằng \texttt{[REDACTED]}. Trong nội dung văn bản tự do, kể cả thông tin lỗi, bộ lọc che thông tin xác thực nằm trong địa chỉ, tham số chữ ký của đường dẫn, các dãy số dài có dạng vector, và các khối dữ liệu mã hóa base64; mỗi chuỗi cũng được cắt ngắn ở 2.000 ký tự. Như vậy, kể cả khi một lỗi không lường trước in ra dữ liệu đầu vào, nhật ký vẫn không chứa mật khẩu camera hay đặc trưng của người.
-
-\subsection{Nhật ký hệ thống}
-\label{sec:6.4.2}
-
-Khác với nhật ký kỹ thuật dành cho việc gỡ lỗi, \emph{nhật ký hệ thống} ghi lại các thao tác quan trọng của người dùng và các sự kiện kỹ thuật có ý nghĩa vận hành, lưu trong PostgreSQL và tra cứu được trên màn hình \emph{Nhật ký hệ thống}. Hệ thống ghi 32 loại sự kiện, chia thành các nhóm: đăng nhập, đăng xuất và hết phiên; quản lý tài khoản và phân công khu vực; quản lý camera và kiểm tra kết nối; bật tắt và cấu hình xử lý AI, lỗi xử lý và lỗi kiểm tra AI; tạo, hủy và kết thúc công việc; thao tác trên vụ việc; và các sự kiện của công cụ bảo trì dữ liệu. Mỗi bản ghi lưu người thực hiện, thời điểm, loại sự kiện, kết quả thành công hay thất bại, cùng thông tin bổ sung đã qua bộ lọc che dữ liệu nhạy cảm tương tự nhật ký kỹ thuật. Quản trị viên có thể lọc theo khoảng ngày, loại sự kiện, người thực hiện và kết quả.
-
-\subsection{Số đo và tín hiệu hoạt động}
-\label{sec:6.4.3}
-
-Tiến trình xử lý nền ghi hai loại thông tin vào PostgreSQL để máy chủ ứng dụng đọc lại:
-\begin{itemize}
-    \item \textbf{Số đo của công việc}, cập nhật khoảng 2 giây một lần cùng với lần gia hạn giữ chỗ: tốc độ đọc khung hình nguồn và tốc độ xử lý khung hình được lấy mẫu, thời gian trung bình mỗi lần chạy Detector, Tracker và bộ mã hóa ảnh, thời gian chờ trong hàng đợi, số lần xuất hiện đã hoàn tất, số lần đã thử lại, cùng bộ nhớ và mức sử dụng CPU của tiến trình.
-    \item \textbf{Tín hiệu hoạt động} (heartbeat) của tiến trình giám sát, gửi 10 giây một lần: trạng thái (khởi động, chờ việc, đang xử lý, đang dừng, đã dừng), công việc đang chạy, bộ nhớ và mức sử dụng CPU. Tín hiệu được giữ trong 7 ngày.
-\end{itemize}
-Một tiến trình xử lý nền được xem là không còn hoạt động nếu không gửi tín hiệu trong 45 giây; số đo của một công việc được xem là cũ nếu không được cập nhật trong 30 giây.
-
-\subsection{Màn hình trạng thái hệ thống}
-\label{sec:6.4.4}
-
-Màn hình \emph{Trạng thái hệ thống} (Hình~\ref{fig:ui-status}) tổng hợp các thông tin trên thành một nơi duy nhất để Quản trị viên kiểm tra:
-\begin{itemize}
-    \item \textbf{Theo camera:} trạng thái kết nối RTSP, trạng thái xử lý AI (chờ việc, đang xử lý, có công việc chờ, tiến trình xử lý nền không hoạt động, hoặc mất tín hiệu khi thời hạn giữ chỗ của công việc đang chạy đã hết), tốc độ xử lý, độ trễ xử lý mỗi khung hình tính bằng tổng thời gian của Detector và Tracker, thời điểm tín hiệu cuối, và số công việc thất bại trong 24 giờ qua. Mỗi camera được xếp vào một trong bốn nhóm: hoạt động bình thường, mất kết nối, lỗi xử lý AI, hoặc không xác định; phía trên màn hình là số camera của từng nhóm, và danh sách có thể được lọc để chỉ hiển thị các camera bất thường.
-    \item \textbf{Theo thành phần:} tình trạng của ba kho dữ liệu PostgreSQL, Milvus và MinIO, của bộ mã hóa phục vụ tìm kiếm, và của tiến trình xử lý nền, gồm số công việc đang chờ, số công việc đang chờ thử lại và thời điểm của công việc chờ lâu nhất.
-\end{itemize}
-Mỗi thông tin được hiển thị kèm độ mới của nó, nên một con số cũ không bị hiểu nhầm là trạng thái hiện tại. Màn hình được cập nhật khi mở và khi Quản trị viên nhấn nút \emph{Làm mới}. Các đường dẫn kiểm tra tình trạng của máy chủ (Mục~\ref{sec:5.4}) cung cấp cùng loại thông tin ở dạng máy đọc được, phục vụ việc kiểm tra tự động khi triển khai.
+\paragraph{Số đo và trạng thái hệ thống.} Trong lúc chạy, mỗi công việc cập nhật khoảng 2 giây một lần các số đo như tốc độ xử lý khung hình, thời gian trung bình của Detector, Tracker và bộ mã hóa, bộ nhớ và mức sử dụng CPU; tiến trình xử lý nền gửi tín hiệu hoạt động (heartbeat) 10 giây một lần và được xem là không còn hoạt động nếu im lặng quá 45 giây. Màn hình \emph{Trạng thái hệ thống} (Hình~\ref{fig:ui-status}) tổng hợp các thông tin này: với mỗi camera là trạng thái kết nối RTSP, trạng thái xử lý AI, tốc độ và độ trễ xử lý, số công việc thất bại trong 24 giờ, và camera được xếp vào một trong bốn nhóm (bình thường, mất kết nối, lỗi xử lý AI, không xác định); với các thành phần là tình trạng ba kho dữ liệu, bộ mã hóa tìm kiếm và hàng đợi công việc. Mỗi thông tin được hiển thị kèm độ mới của nó, nên một con số cũ không bị hiểu nhầm là trạng thái hiện tại.
