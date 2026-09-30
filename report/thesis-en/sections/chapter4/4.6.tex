@@ -1,0 +1,37 @@
+% !TEX root = ../../main.tex
+% C4.6 - Permission matrix (translated). Chapter 8 (Section 8.3) tests against it.
+\section{Permission Matrix}
+\label{sec:4.6}
+
+The use case diagram (Figure~\ref{fig:usecase}) shows which functions each actor uses. For the same function, however, the roles also differ in the \emph{scope of data} they may access. Table~\ref{tab:permissions} summarises the rights of each role for each group of actions, with the conditions on the scope of data.
+
+\begin{table}[H]
+\centering
+\caption{Permission matrix by role}
+\label{tab:permissions}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{4.4cm}|L|L|L|}
+\hline
+\textbf{Group of actions} & \textbf{Administrator} & \textbf{Operator} & \textbf{Viewer} \\
+\hline
+Log in, log out & Yes & Yes & Yes \\
+\hline
+Manage accounts, assign areas to Operators & Yes & No & No \\
+\hline
+Manage cameras, enable/disable AI processing, upload fallback videos, choose the Detector/Tracker & Yes & No & No \\
+\hline
+Monitor status, check AI operation, view the audit log & Yes & No & No \\
+\hline
+Search for people, view the images and frames of search results & No & Only on operational cameras of the current area & No \\
+\hline
+Create cases, add or remove results, edit the title and notes, close or reopen & No & Only for the cases the Operator owns; newly added results must belong to the current area & No \\
+\hline
+View cases and the images of saved results & No & The cases the Operator owns, including after a change of area & Every case, read-only \\
+\hline
+View the overview dashboard & No & No & System-wide \\
+\hline
+\end{tabularx}
+\end{table}
+
+The images and frame of an appearance are granted on one of two grounds: the search right, meaning the appearance belongs to an operational camera in the Operator's current area; or the right over a case, meaning the appearance has been saved in a case the user may see. Thanks to the second ground, an Operator who has moved to another area and a Viewer can still see the images in a case, even without the right to search on that camera. Every right in the matrix is checked on the server (NFR-01).
+
+How the tests verify that the system enforces every cell of this matrix is presented in Section~\ref{sec:8.3}.

@@ -1,0 +1,22 @@
+% !TEX root = ../../main.tex
+% C6.2 - Background AI worker implementation (translated). Matches ai/registry.py, ai/configuration.py, workers/*, services/diagnostics.py.
+\section{Background AI Worker Implementation}
+\label{sec:6.2}
+
+Section~\ref{sec:5.2.1} presented the processing steps and life cycle of a job. This section presents how the background worker is implemented to run reliably on a CPU-only machine.
+
+\subsection{Model Management and Packaging}
+\label{sec:6.2.1}
+
+The system only loads the models declared in a \emph{model registry}, where each entry records an identifier, version, weight file with its SHA-256 hash, preprocessing version and provenance, including the licence; Trackers also list the compatible Detectors. A model can only be used when its weight file exists, the hash matches, the licence has been approved and the model has been trial-loaded successfully; models failing these conditions are still listed on the \emph{AI models} screen with the label \emph{Unavailable}. Currently YOLO11n, ByteTrack, BoT-SORT and RaSa are usable, while the larger YOLO sizes and YOLOX have no weight files yet (Section~\ref{sec:6.1.4}). The hash is recomputed every time a pair of models is selected to run, so a weight file replaced on disk cannot be used silently. When the Administrator applies a new Detector-Tracker configuration, the server trial-loads all three components before saving, and each job uses exactly the configuration version current when it was created.
+
+Each kind of model is wrapped in an \emph{adapter} with a common interface: open to load the model, process one input, and close to release resources. The adapter checks the output before passing it on: the Detector only keeps the person class and valid boxes; RaSa vectors must have 256 dimensions, contain no invalid values and be normalised. As a result, adding a new model, for example enabling YOLOX, only needs the weight file and a registry entry, plus an adapter if the model is of a new kind.
+
+\subsection{Resource Limits and Error Handling}
+\label{sec:6.2.2}
+
+Since the target machine has limited memory, the background worker is limited at several levels. The number of threads of the numerical libraries is set to 2, so that the models do not take every CPU core that the application server and the data stores also need. The Detector and the image encoder run in a separate child process; if an inference does not return within 120 seconds, the child process is killed, because a call hanging inside a native library cannot be interrupted from within the same process. Each job runs in its own process with a default total deadline of 3,600 seconds; when the job ends, the process ends with it, so the memory of the models and frames is fully reclaimed by the operating system. Frames are processed one at a time and released immediately, except for the representative frame candidates, which are already bounded.
+
+Each error is tied to the step that caused it and a specific error code, stored with the job for display on the administration screens, and classified in advance as \emph{transient} or \emph{unrecoverable}. For video files, transient errors are retried after 5 seconds, doubling each time up to 300 seconds, at most three times. RTSP sessions are not retried, since that part of the video has passed; the scheduler creates a new session after 5 minutes (Section~\ref{sec:5.2.1}). When the process receives a stop signal, the running job is left \emph{Running} so that it can be claimed again when its lease expires, instead of being marked failed immediately. A global lock in PostgreSQL guarantees that only one process executes jobs at a time, even if the background worker is accidentally started twice.
+
+\paragraph{AI check.}\label{sec:6.2.5} The \emph{AI check} screen trial-runs the models on real data without creating a job: for a camera, the system reads at most 90 frames from the RTSP stream, takes 6 of them and runs the Detector, Tracker and image encoder in turn; for the search group, the system encodes a sample image and a sample description. Each check is limited to 180 seconds, and only one check runs at a time.

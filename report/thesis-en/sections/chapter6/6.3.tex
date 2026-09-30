@@ -1,0 +1,110 @@
+% !TEX root = ../../main.tex
+% C6.3 - User interface implementation (translated). The screenshots show the application's Vietnamese interface;
+% screen and label names in the text are their English meaning.
+\section{User Interface Implementation}
+\label{sec:6.3}
+
+\subsection{Navigation and Communication with the Server}
+\label{sec:6.3.1}
+\label{sec:6.3.2}
+
+The web application is a single-page application built with React, with screen navigation handled by React Router. The routes are split into three groups by role: a user who is not logged in is sent to the login screen, and a user who opens a route of another role is sent to the home page of his or her own role. This guard only avoids showing unusable screens; the actual permissions are always checked by the server on every request.
+
+Every request to the server goes through a common API layer. This layer attaches the CSRF token to every data-changing request (Section~\ref{sec:5.5.2}). The CSRF token is only kept in the page's memory, never in browser storage. Error responses are turned into Vietnamese messages. For server-side errors, the message includes a \emph{lookup code}, the first eight characters of the request identifier, so that the Administrator can find the matching log line (Section~\ref{sec:6.4}). When any request receives 401, the application clears the login state and returns the user to the login screen. The session is only refreshed when the user is actually active. Automatic background requests do not keep the session alive, and the time of the last user action is shared between browser tabs.
+
+\subsection{Rendering Person Images in the Results}
+\label{sec:6.3.3}
+
+The person images of the result list are rendered by the server from the full frame and the bounding box on each request (Section~\ref{sec:5.3.3}). A result card in the interface has a 3:5 aspect ratio; the crop is widened from the bounding box with the real surrounding scene until it reaches this ratio, only ever growing, never cutting into the person. Since a wide crop may contain other people, the surroundings are dimmed to 60\% brightness and the person found is outlined in an accent colour. The full frame in the detail dialog has a red bounding box drawn around the person. Images are only returned when the requester has the right to see the corresponding result, with instructions not to cache them; if the frame is no longer in the store, the result card shows an \emph{Image unavailable} icon.
+
+\subsection{Main Screens}
+\label{sec:6.3.4}
+
+The figures below show the main screens of the application by role, captured on the demonstration data (Section~\ref{sec:7.2}). The application's interface is in Vietnamese (NFR-19); the names used below are the English meaning of the screen and label names.
+
+\paragraph{Operator.} The \emph{Person search} screen (Figure~\ref{fig:ui-search-image}) has the query form on the left, with the query image, the cameras of the area, the date range and the number of results, and the ranked result list on the right. Each result shows the person image in context, the camera, the time of appearance and the relevance score; the shared area and date are only shown once at the top of the list, and the list can be filtered again by time or camera or sorted by time without sending a new query. When searching by attributes (Figure~\ref{fig:ui-search-attr}), the English description generated from the selected attributes is shown in the form, so that users know which description the system actually searches for. Selecting a result opens the detail dialog with the full frame (Figure~\ref{fig:ui-result}), from which the result is saved into a new case, with the logged-in account as owner and the option to close the case right away (Figure~\ref{fig:ui-create-case}). The \emph{My cases} screen (Figure~\ref{fig:ui-cases}) shows the list of cases by status and the details of the selected case; a closed case is locked and can only be reopened.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{H10a-tim-kiem-anh-cat.png}
+\caption{Person search by image}
+\label{fig:ui-search-image}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{H10b-tim-kiem-thuoc-tinh-cat.png}
+\caption{Person search by attributes}
+\label{fig:ui-search-attr}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\begin{subfigure}[b]{0.61\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{H10c-chi-tiet-ket-qua-cat.png}
+    \caption{Details of a result}
+    \label{fig:ui-result}
+\end{subfigure}\hfill
+\begin{subfigure}[b]{0.36\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{H10d-tao-vu-viec-cat.png}
+    \caption{Creating a case from a result}
+    \label{fig:ui-create-case}
+\end{subfigure}
+\caption{The result detail dialog and the case creation dialog}
+\label{fig:ui-result-case}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{H10e-vu-viec-cua-toi-cat.png}
+\caption{The Operator's case management screen}
+\label{fig:ui-cases}
+\end{figure}
+
+\paragraph{Viewer.} The \emph{Overview} screen (Figure~\ref{fig:ui-overview}) shows the number of cases by status, the number of saved results and the list of recent cases; selecting a case opens the \emph{Case files} screen, which has the same layout as Figure~\ref{fig:ui-cases} but is read-only.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{H10f-tong-quan-cat.png}
+\caption{The Viewer's overview screen}
+\label{fig:ui-overview}
+\end{figure}
+
+\paragraph{Administrator.} The \emph{Cameras} screen (Figure~\ref{fig:ui-cameras}) lists the cameras by area with their connection status, where a camera processed only through video files is shown as \emph{Uploaded video}, their AI processing status and the actions to check the connection, edit and retire them. The \emph{AI models} screen (Figure~\ref{fig:ui-models}) lets the Administrator choose the Detector and Tracker; models that do not meet the conditions are marked \emph{Unavailable}, and the encoder is shown as a fixed component (Section~\ref{sec:6.2.1}). The \emph{Video processing} screen (Figure~\ref{fig:ui-video}) uploads a video for a camera with a predefined sampling mode and follows the progress of each job by the number of frames and ready tracks. The two monitoring screens are \emph{System status} (Figure~\ref{fig:ui-status}, Section~\ref{sec:6.4}) and \emph{AI check} (Figure~\ref{fig:ui-diagnostics}, Section~\ref{sec:6.2.5}).
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{H10g-camera-cat.png}
+\caption{Camera management screen}
+\label{fig:ui-cameras}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{H10h-mo-hinh-ai-cat.png}
+\caption{AI model configuration screen}
+\label{fig:ui-models}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{H10i-xu-ly-video-cat.png}
+\caption{Uploaded video processing screen}
+\label{fig:ui-video}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{H10j-trang-thai-he-thong-cat.png}
+\caption{System status screen}
+\label{fig:ui-status}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{H10k-kiem-tra-ai-cat.png}
+\caption{AI check screen}
+\label{fig:ui-diagnostics}
+\end{figure}

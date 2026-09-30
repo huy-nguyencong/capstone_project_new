@@ -1,0 +1,38 @@
+% !TEX root = ../../main.tex
+% C8.1-C8.3 - Software testing (translated). Figures: report-data-guide.md C8.1-C8.3 (current): unit 713, integration, E2E, UI, rehearsal.
+\section{Software Testing}
+\label{sec:8.1}
+\label{sec:8.2}
+\label{sec:8.3}
+
+The system was tested at five levels, from individual functions to the whole demonstration script; the results are summarised in Table~\ref{tab:test-levels}. The server-side code is tested with pytest and the interface with automated Playwright tests in the Edge browser. Integration and end-to-end tests only run on a disposable database: the test suite refuses to run if the database name does not carry the suffix reserved for tests, so that the demonstration data is never written by mistake.
+
+\begin{table}[H]
+\centering
+\caption{Test results by level}
+\label{tab:test-levels}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{2.9cm}|L|>{\raggedright\arraybackslash}p{4.4cm}|}
+\hline
+\textbf{Level} & \textbf{Scope} & \textbf{Result} \\
+\hline
+Unit & Each component of the server and the background worker, including API contract, security and fault injection tests & 713 passed \\
+\hline
+Integration & With real PostgreSQL, Milvus, MinIO and MediaMTX: store connections; business services; storage adapters; database migrations and schema; RTSP streams & 37 passed, 1 skipped (fault injection needs a service to be fully stopped) \\
+\hline
+End-to-end (E2E) & The whole flow through the real API with the real models: video upload, indexing, search, saving a case, viewing as a Viewer & 2 passed; the AI flow with a 10-second video took 217 seconds (model loading 44 seconds, processing 154 seconds, first text search 16 seconds) \\
+\hline
+User interface & 20 screens at three widths, 390, 768 and 1440 pixels & No overflowing elements, no browser or HTTP errors; 3 bugs found and fixed \\
+\hline
+Demonstration script & The steps of the three roles, from adding an RTSP camera to viewing a case file, run automatically & Twice in a row 15/15 steps passed, 85-88 seconds of interaction \\
+\hline
+\end{tabularx}
+\end{table}
+
+The three interface bugs found were: a model could not be selected on the AI models screen, the first search reported a lost connection because the timeout was shorter than the time needed to load the encoder, and the AI processing status was shown wrongly on the camera screen.
+
+\paragraph{Access control and security tests.} These tests belong to the unit tests and cover the permission matrix of Section~\ref{sec:4.6}:
+\begin{itemize}
+    \item Every API must declare an access rule; one test calls every API with every role and without login, and checks that only the permitted roles are not rejected.
+    \item An Operator opening another Operator's case receives 404; a Viewer can only read cases; appearances outside the area and images belonging to another case are blocked. The end-to-end tests further confirm that an Operator in another area can neither find nor open the frame of an appearance, and that a Viewer cannot call the search function.
+    \item Every write requires the anti-forgery token. Login is rate-limited per IP address and username, and search per account. The security headers are present in both successful and error responses, and only the configured origins may call the API with cookies.
+\end{itemize}

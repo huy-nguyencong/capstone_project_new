@@ -1,0 +1,23 @@
+% !TEX root = ../../main.tex
+% C3.6 - Vector search (translated). HNSW (malkov2020hnsw), Milvus (wang2021milvus) and its docs.
+% Matches storage/milvus/vectors.py (HNSW, IP, M=16, efConstruction=128, ef=64) and services/track_search.py.
+\section{Vector Search}
+\label{sec:3.6}
+
+\subsection{Nearest Neighbour Search and the HNSW Index}
+\label{sec:3.6.1}
+\label{sec:3.6.2}
+
+When each appearance is represented by one vector (Section~\ref{sec:3.5}) and the query is also encoded as a vector $\mathbf{q}$, search becomes a \emph{$k$-nearest-neighbour} problem: among $n$ stored vectors, find the $k$ with the largest inner product with $\mathbf{q}$, equivalent to cosine similarity for normalised vectors. Exhaustive search is always exact but its cost grows linearly with $n$, so the response time grows as data accumulates. \emph{Approximate Nearest Neighbor} (ANN) search builds an index in advance so that a query only examines a small part of the data, accepting that a small fraction of the true neighbours may be missed in exchange for speed.
+
+HNSW (Hierarchical Navigable Small World)~\cite{malkov2020hnsw} is a graph-based ANN method: each vector is a node linked to some vectors near it, and search repeatedly moves to a neighbouring node closer to the query. The nodes are organised in layers; the sparse upper layers move quickly to the region near the query, and the bottom layer, which contains every vector, searches that region precisely, so the search complexity grows logarithmically with the number of elements~\cite{malkov2020hnsw}. The index has three main parameters~\cite{milvus2026hnsw}: the maximum number of edges per node $M$ and the number of candidates during construction \textit{ef\-Con\-struc\-tion}, which give a better graph when larger but cost more memory and construction time; and the number of candidates during search $\mathit{ef}$, which is more accurate but slower when larger and should not be smaller than the number of results requested.
+
+\subsection{Vector Search with Filters}
+\label{sec:3.6.3}
+
+Queries in a surveillance system usually come with conditions, such as only within the user's area or within a time range. With \textbf{post-filtering}, the system takes the $k$ nearest vectors over all data and only then removes the results that fail the condition, so it may return fewer than $k$ results, or none, when the user's area is a small part of the data. With \textbf{pre-filtering}, the system determines the set of vectors that satisfy the condition and searches only within it, so every result is within the permitted scope and there are fewer than $k$ results only when the scope really holds little data. Milvus~\cite{wang2021milvus}, an open-source vector database, stores scalar fields next to the vectors and performs search with pre-filtering~\cite{milvus2026filtered}.
+
+\subsection{Vector Search in the System}
+\label{sec:3.6.4}
+
+The system uses Milvus with an HNSW index, the inner-product metric, $M = 16$, \textit{ef\-Con\-struc\-tion}~$= 128$ and $\mathit{ef} = 64$. A search sends Milvus the query vector together with a filter made of the user's area, the permitted cameras, the time range if any and the ready status, and receives at most $k$ results with $k \in \{4, 8, 12, 16\}$. The similarity is shown as a relevance score and is computed only at query time. Each result is checked against PostgreSQL to fetch its details and re-check the permission scope; results that are no longer valid because the two stores are temporarily out of sync are removed, and if fewer than $k$ results remain, the system searches again with twice the number, up to three rounds, so the number requested never exceeds 64, the value of $\mathit{ef}$. With the project's demonstration data (1,523 tracks, Section~\ref{sec:7.2}), exhaustive search would still be fast enough; the HNSW index was chosen to keep the response time as data accumulates from many cameras over a long period.

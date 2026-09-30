@@ -1,0 +1,36 @@
+% !TEX root = ../../main.tex
+% C5.1 - Architecture (translated). Figure H2 is the English version generated from tools-en.
+\section{System Architecture}
+\label{sec:5.1}
+
+Figure~\ref{fig:architecture} shows the overall architecture of the system, organised around the two stages of Section~\ref{sec:3.1.6}: the \emph{indexing} flow in the left column turns camera data into searchable appearances, and the \emph{search} flow in the right column serves the user. The two flows meet at the storage layer at the bottom. In the figure, black lines show the indexing flow, blue lines the search and data access flow, dashed lines the creation and claiming of jobs, and the thick line the continuous RTSP stream from the cameras.
+
+\begin{figure}[!tbp]
+\centering
+% 18 cm wide, 1 cm beyond each margin for readability (2 cm left margin and 1 cm right margin remain).
+\makebox[\textwidth][c]{\includegraphics[width=18cm]{H2-kien-truc.png}}
+\caption{Overall architecture of the system}
+\label{fig:architecture}
+\end{figure}
+
+\subsection{Components}
+\label{sec:5.1.1}
+
+\begin{itemize}
+    \item \textbf{Camera data source.} The video files of the test dataset are streamed continuously by FFmpeg to a MediaMTX server as RTSP streams; each stream is a logical camera (Section~\ref{sec:3.7.3}) and, for the system, no different from a real IP camera.
+    \item \textbf{Web application.} The interface is built with React and shared by all three roles; the web application only talks to the application server and never accesses a data store directly.
+    \item \textbf{Application server.} A Flask process provides the API for every function and keeps the RaSa encoder loaded to encode search queries.
+    \item \textbf{Background worker.} A separate Python process performs all the AI processing: it creates RTSP processing sessions in rotation among the cameras, takes the jobs of the queue one by one and runs the analysis pipeline.
+    \item \textbf{Storage layer.} PostgreSQL stores the business data and the job queue; Milvus stores the feature vectors with the fields used for filtering; MinIO stores the representative full frame of each appearance.
+\end{itemize}
+
+\subsection{Design Principles}
+\label{sec:5.1.3}
+
+The most important principle is to separate the AI processing from the application server. On the target machine, video analysis is about seven times slower than real time, so the application server does not read RTSP streams or run the analysis pipeline; it only creates jobs. The background worker executes those jobs independently. Users can still search normally while the system is indexing, and errors during analysis do not stop the application server.
+
+The job queue lives in PostgreSQL itself: each job is a row, instead of an additional message queue system. This reduces the number of components to deploy on a personal machine and keeps the job status next to the business data. The background worker executes one job at a time, and the RTSP sessions, which have a bounded length, rotate among the cameras, so that every camera is analysed in turn without overloading a CPU-only machine.
+
+For storage, each store holds one kind of data and PostgreSQL is the source of truth. The three parts of the same appearance are linked by a shared identifier, and every result returned by Milvus is checked against PostgreSQL before it is shown. Every data access, images included, goes through the application server, so that the permission matrix of Section~\ref{sec:4.6} is enforced at a single point.
+
+Finally, the two flows share the encoder and the pipeline. Queries are encoded with exactly the RaSa weights used for indexing, so both sides lie in the same vector space. RTSP streams and video files only differ in the frame reading step.

@@ -96,15 +96,17 @@ v('A4', 'Tệp video tải lên', DOC, 970, 135, 140, 80)
 # --- Cột phải: máy chủ ứng dụng (container = ranh giới tiến trình) ---
 v('C1', 'Máy chủ ứng dụng (Flask API)', CONT, 660, 300, 470, 700)
 v('C1t', '<i>xác thực, phân quyền, tìm kiếm,<br>vụ việc, quản trị</i>', 'text;html=1;align=center;verticalAlign=middle;', 675, 345, 440, 60)
-# 2026-09-29: truy vấn đi qua bước kiểm tra và xác định phạm vi (5.2.3), rồi tách: thuộc tính -> tạo câu, ảnh/câu mô tả -> bộ mã hóa.
-v('Q', 'Kiểm tra truy vấn,<br>xác định phạm vi', PROC, 690, 425, 240, 70)
+# 2026-09-30: phạm vi được xác định sau khi mã hóa (track_search.py), nên ô chỉ còn 'Kiểm tra truy vấn'; phạm vi
+# nằm ở nhãn mũi tên tới PostgreSQL. Kho xếp PostgreSQL | MinIO | Milvus: 3 chỗ cắt (tối thiểu) thay vì 6.
+# 2026-09-29: truy vấn đi qua bước kiểm tra (5.2.3), rồi tách: thuộc tính -> tạo câu, ảnh/câu mô tả -> bộ mã hóa.
+v('Q', 'Kiểm tra truy vấn', PROC, 690, 425, 240, 70)
 v('C3', 'Tạo câu mô tả<br>từ thuộc tính', PROC, 690, 560, 190, 76)
 v('C2', 'Mã hóa truy vấn<br>RaSa ảnh / văn bản', ICON_L + BRAIN + ';', 975, 740, 60, 60)
 # --- Tầng lưu trữ ---
-v('S', 'Tầng lưu trữ', FRAME, 0, 1150, 1130, 200)
-v('S1', '<b>PostgreSQL</b><br>tài khoản, camera, lần xuất hiện,<br>vụ việc, nhật ký, hàng đợi', DB, 20, 1195, 290, 135)
-v('S2', '<b>Milvus</b> (vector)<br>vector 256 chiều + khu vực,<br>camera, thời gian', DB, 390, 1195, 290, 135)
-v('S3', '<b>MinIO</b><br>khung hình đại diện<br>(bucket riêng tư)', ICON_R + BUCKET + ';', 820, 1220, 80, 80)
+v('S', 'Tầng lưu trữ', FRAME, 0, 1215, 1130, 200)
+v('S1', '<b>PostgreSQL</b><br>tài khoản, camera, lần xuất hiện,<br>vụ việc, nhật ký, hàng đợi', DB, 20, 1260, 290, 135)
+v('S2', '<b>Milvus</b> (vector)<br>vector 256 chiều + khu vực,<br>camera, thời gian', DB, 780, 1260, 290, 135)
+v('S3', '<b>MinIO</b><br>khung hình đại diện<br>(bucket riêng tư)', ICON_L + BUCKET + ';', 560, 1290, 70, 70)
 
 n = 0
 
@@ -128,9 +130,9 @@ e(nid(), 'B4', 'B5', DATA + E.format(.5, 1, .5, 0), 'khung bao người')
 e(nid(), 'B5', 'BF', DATA + E.format(.5, 1, .5, 0), 'cập nhật track')
 e(nid(), 'BF', 'B7', DATA + E.format(.5, 1, .5, 0), 'hết phiên hoặc hết tệp:<br>ảnh người (cắt tạm)')
 e(nid(), 'B7', 'B8', DATA + E.format(.5, 1, .5, 0), 'vector đặc trưng')
-e(nid(), 'B8', 'S1', DATA + E.format(.2, 1, .5, 0), '', [(91, 1108), (165, 1108)])
-e(nid(), 'B8', 'S2', DATA + E.format(.5, 1, .3, 0), '', [(160, 1100), (477, 1100)])
-e(nid(), 'B8', 'S3', DATA + E.format(.8, 1, .5, 0), '', [(229, 1092), (860, 1092)])
+e(nid(), 'B8', 'S1', DATA + E.format(.2, 1, .62, 0), '', [(91, 1140), (200, 1140)])
+e(nid(), 'B8', 'S2', DATA + E.format(.8, 1, .2, 0), '', [(229, 1097), (838, 1097)])
+e(nid(), 'B8', 'S3', DATA + E.format(.5, 1, .5, 0), '', [(160, 1115), (595, 1115)])
 # Tệp tải lên: máy chủ lưu tạm trên ổ đĩa (video_staging.py), tiến trình nền đọc tệp đó
 e(nid(), 'C1', 'B2', CTRL + E.format(0, .257, 1, .5), 'tạo công việc<br>(tệp tải lên)', [(595, 480), (595, 358)])
 e(nid(), 'C1', 'B3', DATA + E.format(0, .369, 1, .75), 'tệp video<br>lưu tạm', [(490, 558), (490, 482)], -0.72)
@@ -141,11 +143,11 @@ e(nid(), 'Q', 'C2', DATA + SEARCH + E.format(1, .5, 1, .5), 'ảnh, câu mô t�
 e(nid(), 'C1', 'D1', DATA + SEARCH + E.format(.5, 0, .82, 1), 'kết quả')
 e(nid(), 'A4', 'C1', DATA + SEARCH + E.format(.5, 1, .81, 0), 'tải lên')
 e(nid(), 'C3', 'C2', DATA + SEARCH + E.format(1, .5, .5, 0), 'câu tiếng Anh', [(1005, 598)])
-e(nid(), 'C1', 'S1', DATA + SEARCH + BOTH + E.format(.02, 1, .85, 0), 'quyền, thông tin mô tả', [(669, 1125), (266, 1125)])
+e(nid(), 'C1', 'S1', DATA + SEARCH + BOTH + E.format(.02, 1, .85, 0), 'phạm vi, quyền,<br>dữ liệu nghiệp vụ', [(669, 1175), (266, 1175)], 0.47)
 # Bộ mã hóa chỉ tạo vector; Milvus trả kết quả về máy chủ (không về bộ mã hóa).
-e(nid(), 'C2', 'S2', DATA + SEARCH + E.format(.5, 1, .8, 0), 'vector truy vấn<br>(lọc trước)', [(1005, 1135), (622, 1135)], -0.32)
-e(nid(), 'S2', 'C1', DATA + SEARCH + E.format(1, .5, .128, 1), 'kết quả<br>gần nhất', [(720, 1262)], 0.7)
-e(nid(), 'S3', 'C1', DATA + SEARCH + E.format(.75, 0, .468, 1), 'khung hình', None, 0.6)
+e(nid(), 'C2', 'S2', DATA + SEARCH + E.format(.5, 1, .776, 0), 'vector truy vấn<br>(lọc trước)', None, -0.45)
+e(nid(), 'S2', 'C1', DATA + SEARCH + E.format(.517, 0, .574, 1), 'kết quả<br>gần nhất', None, 0.65)
+e(nid(), 'S3', 'C1', DATA + SEARCH + E.format(1, .5, .213, 1), 'khung hình', [(760, 1325)], 0.8)
 
 # Không vẽ chú giải (SV quyết định 2026-09-29: nhãn trên hình đã đủ rõ).
 

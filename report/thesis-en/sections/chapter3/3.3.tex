@@ -1,0 +1,33 @@
+% !TEX root = ../../main.tex
+% C3.3 - Multi-object tracking (translated). Matches config/bytetrack_tracker.json and botsort_tracker.json.
+\section{Multi-Object Tracking}
+\label{sec:3.3}
+
+\subsection{Problem and Basic Components}
+\label{sec:3.3.1}
+\label{sec:3.3.2}
+
+A detector processes each frame independently, so it cannot tell whether a person in this frame is the one who appeared in the previous frame. Multi-Object Tracking (MOT) assigns each object an identifier and keeps it across frames; the sequence of bounding boxes of the same object over time is called a \emph{track}. In the project, tracking turns separate detections into \emph{appearances}, the unit of search results (Section~\ref{sec:3.1.6}).
+
+The common approach is \emph{tracking-by-detection}, founded on the SORT algorithm~\cite{bewley2016sort}, which has three components. First, each track has a Kalman filter~\cite{kalman1960} that predicts the position and size of its box in the current frame under a near-constant-velocity assumption, then corrects the prediction with the actual detection. Second, the match between a track and a detection is measured by the IoU (Equation~\ref{eq:iou}) between the predicted box and the detected box. Third, assigning each detection to at most one track at minimum total cost is solved with the Hungarian algorithm~\cite{kuhn1955hungarian}; an unmatched detection may start a new track, and an unmatched track is considered lost.
+
+\subsection{ByteTrack}
+\label{sec:3.3.3}
+
+Earlier methods usually discarded low-confidence detections immediately, while a partially occluded person is often detected only with low confidence, so tracks broke easily. ByteTrack~\cite{zhang2022bytetrack} uses every detection through two association steps: high-confidence detections are first matched with all tracks; the remaining tracks are then matched with the low-confidence detections, so that occluded people keep their tracks, and the low-confidence detections left unmatched are discarded as mostly background or errors. Only high-confidence detections start new tracks, and a lost track is kept for a short time so that it can be resumed.
+
+\subsection{BoT-SORT}
+\label{sec:3.3.4}
+
+BoT-SORT~\cite{aharon2022botsort} extends ByteTrack by adjusting the Kalman filter state, compensating camera motion and adding appearance re-identification (ReID) features to the association step. In the project, BoT-SORT is an alternative tracker with the same thresholds as ByteTrack; camera motion compensation and ReID are disabled because the cameras are static and to keep the cost low on a CPU-only machine.
+
+\subsection{Track Life Cycle in the System}
+\label{sec:3.3.5}
+
+The tracker receives the detections of the sampled frames, separately for each camera, with the following rules:
+\begin{itemize}
+    \item \textbf{Confidence thresholds:} detections of 0.25 or more are high and may start a new track; detections from 0.1 to below 0.25 are only used in the second association step.
+    \item \textbf{Confirmation:} a track is confirmed only after at least two observations; an unconfirmed track produces no result.
+    \item \textbf{Termination:} a track ends when it has been lost for more than three consecutive processed frames or more than two seconds since its last observation, and when the stream ends. For video files, the timestamp is the one recorded in the file, so the rule does not depend on the speed of the machine; for RTSP streams, the timestamp is the time the system receives the frame, so when processing is slower than the stream, the two-second condition may end tracks early.
+    \item \textbf{Identifier scope:} one camera and one processing session only; the system does not link the tracks of the same person across cameras.
+\end{itemize}

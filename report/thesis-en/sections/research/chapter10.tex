@@ -1,0 +1,488 @@
+% !TEX root = ../../main.tex
+% Part II (Nguyen Huu Cuong) - merged from the research report (report_latex_v3), see MERGE_NOTES.md.
+% Style pass 2026-09-30: em dashes and rhetorical sentences removed; technical content, numbers and references unchanged.
+\chapter{Attribute Index and Multi-Agent Reasoning}
+\label{chapter:r-reasoning}
+
+\textit{This chapter describes the attribute index built offline with a vision-language model, and the multi-agent funnel that re-ranks the candidates of CLIP retrieval from that evidence.}
+
+\section{The Attribute Index}
+
+\subsection{Schema}
+Each described crop carries the 18 attributes of Table~\ref{tab:r-attrs}. The
+schema is deliberately centred on garments, since these are what a witness
+usually describes. \at{carrying\_canon} is list-valued (a person can carry a
+backpack \emph{and} a handbag); every other attribute is single-valued per crop,
+although the same attribute read across a track often produces several values,
+which is the signal the reasoning stages use.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Attribute} & \textbf{Region} & \textbf{Meaning}\\
+\midrule
+\at{gender}             & whole & apparent gender\\
+\at{age\_group}         & head  & apparent age band\\
+\at{build}              & whole & apparent build\\
+\at{height\_class}      & whole & apparent height, words only\\
+\at{hair\_color}        & head  & dominant hair colour\\
+\at{hair\_style}        & head  & visible hairstyle\\
+\at{upper\_inner\_type} & upper & the top worn under any outer layer\\
+\at{upper\_inner\_color}& upper & the colour of that top\\
+\at{upper\_outer\_type} & upper & the outermost upper garment (jacket, coat)\\
+\at{upper\_outer\_color}& upper & the colour of that outer garment\\
+\at{sleeves}            & upper & sleeve length\\
+\at{pattern}            & upper & visible pattern on the upper body\\
+\at{lower\_type}        & lower & lower-body garment\\
+\at{lower\_color}       & lower & its colour\\
+\at{lower\_length}      & lower & how far it reaches\\
+\at{shoes\_type}        & feet  & footwear type\\
+\at{shoes\_color}       & feet  & footwear colour\\
+\at{carrying\_canon}    & whole & non-clothing objects carried (LIST-valued)\\
+\bottomrule
+\end{tabular}
+\caption{The attribute schema, and the visual band each attribute is judged
+from. The region column is a manual routing table: a wrong entry is invisible at
+run time, because the evidence line still reads correctly but quotes the
+sharpness of the wrong part of the body.}
+\label{tab:r-attrs}
+\end{table}
+
+\subsection{Visual context}
+Attributes alone cannot explain a disagreement. If one frame reads the top as red
+and another as black, the useful question is whether the two frames were taken
+under conditions that make this confusion likely. Every crop therefore also
+carries numeric quality statistics, computed per band:
+
+\begin{center}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Band} & \textbf{Extent of the crop}\\
+\midrule
+\at{whole} & the entire crop\\
+\at{head}  & the first 15\%\\
+\at{upper} & the next 30\%\\
+\at{lower} & the next 40\%\\
+\at{feet}  & the last 15\%\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent
+Each band carries four numbers: sharpness, contrast, brightness and saturation.
+Because \at{upper\_inner\_color} is routed to the \at{upper} band, a note about a
+colour disagreement can cite the saturation of the upper body in the frames that
+read red and in those that read black, giving a mechanism with its figure rather
+than a guess.
+
+\subsection{Three different counts}
+The same attribute value can be counted in three ways. Confusing them is the
+easiest mistake in this design, so the implementation keeps them as three
+separate functions:
+
+\begin{itemize}
+\item The \emph{global prior} is the value's share over the \emph{whole index},
+      with lists \emph{split}: a reading of \at{[red, white]} plus a reading of
+      \at{red} gives red 66\% and white 33\% over three observations. This is
+      the base rate against which rarity is judged.
+\item The \emph{track distribution} is the set of readings of one track, kept
+      \emph{whole}: the same two readings give ``red+white 50\%, red 50\%''.
+      This is what the evidence reader quotes.
+\item \emph{Membership} tells whether a query value \at{red} matches a frame that
+      read \at{[red, white]}, which it does.
+\end{itemize}
+
+The local (pool) prior adds one more rule: it is computed over
+\emph{deduplicated tracks}, not over pool crops. Two pool crops from the same
+five-frame track give a five-frame statistic, not a ten-frame one. Without this
+rule, a person retrieved many times would dominate the pool statistic simply
+because the retriever returned that person several times.
+
+\subsection{The image-quality problem, and why voting does not work}
+\label{sec:r-noise}
+Table~\ref{tab:r-noise} shows one real track, described over ten frames. It is
+the motivating example for Section~\ref{sec:r-reasoning}.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Attribute} & \textbf{Across the 10 described frames}\\
+\midrule
+\at{gender}             & female 80\%, male 20\%\\
+\at{age\_group}         & young adult 100\%\\
+\at{build}              & slim 100\%\\
+\at{height\_class}      & average height 80\%, average 20\%\\
+\at{hair\_color}        & black 40\%, brown 30\%, blonde 30\% (split)\\
+\at{hair\_style}        & short 50\%, straight 30\%, long+straight 20\% (split)\\
+\at{upper\_outer\_type} & hoodie 20\%, not visible 80\% (split)\\
+\at{upper\_outer\_color}& black 20\%, not visible 80\% (split)\\
+\at{upper\_inner\_type} & sweater 70\%, tank top 10\%, not visible 20\%\\
+\at{upper\_inner\_color}& gray 40\%, black 40\%, not visible 20\%
+                          (tied, the aggregate is arbitrary)\\
+\bottomrule
+\end{tabular}
+\caption{VLM noise on one track. A majority vote would report
+\at{hair\_color}${=}$black on a 40/30/30 split, and would break the 40/40 tie
+on \at{upper\_inner\_color} by whichever value the sort visited first.}
+\label{tab:r-noise}
+\end{table}
+
+Three distinct problems appear in this track. Ties make the aggregate arbitrary.
+Splits across near-synonyms (\at{short}, \at{straight}, \at{long+straight}) are
+not a disagreement about the person but about the vocabulary. Occlusion
+(\at{not visible} 80\%) is not a value: it is the absence of an observation, and
+counting it as one would let an invisible garment outvote a visible one. A voting
+aggregator cannot distinguish these cases; an LLM that is told what each form
+means can.
+
+% ========================================================= 5 the reasoning ==
+\section{Multi-Agent Semantic Reasoning}
+\label{sec:r-reasoning}
+
+\subsection{The funnel}
+Figure~\ref{fig:r-reasoning} shows the reasoning block. It keeps ZARA's
+coarse-to-fine iteration (Section~\ref{sec:r-zara}), pruning first and deciding
+second, with four agents run over two rounds:
+
+\begin{enumerate}
+\item The attribute-value selector (stage 1) chooses the attribute-value pairs to
+      spend evidence on, from the knowledge base and the pool statistics.
+\item The evidence pruning agent (stage 2A) reads, for every candidate and every
+      selected pair, what this crop says and what the evidence around that
+      reading looks like.
+\item After the coarse cut ($75 \rightarrow 25$), a second selector (stage 3)
+      works on the survivors, whose statistics have changed because the pool has.
+\item The decision agent (stages 2B and 4B) ranks the candidates from the notes
+      and returns the final ordering.
+\end{enumerate}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{reasoning-000.png}
+\caption{The semantic reasoning block. The knowledge base supplies per-attribute
+statistics to both selector calls; the text query reaches the pruning and
+decision agents directly.}
+\label{fig:r-reasoning}
+\end{figure}
+
+\paragraph{Why stage 0 is not in the funnel.} Neither the list above nor
+Figure~\ref{fig:r-reasoning} shows the query analyst (stage 0), on purpose. The
+funnel is the part that looks at candidates, and stage 0 never sees one. It is a
+\emph{pre-run} over the query alone: it runs once per query, before the pool is
+examined, and settles how each word of the query relates to each value used in
+the index. Its output is a lookup table of relations, not a decision about any
+candidate, and every stage of both rounds reads the same table. Drawing it as a
+fifth agent inside the funnel would suggest that it takes part in pruning or
+ranking, which it does not. Section~\ref{sec:r-stage0} describes it and explains
+why it exists.
+
+Two properties of this arrangement drive the prompt design. First, the coarse cut
+cannot be undone: a candidate placed 26th in the first round can never be
+returned, while a candidate ranked low in the second round still can. The two
+mistakes are not symmetric, and the ranker is told so in round-dependent terms
+(Section~\ref{sec:r-coverage}). Second, the second round renumbers the
+candidates: the survivors are presented to stages 3 and 4 as candidates $1..M$
+without their round-1 labels, so that the refine round is not anchored by the
+ordering of the coarse round.
+
+\subsection{Stage 0: query analyst}
+\label{sec:r-stage0}
+Before any candidate is seen, one call settles what the query asks of each
+attribute. For every attribute in the index vocabulary it emits either
+\code{NOT-CONSTRAINED} or one line per (index value, query value) pair with a
+relation:
+
+\begin{center}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Relation} & \textbf{Meaning}\\
+\midrule
+\code{exact}     & interchangeable both ways; nothing gained or lost by writing either\\
+\code{near}      & a plausible neighbour: what a describer might write for the same
+                   thing\\
+                 & under different light, from further away, or in motion\\
+\code{far}       & a different value of the same kind, unlikely to be confused\\
+\code{unrelated} & not the same property\\
+\code{neutral}   & can neither confirm nor contradict (hides the attribute, too vague)\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent
+This is a statement about \emph{words}: the analyst sees no candidate, no image
+and no statistic. The \code{near} relation matters most, because later stages use
+it to tell a describer's mistake from a different person. The relations are
+settled once per query and reused by every later stage, including the second
+round, since asking the same question twice could produce two different answers.
+
+\paragraph{Why a separate pre-run.} Every later stage has to decide whether what a
+crop read agrees with what the query asked: the selector to weigh a pair, the
+evidence reader to state where the query value stands, and the ranker to size a
+conflict. Without stage 0, each of these calls would derive the relation between,
+for example, \emph{navy} and \emph{black} on its own, inside a prompt already
+crowded with statistics, and nothing would keep the answers consistent: the
+evidence reader could treat a reading as a near match while the ranker treated
+the same reading as a contradiction. Settling the relations once, from the words
+alone, has three consequences.
+
+\begin{itemize}
+\item Consistency: one relation per (index value, query value) pair, read in the
+      same way by stages 1 to 4 in both rounds.
+\item Separation of concerns: a relation is a statement about language. Deciding
+      it without candidates, images or statistics keeps it free of bias from how
+      common a value is or from what the pool happens to contain; the later
+      stages then reason about evidence, not vocabulary.
+\item Cost: the call depends only on the query and the index vocabulary, so it is
+      small, runs once per query, and is replayed from disk whenever the query is
+      run again (Section~\ref{sec:r-engineering}).
+\end{itemize}
+
+\noindent
+The most useful relation it produces is \code{near}: it lets the evidence reader
+and the ranker treat a likely confusion of the describer (navy read as black in a
+dim crop) differently from a real mismatch (navy read as red).
+
+\subsection{Stage 1: attribute-value selector}
+The selector chooses 4 to 10 attribute=value pairs with the highest expected
+decision value, each with a one-sentence justification
+(Figure~\ref{fig:r-selector}). It sees two tables: the \emph{global prior}, the
+value's share over the whole index, and the \emph{local prior}, the pool's
+distribution with the mean CLIP similarity and track stability per value
+(Figure~\ref{fig:r-selector-work}).
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.90\textwidth]{selector-000.png}
+\caption{The selector in the abstract. It decides \emph{where to look}, never what
+is true: the output is a set of pairs with reasons, not a verdict.}
+\label{fig:r-selector}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.97\textwidth]{selector_work-000.png}
+\caption{The same stage with its real inputs and output: the two prior tables as
+input, an attribute-value pair with its reason as output.}
+\label{fig:r-selector-work}
+\end{figure}
+
+The prompt requires the choice to be made jointly across five dimensions, none of
+which may decide alone: the query relation from stage 0; discrimination, that is,
+how small a subset the value picks out; partitioning, how usefully it separates
+competing groups; inspectability, the track stability qualified by the track
+size, since a single-crop track has a stability of 1.00 by construction; and the
+enrichment or depletion signal. A rare exact value can be highly decisive, a
+common exact value can be weak, and a \emph{near} value can be worth a slot
+because it explains an apparent mismatch.
+
+One restriction was added after measurement: the selector's input is limited to
+the attributes the query actually constrains. When shown the whole index, the
+selector spent slots on attributes the query never mentioned, for which any
+reading is equally consistent with the request.
+
+\subsection{Stage 2A: evidence reader}
+This is the most expensive stage and the core of the system. For each candidate
+and each selected pair it writes exactly two lines: what \emph{this crop} read,
+and a note about the evidence around that reading.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{pruning-000.png}
+\caption{The evidence and decision stages in the abstract: stage A reads the
+evidence per candidate and per attribute, and stage B ranks from what it wrote.}
+\label{fig:r-pruning}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.97\textwidth]{pruning_work-000.png}
+\caption{The same two stages at work: one rendered evidence block, the note the
+reader writes from it, and the ranking the decision agent produces. Every figure
+in the note appears in the block; nothing is recomputed or invented.}
+\label{fig:r-evidence}
+\end{figure}
+
+The rendered block for one candidate and one pair contains at most:
+
+\begin{itemize}
+\item the crop's own reading, with its relation to the query value and its index
+      share, for example \code{short [near] [index 65\%]};
+\item the track distribution, such as \code{short 8/10 = 80\% repeated} and
+      \code{long 2/10 = 20\% repeated}, kept whole as readings rather than split;
+\item linkage and cohesion: how strongly the frames that read this value link to
+      this crop (\code{vs crop 0.57 +/- 0.07}) and to each other
+      (\code{together 0.73 +/- 0.14}), with the number of pairs the figure is
+      computed from;
+\item conditions: the quality figures for the relevant band, with the deviation
+      from the pool's own distribution, for example
+      \code{sharp 21.5 (-1.5) mid}, \code{contrast 120.7 (+14.7) mid},
+      \code{bright 88.3 (+16.2) mid}, \code{sat 110.9 (-48.1) mid};
+\item the view: whether this frame is unusual for its own value, printed only
+      when at least two metrics fall outside that value's own range;
+\item frame agreement: how much a quoted frame resembles the crop overall,
+      \emph{excluding the attribute being judged}, so that a frame agreeing about
+      the upper colour cannot be used to justify trusting it about the upper
+      colour.
+\end{itemize}
+
+Four rules govern the note, each adopted after a measured failure:
+
+\begin{enumerate}
+\item The citation rule: never name a mechanism without the figure that shows it.
+      Adding this rule reduced the invented causes in this stage from 19 to 0,
+      and the mechanisms named without numbers to 0 of 82. It is the change with
+      the clearest result in this pipeline, and it was also applied to the
+      ranker.
+\item The crop is a reference observation, not the truth. A frame agreeing with
+      the crop is not evidence that the crop is right, because a tracker can group
+      two people.
+\item No deciding, ranking or averaging. The reader may not write
+      \emph{correct}, \emph{winner}, \emph{most likely} or \emph{therefore the
+      person is X}. Its task is to make the evidence readable; ordering is done by
+      another stage with another prompt.
+\item A length budget: one sentence of at most 25 words for an uncontested unit,
+      and 40 to 95 words where the evidence is contested. Contested notes must be
+      written in full: two to four channels with their figures, then a closing
+      sentence saying where the evidence leaves the readings.
+\end{enumerate}
+
+Because a single call with 75 candidates would exceed the token window of the
+free tier, stage 2A is split into three calls of 25 candidates. The split is sound
+because stage 2A is independent across candidates and attributes: no note depends
+on another. The batches are paced (Section~\ref{sec:r-engineering}).
+
+\subsection{Stage 2B: the ranker}
+The ranker sees the query and one note per attribute per candidate, and nothing
+else: no per-attribute verdict, no score and no CLIP similarity. It ranks all $N$
+candidates against each other and writes at least the top
+$N_{\text{keep}} = \text{cap} + 5$ rows (30 of 75 in the coarse round, 15 of 25
+in the refine round) as a markdown table with one reason per row.
+$N_{\text{keep}}$ is a minimum, not a quota: the model is told to keep writing
+while the evidence still separates one candidate from the next, and to stop when
+it no longer does.
+
+Three mechanisms shape the ordering.
+
+\paragraph{Reliability, not direction.} Whether an attribute matches is the first
+question; how much weight the reading can bear is the second, and the ordering is
+based on the second. Ranking on direction produced 69 of 75 rows opening with
+``Exact red top, shorts, female gender'', all of which was shared by the whole
+pool and ordered nothing.
+
+\paragraph{What each query value is worth.} The ranker receives a rarity table
+once, at the top of its message: for every query value, its share in the index,
+the \emph{typical} (median) share for that attribute, the most common share, and
+the track stability. Each row ends with a label, \emph{decisive}
+($\geq 5\times$ typical), \emph{moderate} ($\geq 1.5\times$) or \emph{almost
+nothing}, and the ratio is printed next to it so that the label can be checked.
+This was added after a measured failure: a candidate whose upper body was read as
+green in every frame, green being rare, was ranked below candidates that only
+matched a common colour, because no downstream stage carried any notion of
+rarity.
+
+\paragraph{The coverage floor.}
+\label{sec:r-coverage}
+The two rounds receive different instructions about absence, because their cuts
+differ in kind.
+
+\begin{itemize}
+\item In the coarse round, PRESENT means read \emph{anywhere}: in one frame, as a
+      minority reading, overshadowed by a competing value, in the track but not in
+      this crop, or as a \code{[near]} value standing in for the query value. A
+      present but weak reading ranks above an absent one. ABSENT is an evidence
+      gap in either of its two forms: \emph{read nowhere in the track} (silence)
+      and \emph{nothing closer than \code{[far]} read anywhere} (contradiction).
+      The floor applies in one case only, the absence of a value that the rarity
+      table calls \emph{decisive}. It is neither a count of matching attributes
+      nor a score.
+\item In the final round nothing lies below the cut any more, so there is nothing
+      left to protect. A value read nowhere is still a reliable mismatch and
+      should still push a candidate down; a single overshadowed frame is weak
+      positive evidence, weighed against everything else, and not a floor.
+\end{itemize}
+
+\subsection{What the CLIP score is worth inside the pool}
+\label{sec:r-clipscore}
+The ranker receives the evidence notes and the query, and deliberately does
+\emph{not} receive the CLIP similarity. This design decision is based on the
+measurement in Table~\ref{tab:r-clipscore}.
+
+CLIP does two jobs here, and only the second is in question. Building the pool is
+not contested: the 75 candidates are CLIP's top 75 out of the whole index, and no
+other part of the system could have produced them. Ordering inside the pool is
+what stages 2B and 4B would inherit if the score were passed on, but the pool is
+already the narrow top tail of a similarity distribution, so the spread that
+ranked it against the \emph{index} may be almost gone \emph{within} the pool.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}lr@{}}
+\toprule
+\textbf{Measured over the evaluated pools} & \textbf{Value}\\
+\midrule
+Mean pool similarity                        & 0.3272\\
+Mean within-pool spread (rank 1 $-$ rank 75)& 0.0622\\
+Mean within-pool standard deviation         & 0.0142\\
+Median adjacent-rank gap                    & 0.0004 \ (2.7\% of one sd)\\
+AUC, ground truth vs.\ rest of pool         & 0.601\\
+Ground-truth $z$-score within pool          & $+1.24$ sd\\
+\bottomrule
+\end{tabular}
+\caption{What the CLIP score separates \emph{inside} the 75-candidate pool. The AUC
+is the probability that a ground-truth crop outranks a non-ground-truth crop there;
+1.0 would mean the score alone sorts the pool perfectly, and 0.5 would be chance.
+It is computed with ties taken into account, because many crops share the same
+similarity to three decimals and counting a tie as a win would overstate the score
+exactly where it is weakest.}
+\label{tab:r-clipscore}
+\end{table}
+
+The three measurements point the same way. An AUC of 0.601 is weak separation:
+inside the pool, the score is closer to chance than to a useful ordering. The
+median gap between \emph{adjacent} ranks is 2.7\% of one standard deviation, so
+ranks 8 and 20 are separated by numerical noise, and a ranker told to respect them
+would be respecting noise. The ground truth does sit $+1.24$ standard deviations
+above the pool mean, which is above average but not separated.
+
+CLIP is therefore a good \emph{retriever}, since it produced this pool out of a
+496-identity gallery, but a weak \emph{ranker of what it retrieved}. These are
+different jobs, which is why they are measured separately here. Passing the score
+into the ranking prompt would add little ordering information and would anchor the
+ranker to the ordering it is meant to correct.
+
+\subsection{Stages 3 and 4}
+Stage 3 is the stage-1 prompt with one paragraph inserted: it selects
+attribute-value pairs again over the 25 survivors, whose pool statistics differ
+from those of the original 75. A value that was rare in the pool may now be shared
+by all the survivors, and therefore useless for separating them. Stage 4A is the
+evidence reader again, on the new pairs, and stage 4B is the ranker with the
+\code{COVERAGE\_FINAL} section. The output of 4B, cut to 10, is the system's
+answer.
+
+\subsection{Engineering}
+\label{sec:r-engineering}
+Several implementation details are essential for reproducibility:
+
+\begin{itemize}
+\item Replay by byte-identical input. Every stage writes its rendered input and
+      its reply to disk. Running an identity again replays from disk every stage
+      whose input text is byte-identical, and resumes at the first stage without a
+      saved answer. A run interrupted by a quota limit can therefore continue
+      without repeating the calls already made.
+\item Pacing. A rolling token-per-minute pacer holds back a call that would exceed
+      the window, with a fixed 60-second gap between 2A batches, 180 seconds
+      between identities, and exponential retry (60/120/240/480\,s) on errors 503
+      and 429.
+\item Robust parsing. A duplicate row in a ranking and a short reply are different
+      failures and are reported separately; a candidate skipped in the middle of
+      the list is appended in input order rather than dropped; and a ranking that
+      cannot be parsed falls back to the CLIP order with a warning, because an
+      empty round would score exactly like a wrong answer while hiding the parse
+      failure.
+\end{itemize}
+
+% ================================================================= 6 setup ==

@@ -1,0 +1,18 @@
+% !TEX root = ../../main.tex
+% C12.2 - Limitations. 12.2.1 = Vietnamese 9.2 translated (Part I); 12.2.2 = research limitations (Part II), verbatim.
+\section{Limitations}
+\label{sec:9.2}
+
+\subsection{Part I: The Application}
+\label{sec:12.2.1}
+
+The experiments confirm the limitations stated in Section~\ref{sec:1.4}. The largest is that search by text and by attributes is not yet effective on the test data: no query has a correct result in the top 16 (Section~\ref{sec:8.4}). The cause is the domain gap between RaSa's training data and person images cropped automatically from cameras.
+
+On a CPU-only machine, processing is about seven times slower than real time. The system has to process the cameras in turn, part of the frames of a live stream are skipped, and the demonstration data had to be indexed from video files (Section~\ref{sec:7.2}). RTSP data is also only encoded and written at the end of each session, rather than as soon as each appearance ends, so there is a delay between a person appearing in front of a camera and becoming searchable (Section~\ref{sec:5.2.1}). The slow speed causes one more problem for RTSP streams. The timestamp of a frame is the time the system reads it rather than the stream's own timestamp, so when processing is slower than the stream, the time gap between two processed frames grows. Tracks then end early and one appearance may be split into several tracks (Section~\ref{sec:3.3.5}). Data indexed from video files is not affected. In addition, the first search is slow because the encoder must be loaded, so the system needs a warm-up before use. Memory is also close to its limit: the application server and the analysis pipeline each load their own models, so while processing, the system uses about 8~GiB and a 16~GB machine nearly runs out of memory if other applications are open (Section~\ref{sec:8.7}).
+
+Finally, the evaluation is incomplete: the quality of search by image and by text at the current confidence threshold has not been measured again (Section~\ref{sec:8.4}). BoT-SORT is integrated but has not been used for indexing or evaluated.
+
+\subsection{Part II: The Reasoning Layer}
+\label{sec:12.2.2}
+
+\input{sections/research/_limits}

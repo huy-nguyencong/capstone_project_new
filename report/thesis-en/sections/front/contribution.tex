@@ -1,0 +1,29 @@
+% !TEX root = ../../main.tex
+% New page for the two-author edition: who did what. Built from the division of the report into
+% Part I (application) and Part II (research). The authors must confirm every row - see MERGE_NOTES.md.
+\chapter*{Work Contribution}
+\addcontentsline{toc}{chapter}{Work Contribution}
+
+The project has two parts that were carried out by different members. \textbf{Part I} (Chapters~\ref{chapter:lienquan} to~\ref{chapter:kiemthu}) builds and evaluates the person search application. \textbf{Part II} (Chapters~\ref{chapter:r-overview} to~\ref{chapter:r-experiments} and Appendix~\ref{app:prompts}) studies an LLM-based reasoning layer that re-ranks the results of text-based person search. The table below lists the work of each member.
+
+% Unnumbered and not in the List of Tables: front-matter table (body tables are numbered by chapter).
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{4.0cm}|L|>{\raggedright\arraybackslash}p{3.2cm}|}
+\hline
+\textbf{Member} & \textbf{Work} & \textbf{Report} \\
+\hline
+Nguyen Cong Huy \newline 2113499 &
+Survey of related systems; requirements, use cases and system architecture; design and implementation of the application (application server, background AI worker, web application, three data stores); deployment on the target machine, preparation of the demonstration data; software testing and evaluation of the application. &
+Part I: Chapters~\ref{chapter:lienquan} to~\ref{chapter:kiemthu} \\
+\hline
+Nguyen Huu Cuong \newline 2252098 &
+Research on improving the search block: attribute index built with a vision-language model, multi-agent LLM reasoning funnel and its prompts, evaluation protocol and tooling, experiments on Market-1501, error analysis and ablations. &
+Part II: Chapters~\ref{chapter:r-overview} to~\ref{chapter:r-experiments}, Appendix~\ref{app:prompts} \\
+\hline
+Both members &
+Topic definition and scope; Introduction and Conclusion; front matter. &
+Chapters~\ref{chapter:tongquan} and~\ref{chapter:tongket} \\
+\hline
+\end{tabularx}
+\end{table}

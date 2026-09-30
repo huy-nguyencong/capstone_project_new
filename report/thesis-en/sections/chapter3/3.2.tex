@@ -1,0 +1,34 @@
+% !TEX root = ../../main.tex
+% C3.2 - Person detection (translated). Matches config/ultralytics_yolo_detector.json (conf 0.1, iou 0.7, max 300).
+\section{Person Detection}
+\label{sec:3.2}
+
+\subsection{Object Detection}
+\label{sec:3.2.1}
+
+Object detection locates the objects in an image and determines their class. For each object, the model returns a rectangular \emph{bounding box}, usually given by the coordinates of two corners $(x_1, y_1, x_2, y_2)$, the \emph{class} of the object and a \emph{confidence score}. Two boxes are compared with the Intersection over Union (IoU):
+\begin{equation}
+    \mathrm{IoU}(A, B) = \frac{|A \cap B|}{|A \cup B|},
+    \label{eq:iou}
+\end{equation}
+which ranges from 0 when the boxes do not overlap to 1 when they coincide. IoU is used to remove duplicate predictions and to link detections across frames in tracking (Section~\ref{sec:3.3}).
+
+\subsection{Two-Stage and One-Stage Detectors}
+\label{sec:3.2.2}
+
+A \emph{two-stage} model such as Faster R-CNN~\cite{ren2017fasterrcnn} first uses a region proposal network to generate regions likely to contain objects, then classifies each region and refines its box; this is accurate but costly because many proposals must be processed. A \emph{one-stage} model such as YOLO (You Only Look Once)~\cite{redmon2016yolo} treats detection as a single regression problem, predicting the boxes and classes of all objects in one pass over the image, which is considerably faster and suits processing many video frames.
+
+\subsection{The YOLO Family}
+\label{sec:3.2.3}
+
+Modern YOLO models have three parts: a feature extractor (backbone) at several levels of detail, a feature aggregator (neck) at several scales so that both large objects close to the camera and small distant ones can be detected, and a prediction head for boxes, classes and confidence. YOLO11 was released by Ultralytics in 2024 in five sizes (n, s, m, l, x) that trade speed for accuracy~\cite{ultralytics2024yolo11docs}. The models are pre-trained on COCO~\cite{lin2014coco}, which has 80 common object classes including \emph{person}, so they can detect people directly without further training.
+
+\subsection{Post-Processing: Confidence Threshold and Duplicate Removal}
+\label{sec:3.2.4}
+
+The raw output of the model contains many low-confidence boxes and many overlapping boxes describing the same object. Two post-processing steps are applied: boxes below a confidence threshold are discarded, and Non-Maximum Suppression (NMS) repeatedly keeps the most confident box and removes every box of the same class whose IoU with it exceeds a threshold. A lower confidence threshold misses fewer people but produces more false detections; a lower IoU threshold removes overlapping boxes more aggressively but may remove people standing close together.
+
+\subsection{Role of Detection in the System}
+\label{sec:3.2.5}
+
+The detector is applied to the sampled frames (Section~\ref{sec:3.4}) and keeps only the \emph{person} class, with a confidence threshold of 0.1, an NMS IoU threshold of 0.7 and at most 300 detections per frame. The low confidence threshold is deliberate: the ByteTrack tracker in the next step needs low-confidence detections, often partially occluded people, to keep existing tracks alive (Section~\ref{sec:3.3}). These detections are not used to start new tracks, and a track is only confirmed when the object is detected in at least two processed frames, so most transient false detections are removed by the tracking step. The reasons for choosing YOLO11n are given in Section~\ref{sec:6.1.4}.

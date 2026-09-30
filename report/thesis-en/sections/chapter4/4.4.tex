@@ -1,0 +1,64 @@
+% !TEX root = ../../main.tex
+% C4.4 - Use case diagram (translated). Figure H1 is the English version (figures/H1-use-case.png, generated from tools-en).
+\section{Use Case Diagram}
+\label{sec:4.4}
+
+The functional requirements of Section~\ref{sec:4.2} are organised into 15 use cases. Figure~\ref{fig:usecase} shows all the use cases of the system with their relations and actors, and Table~\ref{tab:usecases} lists each use case with its actor and purpose.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{H1-use-case.png}
+\caption{Use case diagram of the system}
+\label{fig:usecase}
+\end{figure}
+
+The diagram is organised as follows:
+\begin{itemize}
+    \item \textbf{An abstract \emph{User} actor.} The three concrete actors share login (UC-01) and logout (UC-15), so the diagram links these two use cases to an abstract \emph{User} actor, which the three concrete actors generalise to.
+    \item \textbf{Division by role.} The Administrator is linked to UC-02 to UC-08, the Operator to UC-09 to UC-11 and the Viewer to UC-12 to UC-14; no use case is shared among these actors.
+    \item \textbf{Extend relations.} UC-10 extends UC-09 and UC-11 extends UC-10: after searching, the Operator can view the details of a result and then save it into a case. Likewise, UC-13 extends UC-12 and UC-14 extends UC-13. The extending use cases are still linked directly to their actor, because the actor can also start them independently, for example opening the list of cases without searching first.
+    \item \textbf{Login is a precondition} of every other use case, not a step inside them, so the diagram draws no «include» relation to UC-01.
+\end{itemize}
+
+The automatic system functions (Section~\ref{sec:4.2.5}) have no use case of their own because no actor triggers them; they take place when the Administrator enables AI processing in UC-04.
+
+\begin{table}[H]
+\centering
+\caption{List of use cases}
+\label{tab:usecases}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{1.4cm}|>{\raggedright\arraybackslash}p{3.8cm}|>{\raggedright\arraybackslash}p{2.4cm}|L|}
+\hline
+\textbf{Code} & \textbf{Use case} & \textbf{Actor} & \textbf{Purpose} \\
+\hline
+UC-01 & Log in & All three actors & Authenticate and access the functions of the role \\
+\hline
+UC-02 & Manage user accounts & Administrator & Create, update, lock and delete accounts; assign roles and areas \\
+\hline
+UC-03 & Manage cameras & Administrator & Add and update cameras, check the RTSP connection, retire and restore them \\
+\hline
+UC-04 & Manage AI processing of cameras & Administrator & Enable or disable AI processing per camera; process fallback video files \\
+\hline
+UC-05 & Configure AI models & Administrator & Choose the Detector and Tracker used by the whole system \\
+\hline
+UC-06 & Monitor system status & Administrator & Follow the status of cameras, RTSP streams and AI processing \\
+\hline
+UC-07 & Check AI operation & Administrator & Check the camera processing group and the search group \\
+\hline
+UC-08 & View the audit log & Administrator & Consult the log of actions and technical events \\
+\hline
+UC-09 & Search for people with AI & Operator & Search by image, description or attributes within the assigned area \\
+\hline
+UC-10 & View and assess search results & Operator & View the details of each result, compare and assess it \\
+\hline
+UC-11 & Manage case files & Operator & Create cases, save results, update, close and reopen cases \\
+\hline
+UC-12 & View the overview & Viewer & See the system-wide figures and recent cases \\
+\hline
+UC-13 & View case files & Viewer & View every case in read-only mode \\
+\hline
+UC-14 & View saved search results & Viewer & View the details of a result saved in a case \\
+\hline
+UC-15 & Log out & All three actors & End the session \\
+\hline
+\end{tabularx}
+\end{table}

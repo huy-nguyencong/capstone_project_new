@@ -7,7 +7,7 @@
 \section{Thiết kế kiến trúc hệ thống}
 \label{sec:5.1}
 
-Hình~\ref{fig:architecture} trình bày kiến trúc tổng thể của hệ thống, tổ chức quanh hai giai đoạn đã nêu ở Mục~\ref{sec:3.1.6}: luồng \emph{lập chỉ mục} ở cột trái biến dữ liệu camera thành các lần xuất hiện có thể tìm kiếm, và luồng \emph{tìm kiếm} ở cột phải phục vụ thao tác của người dùng. Hai luồng gặp nhau ở tầng lưu trữ phía dưới.
+Hình~\ref{fig:architecture} trình bày kiến trúc tổng thể của hệ thống, tổ chức quanh hai giai đoạn đã nêu ở Mục~\ref{sec:3.1.6}: luồng \emph{lập chỉ mục} ở cột trái biến dữ liệu camera thành các lần xuất hiện có thể tìm kiếm, và luồng \emph{tìm kiếm} ở cột phải phục vụ thao tác của người dùng. Hai luồng gặp nhau ở tầng lưu trữ phía dưới. Trên hình, đường màu đen là luồng lập chỉ mục, đường màu xanh là luồng tìm kiếm và truy cập dữ liệu, đường nét đứt là việc tạo và nhận công việc, còn đường nét đậm là luồng RTSP liên tục từ camera.
 
 \begin{figure}[!tbp]
 \centering

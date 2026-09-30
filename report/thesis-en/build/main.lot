@@ -1,0 +1,46 @@
+\babel@toc {english}{}\relax 
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {2.1}{\ignorespaces Comparison of systems for searching people in video}}{11}{table.2.1}%
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {3.1}{\ignorespaces The three forms of describing the person and how the project handles them}}{17}{table.caption.30}%
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {4.1}{\ignorespaces List of use cases}}{40}{table.caption.39}%
+\contentsline {table}{\numberline {4.2}{\ignorespaces Use case specification UC-01: Log in}}{41}{table.4.2}%
+\contentsline {table}{\numberline {4.3}{\ignorespaces Use case specification UC-03: Manage cameras}}{42}{table.4.3}%
+\contentsline {table}{\numberline {4.4}{\ignorespaces Use case specification UC-04: Manage AI processing of cameras}}{43}{table.4.4}%
+\contentsline {table}{\numberline {4.5}{\ignorespaces Use case specification UC-05: Configure AI models}}{44}{table.4.5}%
+\contentsline {table}{\numberline {4.6}{\ignorespaces Use case specification UC-09: Search for people with AI}}{44}{table.4.6}%
+\contentsline {table}{\numberline {4.7}{\ignorespaces Use case specification UC-10: View and assess search results}}{45}{table.4.7}%
+\contentsline {table}{\numberline {4.8}{\ignorespaces Use case specification UC-11: Manage case files}}{46}{table.4.8}%
+\contentsline {table}{\numberline {4.9}{\ignorespaces Use case specification UC-13: View case files}}{46}{table.4.9}%
+\contentsline {table}{\numberline {4.10}{\ignorespaces Permission matrix by role}}{48}{table.caption.40}%
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {5.1}{\ignorespaces Tables of the relational database}}{59}{table.caption.48}%
+\contentsline {table}{\numberline {5.2}{\ignorespaces Schema of the Milvus collection of feature vectors}}{62}{table.caption.53}%
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {6.1}{\ignorespaces Summary of technology and model choices}}{72}{table.caption.61}%
+\contentsline {table}{\numberline {6.2}{\ignorespaces Comparison of YOLO11 sizes on the COCO validation set~\blx@tocontentsinit {0}\cite {ultralytics2024yolo11docs}}}{74}{table.caption.63}%
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {7.1}{\ignorespaces Number of tracks in the demonstration data per camera (first 120 seconds of each video)}}{85}{table.caption.89}%
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {8.1}{\ignorespaces Test results by level}}{87}{table.caption.90}%
+\contentsline {table}{\numberline {8.2}{\ignorespaces Search quality results (6 queries)}}{88}{table.caption.93}%
+\contentsline {table}{\numberline {8.3}{\ignorespaces Comparison of the two sampling intervals on a 10-second video (confidence threshold 0.1)}}{90}{table.caption.98}%
+\contentsline {table}{\numberline {8.4}{\ignorespaces Search latency through the API (30 calls per form, $k = 8$)}}{91}{table.caption.101}%
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {9.1}{\ignorespaces The three places the pipeline can be improved, what each has to do, and what that costs.}}{97}{table.caption.104}%
+\contentsline {table}{\numberline {9.2}{\ignorespaces One model per slot. None of them is fine-tuned on this dataset.}}{100}{table.caption.107}%
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {10.1}{\ignorespaces The attribute schema, and the visual band each attribute is judged from. The region column is a manual routing table: a wrong entry is invisible at run time, because the evidence line still reads correctly but quotes the sharpness of the wrong part of the body.}}{104}{table.caption.110}%
+\contentsline {table}{\numberline {10.2}{\ignorespaces VLM noise on one track. A majority vote would report \texttt {hair\_color}${=}$black on a 40/30/30 split, and would break the 40/40 tie on \texttt {upper\_inner\_color} by whichever value the sort visited first.}}{106}{table.caption.111}%
+\contentsline {table}{\numberline {10.3}{\ignorespaces What the CLIP score separates \emph {inside} the 75-candidate pool. The AUC is the probability that a ground-truth crop outranks a non-ground-truth crop there; 1.0 would mean the score alone sorts the pool perfectly, and 0.5 would be chance. It is computed with ties taken into account, because many crops share the same similarity to three decimals and counting a tie as a win would overstate the score exactly where it is weakest.}}{115}{table.caption.122}%
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {11.1}{\ignorespaces Per-call token budget. Output excludes thinking tokens, which are billed as output and counted against the same rate window, so the real output load is higher than this column. The reliable signal for a truncated reply is the API's \texttt {finish\_reason}, not the reported output count.}}{119}{table.caption.126}%
+\contentsline {table}{\numberline {11.2}{\ignorespaces 100 identities out of the 496-identity subset (Section~\ref {sec:r-dataset}), pool of 75 candidates, zero-shot, one descriptive phrasing each. At $n=100$ a percentage point is one identity.}}{120}{table.caption.129}%
+\contentsline {table}{\numberline {11.3}{\ignorespaces Lost: inside CLIP's top 10, not in the funnel's. Rescued: outside CLIP's top 10, inside the funnel's. No pool: the ground truth was not among the 75 retrieved crops at all, so no reranking could have returned it.}}{121}{table.caption.130}%
+\contentsline {table}{\numberline {11.4}{\ignorespaces The five identities CLIP had in its top 10 and the funnel did not return. `Stage 2' is the coarse round's rank out of the candidates it ranked; `n/a' in stage 4 means the refine round never saw that candidate.}}{122}{table.caption.131}%
+\contentsline {table}{\numberline {11.5}{\ignorespaces The five lost identities re-ranked by a larger model at stages 2B and 4B only. `Stage 2' and `Stage 4' read \emph {before} $\rightarrow $ \emph {after}.}}{123}{table.caption.132}%
+\contentsline {table}{\numberline {11.6}{\ignorespaces What each mechanism changed, and how strong the evidence is.}}{128}{table.11.6}%
+\addvspace {10\p@ }
+\addvspace {10\p@ }

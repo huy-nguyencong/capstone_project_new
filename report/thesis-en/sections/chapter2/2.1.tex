@@ -1,0 +1,48 @@
+% !TEX root = ../../main.tex
+% C2.1 - Existing commercial systems (translated). Every claim is sourced.
+\section{Existing Systems on the Market}
+\label{sec:2.1}
+
+This section surveys three commercial products that represent three approaches to searching for people in camera data: comprehensive video analytics (BriefCam), appearance search (Avigilon) and natural-language search on a cloud platform (Verkada). Academic work is presented in Chapter~\ref{chapter:lythuyet}.
+
+\subsection{BriefCam}
+\label{sec:2.1.1}
+
+BriefCam is video content analytics software based on deep learning, acquired by Canon in 2018~\cite{briefcam2018canon} and now distributed as a Milestone Systems product~\cite{milestone2026briefcam}. Its functions are split into three modules: \emph{Review} supports investigation on recorded video, filtering people and vehicles by attributes such as colour, size, speed and direction, finding objects that look similar to a sample object, and condensing hours of video into a short clip (Video Synopsis); \emph{Respond} raises real-time rule-based alerts; and \emph{Research} provides statistics, heat maps and people counting~\cite{milestone2026briefcam}. Figure~\ref{fig:briefcam} shows the search interface of the product. BriefCam can be installed on premises or in the cloud, but the processing server must have an NVIDIA graphics card~\cite{milestone2026briefcamfaq}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\textwidth]{briefcam.png}
+    \caption{The search and filtering interface of BriefCam~\cite{milestone2026briefcam}}
+    \label{fig:briefcam}
+\end{figure}
+
+\paragraph{Relation to the project.} BriefCam supports search by attributes and by an appearance sample, where the sample is an object selected in recorded video rather than an image uploaded from outside as in this project; the published documentation does not mention search by a natural-language description.
+
+\subsection{Avigilon Appearance Search}
+\label{sec:2.1.2}
+
+Avigilon Appearance Search is the deep-learning video search technology of Avigilon, part of Motorola Solutions, used to find a person or vehicle across hours of video from many cameras~\cite{motorola2021appearance}. A search can start by choosing appearance features from a predefined list such as clothing colour, gender and age group; by uploading an image; or by selecting an object in the video as a sample~\cite{motorola2021appearance}. The results help trace the route of the subject and can be bookmarked and exported as an evidence package describing the event. Figure~\ref{fig:avigilon} shows the interface with a person marked. The technology is built into the Avigilon Control Center video management software and runs on the vendor's cameras and recorders, or on the Avigilon AI Appliance for third-party ONVIF cameras.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.45\textwidth]{avigilon.png}
+    \caption{Avigilon Control Center with a marked subject~\cite{avigilon2026appearance}}
+    \label{fig:avigilon}
+\end{figure}
+
+\paragraph{Relation to the project.} Avigilon supports two of the project's forms of description, attribute selection and a reference image, and lets results be compiled into evidence, similar to the project's case files. The documentation does not mention free-text search, and the system is tied to the vendor's software and devices.
+
+\subsection{Verkada AI-Powered Search}
+\label{sec:2.1.3}
+
+Verkada AI-Powered Search, introduced in 2024 on the Command cloud security platform, lets users search for people and vehicles in everyday language, for example ``person wearing helmet'', instead of choosing from a list of attributes~\cite{verkada2024aisearch}, and search with an uploaded image of a person, vehicle or object~\cite{verkada2024reverse}. According to the vendor's technical article~\cite{verkada2025scaling}, cameras produce crops of objects; in the cloud, the crops are encoded into vectors with the CLIP model, which maps images and text into one representation space, and stored in a vector database; the query sentence is encoded the same way to find the nearest crops. Figure~\ref{fig:verkada} shows the results of a natural-language query. The system works best with Verkada cameras; third-party cameras connect through a Command Connector device with higher latency~\cite{verkada2024connector}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.52\textwidth]{verkada.png}
+    \caption{Results of a natural-language query on the Verkada Command platform~\cite{verkada2024aisearch}}
+    \label{fig:verkada}
+\end{figure}
+
+\paragraph{Relation to the project.} Verkada is technically closest to the project: both support search by a description and by an image, based on a shared representation space and a vector database. The difference is the deployment model: Verkada processes on the vendor's cloud infrastructure, whereas the project is deployed on premises on a commodity computer.

@@ -1,0 +1,74 @@
+% !TEX root = ../../main.tex
+% C5.2 - Main processing flows (translated). Figures H3, H4, H5, H7 are the English versions.
+\section{Main Processing Flows}
+\label{sec:5.2}
+
+\subsection{Camera Data Processing Flow}
+\label{sec:5.2.1}
+
+All analysis is organised into \emph{processing jobs} stored in a queue, each tied to one camera and one data source. For \textbf{automatic RTSP sessions}, when the queue is empty, the scheduler in the background worker chooses a camera that is operational, has AI processing enabled and has an RTSP address, preferring the camera that has waited longest, and creates a session limited to 1,800 source frames, about 30 seconds of video at 60 frames per second; a camera whose last session failed is skipped for 5 minutes so that it does not take the turn of the other cameras. Thanks to the rotation, the cameras are analysed in turn, but between two sessions of the same camera there are periods that are not analysed (Section~\ref{sec:1.4}). For \textbf{uploaded video files}, the application server checks the file, stores it temporarily and creates the corresponding job.
+
+\paragraph{Job life cycle.} Figure~\ref{fig:job-state} shows the states of a job. A new job is \emph{Queued}. When the background worker claims it, the job becomes \emph{Running} with a 60-second lease that is renewed periodically during processing; if the worker stops suddenly and the lease expires, the job can be claimed again. For a video file job, transient errors are retried after a delay, up to three times; an RTSP session that fails ends at once, and the camera is processed again in a later session. A job ends as \emph{Succeeded}, as \emph{Failed} after an unrecoverable error or when the retries are exhausted, or as \emph{Cancelled} when the Administrator cancels it, or when the camera is retired or its AI processing is disabled while the job is queued or running.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{H7-trang-thai-cong-viec.png}
+\caption{State diagram of a processing job}
+\label{fig:job-state}
+\end{figure}
+
+\paragraph{Processing steps.} Figure~\ref{fig:pipeline-flow} shows the flowchart of one job, which has two phases. In the \emph{per-frame loop}, each frame is read with its index and timestamp (Section~\ref{sec:3.7.4}), and only one in every $N$ frames goes through the Detector and the Tracker. The tracking result updates the \emph{track buffer}, which holds the appearances being tracked with their representative frame candidates, and the system moves on to the next frame. When an appearance ends, its representative frame is chosen and kept in memory. When the source runs out or the session reaches its frame count, the appearances still being tracked are ended as well, and the job moves to the \emph{encode and write} phase: for each appearance, the person region of the representative frame is cropped temporarily in memory, widened by 5\% of the box size on each side, passed through the image encoder to produce the feature vector, and written to the three stores in the order of Section~\ref{sec:5.3.4}. The appearances of a job can therefore only be found after the job has finished its source. For RTSP streams, the source of a job is a session of 1,800 frames, so a camera's data is written session by session: a person appearing in front of the camera can only be searched once the session containing that appearance has been processed. If the job is cancelled or its lease expires while it is reading and analysing the source, none of its appearances is written. Each appearance is written with the version of the Detector-Tracker configuration, the version of the encoder and the sampling interval $N$ used.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{H3-luu-do-xu-ly-camera.png}
+\caption{Flowchart of one processing job}
+\label{fig:pipeline-flow}
+\end{figure}
+
+\subsection{Representative Frame Selection}
+\label{sec:5.2.2}
+
+Each appearance stores only \emph{one} full frame, used both to create the vector and to display the result, so this frame should show the person as clearly as possible. The representative frame selector works as follows:
+\begin{itemize}
+    \item \textbf{Keep at most three candidates} with the highest scores for each ongoing appearance; the total memory for the candidates of all appearances is limited to 256~MB.
+    \item \textbf{Hard filters.} A candidate only passes when its box is at least 24$\times$48 pixels, the person region is sharp enough, the box touches fewer than two edges of the frame and its shape does not change abruptly from the previous observation (area not changing more than 4 times, aspect ratio not changing more than 2.5 times), since an abrupt change usually signals a wrong person or occlusion.
+    \item \textbf{The quality score} is a weighted sum of the person's size in the frame (0.30), sharpness (0.25), completeness of the body (0.20), stability relative to the previous observation (0.15) and closeness to the middle of the appearance (0.10), minus penalties when the box touches the frame edges or overlaps other people.
+    \item \textbf{Choice at the end.} The highest-scoring candidate among those passing the hard filters is chosen; if none passes, the highest-scoring candidate is still chosen and the appearance is marked low quality instead of being discarded.
+\end{itemize}
+The criteria and weights were designed empirically, are stored in a configuration file and give deterministic results.
+
+\subsection{Search Flow}
+\label{sec:5.2.3}
+
+Figure~\ref{fig:search-sequence} shows the search flow as a sequence diagram.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{H4-tuan-tu-tim-kiem.png}
+\caption{Sequence diagram of the search flow}
+\label{fig:search-sequence}
+\end{figure}
+
+The web application sends the query with the camera filter, time range and number of results $k$. The application server then:
+\begin{enumerate}
+    \item \textbf{validates the input:} a JPEG or PNG image of at most 10~MB; attributes from the allowed list forming a valid combination; $k$ in $\{4, 8, 12, 16\}$;
+    \item \textbf{encodes the query:} an image through the image encoder, a description through the text encoder; attributes are combined into an English sentence from a fixed template, for example \emph{``A woman wearing a red jacket and blue jeans, carrying a handbag.''}, and then handled as a description;
+    \item \textbf{determines the scope:} the area is taken from the Operator's account; the cameras are those selected, or every operational camera of the area if none is selected; cameras outside the scope are rejected;
+    \item \textbf{runs a pre-filtered vector search} in Milvus, checks the results against PostgreSQL and searches again with twice the number when valid results are missing, up to three rounds (Section~\ref{sec:3.6.4}).
+\end{enumerate}
+The returned list only contains the descriptive information and relevance score of each result. Images are fetched through a separate request for each result, in which the server checks the permission again and renders the person image from the representative frame (Section~\ref{sec:6.3.3}). This keeps the list fast to return and makes every image go through the permission check.
+
+\subsection{Case Management Flow}
+\label{sec:5.2.4}
+
+Figure~\ref{fig:case-sequence} shows the flow for saving a search result into a new or existing case, with the option to close the case while saving.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{H5-tuan-tu-vu-viec.png}
+\caption{Sequence diagram of saving a result into a case}
+\label{fig:case-sequence}
+\end{figure}
+
+When saving, the interface only sends the appearance identifier, not the relevance score or display information. The server checks that the appearance is ready and belongs to an operational camera in the Operator's current area, and that the target case is owned by that Operator and open. If valid, the server creates a new result entry with a \emph{snapshot} of the camera name, area name and time of appearance, so that the case still shows correctly if the camera is renamed later or its frame is temporarily unavailable. Each case carries a version number; update requests must include the version being displayed, so concurrent changes from elsewhere are never silently overwritten. The option to close the case is performed by the interface after saving: it reads the case again to get the latest version number, then sends the status change with that version number; if the status change fails, the result is kept and the user is told to close the case again. When a case is opened, images are granted by the right over the case rather than the search right (Section~\ref{sec:4.6}).

@@ -1,0 +1,11 @@
+NOTHING IS BELOW THE CUT NOW
+----------------------------
+This is the FINAL round. What you rank is what is returned, so there is nothing
+below your cut left to protect and no later stage to recover anything for.
+
+Rank on the evidence as it stands. A query value read nowhere - or read only as
+[far] - is still a reliable mismatch and should still sink a candidate; it
+simply no longer earns a candidate a place its evidence has not earned. A single
+overshadowed frame, or a [near] value standing in for the query value, is what
+it is: weak positive evidence, weighed against everything else, and not a
+floor.

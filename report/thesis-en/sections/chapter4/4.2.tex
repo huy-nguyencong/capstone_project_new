@@ -1,0 +1,93 @@
+% !TEX root = ../../main.tex
+% C4.2 - Functional requirements (translated). Codes: FR-C (common), FR-A (Administrator), FR-O (Operator),
+% FR-V (Viewer), FR-S (automatic system functions).
+\section{Functional Requirements}
+\label{sec:4.2}
+
+The functional requirements are grouped by the actors of Section~\ref{sec:4.1}, together with a group of common functions and a group of functions the system performs by itself. Each requirement has a code for cross-reference with the use case specifications (Section~\ref{sec:4.5}) and the test results (Chapter~\ref{chapter:kiemthu}).
+
+\subsection{Common Functions}
+\label{sec:4.2.1}
+
+\begin{reqlist}
+    \item[FR-C01] Users log in with a username and password and are taken to the interface of their role; locked or deactivated accounts are rejected.
+    \item[FR-C02] Users can log out. A session expires 12 hours after it is issued or after 30 minutes of inactivity, and becomes invalid immediately when the account is locked or deactivated. While the user is active, the session is refreshed with a new session.
+\end{reqlist}
+
+\subsection{Administrator Functions}
+\label{sec:4.2.2}
+
+\paragraph{Account management.}
+\begin{reqlist}
+    \item[FR-A01] Create, update, lock, unlock, delete or deactivate accounts, assigning the Operator or Viewer role; usernames are unique.
+    \item[FR-A02] Each Operator is assigned exactly one surveillance area, chosen from the predefined list.
+\end{reqlist}
+
+\paragraph{Camera management.}
+\begin{reqlist}
+    \item[FR-A03] Add and update cameras with a code, name, area, RTSP address and credentials; the camera code is unique, and the area cannot be changed after creation.
+    \item[FR-A04] Check the RTSP connection when a camera is added, when its address changes and on request; if the connection fails, the camera is still saved with a warning so that it can be checked again later.
+    \item[FR-A05] Retire a camera from operation or bring it back. The data of a retired camera is kept but cannot be searched or added to cases for the time being; results already saved in cases remain visible. A camera brought back into operation starts with AI processing disabled.
+\end{reqlist}
+
+\paragraph{AI processing management.}
+\begin{reqlist}
+    \item[FR-A06] Enable or disable AI processing for each camera; enabling is refused when the camera has lost its RTSP connection, has been retired or the models are not ready.
+    \item[FR-A07] Upload a video file for a camera to be processed through the same pipeline as an RTSP stream; the function is used to prepare the demonstration data (Section~\ref{sec:1.3}) and for cameras without RTSP.
+    \item[FR-A08] Choose the Detector and Tracker from a registered list, applied to the whole system; the configuration is only applied when the models are ready and the pair is compatible, otherwise the previous configuration is kept. The image and text encoders are fixed.
+\end{reqlist}
+
+\paragraph{Operation monitoring.}
+\begin{reqlist}
+    \item[FR-A09] Follow the RTSP connection and AI processing status of each camera, filter abnormal cameras and refresh the data.
+    \item[FR-A10] Check the camera processing group, on a real frame from one camera, and the search group separately; results are shown per component, and a frame without people is reported as not yet verifiable rather than as an error.
+    \item[FR-A11] View and filter the audit log by actor, event type and time. The log records logins, logouts, failed logins, administrative actions, case actions and important technical errors; it does not record searches.
+\end{reqlist}
+
+\subsection{Operator Functions}
+\label{sec:4.2.3}
+
+\paragraph{Searching for people.}
+\begin{reqlist}
+    \item[FR-O01] Search by image, provided by file selection, drag and drop, pasting, or dragging a result into the search box to search again for the same person.
+    \item[FR-O02] Search by an English description; Vietnamese is not supported and nothing is translated automatically.
+    \item[FR-O03] Search by attributes, namely gender, the type and colour of the upper and lower garments, and carried items, with no negative options; the attributes are combined into an English description and searched as in FR-O02.
+    \item[FR-O04] The search scope is automatically limited to the account's area and can be narrowed further by operational camera and time range; requests containing cameras or areas outside the Operator's rights are rejected.
+    \item[FR-O05] Choose 4, 8, 12 or 16 results; the system returns at most that many in decreasing order of relevance, without a score threshold that discards results.
+\end{reqlist}
+
+\paragraph{Viewing and assessing results.}
+\begin{reqlist}
+    \item[FR-O06] Each result is one appearance of a person on one camera, shown as the person image with surrounding context, rank, camera, area, time and relevance score.
+    \item[FR-O07] Select a result to see the full frame with the person's bounding box and the details.
+    \item[FR-O08] Sort results by relevance or time, and filter them again by camera or time.
+\end{reqlist}
+
+\paragraph{Case management.}
+\begin{reqlist}
+    \item[FR-O09] Create a new case from a result with a title and notes; the owner is always the logged-in account.
+    \item[FR-O10] Add a result to an open case the Operator owns; each save creates a new entry, even for the same appearance.
+    \item[FR-O11] Optionally close the case while saving; if that step fails, the result is still saved and the user is informed.
+    \item[FR-O12] Edit the title and notes and remove results from an open case.
+    \item[FR-O13] Close or reopen a case; the content of a closed case cannot be edited and results cannot be added or removed.
+    \item[FR-O14] View the cases the Operator owns, including after a change of area; results are shown as in FR-O06 and FR-O07 but without the relevance score.
+\end{reqlist}
+
+\subsection{Viewer Functions}
+\label{sec:4.2.4}
+
+\begin{reqlist}
+    \item[FR-V01] View a system-wide overview: the number of cases by status, the number of saved results and the list of recent cases; select a case to see its details.
+    \item[FR-V02] View every case, filtered by status, creation time or the Operator in charge.
+    \item[FR-V03] View the details of a case and its saved results in read-only mode.
+    \item[FR-V04] View the details of a saved result and the full frame with its bounding box; the relevance score is not shown.
+\end{reqlist}
+
+\subsection{Automatic System Functions}
+\label{sec:4.2.5}
+
+\begin{reqlist}
+    \item[FR-S01] Automatically analyse, in turn, the cameras that are operational, have AI processing enabled and have RTSP, so that every camera is analysed.
+    \item[FR-S02] For each RTSP stream or video file: sample frames, detect people, track them into appearances, choose one representative frame and create a feature vector.
+    \item[FR-S03] Store the representative frame, bounding box, vector and camera, area and time information of each appearance; an appearance can only be found once it is fully stored.
+\end{reqlist}

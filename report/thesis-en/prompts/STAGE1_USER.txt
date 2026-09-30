@@ -1,0 +1,23 @@
+SOURCE DATA
+
+Query
+-----
+{QUERY}
+
+What the query asks of each attribute
+-------------------------------------
+The `query` column of the local prior reads left to right in this order.
+Any attribute not named here is unconstrained.
+
+{QHEAD}
+
+Global Prior - whole index, {N_CROPS} described crops
+------------------------------------------------------
+A multi-valued reading counts once per element, so these are shares of
+observations, not of people.
+
+{PRIOR}
+
+Local Prior - this pool, {N_CANDS} candidates
+----------------------------------------------
+{LOCAL}

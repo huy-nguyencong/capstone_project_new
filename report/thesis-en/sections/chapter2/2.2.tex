@@ -1,0 +1,42 @@
+% !TEX root = ../../main.tex
+% C2.2 - Comparison (translated). Only verified information from 2.1; "not mentioned" where the vendor says nothing.
+\section{Comparison and Discussion}
+\label{sec:2.2}
+
+Table~\ref{tab:related-comparison} compares the three surveyed systems with the project's system, based on the vendors' published documentation (Section~\ref{sec:2.1}); what the documentation does not state is marked ``not mentioned''.
+
+\begin{longtable}{|>{\raggedright\arraybackslash}p{2.2cm}|>{\raggedright\arraybackslash}p{2.85cm}|>{\raggedright\arraybackslash}p{2.85cm}|>{\raggedright\arraybackslash}p{2.85cm}|>{\raggedright\arraybackslash}p{2.85cm}|}
+\caption{Comparison of systems for searching people in video}\label{tab:related-comparison}\\
+\hline
+\textbf{Criterion} & \textbf{BriefCam} & \textbf{Avigilon Appearance Search} & \textbf{Verkada AI-Powered Search} & \textbf{The project's system} \\
+\hline
+\endfirsthead
+\multicolumn{5}{l}{\textit{(continued from Table~\ref{tab:related-comparison})}}\\
+\hline
+\textbf{Criterion} & \textbf{BriefCam} & \textbf{Avigilon Appearance Search} & \textbf{Verkada AI-Powered Search} & \textbf{The project's system} \\
+\hline
+\endhead
+Search by attributes & Yes: object type, colour, size, speed, direction & Yes: clothing colour, gender, age group; vehicle type and colour & Yes, predefined attribute filters, extended by natural-language search & Yes: gender, type and colour of upper and lower garments, carried items; converted into a description sentence \\
+\hline
+Search by image or appearance sample & Yes: select a sample object in the video to find similar appearances & Yes: upload an image or select a sample in the video & Yes: upload an image of a person, vehicle or object & Yes: upload a cropped image containing one person \\
+\hline
+Free-text search & Not mentioned & Not mentioned & Yes & Yes (English only) \\
+\hline
+Published matching mechanism & Metadata search and appearance similarity & Deep learning on appearance features, combined with facial features & Crops and query sentences encoded into one representation space (CLIP), searched in a vector database & Images, sentences and attributes encoded into one representation space, searched in a vector database \\
+\hline
+Other functions & Video Synopsis, face recognition, licence plates, real-time alerts, statistics and heat maps & Bookmarking and exporting results as evidence, multi-site search & Alerts created from a query, centralised cloud management & Case files, access control by role and surveillance area, overview dashboard of case files \\
+\hline
+Deployment model & On premises or on a cloud server & On premises, integrated with the vendor's video management software & The vendor's cloud platform & On premises on one personal computer \\
+\hline
+Hardware and device requirements & Processing server must have an NVIDIA graphics card & The vendor's cameras and recorders, or an AI Appliance for third-party ONVIF cameras & The vendor's cameras, or a Command Connector for third-party cameras & No discrete graphics card; receives streams from any RTSP camera \\
+\hline
+Distribution & Commercial software & Commercial software and devices & Commercial service platform & Self-developed application using published models \\
+\hline
+\end{longtable}
+
+The comparison leads to the following observations:
+\begin{itemize}
+    \item \textbf{Supporting several forms of description has become the norm.} All three systems support search by attributes and by an image or appearance sample, but within the surveyed documentation only Verkada supports free-text search, a function that appeared in 2024. Verkada's approach, encoding images and query sentences into one representation space and searching a vector database, lets one mechanism serve both forms.
+    \item \textbf{Search usually comes with tools for compiling results}, such as Avigilon's bookmarking and evidence export: users also need to store and share results during an investigation.
+    \item \textbf{Commercial systems are tied to the vendor's infrastructure}: BriefCam needs a server with a dedicated graphics card, Avigilon needs the vendor's software and devices, and Verkada runs on the vendor's cloud. Cost and vendor lock-in are barriers for small organisations or those that must keep data on premises. These products also bundle many functions beyond search, such as alerts, face recognition, licence plates and statistics.
+\end{itemize}

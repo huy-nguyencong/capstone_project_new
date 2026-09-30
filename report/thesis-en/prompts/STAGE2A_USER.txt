@@ -1,0 +1,31 @@
+SOURCE DATA
+
+Every reading below is a DESCRIBER's words about a small crop, not ground truth,
+and any of them can be wrong. `carrying_canon` is the hardest to catch: a bag is
+easily missed entirely, or read from a strap or a hand. Only the quality numbers
+are measured; `lighting`, `usability` and `visible` are described too.
+
+Query
+-----
+{QUERY}
+
+How rare a value is, for the attributes below
+---------------------------------------------
+{SCALE}
+
+Candidates
+----------
+{CANDS}
+
+Based on the candidate blocks above, answer the units below.
+
+Units to answer
+---------------
+Every candidate gets one entry for each unit, in this order, under this number.
+Copy the `attribute = value` text exactly; the value is what the QUERY asked
+for, not what any crop read.
+
+{UNITS}
+
+All {N_CANDS} candidate blocks above must appear in the reply. A reply that
+stops early loses candidates.

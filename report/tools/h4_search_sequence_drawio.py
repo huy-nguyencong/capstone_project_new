@@ -1,7 +1,7 @@
 """Sinh figures/H4-tuan-tu-tim-kiem.drawio: sơ đồ tuần tự UML của luồng tìm kiếm.
 
 Khớp services/searches.py (tạo câu từ thuộc tính, mã hóa trong tiến trình API), services/track_search.py
-(khu vực/camera từ phiên, lọc trước trong Milvus, đối chiếu PostgreSQL, tìm lại gấp đôi tối đa 3 lượt)
+(phiên kiểm tra trước; khu vực/camera kiểm tra sau khi mã hóa, lọc trước trong Milvus, đối chiếu PostgreSQL, tìm lại gấp đôi tối đa 3 lượt)
 và API ảnh cắt (kiểm tra quyền rồi đọc khung hình từ MinIO). Chạy: python report/tools/h4_search_sequence_drawio.py
 """
 from xml.sax.saxutils import quoteattr
@@ -13,7 +13,7 @@ cells = []
 X = {'GS': 60, 'WEB': 220, 'API': 400, 'PG': 640, 'MV': 805, 'MN': 955}
 NAMES = {'GS': 'Giám sát viên', 'WEB': 'Ứng dụng web', 'API': 'Máy chủ<br>ứng dụng', 'PG': 'PostgreSQL',
          'MV': 'Milvus', 'MN': 'MinIO'}
-TOP, BOTTOM, HEAD = 0, 1210, 60
+TOP, BOTTOM, HEAD = 0, 1345, 60
 
 
 def v(id, val, style, x, y, w, h):
@@ -31,7 +31,7 @@ def msg(a, b, y, text, ret=False):
     xa, xb = X[a], X[b]
     xa += 6 if xb > xa else -6
     xb += -6 if xb > xa else 6
-    style = ('html=1;verticalAlign=bottom;labelBackgroundColor=none;rounded=0;'
+    style = ('html=1;verticalAlign=bottom;labelBackgroundColor=#ffffff;rounded=0;'
              + ('dashed=1;endArrow=open;endSize=10;' if ret else 'endArrow=block;endFill=1;endSize=10;'))
     cells.append(f'<mxCell id="m{n}" value={quoteattr(text)} style={quoteattr(style + F)} edge="1" parent="1">'
                  f'<mxGeometry relative="1" as="geometry"><mxPoint x="{xa}" y="{y}" as="sourcePoint"/>'
@@ -61,33 +61,35 @@ for key, x in X.items():
           x - 62, TOP, 124, BOTTOM)
 # Thanh kích hoạt của máy chủ ứng dụng
 ACTV = 'html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#ffffff;'
-v('act1', '', ACTV, X['API'] - 6, 175, 12, 625)
-v('act2', '', ACTV, X['API'] - 6, 880, 12, 240)
+v('act1', '', ACTV, X['API'] - 6, 175, 12, 710)
+v('act2', '', ACTV, X['API'] - 6, 1010, 12, 245)
 
 msg('GS', 'WEB', 130, 'nhập truy vấn')
-msg('WEB', 'API', 175, 'gửi truy vấn, bộ lọc, k')
-msg('API', 'PG', 225, 'kiểm tra phiên, khu vực')
-msg('PG', 'API', 270, 'camera đang vận hành', ret=True)
+msg('WEB', 'API', 175, 'gửi truy vấn,<br>bộ lọc, k')
+msg('API', 'PG', 225, 'kiểm tra phiên đăng nhập')
+msg('PG', 'API', 270, 'tài khoản hợp lệ', ret=True)
 self_msg('API', 300, 'tạo câu tiếng Anh<br>(nếu theo thuộc tính)')
 self_msg('API', 375, 'mã hóa truy vấn')
+msg('API', 'PG', 450, 'kiểm tra khu vực, camera')
+msg('PG', 'API', 495, 'camera đang vận hành', ret=True)
 v('loop', 'loop', 'shape=umlFrame;whiteSpace=wrap;html=1;width=70;height=32;boundedLbl=1;verticalAlign=middle;align=left;'
-  'spacingLeft=6;fillColor=none;', 150, 440, 740, 320)
-v('guard', '[thiếu kết quả hợp lệ;<br>k nhân đôi, tối đa 3 lượt]', 'text;html=1;align=left;verticalAlign=top;', 420, 445, 250, 60)
-msg('API', 'MV', 545, 'tìm k vector gần nhất (lọc trước)')
-msg('MV', 'API', 590, 'mã lần xuất hiện + điểm', ret=True)
-msg('API', 'PG', 655, 'đối chiếu, kiểm tra')
-msg('PG', 'API', 700, 'camera, thời điểm, bbox', ret=True)
-msg('API', 'WEB', 795, 'tối đa k kết quả', ret=True)
+  'spacingLeft=6;fillColor=none;', 150, 530, 740, 320)
+v('guard', '[thiếu kết quả hợp lệ;<br>k nhân đôi, tối đa 3 lượt]', 'text;html=1;align=left;verticalAlign=top;', 420, 535, 250, 60)
+msg('API', 'MV', 635, 'tìm k vector gần nhất (lọc trước)')
+msg('MV', 'API', 680, 'mã lần xuất hiện + điểm', ret=True)
+msg('API', 'PG', 745, 'đối chiếu, kiểm tra')
+msg('PG', 'API', 790, 'camera, thời điểm, bbox', ret=True)
+msg('API', 'WEB', 885, 'tối đa k kết quả', ret=True)
 v('loop2', 'loop', 'shape=umlFrame;whiteSpace=wrap;html=1;width=70;height=32;boundedLbl=1;verticalAlign=middle;align=left;'
-  'spacingLeft=6;fillColor=none;', 110, 825, 900, 320)
-v('guard2', '[mỗi kết quả]', 'text;html=1;align=left;verticalAlign=top;', 185, 828, 160, 30)
-msg('WEB', 'API', 880, 'yêu cầu ảnh người')
-msg('API', 'PG', 930, 'kiểm tra quyền')
-msg('API', 'MN', 985, 'đọc khung hình đại diện')
-msg('MN', 'API', 1030, 'khung hình toàn cảnh', ret=True)
-self_msg('API', 1055, 'cắt, nới khung,<br>làm tối xung quanh')
-msg('API', 'WEB', 1125, 'ảnh người', ret=True)
-msg('WEB', 'GS', 1175, 'hiển thị', ret=True)
+  'spacingLeft=6;fillColor=none;', 110, 915, 900, 365)
+v('guard2', '[mỗi kết quả]', 'text;html=1;align=left;verticalAlign=top;', 232, 918, 160, 30)
+msg('WEB', 'API', 1010, 'yêu cầu ảnh người')
+msg('API', 'PG', 1060, 'kiểm tra quyền')
+msg('API', 'MN', 1115, 'đọc khung hình đại diện')
+msg('MN', 'API', 1160, 'khung hình toàn cảnh', ret=True)
+self_msg('API', 1185, 'cắt, nới khung,<br>làm tối xung quanh')
+msg('API', 'WEB', 1255, 'ảnh người', ret=True)
+msg('WEB', 'GS', 1310, 'hiển thị', ret=True)
 
 xml = ('<mxfile host="app.diagrams.net"><diagram name="H4 - Tuần tự tìm kiếm" id="h4"><mxGraphModel dx="1400" dy="1100" '
        'grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" '

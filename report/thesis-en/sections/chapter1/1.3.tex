@@ -1,0 +1,36 @@
+% !TEX root = ../../main.tex
+% C1.3 - Scope (translated). The last paragraph before "Out of scope" is [MERGE] for Part II.
+\section{Scope}
+\label{sec:1.3}
+
+The scope of the project is defined as follows.
+
+\paragraph{Search target.} The system only searches for people. Search is based on overall appearance, such as clothing, colours and carried items, not on faces or other biometric features.
+
+\paragraph{Camera data.} The system receives camera images as video streams over the Real Time Streaming Protocol (RTSP), the common protocol of surveillance cameras. Within the project, the camera system is simulated by streaming the videos of a public dataset, made of seven static cameras observing the same place, as RTSP streams; each stream acts as one camera and is assigned to a surveillance area to demonstrate area-based access control. Because the same protocol is used, the simulated streams can in principle be replaced by real cameras. The system processes the streams one at a time, not concurrently, and stores the analysis results for later retrieval. Since the target machine only has a central processing unit, it cannot analyse high-resolution video in real time; the data used for the demonstration is therefore indexed in advance from the video files of the dataset themselves, through the same processing pipeline as the RTSP streams.
+
+\paragraph{Forms of description.} Users describe the person with one of three forms:
+\begin{itemize}
+    \item a pre-cropped reference image containing one person;
+    \item a text description in English;
+    \item a set of predefined appearance attributes: gender, type and colour of the upper garment, type and colour of the lower garment, and carried items such as a backpack or a handbag.
+\end{itemize}
+The system does not support queries in Vietnamese and does not translate descriptions automatically.
+
+\paragraph{Search results.} Each result corresponds to one appearance of a person on one camera, ranked by how well it matches the description. Users choose how many results to see and can restrict the search to certain cameras and a time range. The relevance score is only used to rank and to support assessment within the current search; the system draws no conclusion about identity and does not keep a history of searches. Only results that the user deliberately saves are written to a case file.
+
+\paragraph{Users.} The application serves several groups of users with different responsibilities and permissions; the concrete roles are defined in the system analysis of Chapter~\ref{chapter:phantich}. Creating and managing the list of surveillance areas is outside the scope; the list is declared at deployment.
+
+\paragraph{Deployment environment.} The system is deployed as a web application on a personal computer without a discrete graphics card, for demonstration within the capstone project and not for commercial use.
+
+% [MERGE] Part II scope.
+\paragraph{Research on the search block.} The research of Part II is a separate study of the search step for text descriptions and is not integrated into the application. It works on a public person re-identification dataset whose images are already cropped and grouped by identity, uses its own choice of models, and evaluates a re-ranking layer offline on a sample of identities. Its results show what such a layer could contribute to the search step; they are not a measurement of the deployed application.
+
+\paragraph{Out of scope.} The project does not cover:
+\begin{itemize}
+    \item face recognition or determining the identity of the person in an image;
+    \item searching for vehicles or objects other than people;
+    \item training or fine-tuning artificial intelligence models;
+    \item linking the appearances of the same person across different cameras in the application;
+    \item processing many camera streams concurrently and raising real-time alerts.
+\end{itemize}

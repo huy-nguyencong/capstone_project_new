@@ -1,0 +1,184 @@
+% !TEX root = ../../main.tex
+% C4.5 - Use case specifications (translated). Eight use cases of the main workflow: UC-01, 03, 04, 05, 09, 10, 11, 13.
+% Condensed from files/usecase_detail.md. Interface labels in bold are the English meaning of the Vietnamese UI labels.
+\section{Use Case Specifications}
+\label{sec:4.5}
+
+This section specifies the eight use cases that make up the main workflow of the system: a user logs in (UC-01); the Administrator adds a camera (UC-03), puts it under analysis (UC-04) and chooses the AI models (UC-05); the Operator searches for a person (UC-09), assesses the results (UC-10) and saves a result into a case (UC-11); the Viewer looks at the case files (UC-13). Each specification gives the actor, purpose, precondition, postcondition, main flow, exceptions (marked E) and alternative flows (marked A). The behaviour of the remaining use cases is stated in the functional requirements of Section~\ref{sec:4.2}; the data scope of each role is summarised in the permission matrix of Section~\ref{sec:4.6}.
+
+\begin{longtable}{|>{\raggedright\arraybackslash}p{2.9cm}|p{12.3cm}|}
+\caption{Use case specification UC-01: Log in}\label{tab:uc01}\\
+\hline
+\textbf{Actor} & Administrator, Operator, Viewer \\ \hline
+\textbf{Purpose} & Authenticate the account to access the functions and data suited to the user's role. \\ \hline
+\textbf{Precondition} & The user has an active account. \\ \hline
+\textbf{Postcondition} & The system creates a login session and takes the user to the home page of the role. \\ \hline
+\endfirsthead
+\multicolumn{2}{l}{\textit{(continued from Table~\ref{tab:uc01})}}\\
+\hline
+\endhead
+\textbf{Main flow} & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{1.}The user opens the login page and enters a username and password. \\
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{2.}The system checks the credentials and the status of the account. \\
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{3.}The system creates a login session and determines the role of the account. \\
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{4.}The system takes the user to the home page of the role; the user only sees the functions of that role. \\ \hline
+\textbf{Exceptions} & \textbf{E1 - Wrong credentials:} The system reports that the login failed, with the same message for a wrong username and a wrong password; the failure is recorded in the audit log. \\ \cline{2-2}
+ & \textbf{E2 - Locked or deactivated account:} The system refuses the login. \\ \cline{2-2}
+ & \textbf{E3 - Too many attempts:} If there are too many login attempts in a short time, the system refuses temporarily and states how long to wait before trying again. \\ \hline
+\textbf{Alternative flows} & None. \\ \hline
+\end{longtable}
+
+\begin{longtable}{|>{\raggedright\arraybackslash}p{2.9cm}|p{12.3cm}|}
+\caption{Use case specification UC-03: Manage cameras}\label{tab:uc03}\\
+\hline
+\textbf{Actor} & Administrator \\ \hline
+\textbf{Purpose} & Manage the cameras of the system: add and update them, check the RTSP connection, retire a camera from operation and bring it back. \\ \hline
+\textbf{Precondition} & The Administrator is logged in; the list of surveillance areas has been declared. \\ \hline
+\textbf{Postcondition} & The information and operational status of the camera are updated; the result of the RTSP connection check is recorded. \\ \hline
+\endfirsthead
+\multicolumn{2}{l}{\textit{(continued from Table~\ref{tab:uc03})}}\\
+\hline
+\endhead
+\textbf{Main flow} & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{1.}The Administrator opens camera management; the system shows the list of cameras with their area, operational status, RTSP connection status and AI processing status. \\
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{2.}The Administrator chooses to add a camera and enters its code, name, area and RTSP address, optionally with the camera's username and password; the RTSP address is optional for a camera processed only through video files. \\
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{3.}The system validates the data, separates the credentials from the address and stores them encrypted, then saves the camera with the connection status \emph{Unverified}. \\
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{4.}The system tries to connect to the RTSP stream and updates the connection status of the camera. \\ \hline
+\textbf{Exceptions} & \textbf{E1 - Invalid data:} If required information is missing, the address is not a valid RTSP address, or the camera code already exists, the system refuses to save. \\ \cline{2-2}
+ & \textbf{E2 - Connection fails:} The camera is still saved with the status \emph{Offline} and a warning; the Administrator can fix the configuration and check again later. \\ \cline{2-2}
+ & \textbf{E3 - Address outside the permitted network:} If the address is not an IP address in the camera network ranges declared at deployment, the system refuses to check the connection and the camera stays \emph{Unverified}. \\ \hline
+\textbf{Alternative flows} & \textbf{A1 - Update a camera:} The Administrator edits the name or the RTSP address; the area of the camera cannot be changed. When the address changes, the connection status returns to \emph{Unverified} and is checked again. \\ \cline{2-2}
+ & \textbf{A2 - Check the connection again:} The Administrator requests a connection check for a camera; the system tries to connect and updates the status. \\ \cline{2-2}
+ & \textbf{A3 - Retire from operation:} The camera is retired, AI processing is disabled and its running job is cancelled; the data already created is kept but temporarily cannot be searched. \\ \cline{2-2}
+ & \textbf{A4 - Bring back into operation:} The camera returns to operation with AI processing disabled; its old data can be searched again as normal. \\ \hline
+\end{longtable}
+
+\begin{longtable}{|>{\raggedright\arraybackslash}p{2.9cm}|p{12.3cm}|}
+\caption{Use case specification UC-04: Manage AI processing of cameras}\label{tab:uc04}\\
+\hline
+\textbf{Actor} & Administrator \\ \hline
+\textbf{Purpose} & Decide which cameras are analysed by enabling or disabling AI processing for each camera, and process a recorded video file for a camera when needed. \\ \hline
+\textbf{Precondition} & The Administrator is logged in; the camera has been added to the system and is operational. \\ \hline
+\textbf{Postcondition} & The AI processing status of the camera is updated; the system starts or stops including the camera in the analysis. \\ \hline
+\endfirsthead
+\multicolumn{2}{l}{\textit{(continued from Table~\ref{tab:uc04})}}\\
+\hline
+\endhead
+\textbf{Main flow} & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{1.}The Administrator opens AI processing management; the system shows the list of cameras with their AI processing status and the model configuration in use. \\
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{2.}The Administrator enables or disables AI processing for a camera and confirms. \\
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{3.}The system checks the status of the camera and the current model configuration. \\
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{4.}The system saves the new status. When enabled, the camera is analysed in turn with the other cameras that have AI processing enabled. When disabled, the camera's running job is cancelled and the system stops creating new data; existing data is kept. \\
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{5.}The system reports the result to the Administrator. \\ \hline
+\textbf{Exceptions} & \textbf{E1 - Camera offline:} If a camera with RTSP has lost its connection, the system refuses to enable AI processing and reports it. \\ \cline{2-2}
+ & \textbf{E2 - AI models not ready:} If the current model configuration is incomplete or unavailable, the system refuses to enable AI processing. \\ \cline{2-2}
+ & \textbf{E3 - Camera no longer operational:} If the camera has been retired, the system does not allow its AI processing status to change. \\ \cline{2-2}
+ & \textbf{E4 - Invalid video file:} If the uploaded file has the wrong format or exceeds the permitted size, the system refuses it and creates no job. \\ \hline
+\textbf{Alternative flows} & \textbf{A1 - Process a video file:} The Administrator chooses a camera, uploads a recorded video file, and chooses the recording start time and the sampling mode. The system checks the file, creates a processing job that goes through the same analysis pipeline as an RTSP stream and shows its progress. This is the only way to process a camera without RTSP. \\ \hline
+\end{longtable}
+
+\begin{longtable}{|>{\raggedright\arraybackslash}p{2.9cm}|p{12.3cm}|}
+\caption{Use case specification UC-05: Configure AI models}\label{tab:uc05}\\
+\hline
+\textbf{Actor} & Administrator \\ \hline
+\textbf{Purpose} & Choose the person detector (Detector) and tracking algorithm (Tracker) used by the whole system. The image and text encoders are fixed components that cannot be changed from the interface. \\ \hline
+\textbf{Precondition} & The Administrator is logged in; the system has a registered list of Detectors and Trackers. \\ \hline
+\textbf{Postcondition} & The chosen Detector-Tracker pair becomes the current configuration; processing jobs created afterwards use it. \\ \hline
+\endfirsthead
+\multicolumn{2}{l}{\textit{(continued from Table~\ref{tab:uc05})}}\\
+\hline
+\endhead
+\textbf{Main flow} & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{1.}The Administrator opens the AI model configuration; the system shows the Detector-Tracker pair in use and the list of registered models, in which unavailable models are marked and cannot be selected. \\
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{2.}The Administrator chooses a Detector, a Tracker or both, then confirms. \\
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{3.}The system checks that the models are ready and that the Detector-Tracker pair is compatible, then trial-loads the new configuration. \\
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{4.}The system saves the new configuration as the current one and reports the result. \\ \hline
+\textbf{Exceptions} & \textbf{E1 - Model unavailable:} If a chosen model is missing or cannot be loaded, the system refuses and keeps the previous valid configuration. \\ \cline{2-2}
+ & \textbf{E2 - Incompatible Detector and Tracker:} The system refuses and asks the Administrator to choose another pair. \\ \hline
+\textbf{Alternative flows} & None. \\ \hline
+\end{longtable}
+
+\begin{longtable}{|>{\raggedright\arraybackslash}p{2.9cm}|p{12.3cm}|}
+\caption{Use case specification UC-09: Search for people with AI}\label{tab:uc09}\\
+\hline
+\textbf{Actor} & Operator \\ \hline
+\textbf{Purpose} & Find a person in the analysed camera data by image, English description or appearance attributes, within the assigned surveillance area. \\ \hline
+\textbf{Precondition} & The Operator is logged in; the account has an assigned surveillance area with analysed data. \\ \hline
+\textbf{Postcondition} & The system shows at most $k$ best-matching results within the valid scope, in decreasing order of relevance. \\ \hline
+\endfirsthead
+\multicolumn{2}{l}{\textit{(continued from Table~\ref{tab:uc09})}}\\
+\hline
+\endhead
+\textbf{Main flow} & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{1.}The Operator chooses the form of search and provides an image of the person, an English description or the attributes. \\
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{2.}The Operator may also choose cameras of the area and a time range, choose the number of results $k$ among 4, 8, 12 and 16, then sends the request. \\
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{3.}The system validates the query and limits the search scope to the operational cameras of the account's area. \\
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{4.}The system encodes the query, matches it against the indexed data and takes the $k$ results with the highest relevance. \\
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{5.}The system shows the person image, camera, area, time of appearance and relevance score of each result. \\ \hline
+\textbf{Exceptions} & \textbf{E1 - Invalid query:} If the image has a wrong format, the description is not in English, the attributes are invalid or $k$ is not an allowed value, the system reports the error and asks for new input. \\ \cline{2-2}
+ & \textbf{E2 - No data in scope:} The system reports that there is no matching data and suggests widening the time range or choosing more cameras. \\ \cline{2-2}
+ & \textbf{E3 - Search components unavailable:} If the encoder or the vector store is not working, the system reports that the search failed instead of returning an empty list. \\ \cline{2-2}
+ & \textbf{E4 - Request out of scope:} If a request sent directly contains a camera outside the account's area, the server refuses it. \\ \hline
+\textbf{Alternative flows} & \textbf{A1 - Search again from a result:} The Operator drags the image of a result into the image search box to search again for the same person. \\ \hline
+\end{longtable}
+
+\begin{longtable}{|>{\raggedright\arraybackslash}p{2.9cm}|p{12.3cm}|}
+\caption{Use case specification UC-10: View and assess search results}\label{tab:uc10}\\
+\hline
+\textbf{Actor} & Operator \\ \hline
+\textbf{Purpose} & View the details of each result and assess it to decide which results really show the person being sought. \\ \hline
+\textbf{Precondition} & The Operator has performed UC-09 and the system has returned at least one result. \\ \hline
+\textbf{Postcondition} & The Operator has assessed the results; the original data is unchanged. \\ \hline
+\endfirsthead
+\multicolumn{2}{l}{\textit{(continued from Table~\ref{tab:uc10})}}\\
+\hline
+\endhead
+\textbf{Main flow} & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{1.}The Operator views the list of results with the person image, camera, area, time of appearance and relevance score. \\
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{2.}The Operator selects a result; the system shows the full frame with the bounding box of the person found, together with the details. \\
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{3.}The Operator compares it with the person being sought and may go on to other results. \\
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{4.}For a result to keep, the Operator chooses \textbf{Create new case} or \textbf{Add to existing case}; the system continues with UC-11. \\ \hline
+\textbf{Exceptions} & \textbf{E1 - Result no longer available:} If the data of the result has been removed, the system reports that the result is no longer available. \\ \cline{2-2}
+ & \textbf{E2 - Image cannot be shown:} The system still shows the remaining information and reports that the person image cannot be shown. \\ \hline
+\textbf{Alternative flows} & \textbf{A1 - Sort results:} The Operator sorts the list by relevance or by time of appearance. \\ \cline{2-2}
+ & \textbf{A2 - Filter results:} The Operator filters the current list by camera or time range without sending a new query. \\ \hline
+\end{longtable}
+
+\begin{longtable}{|>{\raggedright\arraybackslash}p{2.9cm}|p{12.3cm}|}
+\caption{Use case specification UC-11: Manage case files}\label{tab:uc11}\\
+\hline
+\textbf{Actor} & Operator \\ \hline
+\textbf{Purpose} & Save the search results related to an incident into a case the Operator owns, and follow the case until it is closed. \\ \hline
+\textbf{Precondition} & The Operator is logged in; the result to save is within the Operator's search scope. \\ \hline
+\textbf{Postcondition} & The case is created or updated, with exactly one Operator in charge, a title, notes, a status and the saved results. \\ \hline
+\endfirsthead
+\multicolumn{2}{l}{\textit{(continued from Table~\ref{tab:uc11})}}\\
+\hline
+\endhead
+\textbf{Main flow} & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{1.}From a search result, the Operator chooses \textbf{Create new case} or \textbf{Add to existing case}. \\
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{2.}For a new case, the Operator enters a title and notes; the system sets the logged-in account as the owner. For an existing case, the system only lists the open cases owned by the Operator. \\
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{3.}The system saves the result as a new entry in the case, even if the appearance is already in it. \\
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{4.}The Operator may edit the title and notes and remove results from the case; the original data of the appearance is not deleted. \\
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{5.}When the work is done, the Operator marks the case \textbf{Closed}; the system records the closing time and locks the case. \\ \hline
+\textbf{Exceptions} & \textbf{E1 - Result or case no longer available:} The system reports it, saves nothing and reloads the list of cases. \\ \cline{2-2}
+ & \textbf{E2 - Result outside the Operator's rights:} If a request sent directly tries to save a result outside the Operator's scope, the system refuses it. \\ \cline{2-2}
+ & \textbf{E3 - Case already closed:} The system refuses to add or remove results or to edit the title and notes, and asks for the case to be reopened first. \\ \cline{2-2}
+ & \textbf{E4 - Data changed elsewhere:} The system refuses to overwrite and asks the Operator to reload the case. \\ \hline
+\textbf{Alternative flows} & \textbf{A1 - Close while saving:} If the Operator ticks \textbf{Mark the case as closed} when saving, the case is closed right after the save; if this step fails, the result is still saved and the system asks the Operator to close the case again. \\ \cline{2-2}
+ & \textbf{A2 - Reopen a case:} The Operator reopens a closed case; it returns to \textbf{Open} and can be edited as normal. \\ \hline
+\end{longtable}
+
+\begin{longtable}{|>{\raggedright\arraybackslash}p{2.9cm}|p{12.3cm}|}
+\caption{Use case specification UC-13: View case files}\label{tab:uc13}\\
+\hline
+\textbf{Actor} & Viewer \\ \hline
+\textbf{Purpose} & View every case created by the Operators with its saved results, in read-only mode. \\ \hline
+\textbf{Precondition} & The Viewer is logged in. \\ \hline
+\textbf{Postcondition} & The Viewer has seen the content of the case; no data has changed. \\ \hline
+\endfirsthead
+\multicolumn{2}{l}{\textit{(continued from Table~\ref{tab:uc13})}}\\
+\hline
+\endhead
+\textbf{Main flow} & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{1.}The Viewer opens the case files; the system shows the list of all cases in the system. \\
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{2.}The Viewer may filter by status, creation time or the Operator in charge, then selects a case. \\
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{3.}The system shows the title, notes, status, Operator in charge, creation time and saved results, without relevance scores. \\
+ & \hangindent=1.6em\hangafter=1\noindent\makebox[1.6em][l]{4.}The Viewer may select a result to see its details; the system continues with UC-14 (View saved search results). \\ \hline
+\textbf{Exceptions} & \textbf{E1 - No cases yet:} The system shows an empty state. \\ \cline{2-2}
+ & \textbf{E2 - Case cannot be retrieved:} The system reports that the case cannot be shown and allows retrying. \\ \cline{2-2}
+ & \textbf{E3 - Some results no longer available:} The system still shows the case and the remaining data, and marks the results that could not be retrieved. \\ \hline
+\textbf{Alternative flows} & \textbf{A1 - Open from the overview:} The Viewer selects a case in the recent-cases list of UC-12; the system opens its details directly. \\ \hline
+\end{longtable}

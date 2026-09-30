@@ -1,0 +1,23 @@
+% !TEX root = ../../main.tex
+% C7.2 - Test data and simulated cameras (translated). Figures: report-data-guide.md section 2 and C7.2 (current).
+\section{Test Data and Simulated Cameras}
+\label{sec:7.2}
+
+\paragraph{Dataset.} The project uses the WILDTRACK dataset~\cite{chavdarova2018wildtrack}, made of the videos of seven static 1920$\times$1080 cameras observing one crowded outdoor pedestrian area with overlapping fields of view, together with person position labels on a set of frames. Each video is treated as one camera, and all seven cameras are assigned to the same surveillance area.
+
+\paragraph{Simulated cameras.} The seven videos are streamed as seven RTSP streams through MediaMTX as in Section~\ref{sec:3.7.3}. On the target machine, however, the analysis is about seven times slower than real time, so the streaming server drops frames and most of the stream content is not analysed. The RTSP streams are therefore used to demonstrate and verify camera ingestion (Section~\ref{sec:8.6}), while the demonstration data is indexed from the video files themselves through the video upload function, which goes through the same pipeline.
+
+\paragraph{Preparing the demonstration data.} Indexing is done by a tool that calls the system's API as an Administrator: it cuts the segment of video to process, uploads it for each camera with the same time origin for all seven cameras, and follows the jobs until they finish. The demonstration data covers the first 120 seconds of each video: the 0-60 second segment produced 736 tracks, and the 60-120 second segment was processed by 7 jobs in 55 minutes, adding 752 tracks without errors. In total there are 1,488 ready tracks, distributed as in Table~\ref{tab:demo-tracks}. Together with 35 tracks from one RTSP processing session, the demonstration data has 1,523 tracks and one sample case with 3 results.
+
+\begin{table}[H]
+\centering
+\caption{Number of tracks in the demonstration data per camera (first 120 seconds of each video)}
+\label{tab:demo-tracks}
+\begin{tabularx}{\textwidth}{|L|c|c|c|c|c|c|c|c|}
+\hline
+\textbf{Camera} & C1 & C2 & C3 & C4 & C5 & C6 & C7 & \textbf{Total} \\
+\hline
+\textbf{Tracks} & 208 & 254 & 308 & 188 & 182 & 159 & 189 & 1,488 \\
+\hline
+\end{tabularx}
+\end{table}

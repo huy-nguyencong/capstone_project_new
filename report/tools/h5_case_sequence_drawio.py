@@ -2,7 +2,8 @@
 
 Khớp api/v1/cases.py (POST /cases, POST /cases/{id}/results, PATCH /cases/{id}) và services/cases.py
 (người phụ trách lấy từ phiên; _save_track: READY + camera ACTIVE thuộc khu vực hiện tại; bản chụp; vụ việc CLOSED bị khóa;
-PATCH so số phiên bản). "Đánh dấu hoàn thành khi lưu" = yêu cầu thứ hai do giao diện gửi.
+PATCH so số phiên bản). "Đánh dấu hoàn thành khi lưu" = giao diện đọc lại vụ việc lấy số phiên bản mới nhất rồi gửi PATCH
+(services/api/cases.js markCompleted). Nhánh thêm vào vụ việc đã có trả về kết quả vừa lưu, không trả vụ việc.
 Chạy: python report/tools/h5_case_sequence_drawio.py
 """
 from xml.sax.saxutils import quoteattr
@@ -13,7 +14,7 @@ F = f'fontFamily=Times New Roman;fontSize={FS};'
 cells = []
 X = {'GS': 60, 'WEB': 250, 'API': 480, 'PG': 790}
 NAMES = {'GS': 'Giám sát viên', 'WEB': 'Ứng dụng web', 'API': 'Máy chủ ứng dụng', 'PG': 'PostgreSQL'}
-TOP, BOTTOM, HEAD = 0, 1145, 60
+TOP, BOTTOM, HEAD = 0, 1290, 60
 
 
 def v(id, val, style, x, y, w, h):
@@ -30,7 +31,7 @@ def msg(a, b, y, text, ret=False):
     xa, xb = X[a], X[b]
     xa += 6 if xb > xa else -6
     xb += -6 if xb > xa else 6
-    style = ('html=1;verticalAlign=bottom;labelBackgroundColor=none;rounded=0;'
+    style = ('html=1;verticalAlign=bottom;labelBackgroundColor=#ffffff;rounded=0;'
              + ('dashed=1;endArrow=open;endSize=10;' if ret else 'endArrow=block;endFill=1;endSize=10;'))
     cells.append(f'<mxCell id="m{n}" value={quoteattr(text)} style={quoteattr(style + F)} edge="1" parent="1">'
                  f'<mxGeometry relative="1" as="geometry"><mxPoint x="{xa}" y="{y}" as="sourcePoint"/>'
@@ -40,7 +41,7 @@ def msg(a, b, y, text, ret=False):
 def frame(id, kind, x, y, w, h, guard, gx):
     v(id, kind, 'shape=umlFrame;whiteSpace=wrap;html=1;width=60;height=32;boundedLbl=1;verticalAlign=middle;align=left;'
       'spacingLeft=6;fillColor=none;', x, y, w, h)
-    v(id + 'g', guard, 'text;html=1;align=left;verticalAlign=top;', gx, y + 3, 330, 32)
+    v(id + 'g', guard, 'text;html=1;align=left;verticalAlign=top;labelBackgroundColor=#ffffff;', gx, y + 3, 330, 32)
 
 
 def divider(y, x, w, guard, gx):
@@ -49,7 +50,7 @@ def divider(y, x, w, guard, gx):
     cells.append(f'<mxCell id="d{n}" value="" style={quoteattr("endArrow=none;dashed=1;html=1;rounded=0;" + F)} edge="1" parent="1">'
                  f'<mxGeometry relative="1" as="geometry"><mxPoint x="{x}" y="{y}" as="sourcePoint"/>'
                  f'<mxPoint x="{x + w}" y="{y}" as="targetPoint"/></mxGeometry></mxCell>')
-    v(f'dg{n}', guard, 'text;html=1;align=left;verticalAlign=top;', gx, y + 3, 330, 32)
+    v(f'dg{n}', guard, 'text;html=1;align=left;verticalAlign=top;labelBackgroundColor=#ffffff;', gx, y + 3, 330, 32)
 
 
 for key, x in X.items():
@@ -62,24 +63,27 @@ for key, x in X.items():
           'collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#DAE8FC;strokeColor=#6C8EBF;size=' + str(HEAD) + ';',
           x - 90, TOP, 180, BOTTOM)
 ACTV = 'html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#ffffff;'
-v('act1', '', ACTV, X['API'] - 6, 240, 12, 510)
-v('act2', '', ACTV, X['API'] - 6, 870, 12, 150)
+v('act1', '', ACTV, X['API'] - 6, 285, 12, 495)
+v('act2', '', ACTV, X['API'] - 6, 890, 12, 45)
+v('act3', '', ACTV, X['API'] - 6, 1030, 12, 130)
 
 msg('GS', 'WEB', 130, 'chọn kết quả để lưu')
-frame('alt', 'alt', 150, 165, 800, 410, '[tạo vụ việc mới]', 225)
-msg('WEB', 'API', 265, 'tạo vụ việc (tiêu đề, ghi chú,<br>mã lần xuất hiện)')
-msg('API', 'PG', 325, 'tạo vụ việc, người phụ trách<br>lấy từ phiên đăng nhập')
-divider(360, 150, 800, '[thêm vào vụ việc đã có]', 160)
-msg('WEB', 'API', 460, 'thêm kết quả (mã vụ việc,<br>mã lần xuất hiện)')
-msg('API', 'PG', 525, 'kiểm tra vụ việc của mình,<br>đang xử lý')
-msg('API', 'PG', 640, 'kiểm tra lần xuất hiện: sẵn sàng,<br>camera vận hành, đúng khu vực')
-msg('API', 'PG', 705, 'tạo mục kết quả + bản chụp,<br>ghi nhật ký')
-msg('API', 'WEB', 755, 'vụ việc, số phiên bản', ret=True)
-frame('opt', 'opt', 150, 790, 800, 250, '[đánh dấu hoàn thành khi lưu]', 225)
-msg('WEB', 'API', 880, 'đổi trạng thái Hoàn thành<br>(kèm số phiên bản)')
-msg('API', 'PG', 950, 'so số phiên bản, cập nhật,<br>ghi nhật ký')
-msg('API', 'WEB', 1015, 'thành công / lỗi', ret=True)
-msg('WEB', 'GS', 1095, 'thông báo kết quả', ret=True)
+frame('alt', 'alt', 150, 165, 800, 425, '[tạo vụ việc mới]', 225)
+msg('WEB', 'API', 285, 'tạo vụ việc<br>(tiêu đề, ghi chú,<br>mã lần xuất hiện)')
+msg('API', 'PG', 345, 'tạo vụ việc, người phụ trách<br>lấy từ phiên đăng nhập')
+divider(380, 150, 800, '[thêm vào vụ việc đã có]', 160)
+msg('WEB', 'API', 490, 'thêm kết quả<br>(mã vụ việc,<br>mã lần xuất hiện)')
+msg('API', 'PG', 555, 'kiểm tra vụ việc của mình,<br>đang xử lý')
+msg('API', 'PG', 660, 'kiểm tra lần xuất hiện: sẵn sàng,<br>camera vận hành, đúng khu vực')
+msg('API', 'PG', 725, 'tạo mục kết quả + bản chụp,<br>ghi nhật ký')
+msg('API', 'WEB', 780, 'vụ việc hoặc<br>kết quả đã lưu', ret=True)
+frame('opt', 'opt', 150, 810, 800, 375, '[đánh dấu hoàn thành khi lưu]', 225)
+msg('WEB', 'API', 890, 'đọc lại vụ việc')
+msg('API', 'WEB', 935, 'số phiên bản mới nhất', ret=True)
+msg('WEB', 'API', 1030, 'đổi trạng thái<br>Hoàn thành (kèm<br>số phiên bản)')
+msg('API', 'PG', 1095, 'so số phiên bản, cập nhật,<br>ghi nhật ký')
+msg('API', 'WEB', 1160, 'thành công / lỗi', ret=True)
+msg('WEB', 'GS', 1240, 'thông báo kết quả', ret=True)
 
 xml = ('<mxfile host="app.diagrams.net"><diagram name="H5 - Tuần tự vụ việc" id="h5"><mxGraphModel dx="1400" dy="1100" '
        'grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" '

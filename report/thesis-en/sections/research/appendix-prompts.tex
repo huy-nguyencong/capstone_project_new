@@ -1,0 +1,60 @@
+% !TEX root = ../../main.tex
+% Part II (Nguyen Huu Cuong) - merged from the research report (report_latex_v3), see MERGE_NOTES.md.
+\chapter{System Prompts of Part II}
+\label{app:prompts}
+
+The prompts are reproduced verbatim, as sent to the model. Every design decision
+discussed in Section~\ref{sec:r-reasoning} and listed in Table~\ref{tab:r-ablation}
+appears here as text. Placeholders in braces are filled by the renderers described
+in Section~\ref{sec:r-reasoning}; the user messages show what data each stage
+receives.
+
+The two ranking rounds share one system prompt and differ only in the coverage
+block inserted into it: \code{COVERAGE\_COARSE} for the $75\rightarrow25$ cut and
+\code{COVERAGE\_FINAL} for the $25\rightarrow10$ cut. Stage 3 uses the prompt of
+stage 1 with one paragraph inserted.
+
+\section{Stage 0: query analyst}
+\VerbatimInput[fontsize=\footnotesize,breaklines=true,breakanywhere=true,
+               frame=leftline,framesep=4mm]{prompts/STAGE0_SYS.txt}
+\paragraph{User message.}
+\VerbatimInput[fontsize=\footnotesize,breaklines=true,breakanywhere=true,
+               frame=leftline,framesep=4mm]{prompts/STAGE0_USER.txt}
+
+\section{Stage 1: attribute-value selector}
+\VerbatimInput[fontsize=\footnotesize,breaklines=true,breakanywhere=true,
+               frame=leftline,framesep=4mm]{prompts/STAGE1_SYS.txt}
+\paragraph{User message.}
+\VerbatimInput[fontsize=\footnotesize,breaklines=true,breakanywhere=true,
+               frame=leftline,framesep=4mm]{prompts/STAGE1_USER.txt}
+
+\section{Stage 3: the refine selector's insertion}
+Stage 3 sends the stage 1 prompt above with this paragraph added, and the anchor
+phrase \emph{``VALUE for distinguishing candidates.''} replaced by it.
+\VerbatimInput[fontsize=\footnotesize,breaklines=true,breakanywhere=true,
+               frame=leftline,framesep=4mm]{prompts/STAGE3_REFINE.txt}
+
+\section{Stage 2A / 4A: evidence reader}
+\VerbatimInput[fontsize=\footnotesize,breaklines=true,breakanywhere=true,
+               frame=leftline,framesep=4mm]{prompts/STAGE2A_SYS.txt}
+\paragraph{User message.}
+\VerbatimInput[fontsize=\footnotesize,breaklines=true,breakanywhere=true,
+               frame=leftline,framesep=4mm]{prompts/STAGE2A_USER.txt}
+
+\section{Stage 2B / 4B: the ranker}
+\VerbatimInput[fontsize=\footnotesize,breaklines=true,breakanywhere=true,
+               frame=leftline,framesep=4mm]{prompts/STAGE2B_SYS.txt}
+\paragraph{User message.}
+\VerbatimInput[fontsize=\footnotesize,breaklines=true,breakanywhere=true,
+               frame=leftline,framesep=4mm]{prompts/STAGE2B_USER.txt}
+
+\section{The coverage blocks}
+\code{\{COVERAGE\}} in the ranker's system prompt is one of these two.
+\paragraph{Coarse round ($75\rightarrow25$).}
+\VerbatimInput[fontsize=\footnotesize,breaklines=true,breakanywhere=true,
+               frame=leftline,framesep=4mm]{prompts/COVERAGE_COARSE.txt}
+\paragraph{Final round ($25\rightarrow10$).}
+\VerbatimInput[fontsize=\footnotesize,breaklines=true,breakanywhere=true,
+               frame=leftline,framesep=4mm]{prompts/COVERAGE_FINAL.txt}
+
+% ============================================================ references ====

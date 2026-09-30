@@ -1,0 +1,51 @@
+% !TEX root = ../../main.tex
+% Part II (Nguyen Huu Cuong) - merged from the research report (report_latex_v3), see MERGE_NOTES.md.
+% Style pass 2026-09-30: em dashes and rhetorical sentences removed; technical content, numbers and references unchanged.
+% Used by Chapter 12, section 12.2 (Part II limitations).
+\label{sec:r-limits}
+\paragraph{Model.} The reasoning LLM is Flash-Lite 3.5, chosen for its larger
+free-tier allowance rather than its quality. Section~\ref{sec:r-rerun} confirms
+that this is a limitation: it recovers four of five ranking failures by switching
+the two ranking calls to a larger model and changing nothing else. A full sweep on
+the larger model is the most direct improvement available and has not been run;
+the re-run covers five oracle-selected queries, not the sample.
+
+\paragraph{Data.} Token limits restricted the evaluation to 100 of the 496
+uniquely identifiable identities, so practical usability is not yet established,
+and the subset itself is an easier population than the full 1501 identities
+(Section~\ref{sec:r-dataset}). At $n=100$ a percentage point is one identity, and
+the R@1 ordering in Table~\ref{tab:r-main} rests on differences of 3 and 8
+identities. Extending the sweep requires no new work: the work-queue notebook
+already selects the next identities to run, giving priority to queries whose
+ground truth is inside the pool but outside CLIP's top 10.
+
+\paragraph{The blocks this part did not change.} Detection and tracking were filled
+with established defaults and left unchanged (Section~\ref{sec:r-choices}), and
+their failures still reach the search block: a person the detector missed has no
+crop, and a track merged by the tracker contains two people under one identity.
+This part measures neither. A tracker-error analysis over the same 100 identities
+is the next measurement to make, and it would move part of what
+Section~\ref{sec:r-error} counts as a reasoning residue into an upstream category.
+
+\paragraph{The refine round.} Four stages beat two at R@10 and lose to two at R@1
+and R@5, and three of the five losses in Table~\ref{tab:r-lostwhy} were caused by
+the refine round. Whether stages 3 and 4 should return a full ranking, or only
+re-order the candidates the coarse round was unsure about, is still open.
+
+\paragraph{Rarity versus mismatch cost.} The rarity table tells the ranker what a
+query value is worth when it separates candidates. It does not yet state the
+converse: a \emph{binary} attribute such as gender is ``almost nothing'' by rarity
+(both values are common), yet a gender mismatch is the strongest exclusion
+available. On one measured query, 40 of 40 reasons led with the lower colour and
+gender appeared in 2, while gender split the pool 44 to 31. This asymmetry between
+rarity and mismatch cost remains to be handled.
+
+\paragraph{Output truncation.} At 25 candidates per 2A call, replies occasionally
+stop at the output limit in the middle of a unit. The limit is currently detected
+after the fact from the API's finish reason rather than requested explicitly, and
+the two direct fixes, sending an explicit output cap or reducing the batch to 15
+candidates, have not yet been compared.
+
+\paragraph{Single phrasing.} Each identity is queried with one descriptive
+sentence. Robustness to paraphrase is not measured, although the pipeline already
+supports several phrasings per identity.

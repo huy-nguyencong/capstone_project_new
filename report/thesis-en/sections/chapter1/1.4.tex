@@ -1,0 +1,16 @@
+% !TEX root = ../../main.tex
+% C1.4 - Limitations (translated). The last item is [MERGE] for Part II.
+\section{Limitations}
+\label{sec:1.4}
+
+Besides the defined scope, the results of the project have the following limitations; their extent is quantified in Chapters~\ref{chapter:kiemthu} and~\ref{chapter:r-experiments} and summarised in Chapter~\ref{chapter:tongket}.
+\begin{itemize}
+    \item \textbf{Search quality depends on existing models.} The models were trained on data from contexts different from the project's camera data and are not fine-tuned. Search by text and by attributes is affected most, so search by image is the most reliable form.
+    \item \textbf{Narrow test data.} The system was only tested on seven static cameras observing one outdoor place in daylight; harder conditions such as low light or low resolution have not been verified.
+    \item \textbf{Not all cameras are analysed continuously.} Running on a machine without a discrete graphics card, the system analyses video more slowly than it is recorded and processes the cameras in turn, so the searchable data of each camera has gaps.
+    \item \textbf{Appearances may be missed or split.} The system analyses only part of the frames and represents each appearance by one frame, so a person who appears very briefly may be missed, and an occluded person may be split into several results or ranked low.
+    \item \textbf{Limited descriptions.} Text descriptions are only supported in English; the attribute set only covers gender, clothing and carried items, with no negative options.
+    \item \textbf{Relative scores and small deployment.} The relevance score only ranks results within one search; the system is deployed on a single computer at demonstration scale.
+    % [MERGE] Part II limitation.
+    \item \textbf{The reasoning layer is evaluated offline and on a small sample.} The research of Part II was measured on 100 identities of a public dataset with a hosted language model, and depends on that model's quotas and latency; it has not been run inside the application.
+\end{itemize}

@@ -1,0 +1,19 @@
+% !TEX root = ../../main.tex
+% C12.3 - Future work. 12.3.1 = Vietnamese 9.3 translated (Part I); 12.3.2 = [MERGE] link between the two parts (to be reviewed).
+\section{Future Work}
+\label{sec:9.3}
+
+\subsection{Part I: The Application}
+\label{sec:12.3.1}
+
+The priority is to improve search by text and by attributes. RaSa's re-ranking with its multimodal encoder could be enabled on the first candidates (Section~\ref{sec:3.5.3}) and evaluated again, or the model could be fine-tuned on data from the same domain as surveillance cameras.
+
+For speed, inference on the CPU could be optimised, for example with OpenVINO, starting with the image encoder, which takes most of the processing time (Section~\ref{sec:8.5}), or the system could be deployed on a machine with a GPU to analyse many camera streams at the same time instead of in turn. Once the system keeps up with real time, each camera could be processed continuously, and each appearance could be encoded and written as soon as it ends to shorten the delay before it becomes searchable. The write to the three stores already handles each appearance separately, so the change lies mainly in the analysis pipeline. For RTSP streams, the timestamp should come from the stream's own timestamps instead of the machine clock, so that the track termination rule does not depend on the processing speed.
+
+The evaluation should also be completed: measuring search by image and by text again with the current configuration, and comparing ByteTrack with BoT-SORT. Further ahead, the system could link the appearances of the same person across cameras, represent each appearance with several frames, and support queries in Vietnamese.
+
+% [MERGE] New paragraph linking the two parts - to be reviewed by both authors.
+\subsection{Bringing the Two Parts Together}
+\label{sec:12.3.2}
+
+The research of Part~II addresses exactly the weakest point of the application, search by text (Section~\ref{sec:8.4}). Its reasoning layer works on a candidate pool produced by vector retrieval, which is the output the application already obtains from Milvus, so it could be placed behind the application's search step as an optional re-ranking stage. Doing so would require an attribute index built alongside the vectors during indexing, a decision on where the language model runs given the application's on-premises deployment, and a measurement of the added latency per query. The further directions of the reasoning layer itself are stated in Section~\ref{sec:12.2.2}.

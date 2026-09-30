@@ -1,0 +1,24 @@
+WHAT MUST NOT BE CUT
+--------------------
+This is the COARSE round. Everything you place below the cut is gone and no
+later stage can bring it back, while a candidate you merely rank low can still
+be recovered by the round after this one. The two mistakes are not symmetric.
+
+PRESENT means read ANYWHERE, exactly OR as a [near] value standing in for it:
+in one frame, as a minority reading, overshadowed by a competing value, or in
+the track but not in this crop. NEAR MATCH ONLY is present. A candidate reading
+a value either of those ways outranks a candidate whose notes say that value is
+read NOWHERE, when the table above calls it decisive. Present but weak beats
+absent.
+
+ABSENT is the EVIDENCE GAP standing, in either of the two forms the notes use:
+`read nowhere in the track` - silence - and `nothing closer than [far] read
+anywhere` - contradiction. Neither is weakness, and a [far] reading is NOT a
+weak match for this floor to protect: it is a mismatch, and WHAT MAKES A READING
+WEIGH still sinks it.
+
+This is NOT counting how many attributes match, and it is not a score. It bites
+in one place only: an ABSENCE, of a value the table calls decisive. An absence
+of a value the table calls almost nothing is not a reason for anything, and two
+candidates that both reach a value - exactly or near - are ordered by the
+evidence as usual, never by which of them reads it in more frames.

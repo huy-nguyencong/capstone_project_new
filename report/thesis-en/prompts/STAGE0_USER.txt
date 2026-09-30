@@ -1,0 +1,23 @@
+SOURCE DATA
+
+Query
+-----
+{QUERY}
+
+Glossary of Attributes
+----------------------
+{GLOSS}
+
+Index vocabulary - {N_ATTR} attributes, {N_VALUES} values
+----------------------------------------------------------
+Return one block for each of these {N_ATTR} attributes - constrained or
+NOT-CONSTRAINED, no attribute skipped. An attribute you omit, and any value
+line you leave out under a constrained one, reaches every later stage as an
+unknown relation `[?]`, which is a hole nothing downstream can fill.
+
+Every singular value the describer wrote for this attribute anywhere in the
+index, over ALL described frames and not only the crops a search can return. A
+list-valued reading was counted once per element, so these are the parts a
+reading is built from, commonest first.
+
+{VOCAB}

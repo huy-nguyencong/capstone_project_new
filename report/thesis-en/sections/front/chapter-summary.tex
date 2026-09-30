@@ -1,0 +1,23 @@
+% !TEX root = ../../main.tex
+% F6 - Chapter summary (two parts). The only place that describes the structure of the report.
+\chapter*{Chapter Summary}
+\addcontentsline{toc}{chapter}{Chapter Summary}
+
+The report has a shared introduction, two parts carried out by different members (see the Work Contribution page), and a shared conclusion.
+
+\begin{description}[style=nextline]
+    \item[Chapter 1: Introduction] Presents the difficulty of finding a person in a large amount of surveillance video by manual review, and sets the objectives of building an application that searches for people by image, description or appearance features, and of studying how to improve search from text descriptions. It also defines the scope and the limitations of the project.
+    \item[Part I: The Person Search Application] \mbox{}
+    \item[Chapter 2: Related Systems] Surveys three commercial systems that search for people in video, BriefCam, Avigilon and Verkada, compares them on criteria relevant to the project, and derives the directions of the system.
+    \item[Chapter 3: Theoretical Background] Presents person search and cross-modal retrieval and the techniques the application uses: person detection, multi-object tracking, frame sampling, joint image-text representation learning with the RaSa model, vector search with the HNSW index, and the RTSP protocol used to simulate cameras.
+    \item[Chapter 4: System Analysis] Defines the three actors, the Administrator, the Operator and the Viewer, lists the functional and non-functional requirements, presents the use case diagram and the specifications of the main use cases, and ends with the permission matrix.
+    \item[Chapter 5: System Design] Presents the architecture that separates the AI processing from the application server, the two main flows of indexing and search, the data design over the PostgreSQL, Milvus and MinIO stores, the application programming interface, the security mechanisms and the user interface design.
+    \item[Chapter 6: System Implementation] Explains the choice of technologies and models, describes the implementation of the background AI worker and the web application, presents the main screens by role, and the operation monitoring tools for the Administrator.
+    \item[Chapter 7: System Deployment] Describes the deployment environment on a CPU-only laptop, the start-up, backup and restore procedures, and the preparation of the demonstration data from the seven cameras of the WILDTRACK dataset.
+    \item[Chapter 8: Testing and Evaluation] Presents the results of testing at five levels, from unit tests to the demonstration script, the evaluation of the three forms of search, and the measurements of the sampling interval, RTSP handling, search latency, storage and memory. The measurement that was not carried out is stated together with its method.
+    \item[Part II: Semantic Reasoning for Text-Based Person Search] \mbox{}
+    \item[Chapter 9: Motivation and Overview] States the problem and the contributions of the research, reads the pipeline as a template of replaceable blocks, argues for improving the search block with a reasoning layer inspired by ZARA, and fills each block with a concrete model.
+    \item[Chapter 10: Attribute Index and Multi-Agent Reasoning] Describes the attribute index built with a vision-language model and the four-stage multi-agent funnel that re-ranks the CLIP candidate pool from that evidence.
+    \item[Chapter 11: Experiments and Results] Presents the experimental setup on Market-1501, the results against the CLIP baseline decomposed into rescued and lost identities, a targeted re-run on a larger model, the ablations of the prompt mechanisms and the evaluation tooling.
+    \item[Chapter 12: Conclusion and Future Work] Summarises the results of both parts against the objectives, the limitations confirmed by the experiments and the directions for future work, including how the two parts could be brought together.
+\end{description}

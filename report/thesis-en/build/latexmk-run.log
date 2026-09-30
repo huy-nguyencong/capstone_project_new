@@ -1,0 +1,720 @@
+Rc files read:
+  .latexmkrc
+Latexmk: This is Latexmk, John Collins, 15 June 2025. Version 4.87.
+Latexmk: applying rule 'xelatex'...
+Rule 'xelatex':  Reasons for rerun
+Changed files or newly in use/created:
+  figures/H8-erd.png
+Category 'changed_user':
+  figures/H8-erd.png
+
+------------
+Run number 1 of rule 'xelatex'
+------------
+------------
+Running 'xelatex -interaction=nonstopmode -file-line-error -synctex=1 -no-pdf -interaction=nonstopmode -recorder -output-directory="build"  "main.tex"'
+------------
+This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex.fmt)
+ restricted \write18 enabled.
+entering extended mode
+(main.tex
+LaTeX2e <2025-11-01>
+L3 programming layer <2025-11-06>
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/base\report.cls
+Document Class: report 2025/01/22 v1.4n Standard LaTeX document class
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/base\size12.clo))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/koma-script\scrextend.s
+ty
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/koma-script\scrkbase.st
+y
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/koma-script\scrbase.sty
+
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/koma-script\scrlfile.st
+y
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/koma-script\scrlfile-ho
+ok.sty
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/koma-script\scrlogo.sty
+))) (C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/graphics\keyval.sty
+))))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/geometry\geometry.sty
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/iftex\ifvtex.sty
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/iftex\iftex.sty))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/geometry\geometry.cfg))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/fontspec\fontspec.sty
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/l3packages/xparse\xpars
+e.sty
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/l3kernel\expl3.sty
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/l3backend\l3backend-xet
+ex.def)))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/fontspec\fontspec-xetex
+.sty (C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/base\fontenc.sty)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/fontspec\fontspec.cfg))
+) (C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/babel\babel.sty
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/babel\xebabel.def)
+*************************************
+* Local config file bblopts.cfg used
+*
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/arabi\bblopts.cfg)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/babel/locale/en\babel
+-english.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/babel-english\english.l
+df))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/csquotes\csquotes.sty
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/etoolbox\etoolbox.sty)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/csquotes\csquotes.def)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/csquotes\csquotes.cfg))
+ (C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/biblatex\biblatex.sty
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pdftexcmds\pdftexcmds
+.sty
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/infwarerr\infwarerr.s
+ty)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/ltxcmds\ltxcmds.sty))
+
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/kvoptions\kvoptions.sty
+
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/kvsetkeys\kvsetkeys.sty
+)) (C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/logreq\logreq.sty
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/logreq\logreq.def))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/base\ifthen.sty)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/url\url.sty)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/biblatex\blx-dm.def)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/biblatex\blx-unicode.de
+f)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/biblatex\blx-compat.def
+) (C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/biblatex\biblatex.def
+)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/biblatex-ieee\ieee.bbx
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/biblatex/bbx\numeric-co
+mp.bbx
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/biblatex/bbx\numeric.bb
+x
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/biblatex/bbx\standard.b
+bx))))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/biblatex-ieee\ieee.cbx
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/biblatex/cbx\numeric-ve
+rb.cbx))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/biblatex\biblatex.cfg)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/biblatex\blx-case-expl3
+.sty))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/eso-pic\eso-pic.sty
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/xcolor\xcolor.sty
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/graphics-cfg\color.cfg)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/graphics-def\xetex.def)
+ (C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/graphics\mathcolor.ltx
+)))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/graphics\graphicx.sty
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/graphics\graphics.sty
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/graphics\trig.sty)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/graphics-cfg\graphics.c
+fg)))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/pdfpages\pdfpages.sty
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/tools\calc.sty)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/pdfpages\ppxetex.def))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/pgf/frontendlayer\tikz.
+sty
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/pgf/basiclayer\pgf.sty
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/pgf/utilities\pgfrcs.st
+y
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/utilities\pgfutil
+-common.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/utilities\pgfutil
+-latex.def)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/utilities\pgfrcs.
+code.tex
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf\pgf.revision.tex)
+))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/pgf/basiclayer\pgfcore.
+sty
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/pgf/systemlayer\pgfsys.
+sty
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/systemlayer\pgfsy
+s.code.tex
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/utilities\pgfkeys
+.code.tex
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/utilities\pgfkeys
+libraryfiltered.code.tex))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/systemlayer\pgf.c
+fg)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/systemlayer\pgfsy
+s-xetex.def
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/systemlayer\pgfsy
+s-dvipdfmx.def
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/systemlayer\pgfsy
+s-common-pdf.def))))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/systemlayer\pgfsy
+ssoftpath.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/systemlayer\pgfsy
+sprotocol.code.tex))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgfcor
+e.code.tex
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmath.code
+.tex
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathutil.
+code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathparse
+r.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathfunct
+ions.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathfunct
+ions.basic.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathfunct
+ions.trigonometric.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathfunct
+ions.random.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathfunct
+ions.comparison.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathfunct
+ions.base.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathfunct
+ions.round.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathfunct
+ions.misc.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathfunct
+ions.integerarithmetics.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathcalc.
+code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathfloat
+.code.tex))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfint.code.
+tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgfcor
+epoints.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgfcor
+epathconstruct.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgfcor
+epathusage.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgfcor
+escopes.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgfcor
+egraphicstate.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgfcor
+etransformations.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgfcor
+equick.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgfcor
+eobjects.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgfcor
+epathprocessing.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgfcor
+earrows.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgfcor
+eshade.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgfcor
+eimage.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgfcor
+eexternal.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgfcor
+elayers.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgfcor
+etransparency.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgfcor
+epatterns.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgfcor
+erdf.code.tex)))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/modules\pgfmodule
+shapes.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/modules\pgfmodule
+plot.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/pgf/compatibility\pgfco
+mp-version-0-65.sty)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/pgf/compatibility\pgfco
+mp-version-1-18.sty))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/pgf/utilities\pgffor.st
+y
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/pgf/utilities\pgfkeys.s
+ty
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/utilities\pgfkeys
+.code.tex))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/pgf/math\pgfmath.sty
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmath.code
+.tex))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/utilities\pgffor.
+code.tex))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/frontendlayer/tik
+z\tikz.code.tex
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/libraries\pgflibr
+aryplothandlers.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/modules\pgfmodule
+matrix.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/frontendlayer/tik
+z/libraries\tikzlibrarytopaths.code.tex)))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/frontendlayer/tik
+z/libraries\tikzlibrarypositioning.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/libraries\pgflibr
+aryarrows.meta.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/frontendlayer/tik
+z/libraries\tikzlibraryshapes.geometric.code.tex
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/libraries/shapes\
+pgflibraryshapes.geometric.code.tex))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/fancyhdr\fancyhdr.sty)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/lastpage\lastpage.sty
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/lastpage\lastpage2e.sty
+
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/lastpage\lastpagemodern
+.sty) 
+)) (C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/tools\tabularx.sty
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/tools\array.sty))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/tools\longtable.sty)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/booktabs\booktabs.sty)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/multirow\multirow.sty)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/xurl\xurl.sty
+xurl: Set penalties for biblatex
+) (C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/amsmath\amsmath.sty
+For additional information on amsmath, use the `?' option.
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/amsmath\amstext.sty
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/amsmath\amsgen.sty))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/amsmath\amsbsy.sty)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/amsmath\amsopn.sty))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\amssymb.sty
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\amsfonts.sty))
+
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/anyfontsize\anyfontsize
+.sty) (C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/float\float.sty)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/titlesec\titlesec.sty)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/listings\listings.sty
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/listings\lstpatch.sty)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/listings\lstmisc.sty)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/listings\listings.cfg))
+==> First Aid for listings.sty no longer applied!
+    Expected:
+        2024/09/23 1.10c (Carsten Heinz)
+    but found:
+        2025/11/14 1.11b (Carsten Heinz)
+    so I'm assuming it got fixed.
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/graphics\lscape.sty)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/tools\afterpage.sty)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/caption\subcaption.sty
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/caption\caption.sty
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/caption\caption3.sty)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/caption\ltcaption.sty))
+) (C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/fvextra\fvextra.sty
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/fancyvrb\fancyvrb.sty)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/upquote\upquote.sty
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/base\textcomp.sty))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/lineno\lineno.sty
+
+LaTeX Warning: Command \@parboxrestore  has changed.
+               Check if current package is valid.
+
+)
+
+Package fvextra Warning: csquotes should be loaded after fvextra, to avoid a wa
+rning from the lineno package on input line 36.
+
+) (C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/enumitem\enumitem.sty
+) (C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/pgfplots\pgfplots.sty
+
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgfplots\pgfplots.rev
+ision.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgfplots\pgfplots.cod
+e.tex
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgfplots\pgfplotscore
+.code.tex
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgfplots/sys\pgfplots
+sysgeneric.code.tex))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgfplots/libs\pgfplot
+slibrary.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgfplots/oldpgfcompat
+ib\pgfplotsoldpgfsupp_loader.code.tex
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/libraries\pgflibr
+aryfpu.code.tex)
+Package pgfplots: loading complementary utilities for your pgf version...
+
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgfplots/oldpgfcompat
+ib\pgfplotsoldpgfsupp_pgfutil-common-lists.tex))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgfplots/util\pgfplot
+sutil.code.tex
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgfplots/liststructur
+e\pgfplotsliststructure.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgfplots/liststructur
+e\pgfplotsliststructureext.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgfplots/liststructur
+e\pgfplotsarray.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgfplots/liststructur
+e\pgfplotsmatrix.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgfplots/numtable\pgf
+plotstableshared.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgfplots/liststructur
+e\pgfplotsdeque.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgfplots/util\pgfplot
+sbinary.code.tex
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgfplots/util\pgfplot
+sbinary.data.code.tex))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgfplots/util\pgfplot
+sutil.verb.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgfplots/libs\pgflibr
+arypgfplots.surfshading.code.tex
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgfplots/sys\pgflibra
+rypgfplots.surfshading.pgfsys-xetex.def
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgfplots/sys\pgflibra
+rypgfplots.surfshading.pgfsys-dvipdfmx.def))))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgfplots/util\pgfplot
+scolormap.code.tex
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgfplots/util\pgfplot
+scolor.code.tex))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgfplots\pgfplotsstac
+kedplots.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgfplots\pgfplotsplot
+handlers.code.tex
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgfplots\pgfplotsmesh
+plothandler.code.tex
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgfplots\pgfplotsmesh
+plotimage.code.tex)))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgfplots\pgfplots.sca
+ling.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgfplots\pgfplotscoor
+dprocessing.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgfplots\pgfplots.err
+orbars.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgfplots\pgfplots.mar
+kers.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgfplots\pgfplotstick
+s.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgfplots\pgfplots.pat
+hs.code.tex)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/frontendlayer/tik
+z/libraries\tikzlibrarydecorations.code.tex
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/modules\pgfmodule
+decorations.code.tex))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/frontendlayer/tik
+z/libraries\tikzlibrarydecorations.pathmorphing.code.tex
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/libraries/decorat
+ions\pgflibrarydecorations.pathmorphing.code.tex))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/frontendlayer/tik
+z/libraries\tikzlibrarydecorations.pathreplacing.code.tex
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/libraries/decorat
+ions\pgflibrarydecorations.pathreplacing.code.tex))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgfplots/libs\tikzlib
+rarypgfplots.contourlua.code.tex))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/frontendlayer/tik
+z/libraries\tikzlibraryplotmarks.code.tex
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pgf/libraries\pgflibr
+aryplotmarks.code.tex)))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/hyperref\hyperref.sty
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/kvdefinekeys\kvdefine
+keys.sty)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/pdfescape\pdfescape.s
+ty) (C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/hycolor\hycolor.sty
+) (C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/hyperref\nameref.sty
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/refcount\refcount.sty)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/gettitlestring\gettit
+lestring.sty))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/stringenc\stringenc.s
+ty) (C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/hyperref\pd1enc.def
+) (C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/intcalc\intcalc.sty
+) (C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/hyperref\puenc.def)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/bitset\bitset.sty
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/bigintcalc\bigintcalc
+.sty)))
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/hyperref\hxetex.def
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/rerunfilecheck\rerunfil
+echeck.sty
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/generic/uniquecounter\uniquec
+ounter.sty)))
+(D:\uni-studies\semester-253\capstone_project_new\report\thesis-en\build\main.a
+ux)
+*geometry* driver: auto-detecting
+*geometry* detected driver: xetex
+
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/biblatex/lbx\english.lb
+x)
+(D:\uni-studies\semester-253\capstone_project_new\report\thesis-en\build\main.b
+bl)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/pdflscape\pdflscape.sty
+
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/pdflscape\pdflscape-nom
+etadata.sty))
+Package pgfplots notification 'compat/show suggested version=true': you might b
+enefit from \pgfplotsset{compat=1.18} (current compat level: 1.17).
+
+
+(D:\uni-studies\semester-253\capstone_project_new\report\thesis-en\build\main.o
+ut)
+(D:\uni-studies\semester-253\capstone_project_new\report\thesis-en\build\main.o
+ut) (sections/front/cover-page.tex
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\umsa.fd)
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\umsb.fd)
+[1] [1]) (sections/front/decl-of-authen.tex) (sections/front/ack.tex [1])
+(sections/front/contribution.tex [2]) (sections/front/abstract.tex [3])
+(sections/front/chapter-summary.tex [4] [5]
+Overfull \hbox (4.86993pt too wide) in paragraph at lines 14--15
+\TU/TimesNewRoman(0)/m/n/13 Presents the architecture that separates the AI pro
+cessing from the application server,
+
+Overfull \hbox (4.06337pt too wide) in paragraph at lines 14--15
+\TU/TimesNewRoman(0)/m/n/13 Milvus and MinIO stores, the application programmin
+g interface, the security mech-
+[6] [7]) [8]
+(D:\uni-studies\semester-253\capstone_project_new\report\thesis-en\build\main.t
+oc [9] [10] [11] [12] [13] [14]) [15]
+(D:\uni-studies\semester-253\capstone_project_new\report\thesis-en\build\main.l
+of [16]
+Overfull \hbox (2.47859pt too wide) in paragraph at lines 38--38
+ [][] [][][]\TU/TimesNewRoman(0)/m/n/13 The semantic reasoning block. The knowl
+edge base supplies per-attribute 
+) [17]
+(D:\uni-studies\semester-253\capstone_project_new\report\thesis-en\build\main.l
+ot [18]
+Overfull \hbox (12.48386pt too wide) in paragraph at lines 36--36
+ [][] [][][]\TU/TimesNewRoman(0)/m/n/13 VLM noise on one track. A majority vote
+ would report \TU/lmtt/m/n/13 hair_color$[]$\TU/TimesNewRoman(0)/m/n/13 black 
+
+Overfull \hbox (7.43568pt too wide) in paragraph at lines 36--36
+ \TU/TimesNewRoman(0)/m/n/13 on a 40/30/30 split, and would break the 40/40 tie
+ on \TU/lmtt/m/n/13 upper_inner_color 
+[19]) (sections/front/abbreviations.tex [20]
+sections/front/abbreviations.tex:87: ignored error: Infinite glue shrinkage fou
+nd in box being split [21]) [22] (sections/chapter1/chapter1.tex
+Chapter 1.
+(sections/chapter1/1.1.tex [1]) (sections/chapter1/1.2.tex [2])
+(sections/chapter1/1.3.tex [3] [4]) (sections/chapter1/1.4.tex
+Overfull \hbox (4.05077pt too wide) in paragraph at lines 8--9
+\TU/TimesNewRoman(0)/m/n/13 from contexts different from the project’s camera d
+ata and are not fine-tuned. Search
+[5])) [6] [7] (sections/chapter2/chapter2.tex
+Chapter 2.
+(sections/chapter2/2.1.tex [8] [9] [10]) (sections/chapter2/2.2.tex
+sections/chapter2/2.2.tex:35: ignored error: Infinite glue shrinkage found in b
+ox being split [11] [12]) (sections/chapter2/2.3.tex [13]))
+(sections/chapter3/chapter3.tex [14]
+Chapter 3.
+(sections/chapter3/3.1.tex [15] [16]) (sections/chapter3/3.2.tex [17]
+Overfull \hbox (8.06004pt too wide) in paragraph at lines 26--26
+|[]\TU/TimesNewRoman(0)/b/n/15.59996 Post-Processing: Confidence Threshold and 
+Duplicate Removal| 
+[18]) (sections/chapter3/3.3.tex
+Overfull \hbox (1.1841pt too wide) in paragraph at lines 12--13
+[]\TU/TimesNewRoman(0)/m/n/13 The common approach is \TU/TimesNewRoman(0)/m/it/
+13 tracking-by-detection\TU/TimesNewRoman(0)/m/n/13 , founded on the SORT algor
+ithm [[][]24[][]],
+[19] [20]) (sections/chapter3/3.4.tex) (sections/chapter3/3.5.tex [21] [22]
+[23]) (sections/chapter3/3.6.tex [24]) (sections/chapter3/3.7.tex [25] [26]))
+(sections/chapter4/chapter4.tex [27]
+Chapter 4.
+
+Overfull \hbox (10.32353pt too wide) in paragraph at lines 7--8
+\TU/TimesNewRoman(0)/m/it/13 This chapter analyses the requirements of the syst
+em: actors, functional and non-functional
+(sections/chapter4/4.1.tex [28] [29]) (sections/chapter4/4.2.tex [30] [31]
+[32] [33]) (sections/chapter4/4.3.tex [34]
+Overfull \hbox (1.95564pt too wide) in paragraph at lines 12--13
+[]\TU/TimesNewRoman(0)/b/n/13 Server-side permission checks \TU/TimesNewRoman(0
+)/m/n/13 for every request, including image requests,
+[35] [36]
+Overfull \hbox (1.08763pt too wide) in paragraph at lines 54--55
+\TU/TimesNewRoman(0)/m/n/13 changing other components; RTSP streams and video f
+iles share the pipeline
+) (sections/chapter4/4.4.tex [37] [38]
+Overfull \hbox (4.64813pt too wide) in paragraph at lines 63--63
+[]|\TU/TimesNewRoman(0)/m/n/13 Administrator|  
+
+Overfull \hbox (4.64813pt too wide) in paragraph at lines 63--63
+[]|\TU/TimesNewRoman(0)/m/n/13 Administrator|  
+
+Overfull \hbox (4.64813pt too wide) in paragraph at lines 63--63
+[]|\TU/TimesNewRoman(0)/m/n/13 Administrator|  
+
+Overfull \hbox (4.64813pt too wide) in paragraph at lines 63--63
+[]|\TU/TimesNewRoman(0)/m/n/13 Administrator|  
+
+Overfull \hbox (4.64813pt too wide) in paragraph at lines 63--63
+[]|\TU/TimesNewRoman(0)/m/n/13 Administrator|  
+
+Overfull \hbox (4.64813pt too wide) in paragraph at lines 63--63
+[]|\TU/TimesNewRoman(0)/m/n/13 Administrator|  
+
+Overfull \hbox (4.64813pt too wide) in paragraph at lines 63--63
+[]|\TU/TimesNewRoman(0)/m/n/13 Administrator|  
+) (sections/chapter4/4.5.tex [39] [40]
+Overfull \hbox (2.43767pt too wide) in alignment at lines 9--16
+ [] [] 
+
+Overfull \hbox (2.43767pt too wide) in alignment at lines 16--19
+ [] [] 
+
+Overfull \hbox (2.43767pt too wide) in alignment at lines 19--28
+ [] [] 
+
+Overfull \hbox (2.43767pt too wide) in alignment at lines 30--37
+ [] [] 
+
+Overfull \hbox (2.43767pt too wide) in alignment at lines 37--40
+ [] [] 
+
+Overfull \hbox (2.43767pt too wide) in alignment at lines 40--52
+ [] [] 
+[41]
+Overfull \hbox (2.43767pt too wide) in alignment at lines 54--61
+ [] [] 
+
+Overfull \hbox (2.43767pt too wide) in alignment at lines 61--64
+ [] [] 
+
+Overfull \hbox (2.43767pt too wide) in alignment at lines 64--75
+ [] [] 
+[42]
+Overfull \hbox (2.43767pt too wide) in alignment at lines 77--84
+ [] [] 
+
+Overfull \hbox (2.43767pt too wide) in alignment at lines 84--87
+ [] [] 
+
+Overfull \hbox (2.43767pt too wide) in alignment at lines 87--95
+ [] [] 
+[43]
+Overfull \hbox (2.43767pt too wide) in alignment at lines 97--104
+ [] [] 
+
+Overfull \hbox (2.43767pt too wide) in alignment at lines 104--107
+ [] [] 
+
+Overfull \hbox (2.43767pt too wide) in alignment at lines 107--118
+ [] [] 
+sections/chapter4/4.5.tex:118: ignored error: Infinite glue shrinkage found in 
+box being split [44]
+Overfull \hbox (2.43767pt too wide) in alignment at lines 120--127
+ [] [] 
+
+Overfull \hbox (2.43767pt too wide) in alignment at lines 127--130
+ [] [] 
+
+Overfull \hbox (2.43767pt too wide) in alignment at lines 130--139
+ [] [] 
+
+Overfull \hbox (2.43767pt too wide) in alignment at lines 141--148
+ [] [] 
+
+Overfull \hbox (2.43767pt too wide) in alignment at lines 148--151
+ [] [] 
+
+Overfull \hbox (2.43767pt too wide) in alignment at lines 151--163
+ [] [] 
+[45]
+Overfull \hbox (2.43767pt too wide) in alignment at lines 165--172
+ [] [] 
+
+Overfull \hbox (2.43767pt too wide) in alignment at lines 172--175
+ [] [] 
+
+Overfull \hbox (2.43767pt too wide) in alignment at lines 175--184
+ [] [] 
+sections/chapter4/4.5.tex:184: ignored error: Infinite glue shrinkage found in 
+box being split [46]) (sections/chapter4/4.6.tex [47]))
+(sections/chapter5/chapter5.tex [48]
+Chapter 5.
+(sections/chapter5/5.1.tex [49] [50]) (sections/chapter5/5.2.tex [51] [52]
+[53] [54] [55] [56]) (sections/chapter5/5.3.tex [57] [58] [59] [60] [61]
+[62] [63] [64]) (sections/chapter5/5.4.tex [65]) (sections/chapter5/5.5.tex
+[66] [67]) (sections/chapter5/5.6.tex [68] [69]))
+(sections/chapter6/chapter6.tex [70]
+Chapter 6.
+(sections/chapter6/6.1.tex [71] [72] [73]
+Overfull \hbox (7.4967pt too wide) in paragraph at lines 74--75
+[] []\TU/TimesNewRoman(0)/b/n/13 Tracking.[] \TU/TimesNewRoman(0)/m/n/13 Algori
+thms that add appearance features, such as DeepSORT [[][]44[][]] and Strong-
+) (sections/chapter6/6.2.tex [74] [75]) (sections/chapter6/6.3.tex [76]
+[77] [78] [79] [80]) (sections/chapter6/6.4.tex [81] [82]))
+(sections/chapter7/chapter7.tex [83]
+Chapter 7.
+(sections/chapter7/7.1.tex) (sections/chapter7/7.2.tex [84]))
+(sections/chapter8/chapter8.tex [85]
+Chapter 8.
+(sections/chapter8/8.1.tex [86] [87]) (sections/chapter8/8.2.tex [88])
+(sections/chapter8/8.3.tex
+Overfull \hbox (8.00366pt too wide) in paragraph at lines 32--4
+[] []\TU/TimesNewRoman(0)/b/n/13 Qualitative check on the demonstration data.[]
+ \TU/TimesNewRoman(0)/m/n/13 On the demonstration data (Section [][]7.2[][]),
+[89] [90] [91])) [92] [93] (sections/research/chapter9.tex
+Chapter 9.
+[94] [95]
+Underfull \hbox (badness 10000) in paragraph at lines 103--103
+[]|\TU/TimesNewRoman(0)/m/n/13 Detect people cor-
+
+Underfull \hbox (badness 10000) in paragraph at lines 105--105
+[]|\TU/TimesNewRoman(0)/m/n/13 Maintain identity
+
+Underfull \hbox (badness 10000) in paragraph at lines 108--108
+[]|\TU/TimesNewRoman(0)/m/n/13 Image/text en-
+[96] [97] [98] [99] [100] [101]) (sections/research/chapter10.tex [102]
+Chapter 10.
+[103] [104] [105] [106] [107] [108] [109] [110] [111]
+Overfull \hbox (2.32437pt too wide) in paragraph at lines 320--324
+\TU/TimesNewRoman(0)/m/n/13 pool’s own distribution, for example \TU/lmtt/m/n/1
+3 sharp 21.5 (-1.5) mid\TU/TimesNewRoman(0)/m/n/13 , \TU/lmtt/m/n/13 contrast 1
+20.7
+[112] [113] [114] [115]) (sections/research/chapter11.tex [116]
+Chapter 11.
+[117] [118] [119] [120] [121] [122] [123] [124] [125] [126] [127]
+sections/research/chapter11.tex:466: ignored error: Infinite glue shrinkage fou
+nd in box being split [128] [129]) (sections/chapter12/chapter12.tex [130]
+Chapter 12.
+(sections/chapter12/12.1.tex [131] (sections/research/_conclusion.tex))
+(sections/chapter12/12.2.tex [132] (sections/research/_limits.tex [133]
+[134])) (sections/chapter12/12.3.tex)) [135] [136]
+Overfull \hbox (3.35936pt too wide) in paragraph at lines 130--130
+[]\TU/TimesNewRoman(0)/m/n/13 Milestone Systems. “  BriefCam video analytics so
+ftware,” Accessed: Sep. 27, 2026.
+[137] [138] [139]
+Overfull \hbox (0.90617pt too wide) in paragraph at lines 130--130
+[]\TU/TimesNewRoman(0)/m/n/13 N. Aharon, R. Orfaig, and B.[]Z. Bobrovsky, \TU/T
+imesNewRoman(0)/m/it/13 BoT-SORT: Robust associations multi-
+
+Overfull \hbox (7.34782pt too wide) in paragraph at lines 130--130
+\TU/TimesNewRoman(0)/m/it/13 Learning (ICML)\TU/TimesNewRoman(0)/m/n/13 , ser. 
+Proceedings of Machine Learning Research, vol. 139, PMLR,
+[140]
+Overfull \hbox (1.49413pt too wide) in paragraph at lines 130--130
+[]\TU/TimesNewRoman(0)/m/n/13 pgvector. “  Pgvector: Open-source vector similar
+ity search for postgres,” Accessed:
+[141]
+Overfull \hbox (3.05675pt too wide) in paragraph at lines 130--130
+[]\TU/TimesNewRoman(0)/m/n/13 Qwen Team, \TU/TimesNewRoman(0)/m/it/13 Qwen2.5-V
+L-3B-Instruct\TU/TimesNewRoman(0)/m/n/13 , Hugging Face model repository, 2024.
+ [On-
+(sections/research/appendix-prompts.tex [142]
+Appendix A.
+[143] [144] [145] [146] [147] [148] [149] [150] [151] [152] [153] [154]
+[155] [156] [157] [158] [159] [160] [161] [162] [163] [164] [165] [166]
+[167] [168] [169] [170] [171] [172]) [173]
+
+enddocument/afterlastpage (AED): lastpage setting LastPage.
+
+(D:\uni-studies\semester-253\capstone_project_new\report\thesis-en\build\main.a
+ux) )
+(see the transcript file for additional information)
+Output written on D:\uni-studies\semester-253\capstone_project_new\report\thesi
+s-en\build\main.xdv (197 pages, 3268164 bytes).
+SyncTeX written on D:\uni-studies\semester-253\capstone_project_new\report\thesis-en\build/main.synctex.gz.
+Transcript written on D:\uni-studies\semester-253\capstone_project_new\report\t
+hesis-en\build\main.log.
+Latexmk: Getting log file 'build/main.log'
+Latexmk: Examining 'build/main.fls'
+Latexmk: Examining 'build/main.log'
+Latexmk: Found input bbl file 'D:/uni-studies/semester-253/capstone_project_new/report/thesis-en/build/main.bbl'
+Latexmk: Log file says output to 'D:/uni-studies/semester-253/capstone_project_new/report/thesis-en/build/main.xdv'
+Latexmk: Using biber to make bibliography file(s).
+Latexmk: Bibliography file(s) from .bcf file:
+  ref.bib
+Sources for biber
+  ref.bib
+  build/main.bcf
+Latexmk: applying rule 'xdvipdfmx'...
+Rule 'xdvipdfmx':  Reasons for rerun
+Changed files or newly in use/created:
+  build/main.xdv
+Category 'changed_source_rules':
+  xelatex
+
+------------
+Run number 1 of rule 'xdvipdfmx'
+------------
+------------
+Running 'xdvipdfmx -E -o "build/main.pdf"  "build/main.xdv"'
+------------
+build/main.xdv -> build/main.pdf
+[1][2
+xdvipdfmx:warning: Object @page.A already defined.
+][3][4][5][6][7][8][9][10][11][12][13][14][15][16][17][18][19][20][21][22][23][24][25][26][27][28][29][30][31][32][33][34][35][36][37][38][39][40][41][42][43][44][45][46][47][48][49][50][51][52][53][54][55][56][57][58][59][60][61][62][63][64][65][66][67][68][69][70][71][72][73][74][75][76][77][78][79][80][81][82][83][84][85][86][87][88][89][90][91][92][93][94][95][96][97][98][99][100][101][102][103][104][105][106][107][108][109][110][111][112][113][114][115][116][117][118][119][120][121][122][123][124][125][126][127][128][129][130][131][132][133][134][135][136][137][138][139][140][141][142][143][144][145][146][147][148][149][150][151][152][153][154][155][156][157][158][159][160][161][162][163][164][165][166][167][168][169][170][171][172][173][174][175][176][177][178][179][180][181][182][183][184][185][186][187][188][189][190][191][192][193][194][195][196][197]
+18162031 bytes written
+Latexmk: All targets (build/main.xdv build/main.pdf) are up-to-date
+

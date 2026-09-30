@@ -1,0 +1,14 @@
+% !TEX root = ../../main.tex
+% C3.4 - Frame sampling (translated). Matches workers/sampling.py (i mod N = 0; baseline N=10, throughput N=20 default).
+\section{Frame Sampling}
+\label{sec:3.4}
+\label{sec:3.4.3}
+
+Surveillance video usually has a few dozen frames per second; the videos of the project's dataset have about 60 frames per second, so two consecutive frames are only about 17 milliseconds apart and almost identical. Running the models on every frame is therefore very costly and brings little new information. The project samples frames uniformly by index: with frame index $i$ and sampling interval $N$, a frame is selected if and only if
+\begin{equation}
+    i \bmod N = 0,
+    \label{eq:sampling}
+\end{equation}
+and it keeps its original index and timestamp, so that the time at which a person appears follows the camera's own timeline. With a source of $f$ frames per second, two processed frames are $N/f$ seconds apart: about 0.17 seconds with $N = 10$ and 0.33 seconds with $N = 20$.
+
+The sampling interval is a trade-off. Sampling comes before the detector, so the number of AI model runs drops by about $N$ times; decoding, however, must still be done on every frame, because most H.264 frames can only be decoded after the frames before them (Section~\ref{sec:3.7.1}). Conversely, the larger $N$ is, the more easily a person who appears only briefly is missed, since a track needs at least two observations, and the further people move between two observations, which makes IoU association harder and tracks break more easily. The system provides two presets: \emph{baseline} with $N = 10$, which favours track quality, and \emph{throughput} with $N = 20$, which favours speed and was chosen as the default based on measurements on the target machine (Section~\ref{sec:8.5}). Each job records the value of $N$ it used so that results can be compared and reproduced.

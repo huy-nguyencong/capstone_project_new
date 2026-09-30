@@ -1,0 +1,48 @@
+\babel@toc {english}{}\relax 
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {2.1}{\ignorespaces The search and filtering interface of BriefCam~\blx@tocontentsinit {0}\cite {milestone2026briefcam}}}{9}{figure.caption.21}%
+\contentsline {figure}{\numberline {2.2}{\ignorespaces Avigilon Control Center with a marked subject~\blx@tocontentsinit {0}\cite {avigilon2026appearance}}}{10}{figure.caption.23}%
+\contentsline {figure}{\numberline {2.3}{\ignorespaces Results of a natural-language query on the Verkada Command platform~\blx@tocontentsinit {0}\cite {verkada2024aisearch}}}{11}{figure.caption.25}%
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {4.1}{\ignorespaces Use case diagram of the system}}{38}{figure.caption.38}%
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {5.1}{\ignorespaces Overall architecture of the system}}{50}{figure.caption.41}%
+\contentsline {figure}{\numberline {5.2}{\ignorespaces State diagram of a processing job}}{53}{figure.caption.43}%
+\contentsline {figure}{\numberline {5.3}{\ignorespaces Flowchart of one processing job}}{54}{figure.caption.45}%
+\contentsline {figure}{\numberline {5.4}{\ignorespaces Sequence diagram of the search flow}}{56}{figure.caption.46}%
+\contentsline {figure}{\numberline {5.5}{\ignorespaces Sequence diagram of saving a result into a case}}{58}{figure.caption.47}%
+\contentsline {figure}{\numberline {5.6}{\ignorespaces Entity-relationship diagram of the relational database}}{60}{figure.caption.50}%
+\contentsline {figure}{\numberline {5.7}{\ignorespaces State diagram of an appearance}}{64}{figure.caption.56}%
+\contentsline {figure}{\numberline {5.8}{\ignorespaces Screen flow by role}}{69}{figure.caption.60}%
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {6.1}{\ignorespaces Person search by image}}{78}{figure.caption.68}%
+\contentsline {figure}{\numberline {6.2}{\ignorespaces Person search by attributes}}{79}{figure.caption.69}%
+\contentsline {figure}{\numberline {6.3}{\ignorespaces The result detail dialog and the case creation dialog}}{79}{figure.caption.70}%
+\contentsline {figure}{\numberline {6.4}{\ignorespaces The Operator's case management screen}}{80}{figure.caption.71}%
+\contentsline {figure}{\numberline {6.5}{\ignorespaces The Viewer's overview screen}}{80}{figure.caption.73}%
+\contentsline {figure}{\numberline {6.6}{\ignorespaces Camera management screen}}{81}{figure.caption.75}%
+\contentsline {figure}{\numberline {6.7}{\ignorespaces AI model configuration screen}}{81}{figure.caption.76}%
+\contentsline {figure}{\numberline {6.8}{\ignorespaces Uploaded video processing screen}}{82}{figure.caption.77}%
+\contentsline {figure}{\numberline {6.9}{\ignorespaces System status screen}}{82}{figure.caption.78}%
+\contentsline {figure}{\numberline {6.10}{\ignorespaces AI check screen}}{83}{figure.caption.79}%
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {9.1}{\ignorespaces The pipeline as a template. Offline: video $\rightarrow $ object detection $\rightarrow $ tracker $\rightarrow $ image encoder $\rightarrow $ database. Online: text query $\rightarrow $ text encoder $\rightarrow $ similarity search against the same database. Every box is a slot for any detector, tracker or encoder.}}{96}{figure.caption.103}%
+\contentsline {figure}{\numberline {9.2}{\ignorespaces ZARA's retrieval of discriminative evidence for candidate classes, the pattern this project adapts.}}{99}{figure.caption.106}%
+\contentsline {figure}{\numberline {9.3}{\ignorespaces Extended offline indexing. The Qwen2.5-VL-3B branch turns each crop into 18 readable attributes alongside its embedding, which the reasoning stages need.}}{101}{figure.caption.108}%
+\contentsline {figure}{\numberline {9.4}{\ignorespaces Online search with the reasoning layer. CLIP produces the candidates and the funnel orders them. The user's text reaches the reasoning block directly and is not summarised by the retrieval stage.}}{101}{figure.caption.109}%
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {10.1}{\ignorespaces The semantic reasoning block. The knowledge base supplies per-attribute statistics to both selector calls; the text query reaches the pruning and decision agents directly.}}{107}{figure.caption.112}%
+\contentsline {figure}{\numberline {10.2}{\ignorespaces The selector in the abstract. It decides \emph {where to look}, never what is true: the output is a set of pairs with reasons, not a verdict.}}{110}{figure.caption.115}%
+\contentsline {figure}{\numberline {10.3}{\ignorespaces The same stage with its real inputs and output: the two prior tables as input, an attribute-value pair with its reason as output.}}{110}{figure.caption.116}%
+\contentsline {figure}{\numberline {10.4}{\ignorespaces The evidence and decision stages in the abstract: stage A reads the evidence per candidate and per attribute, and stage B ranks from what it wrote.}}{111}{figure.caption.117}%
+\contentsline {figure}{\numberline {10.5}{\ignorespaces The same two stages at work: one rendered evidence block, the note the reader writes from it, and the ranking the decision agent produces. Every figure in the note appears in the block; nothing is recomputed or invented.}}{112}{figure.caption.118}%
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {11.1}{\ignorespaces A lost case. Left: three gallery crops of the correct person. Right: the CLIP ordering and the two funnel rounds, ranks 1 to 5 and 6 to 10.}}{124}{figure.caption.134}%
+\contentsline {figure}{\numberline {11.2}{\ignorespaces The same query after re-ranking with the larger model at stages 2B and 4B only. Stages 0, 1 and 2A were replayed unchanged.}}{125}{figure.caption.136}%
+\contentsline {figure}{\numberline {11.3}{\ignorespaces A rescued case: outside CLIP's top 10, first after reasoning.}}{126}{figure.caption.138}%
+\addvspace {10\p@ }
+\addvspace {10\p@ }

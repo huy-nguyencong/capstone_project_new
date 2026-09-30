@@ -1,7 +1,8 @@
 """Sinh figures/H7-trang-thai-cong-viec.drawio: sơ đồ trạng thái UML của công việc xử lý (processing job).
 
 Khớp services/jobs.py (claim: PENDING hoặc RUNNING hết hạn giữ chỗ -> RUNNING, giữ chỗ 60 s; cancel: PENDING -> CANCELLED ngay,
-RUNNING -> CANCELLED khi tiến trình kiểm tra; defer_retry) và workers/durable.py (tối đa 3 lần thử).
+RUNNING -> CANCELLED khi tiến trình kiểm tra; defer_retry; services/cameras.py: ngừng camera/tắt AI hủy luôn
+công việc PENDING) và workers/durable.py (tối đa 3 lần thử).
 Chạy: python report/tools/h7_job_state_drawio.py
 """
 from xml.sax.saxutils import quoteattr
@@ -46,11 +47,11 @@ v('fin', '', FINAL, 535, 740, 30, 30)
 
 e('t0', 'init', 'P', T + E.format(.5, 1, .5, 0), 'Quản trị viên tải tệp lên /<br>bộ lập lịch tạo phiên RTSP', None, 0, (-150, 0))
 e('t1', 'P', 'R', T + E.format(1, .5, 0, .5), 'tiến trình xử lý nền<br>nhận việc (giữ chỗ 60 s)')
-e('t2', 'R', 'R', ORTHO + E.format(.3, 0, .7, 0), 'báo hiệu định kỳ / gia hạn giữ chỗ;<br>lỗi tạm thời, còn lượt thử / chờ rồi thử lại;<br>hết hạn giữ chỗ / nhận lại', [(680, 60), (760, 60)])
+e('t2', 'R', 'R', ORTHO + E.format(.3, 0, .7, 0), 'báo hiệu định kỳ / gia hạn giữ chỗ;<br>lỗi tạm thời (tệp video), còn lượt thử / chờ rồi thử lại;<br>hết hạn giữ chỗ / nhận lại', [(680, 60), (760, 60)])
 e('t4', 'R', 'S', ORTHO + E.format(.8, 1, .5, 0), 'xử lý xong', [(780, 400), (850, 400)])
 e('t5', 'R', 'F', ORTHO + E.format(.5, 1, .5, 0), 'lỗi không phục hồi<br>hoặc hết số lần thử', [(720, 440), (550, 440)])
 e('t6', 'R', 'C', ORTHO + E.format(.2, 1, .8, 0), 'yêu cầu hủy, camera ngừng<br>vận hành hoặc tắt AI', [(660, 330), (310, 330)])
-e('t7', 'P', 'C', T + E.format(.3, 1, .3, 0), 'yêu cầu hủy')
+e('t7', 'P', 'C', T + E.format(.3, 1, .3, 0), 'yêu cầu hủy,<br>camera ngừng<br>vận hành<br>hoặc tắt AI', None, 0, (-95, 0))
 e('t8', 'C', 'fin', ORTHO + E.format(.5, 1, 0, .5), '', [(250, 755)])
 e('t9', 'F', 'fin', T + E.format(.5, 1, .5, 0))
 e('t10', 'S', 'fin', ORTHO + E.format(.5, 1, 1, .5), '', [(850, 755)])

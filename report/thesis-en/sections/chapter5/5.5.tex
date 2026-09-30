@@ -1,0 +1,33 @@
+% !TEX root = ../../main.tex
+% C5.5 - Security and access control design (translated). Matches auth/*, api/security.py, api/rate_limit.py, services/*.
+% Note: refresh() sets a new expiry of now + 12 h (architect.md section 13 #8, spec follows the application).
+\section{Security and Access Control Design}
+\label{sec:5.5}
+
+This section presents the mechanisms implementing the security requirements of Section~\ref{sec:4.3.1} and the permission matrix of Section~\ref{sec:4.6}, following the principle of \emph{defence in depth}: each request is checked in turn for its login session, its role and its data scope, and the database constraints are the last layer that keeps invalid data from being written.
+
+\subsection{Authentication and Sessions}
+\label{sec:5.5.1}
+
+Passwords are hashed with Argon2 and are at least 8 characters long. When the username does not exist, the system still verifies against a dummy hash and returns the same error message as for a wrong password, so that neither the response time nor the error content reveals which usernames exist; every failed login is written to the audit log.
+
+On a successful login, the server generates a random 32-byte session token and sends it in a cookie with the \texttt{HttpOnly} attribute, so that JavaScript on the page cannot read it, \texttt{SameSite=Lax}, so that the browser does not send the cookie with data-changing requests coming from another site, and \texttt{Secure} when deployed over HTTPS. The database only stores the SHA-256 hash of the token, so even if the session table leaks, an attacker has no valid token. On each request, the server answers 401 if the session has been revoked, is more than 12 hours old since it was issued, or has been inactive for more than 30 minutes, and revokes the session immediately if the account has been locked or deactivated or is an Operator without an area. While the user is actually active, the interface refreshes the session periodically; each refresh issues a new token whose 12-hour limit counts from the refresh and revokes the old one, so a leaked token is only valid for a short time.
+
+\subsection{Cross-Site Request Forgery Protection}
+\label{sec:5.5.2}
+
+Since the browser sends the session cookie automatically, a malicious website could try to make the user's browser send requests to the system without the user knowing (a CSRF attack). Besides the \texttt{SameSite} attribute, every data-changing request must carry an \texttt{X-CSRF-Token} header containing an anti-forgery token, computed with HMAC-SHA256 from the session token and returned to the interface at login; another website cannot read this token and therefore cannot build a valid request. The server only allows the configured origins to call the API with cookies (CORS), and every response carries security headers such as disabling content-type sniffing, forbidding the page from being framed by another site and disabling caching of API responses.
+
+\subsection{Access Control}
+\label{sec:5.5.3}
+
+Access control is enforced on the server in three layers. First, each API declares the roles allowed to call it; requests from other roles are rejected with 403 before any business processing. Second, the business layer checks the rights on each object: cameras and appearances must belong to the Operator's current area and the camera must be operational, a case must be owned by that Operator, and images are granted on one of the two grounds of Section~\ref{sec:4.6}; the area and the owner are always taken from the login session. Third, the database constraints keep invalid data from being written even if the business layer has a bug.
+
+For objects outside the scope, the server returns 404 rather than 403: with 403, a user could infer that an object exists by trying identifiers one by one. Hiding the functions of other roles in the interface is only a convenience and is not considered an access control measure.
+
+\subsection{Data Protection and Abuse Limitation}
+\label{sec:5.5.4}
+
+The credentials in an RTSP address are separated, encrypted with the Fernet symmetric encryption scheme using a key configured through an environment variable, and only decrypted at connection time; they are never returned to the interface or written to logs. Since the connection check makes the server connect to an address entered by the user, the system only accepts IP addresses within the camera network ranges declared at deployment and always rejects loopback, link-local and multicast addresses, so that the function cannot be abused to probe other machines on the internal network (an SSRF attack).
+
+Resource-intensive or probe-prone functions are limited in calls per minute: login 10 times per IP address-username pair, and search 30 times, video upload 10 times, camera connection check 10 times and AI check 6 times per account. When the limit is exceeded, the server returns 429 with the time to wait. The counters live in the memory of the server process, which suits the project's single-process deployment. Uploaded data is also checked before processing: query images must be JPEG or PNG, at most 10~MB and 24 megapixels, and video files at most 500~MB with a valid format signature. File names sent by users are never used as storage paths.

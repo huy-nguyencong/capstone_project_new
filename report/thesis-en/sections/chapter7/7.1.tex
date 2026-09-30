@@ -1,0 +1,11 @@
+% !TEX root = ../../main.tex
+% C7.1 - Environment and deployment procedure (translated). Figures: report-data-guide.md section 2 and C7.3 (current).
+\section{Environment and Deployment Procedure}
+\label{sec:7.1}
+\label{sec:7.3}
+
+\paragraph{Environment.} The whole system is deployed on a laptop with an Intel Core i5-11300H processor (4 cores, 8 threads, 3.1~GHz), 16~GB of memory and no discrete graphics card, running Windows 11. The infrastructure services run in Docker Compose: PostgreSQL 17, Milvus 2.6 in Standalone mode with etcd, MinIO shared by Milvus and by the application's frames, and MediaMTX to stream the simulated cameras. The Flask application server, the background worker and the React web application run directly on the machine. The AI configuration is YOLO11n with a confidence threshold of 0.1, ByteTrack, the RaSa encoder and a sampling interval of $N = 20$, all running on the CPU.
+
+\paragraph{Start-up procedure.} The components are started in order: infrastructure services, simulated camera streams, application server, background worker, then the web application. Since the query encoder is only loaded at the first search, a warm-up search is run before use (Section~\ref{sec:8.7}).
+
+\paragraph{Backup and restore.} The backup of the demonstration data of the three stores is about 510~MB in 1,525 files. The restore procedure was rehearsed with 1,555 tracks, 10 of whose frames had been deleted on purpose: the restore finished in 28.8 seconds (PostgreSQL 1.8 seconds; frames 6.2 seconds, with all 10 of 10 files re-uploaded; rebuilding the Milvus vectors 8.8 seconds; reconciling the three stores 12 seconds). The first rehearsal, when vectors were still written one by one, took 1,485 seconds and had one vector time out, which led to the switch to batch writes. After each demonstration rehearsal, the data is reset to its baseline in about 70 seconds.

@@ -1,0 +1,53 @@
+% !TEX root = ../../main.tex
+% C3.1 - Person search and cross-modal retrieval (translated).
+\section{Person Search and Cross-Modal Retrieval}
+\label{sec:3.1}
+
+\subsection{Problem Statement}
+\label{sec:3.1.1}
+
+Given a set of person images extracted from the video of many cameras, called the \emph{gallery} $\mathcal{G} = \{g_1, g_2, \ldots, g_n\}$, and a \emph{query} $q$ describing the person being sought, the system must rank the elements of $\mathcal{G}$ by how well they match $q$ and return the $k$ best matches. The common approach is to learn a representation function that maps the query and every element into a vector space, then measure relevance with a similarity function $s(q, g_i)$; search then becomes finding the nearest vectors.
+
+In surveillance data, the people to be indexed are not available as tightly cropped images as in benchmark datasets; they appear in full frames together with many other people and objects, so the complete problem also includes a person detection step. Xiao et al.\ learn detection and identification jointly in one model~\cite{xiao2017personsearch}; another approach uses a separate detector and a separate identification model~\cite{zheng2017reidwild}. The project follows the second approach so that each component can be replaced independently.
+
+\subsection{Three Forms of Query}
+\label{sec:3.1.2}
+\label{sec:3.1.3}
+\label{sec:3.1.4}
+
+\paragraph{Search by image.} When the query is an image containing the person, the problem corresponds to \emph{person re-identification} (ReID): finding the images of the same person in data collected from several cameras or at several times~\cite{ye2022reidsurvey}. The main challenges are changes in viewpoint, lighting and pose, occlusion and low resolution: the same person can look very different between two cameras, while two people dressed alike can look very similar.
+
+\paragraph{Search by text.} When the user only has a verbal description, for example ``a man wearing a black jacket and blue jeans, carrying a backpack'', the problem is text-based person search (TBPS), proposed by Li et al.\ together with the CUHK-PEDES dataset of person images with English descriptions~\cite{li2017cuhkpedes}. It is a cross-modal problem: the model must bring text and images into one representation space, while descriptions are often vague and the differences between people often lie in small details.
+
+\paragraph{Search by attributes.} The user chooses appearance attributes from a predefined list such as gender, garment type and colour, and carried items. There are two ways to implement it: use a pedestrian attribute recognition model~\cite{wang2022parsurvey} and filter by label, which needs labelled data for every attribute; or combine the attributes into a description sentence from a fixed template and handle it as a text query. The project uses the second way so that it shares the model of text search; the trade-off is that attributes only affect the ranking and are not hard filters. Negative options such as ``no backpack'' are not supported, because CLIP-style vision-language models have considerable difficulty with negation, in many cases performing at chance level~\cite{alhamoud2025negation}.
+
+Appearance search differs from face recognition: it does not rely on biometric features, which need a clearly visible face, but on clothing, colours and carried items, which are easy to observe from cameras mounted high and far away but can change and be shared by many people. The results are therefore suggestions for the user to assess, not conclusions about identity.
+
+\subsection{Approach of the Project}
+\label{sec:3.1.6}
+
+Table~\ref{tab:query-modes} summarises the three forms of query and how the project handles them.
+
+\begin{table}[H]
+\centering
+\caption{The three forms of describing the person and how the project handles them}
+\label{tab:query-modes}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{2.6cm}|L|L|L|}
+\hline
+\textbf{Form} & \textbf{Input} & \textbf{Strengths and challenges} & \textbf{Handling in the project} \\
+\hline
+Reference image (ReID) & A cropped image containing one person & Rich visual information; sensitive to viewpoint, lighting and occlusion & Encoded with the image encoder \\
+\hline
+Text description (TBPS) & An English sentence & No image needed; descriptions may be vague or incomplete & Encoded with the text encoder \\
+\hline
+Attributes & Gender, type and colour of the upper and lower garments, carried items & Easy to enter and unambiguous; only expresses the available attributes & Turned into a structured English sentence, then handled as a text description \\
+\hline
+\end{tabularx}
+\end{table}
+
+\begin{itemize}
+    \item \textbf{One shared representation space.} The RaSa model~\cite{bai2023rasa} encodes both images and text into one vector space, so person images from video, query images, description sentences and sentences generated from attributes can all be compared directly (Section~\ref{sec:3.5}).
+    \item \textbf{The result unit is an appearance.} People are detected and tracked across frames (Sections~\ref{sec:3.2} and~\ref{sec:3.3}); each continuous appearance of a person on one camera (a track) is represented by one representative frame and one vector, which reduces the number of elements to match and avoids duplicate results.
+    \item \textbf{Two separate stages.} The indexing stage runs in the background, processes camera streams and stores features; the query stage only encodes the user's description and finds the nearest vectors (Section~\ref{sec:3.6}), without processing images again.
+    \item \textbf{A human makes the final decision.} The system only ranks; users assess each result on the original image before saving it to a case file.
+\end{itemize}

@@ -1,0 +1,13 @@
+% !TEX root = ../../main.tex
+% C2.3 - Development directions (translated).
+\section{Development Directions}
+\label{sec:2.3}
+
+Based on the observations in Section~\ref{sec:2.2}, the project sets the following development directions:
+\begin{enumerate}
+    \item \textbf{Support all three forms of description in one search mechanism}: a reference image, a free-text description in English, and a set of predefined attributes. As in Verkada's approach, all three are mapped into one representation space; the attribute set is turned into a structured description sentence, so no separate model is needed for each attribute.
+    \item \textbf{Organise results by appearance}, one appearance of a person on one camera, ranked by relevance and always shown with the original frame so that users can judge them; the system draws no conclusion about identity (Section~\ref{sec:1.2}).
+    \item \textbf{Manage results as case files}, similar to Avigilon's evidence compilation, so that the responsible people can review them without searching again.
+    \item \textbf{Control access by role and surveillance area}, separating the responsibilities of technical administration, searching and following results; searchers only access the data of their assigned area (Section~\ref{sec:1.1}).
+    \item \textbf{Deploy on premises, independent of hardware vendors}: a web application that receives images over the common RTSP protocol and processes and stores all data on a computer without a discrete graphics card.
+\end{enumerate}

@@ -1,0 +1,13 @@
+SOURCE DATA
+
+Query
+-----
+{QUERY}
+
+What each query value is worth in the index
+-------------------------------------------
+{WORTH}
+
+Candidates
+----------
+{VERDICTS}
