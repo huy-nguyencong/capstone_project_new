@@ -222,9 +222,9 @@ Các điểm dưới đây rất dễ viết sai. Mỗi lần góp ý tôi sẽ 
 
 | Mã | Mục trong báo cáo | Nội dung | Nguồn số liệu | Trạng thái |
 | --- | --- | --- | --- | --- |
-| C8.1–C8.3 | 8.1 Kiểm thử phần mềm (nhãn sec:8.1, 8.2, 8.3) | Bảng 5 mức: unit 711; integration 37 đạt + 1 bỏ qua; E2E 2 (217 s); giao diện 20 màn hình × 3 cỡ, 3 lỗi đã sửa; kịch bản demo 2 × 15/15. Đoạn phân quyền/bảo mật (ma trận vai trò × API, 404 ngoài phạm vi, Viewer chỉ đọc, CSRF, rate limit, header, CORS) | guide C8.1–C8.3 (Hiện hành) | REVIEW |
+| C8.1–C8.3 | 8.1 Kiểm thử phần mềm (nhãn sec:8.1, 8.2, 8.3) | Bảng 5 mức: unit 713; integration 37 đạt + 1 bỏ qua; E2E 2 (217 s); giao diện 20 màn hình × 3 cỡ, 3 lỗi đã sửa; kịch bản demo 2 × 15/15. Đoạn phân quyền/bảo mật (ma trận vai trò × API, 404 ngoài phạm vi, Viewer chỉ đọc, CSRF, rate limit, header, CORS) | guide C8.1–C8.3 (Hiện hành) | REVIEW |
 | C8.4 | 8.2 Đánh giá chất lượng tìm kiếm (nhãn sec:8.4) | Phương pháp (6 truy vấn, Recall@k, MRR); bảng có cột điều kiện: lần 1 (Cũ, 0,25, 1.552 track) cho ảnh/văn bản/thuộc tính, lần 2 (Hiện hành, 0,1, 1.526 track) chỉ thuộc tính; ghi rõ Recall ảnh/văn bản ở 0,1 **chưa đo**; phát hiện người (so sánh định tính); kiểm tra định tính trên dữ liệu demo (không so sánh với Recall). Không còn BLOCKED | guide C8.4 | REVIEW |
-| C8.5–C8.7 | 8.3 Hiệu năng và xử lý luồng camera (nhãn sec:8.5, 8.6, 8.7) | N=10/N=20 lấy từ **benchmark `var/benchmark/local-cpu-demo.json` (AIW-27), trạng thái Cũ (ngưỡng 0,25)** — không lấy từ O3; RAM/CPU theo N chưa đo. RTSP (Cũ về số track; tự tạo phiên 13–24 s Hiện hành). Độ trễ từng lần (Hiện hành), p50/p95 chưa đo + phương pháp. Dung lượng (Hiện hành); RAM toàn stack chưa đo (chỉ quan sát). Không còn BLOCKED | guide C8.5–C8.7 | REVIEW |
+| C8.5–C8.7 | 8.3 Hiệu năng và xử lý luồng camera (nhãn sec:8.5, 8.6, 8.7) | N=10/N=20 ở ngưỡng 0,1 (Hiện hành, `local-cpu-demo-conf010.json`) kèm CPU, bộ nhớ đỉnh theo N và điều kiện đo. RTSP (Cũ về số track; tự tạo phiên 13–24 s Hiện hành). Độ trễ: p50/p95 qua API (Hiện hành, Bảng 8.4) và các lần đo qua giao diện. Dung lượng và RAM toàn stack (Hiện hành, kèm 4 điều kiện đo). Không còn BLOCKED | guide C8.5–C8.7 | REVIEW |
 
 **Yêu cầu đo gửi SV (theo guide mục 4), nếu muốn thay số Cũ/Chưa đo:** benchmark N=10/N=20 với ngưỡng 0,1 (C8.5); Recall ảnh/văn bản với ngưỡng 0,1 (C8.4); độ trễ tìm kiếm p50/p95 (C8.7, cần script); RAM toàn stack và theo N (R8).
 
@@ -276,16 +276,16 @@ Sơ đồ: Claude dựng sẵn `.drawio`, SV chỉnh và xuất ảnh; ảnh ch�
 | Mã | Mục | Trạng thái | Ghi chú |
 | --- | --- | --- | --- |
 | F1–F4 | Bìa, trang tên, phiếu nhiệm vụ, cam đoan, cảm ơn | REVIEW | Đã viết. F2 phiếu nhiệm vụ đang ẩn (SV quyết định 2026-09-29), chỉ thêm lại khi có yêu cầu |
-| F5–F7 | Tóm tắt, tóm tắt các chương, mục lục | REVIEW | F5, F6 viết 2026-09-29 (chỉ số Hiện hành; Recall nêu định tính). F2 phiếu nhiệm vụ đang ẩn |
+| F5–F7 | Tóm tắt, tóm tắt các chương, danh mục từ viết tắt, mục lục | REVIEW | F5, F6 viết 2026-09-29 (chỉ số Hiện hành; Recall nêu định tính); F7 rà soát 2026-09-30 (chỉ giữ từ có trong thân bài) |
 | C1 | Tổng quan về đề tài | REVIEW | Đủ 4 mục 1.1–1.4 |
 | C2 | Khảo sát các hệ thống liên quan | REVIEW | Đủ 2.1–2.3, nguồn đã kiểm chứng |
-| C3 | Cơ sở lý thuyết | DRAFTING | 3.1 đã viết (REVIEW) |
-| C4 | Phân tích hệ thống | TODO | |
-| C5 | Thiết kế hệ thống | TODO | |
-| C6 | Hiện thực hệ thống | TODO | |
-| C7 | Triển khai hệ thống | TODO | Đã đủ dữ liệu (O2 xong) |
-| C8 | Kiểm thử và đánh giá | TODO | Đã có số đo (architect mục 13) |
-| C9 | Tổng kết | TODO | Viết cuối |
+| C3 | Cơ sở lý thuyết | REVIEW | Đủ 3.1–3.7, rút gọn 2026-09-29 |
+| C4 | Phân tích hệ thống | REVIEW | Đủ 4.1–4.6; 8 đặc tả use case rút gọn |
+| C5 | Thiết kế hệ thống | REVIEW | Đủ 5.1–5.6; H2 cập nhật 2026-09-29 |
+| C6 | Hiện thực hệ thống | REVIEW | Đủ 6.1–6.4; 11 ảnh chụp màn hình |
+| C7 | Triển khai hệ thống | REVIEW | Đủ 7.1–7.2, số liệu Hiện hành |
+| C8 | Kiểm thử và đánh giá | REVIEW | Đủ 8.1–8.3; số đo mới 2026-09-29; chỉ còn Recall ảnh/văn bản ở ngưỡng 0,1 chưa đo (nêu là hạn chế) |
+| C9 | Tổng kết | REVIEW | Đủ 9.1–9.3 |
 
 ## 10. Nhật ký góp ý
 
@@ -393,3 +393,5 @@ Mỗi vòng góp ý thêm một dòng:
 | 2026-09-29 | H2 kéo dài mũi tên ngang | SV yêu cầu. Khung 'Nguồn dữ liệu camera' và 'Tiến trình xử lý nền' rộng 470 → 530 px; cột phải và tầng lưu trữ dời theo (+60 px). Mũi tên tệp video → FFmpeg ~16 → 40 px, FFmpeg → camera ~68 → 87 px, bộ lập lịch → hàng đợi ~10 → 40 px. Đã xem trước, xuất 200%, trang 46 vẫn vừa; số trang không đổi | DONE |
 | 2026-09-29 | H2 bỏ mũi tên vòng lặp | SV quyết định: mũi tên Bộ đệm track → Lấy mẫu ('khung hình tiếp theo') dễ bị hiểu là dữ liệu đi ngược, nên bỏ; đổi nhãn Lấy mẫu → Phát hiện thành 'từng khung hình đã lấy mẫu'. Ý tích lũy qua nhiều khung hình giữ bằng ô Bộ đệm track và nhãn 'hết phiên hoặc hết tệp'; chi tiết vòng lặp ở H3. Cập nhật specs/H2-kien-truc.md, xuất 200% | DONE |
 | 2026-09-29 | H2 rà soát logic luồng tìm kiếm (SV duyệt) | Thêm ô 'Kiểm tra truy vấn, xác định phạm vi'; truy vấn tách nhánh: thuộc tính → tạo câu mô tả, ảnh/câu mô tả → bộ mã hóa. Bộ mã hóa → Milvus đổi thành một chiều 'vector truy vấn (lọc trước)', thêm Milvus → máy chủ 'kết quả gần nhất'. Các điểm 3–6 (hàng đợi, worker ↔ PostgreSQL, PENDING → READY, BoT-SORT) giữ nguyên theo đề xuất. Xem trước, xuất 200%, cập nhật specs | DONE |
+| 2026-09-29 | Cập nhật số liệu đo mới (report-data-guide.md 2026-09-29) | **8.3** viết lại: Bảng 8.3 dùng benchmark ngưỡng 0,1 (Hiện hành, local-cpu-demo-conf010.json) thêm CPU và bộ nhớ đỉnh theo N, kèm điều kiện đo bắt buộc (cold/warm, ±12 s, lấy mẫu 0,25 s là giá trị dưới) và giải thích bộ mã hóa ảnh chiếm phần lớn thời gian; thêm Bảng 8.4 độ trễ p50/p95/max qua API; đoạn bộ nhớ dùng số đo stack-memory kèm 4 điều kiện bắt buộc. **713** kiểm thử đơn vị (8.1, 9.1, tóm tắt). **6.1** bỏ câu 'Milvus tốn tài nguyên nhất' (mâu thuẫn số đo: toàn bộ container ~515 MiB), thay bằng triển khai phức tạp hơn. **9.2** bỏ các mục đã đo khỏi danh sách chưa đo, thêm hạn chế bộ nhớ ~8 GiB khi đang xử lý; **9.3** hướng tối ưu bộ mã hóa ảnh, bỏ các phép đo đã xong. Chỉ còn Recall ảnh/văn bản ở ngưỡng 0,1 là chưa đo. Thân bài kết thúc trang 91 | DONE |
+| 2026-09-30 | Hoàn thiện sau rà soát tổng thể (SV duyệt 1–4) | (1) Hạn phiên: spec theo ứng dụng hiện tại, hạn 12 giờ tính từ lúc phiên được cấp, mỗi lần làm mới cấp phiên mới; sửa FR-C02 (4.2), câu làm mới ở 5.5.1, ghi chú UC-15 (`usecase_detail.md`), architect §13 #8 (kèm rủi ro còn lại và cách sửa về sau). (2) Danh mục từ viết tắt: bỏ AVC, bbox, ERD, GOP, IDOR; thêm CORS, CPU, CSDL, GPU, HTTP, HTTPS, JPEG, JSON, MRR, RAM, REST, SHA. (3) 8.3: thêm câu giải thích đoạn benchmark có mật độ người cao hơn dữ liệu trình diễn (36 track/10 s so với 752 track/420 s), nên chậm hơn mức ~7 lần. (4) Cập nhật bảng theo dõi mục 9 (C3–C9 sang REVIEW) và dòng C8.1–C8.3, C8.5–C8.7; architect §13 #4 ghi số đo RAM chính thức | DONE |

@@ -395,4 +395,4 @@
 
 - Admin, Operator và Viewer sử dụng cùng một cơ chế đăng xuất.
 - Use case này chỉ kết thúc phiên đăng nhập hiện tại, không làm thay đổi tài khoản, vai trò hoặc dữ liệu của người dùng.
-- Phiên đăng nhập hết hạn tuyệt đối sau 12 giờ hoặc sau 30 phút không hoạt động (có thể cấu hình); tài khoản bị khóa/ngừng hoạt động mất quyền ở request kế tiếp.
+- Phiên đăng nhập hết hạn sau 12 giờ kể từ khi được cấp hoặc sau 30 phút không hoạt động (có thể cấu hình); tài khoản bị khóa/ngừng hoạt động mất quyền ở request kế tiếp. Khi người dùng còn thao tác, giao diện làm mới phiên định kỳ: mỗi lần làm mới cấp một phiên mới (mã mới, hạn 12 giờ tính lại) và thu hồi phiên cũ (quyết định 2026-09-30, spec theo ứng dụng hiện tại; xem `architect.md` mục 13 #8).
