@@ -119,6 +119,40 @@ Tìm bằng văn bản/thuộc tính chạy được nhưng Recall thấp trên 
 khác CUHK-PEDES). Nếu được hỏi, trình diễn như chức năng hỗ trợ và giải thích giới hạn, không dùng
 làm phần chính.
 
+### Truy vấn văn bản và thuộc tính đã thử
+
+Thử trên dữ liệu demo ngày 2026-10-01 (1.523 track, top 8, tài khoản `operator`, xem bằng mắt). Cột
+"Khớp / 8" đếm số kết quả **đúng với mô tả** (giới tính, tóc, quần áo, đồ mang theo), không phải số
+lần tìm ra cùng một người. Điểm phù hợp của văn bản/thuộc tính chỉ khoảng 0,25–0,33 (tìm bằng ảnh
+khoảng 0,8); đó là bình thường khi so ảnh với câu chữ, không phải lỗi.
+
+**Văn bản** (gõ nguyên câu ở tab Văn bản):
+
+| Câu mô tả | Khớp / 8 | Ghi chú |
+| --- | --- | --- |
+| `A woman with long blonde hair wearing a black jacket.` | 7 | Tốt nhất; phụ nữ tóc vàng dài trên Cam 2, 3, 5, 6, 7 |
+| `A woman with long hair wearing a black coat and a scarf.` | 6 | |
+| `A young man with glasses wearing a black jacket and carrying a backpack.` | 5–6 | |
+| `A man carrying an orange backpack and pulling a black suitcase.` | 4 | 4 kết quả là **đúng một người** (người kéo vali ở `WT-Q002`) trên Cam 6, 4, 1. Kéo kết quả #1 vào ô ảnh rồi tìm bằng ảnh: 8/8 đúng người này trên Cam 6 và Cam 4 (kết quả #1 là chính track vừa kéo vào) |
+| `A man wearing a black jacket and blue jeans, carrying a backpack.` | 5 | Câu chung, nhiều người khớp |
+
+**Thuộc tính** (chọn ở tab Thuộc tính; câu tiếng Anh được sinh tự động):
+
+| Chọn trên giao diện | Câu sinh ra | Khớp / 8 |
+| --- | --- | --- |
+| Giới tính `Woman` · Loại áo `Coat` · Màu áo `Black` | `A woman wearing a black coat.` | 6 |
+| Giới tính `Woman` · Loại áo `Jacket` · Màu áo `Black` · Loại quần/váy `Jeans` · Màu quần/váy `Blue` | `A woman wearing a black jacket and blue jeans.` | 6 |
+| Giới tính `Man` · Vật mang theo `Backpack` | `A man carrying a backpack.` | 6 |
+| Giới tính `Man` · Loại áo `Jacket` · Màu áo `Black` · Vật mang theo `Backpack` | `A man wearing a black jacket, carrying a backpack.` | 5–6 |
+
+**Tránh dùng khi demo** (đã thử, không đạt): màu sáng hoặc nổi (áo đỏ, be, trắng, xanh dương sáng,
+hoodie xám) — kết quả chỉ đúng giới tính, sai màu; họa tiết và màu túi (túi hoa, túi vàng-đen) — 0/8.
+Mô hình nhận tốt giới tính, tóc dài/tóc vàng, ba lô, vali và quần áo tối màu; kém với màu sắc cụ thể.
+
+**Cách trình bày gợi ý:** tìm bằng văn bản câu vali ở trên → mở kết quả #1 → kéo vào ô ảnh và tìm
+bằng ảnh → 8/8 cùng một người (đã thử 2026-10-01; kết quả #1 là chính track vừa kéo vào, 7 kết quả còn lại là các lần xuất hiện khác trên Cam 6 và Cam 4). Luồng này cho thấy văn bản dùng để khoanh vùng ban đầu,
+ảnh dùng để xác định chính xác.
+
 ## 5. Sự cố và phương án dự phòng
 
 | Hiện tượng | Xử lý |

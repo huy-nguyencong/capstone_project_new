@@ -46,7 +46,7 @@ export function BoundingBox({ box, label, dashed, className, children }) {
 export function ResultScene({ result }) {
   const [failedUrl, setFailedUrl] = useState(null)
   const available = result.hasFrame && Boolean(result.frameUrl) && failedUrl !== result.frameUrl
-  const label = result.scoreText ? `Điểm ${result.scoreText}` : null
+  // The score is shown in the details panel next to the frame; the box only marks the person.
   return (
     <SceneFrame osd={result.osd} className="rounded-md">
       {available ? (
@@ -57,7 +57,7 @@ export function ResultScene({ result }) {
             className="absolute inset-0 h-full w-full object-fill"
             onError={() => setFailedUrl(result.frameUrl)}
           />
-          {result.bbox && <BoundingBox box={result.bbox} label={label} />}
+          {result.bbox && <BoundingBox box={result.bbox} />}
         </>
       ) : (
         <div className="absolute inset-0 grid place-items-center p-4 text-center text-[13px] text-neutral-300">
