@@ -1,20 +1,20 @@
 # Kịch bản demo PRISM
 
 > Tài liệu thực hiện cho buổi bảo vệ (R7 trong `remaining-work-plan.md`); không phải nguồn yêu cầu.
-> Luồng trình diễn bám theo architect §1/§10: Quản trị viên thiết lập camera RTSP, hệ thống tự xử lý,
-> Giám sát viên tìm kiếm và lưu vụ việc, Quản lý theo dõi.
+> Luồng trình diễn bám theo architect §1/§10, theo thứ tự Giám sát viên tìm kiếm và lưu vụ việc → Quản lý
+> theo dõi → Quản trị viên thiết lập camera RTSP, bật AI, kiểm tra và đổi mô hình.
 
 ## 1. Tóm tắt
 
 | Phần | Vai trò | Nội dung | Thời gian thao tác |
 | --- | --- | --- | --- |
-| A | Quản trị viên | Thêm camera RTSP, kiểm tra kết nối, bật AI, xem worker tự tạo phiên | ~40 giây |
-| B | Giám sát viên | Tìm bằng ảnh, mở kết quả, tạo vụ việc và đánh dấu hoàn thành; tìm bằng văn bản (kể cả văn bản rồi đến ảnh) và thuộc tính | ~25 giây + ~1 phút cho B5–B7 |
-| C | Quản lý | Dashboard, mở hồ sơ vụ việc | ~15 giây |
-| D | Quản trị viên | Tắt AI cho camera vừa thêm | ~10 giây |
+| 4.1 | Giám sát viên | G1–G9: tìm bằng ảnh, xem chi tiết, tạo vụ việc và đánh dấu hoàn thành, vụ việc của tôi, tìm bằng văn bản, từ văn bản sang ảnh, thuộc tính | ~1,5 phút |
+| 4.2 | Quản lý | Q1–Q3: tổng quan, hồ sơ vụ việc | ~15 giây |
+| 4.3 | Quản trị viên | A1–A7: thêm camera RTSP, bật AI, tiến trình nền tự xử lý, kiểm tra AI, đổi mô hình, nhật ký, tắt AI | ~1 phút thao tác + vài phút chờ (bật AI, kiểm tra AI, đổi mô hình) |
 
 Thời gian thao tác đo khi diễn tập tự động (2026-09-28, hai lần liên tiếp đều đạt): 85–88 giây chưa kể
-lời thuyết minh; bản tự động không gồm B5–B7 (tìm bằng văn bản/thuộc tính, thêm ~1 phút). Khi trình bày có lời nói, dự kiến 6–8 phút.
+lời thuyết minh. Bản tự động (mục 7) chạy theo thứ tự cũ Quản trị viên → Giám sát viên → Quản lý và
+không gồm G5–G8, A4–A6; nội dung kiểm tra tương đương. Khi trình bày có lời nói, dự kiến 6–8 phút.
 
 Dữ liệu demo: 7 camera WILDTRACK (khu vực Gate A), 1.488 track trong 2 phút đầu của mỗi video, cùng
 camera `RTSP Cam 1` (35 track) và 1 vụ việc có sẵn ("Tìm người để quên hành lý", 3 kết quả); tổng
@@ -26,7 +26,7 @@ camera `RTSP Cam 1` (35 track) và 1 vụ việc có sẵn ("Tìm người để
       trống khi chạy đủ stack).
 - [ ] Chạy trọn kịch bản ít nhất một lần bằng tay trên chính máy demo; sau đó đưa dữ liệu về mốc
       (mục 6).
-- [ ] Quay video màn hình có thuyết minh làm phương án dự phòng (cách quay ở mục 8). Bản dự phòng không lời do diễn tập tự
+- [ ] Quay video màn hình có thuyết minh làm phương án dự phòng, theo thứ tự mục 4. Bản dự phòng không lời do diễn tập tự
       động tạo: `frontend/ui-smoke/output/demo/2026-09-28T18-28-24/demo.mp4` (83 giây). Chép video ra
       USB/Drive.
 - [ ] Chép ảnh truy vấn `backend/var/demo-queries/WT-Q00*.jpg` ra màn hình desktop để kéo thả nhanh.
@@ -68,43 +68,166 @@ camera `RTSP Cam 1` (35 track) và 1 vụ việc có sẵn ("Tìm người để
 
 ## 4. Kịch bản trình diễn
 
-Tài khoản demo: `admin`, `operator`, `viewer` (mật khẩu seed). URL RTSP dùng trong demo, trên mạng
-hiện tại: **`rtsp://192.168.110.145:8554/cam2`**. Nếu `rtsp.ps1 up` in IP khác thì dùng đúng địa chỉ
-`cam2` nó in ra; gõ nguyên chữ `<IP-LAN>` sẽ lưu được camera nhưng kết nối ở trạng thái "Chưa xác minh".
+Thứ tự: **Giám sát viên → Quản lý → Quản trị viên**. Phần tìm kiếm chạy trước, khi tiến trình nền còn
+rảnh nên kết quả ra nhanh; phần Quản trị viên (bật AI, kiểm tra AI, đổi mô hình) tốn thời gian chờ nên
+để cuối. Đã làm nóng tìm kiếm ở mục 3.
 
-### A. Quản trị viên — nhận luồng RTSP (UC-03, UC-04, UC-06)
+Tài khoản: `operator`, `viewer`, `admin` (mật khẩu seed). Ảnh truy vấn ở `backend/var/demo-queries/`
+(đã chép ra desktop theo mục 2).
 
-| # | Thao tác | Kết quả mong đợi | Ý để nói |
-| --- | --- | --- | --- |
-| A1 | **Camera → Thêm camera**: mã `DEMO-RTSP`, tên `Camera sảnh chính (RTSP)`, khu vực Gate A, RTSP `rtsp://192.168.110.145:8554/cam2` (IP theo `rtsp.ps1 up`) → **Lưu và kiểm tra RTSP** | Camera mới, cột Kết nối "Trực tuyến" | Hệ thống camera giả lập: FFmpeg phát 7 video WILDTRACK vào MediaMTX; địa chỉ phải thuộc dải mạng cho phép (chống SSRF) |
-| A2 | **Xử lý AI** → bật công tắc của camera → **Bật xử lý AI** | Công tắc bật; cấu hình YOLO11n + ByteTrack hiển thị ở đầu trang | Detector/Tracker là cấu hình chung; Admin đổi được ở **Mô hình AI** (có BoT-SORT) |
-| A3 | **Trạng thái hệ thống** → **Làm mới** sau ~10–20 giây | Camera mới "Đang xử lý", worker "Đang xử lý" | Worker tự lập lịch phiên RTSP (1.800 frame, lấy mẫu mỗi 20 frame), tuần tự từng camera |
-| A4 | Đăng xuất | | |
+### 4.1. Giám sát viên (`operator`) — tìm kiếm và lập vụ việc
 
-### B. Giám sát viên — tìm và lưu vụ việc (UC-09, UC-10, UC-11)
+#### G1. Đăng nhập, màn hình tìm kiếm
 
-| # | Thao tác | Kết quả mong đợi | Ý để nói |
-| --- | --- | --- | --- |
-| B1 | Đăng nhập `operator` → **Tìm kiếm người** → tab **Hình ảnh** → kéo thả `WT-Q006.jpg` → **Tìm kiếm** | ~8 giây; 8 kết quả, cùng một người (túi hoa, giày trắng) trên Cam 6, 4, 1, 7, 3 | Chỉ tìm trong khu vực được giao; điểm phù hợp chỉ để xếp hạng; mỗi kết quả là một lần xuất hiện (track) |
-| B2 | Bấm kết quả #1 | Khung hình toàn cảnh có viền người, điểm, camera, thời gian | Ảnh crop dựng động từ full frame + bbox, không lưu crop |
-| B3 | **Tạo vụ việc mới**: tiêu đề `Tìm người mang túi hoa, giày trắng`, ghi chú, bật **Đánh dấu vụ việc đã hoàn thành** → **Tạo vụ việc** → đóng | Thông báo đã lưu | Không lưu điểm vào vụ việc; vụ việc hoàn thành bị khóa, mở lại được |
-| B4 | **Vụ việc của tôi** → tab **Hoàn thành** → mở vụ việc | Vụ việc có 1 kết quả, trạng thái Hoàn thành | |
-| B5 | **Tìm kiếm người** → tab **Văn bản** → gõ `A woman with long blonde hair wearing a black jacket.` → **Tìm kiếm** | Khoảng 1 giây hoặc nhanh hơn (đo lúc worker rảnh: ~0,1 s); khoảng 7/8 kết quả là phụ nữ tóc vàng dài, áo khoác tối, trên nhiều camera | Mô tả chỉ nhận tiếng Anh (gõ tiếng Việt có dấu bị từ chối); câu và ảnh được RaSa đưa vào cùng một không gian vector nên dùng chung chỉ mục với tìm bằng ảnh; điểm chỉ ~0,3 là bình thường khi so câu chữ với ảnh |
-| B6 | Tab **Văn bản** → gõ `A man carrying an orange backpack and pulling a black suitcase.` → **Tìm kiếm** → chuyển sang tab **Hình ảnh** (lưới kết quả vẫn giữ) → kéo thẻ kết quả **#1** trong lưới thả vào ô ảnh → **Tìm kiếm** | Văn bản: 4/8 là người đeo ba lô cam kéo vali, trên Cam 6, 4, 1. Ảnh: 8/8 đúng người đó trên Cam 6 và 4 (kết quả #1 là chính track vừa kéo vào) | Văn bản dùng để khoanh vùng khi chưa có ảnh; khi đã thấy người cần tìm thì chuyển sang tìm bằng ảnh để xác định chính xác |
-| B7 | Tab **Thuộc tính** → Giới tính `Woman`, Loại áo `Coat`, Màu áo `Black` → **Tìm kiếm** | Câu `A woman wearing a black coat.` được sinh ra; khoảng 6/8 là phụ nữ mặc áo khoác dài tối màu | Thuộc tính được ghép thành câu tiếng Anh có kiểm soát rồi đi qua cùng Text Encoder. Nói rõ giới hạn: mô hình nhận tốt giới tính, tóc, ba lô/vali và áo tối màu, nhưng kém với màu sáng (đỏ, be, trắng); Recall theo danh tính bằng văn bản/thuộc tính trên WILDTRACK là 0 |
-| B8 | Đăng xuất | | |
+- **Dữ liệu:** tài khoản `operator`.
+- **Thao tác:** đăng nhập → trang **Tìm kiếm người**.
+- **Kết quả mong đợi:** góc phải hiện "Khu vực giám sát: Gate A"; danh sách camera chỉ gồm camera của
+  Gate A; ba cách tìm Hình ảnh, Văn bản, Thuộc tính.
+- **Lời thuyết trình:** "Giám sát viên chỉ tìm được trên camera thuộc khu vực của mình, ở đây là Gate A."
 
-### C. Quản lý — theo dõi (UC-12, UC-13, UC-14)
+#### G2. Tìm bằng ảnh
 
-| # | Thao tác | Kết quả mong đợi |
-| --- | --- | --- |
-| C1 | Đăng nhập `viewer` → **Tổng quan** | 2 vụ việc, 4 kết quả, 1 đang xử lý, 1 hoàn thành; vụ việc mới ở đầu danh sách |
-| C2 | **Hồ sơ vụ việc** → mở vụ việc mới | Chỉ đọc; ảnh kết quả hiển thị |
-| C3 | Đăng xuất | |
+- **Dữ liệu:** ảnh `WT-Q006.jpg` (người đội mũ len, mang túi hoa, giày trắng); số kết quả 8.
+- **Thao tác:** tab **Hình ảnh** → kéo thả ảnh vào ô (hoặc bấm chọn tệp, hoặc dán Ctrl+V) →
+  **Tìm kiếm**.
+- **Kết quả mong đợi:** khoảng 1–2 giây; 8 kết quả đều là người này, trên Cam 6, 4, 1, 7, 3; điểm
+  khoảng 0,85–0,88.
+- **Lời thuyết trình:** "Tìm bằng một ảnh crop: tám kết quả đều là người này, xuất hiện trên năm camera khác nhau. Điểm chỉ dùng để xếp hạng, kết luận thuộc về người dùng."
 
-### D. Kết thúc
+#### G3. Xem chi tiết một kết quả
 
-Đăng nhập `admin` → **Xử lý AI** → tắt công tắc của `Camera sảnh chính (RTSP)` → **Tắt xử lý AI**.
+- **Dữ liệu:** không.
+- **Thao tác:** bấm kết quả #1; dùng nút mũi tên để xem kết quả tiếp theo.
+- **Kết quả mong đợi:** khung hình toàn cảnh có viền đánh dấu người; bên cạnh là ảnh người, điểm phù
+  hợp, camera, khu vực, thời gian.
+- **Lời thuyết trình:** "Khung hình gốc có viền đánh dấu người, kèm camera, khu vực và thời gian xuất hiện."
+
+#### G4. Tạo vụ việc và đánh dấu hoàn thành khi lưu
+
+- **Dữ liệu:** tiêu đề `Tìm người mang túi hoa, giày trắng`; ghi chú
+  `Đã xác định người trên nhiều camera khu Gate A.`
+- **Thao tác:** trong cửa sổ chi tiết → **Tạo vụ việc mới** → nhập tiêu đề, ghi chú → bật
+  **Đánh dấu vụ việc đã hoàn thành** → **Tạo vụ việc** → đóng cửa sổ.
+- **Kết quả mong đợi:** thông báo đã lưu.
+- **Lời thuyết trình:** "Lưu kết quả vào vụ việc mới và đánh dấu hoàn thành ngay khi lưu; vụ việc hoàn thành sẽ bị khóa."
+
+#### G5. Vụ việc của tôi
+
+- **Dữ liệu:** không.
+- **Thao tác:** **Vụ việc của tôi** → tab **Hoàn thành** → mở vụ việc vừa tạo; chỉ vào nút
+  **Mở lại vụ việc** (không cần bấm).
+- **Kết quả mong đợi:** vụ việc có 1 kết quả, trạng thái Hoàn thành; vụ việc có sẵn "Tìm người để quên
+  hành lý" nằm ở tab Đang xử lý.
+- **Lời thuyết trình:** "Vụ việc lọc theo trạng thái; vụ việc hoàn thành có thể mở lại khi cần bổ sung."
+
+#### G6. Tìm bằng mô tả văn bản
+
+- **Dữ liệu:** `A woman with long blonde hair wearing a black jacket.`
+- **Thao tác:** **Tìm kiếm người** → tab **Văn bản** → gõ câu → **Tìm kiếm**.
+- **Kết quả mong đợi:** dưới 1 giây; khoảng 7/8 kết quả là phụ nữ tóc vàng dài, áo khoác tối, trên
+  nhiều camera; điểm khoảng 0,3.
+- **Lời thuyết trình:** "Tìm bằng mô tả tiếng Anh: phần lớn kết quả khớp mô tả; điểm thấp hơn tìm bằng ảnh là bình thường."
+
+#### G7. Từ văn bản sang ảnh
+
+- **Dữ liệu:** `A man carrying an orange backpack and pulling a black suitcase.`
+- **Thao tác:** tab **Văn bản** → gõ câu → **Tìm kiếm** → chuyển sang tab **Hình ảnh** (lưới kết quả
+  vẫn giữ) → kéo thẻ kết quả **#1** thả vào ô ảnh → **Tìm kiếm**.
+- **Kết quả mong đợi:** văn bản: 4/8 là người đeo ba lô cam kéo vali, trên Cam 6, 4, 1. Ảnh: 8/8 đúng
+  người đó trên Cam 6 và 4 (kết quả #1 là chính lần xuất hiện vừa kéo vào).
+- **Lời thuyết trình:** "Văn bản để khoanh vùng; thấy đúng người thì kéo kết quả sang tìm bằng ảnh, lúc này tám kết quả đều là người đó."
+
+#### G8. Tìm bằng thuộc tính
+
+- **Dữ liệu:** Giới tính `Woman` · Loại áo `Coat` · Màu áo `Black`.
+- **Thao tác:** tab **Thuộc tính** → chọn ba giá trị → xem câu được sinh ra → **Tìm kiếm**.
+- **Kết quả mong đợi:** câu `A woman wearing a black coat.`; khoảng 6/8 là phụ nữ mặc áo khoác dài tối
+  màu.
+- **Lời thuyết trình:** "Chọn thuộc tính, hệ thống ghép thành câu tiếng Anh. Mô hình nhận tốt giới tính, tóc, đồ mang theo, kém với màu sáng."
+
+#### G9. Đăng xuất
+
+### 4.2. Quản lý (`viewer`) — theo dõi kết quả
+
+#### Q1. Tổng quan
+
+- **Dữ liệu:** tài khoản `viewer`.
+- **Thao tác:** đăng nhập → **Tổng quan**.
+- **Kết quả mong đợi:** 2 vụ việc, 4 kết quả đã lưu, 1 đang xử lý, 1 hoàn thành; vụ việc vừa tạo ở đầu
+  danh sách "Vụ việc gần đây".
+- **Lời thuyết trình:** "Quản lý theo dõi toàn hệ thống: số vụ việc theo trạng thái và số kết quả đã lưu; vụ việc vừa tạo nằm đầu danh sách."
+
+#### Q2. Hồ sơ vụ việc
+
+- **Dữ liệu:** không (có thể lọc theo người phụ trách `Operator` hoặc tab trạng thái).
+- **Thao tác:** **Hồ sơ vụ việc** → mở vụ việc `Tìm người mang túi hoa, giày trắng`.
+- **Kết quả mong đợi:** chi tiết vụ việc chỉ đọc, có ảnh kết quả, thời gian hoàn thành; không có nút
+  sửa.
+- **Lời thuyết trình:** "Hồ sơ vụ việc ở chế độ chỉ đọc, xem được cả ảnh kết quả."
+
+#### Q3. Đăng xuất
+
+### 4.3. Quản trị viên (`admin`) — vận hành camera và AI
+
+URL RTSP: dùng địa chỉ `cam2` do `rtsp.ps1 up` in ra, ví dụ `rtsp://192.168.110.147:8554/cam2`
+(IP đổi theo mạng; gõ sai IP hoặc gõ nguyên chữ mẫu thì camera lưu được nhưng ở trạng thái
+"Chưa xác minh").
+
+#### A1. Thêm camera RTSP và kiểm tra kết nối
+
+- **Dữ liệu:** mã `DEMO-RTSP`; tên `Camera sảnh chính (RTSP)`; khu vực `Gate A`; RTSP như trên.
+- **Thao tác:** đăng nhập `admin` → **Camera** → **Thêm camera** → nhập → **Lưu và kiểm tra RTSP**.
+- **Kết quả mong đợi:** camera mới, cột Kết nối "Trực tuyến".
+- **Lời thuyết trình:** "Thêm một camera RTSP vào khu vực Gate A và kiểm tra kết nối: camera trực tuyến."
+
+#### A2. Bật xử lý AI
+
+- **Dữ liệu:** không.
+- **Thao tác:** **Xử lý AI** → bật công tắc của `Camera sảnh chính (RTSP)` → xác nhận **Bật xử lý AI**.
+- **Kết quả mong đợi:** công tắc bật; đầu trang hiện cấu hình đang dùng YOLO11n + ByteTrack.
+- **Lời thuyết trình:** "Bật xử lý AI cho camera vừa thêm."
+
+#### A3. Tiến trình nền tự xử lý
+
+- **Dữ liệu:** không.
+- **Thao tác:** **Trạng thái hệ thống** → bấm **Làm mới** sau 10–20 giây.
+- **Kết quả mong đợi:** camera mới "Đang xử lý"; dòng tiến trình nền "Đang xử lý". Chờ thực tế 13–24
+  giây.
+- **Lời thuyết trình:** "Tiến trình nền tự nhận camera và bắt đầu xử lý luồng, không cần thao tác thêm."
+
+#### A4. Kiểm tra AI
+
+- **Dữ liệu:** camera `Camera sảnh chính (RTSP)` (hoặc `RTSP Cam 1`).
+- **Thao tác:** **Kiểm tra AI** → mục kiểm tra luồng xử lý camera → chọn camera → chạy kiểm tra.
+- **Kết quả mong đợi:** vài chục giây (chưa đo chính xác); các bước Nguồn khung hình (6 khung
+  1920×1080), Detector (hàng chục đến hơn 100 vùng người; thử trên `RTSP Cam 1` được 107–126), Tracker, Image Encoder (vector 256 chiều) đều
+  thành công, mỗi bước có thời gian.
+- **Lời thuyết trình:** "Kiểm tra AI chạy thử từng bước của luồng xử lý trên camera và báo kết quả, thời gian từng bước."
+
+#### A5. Đổi mô hình theo dõi
+
+- **Dữ liệu:** Tracker `BoT-SORT`.
+- **Thao tác:** **Mô hình AI** → chọn thẻ BoT-SORT → **Áp dụng cấu hình** → chờ "Đang áp dụng…".
+- **Kết quả mong đợi:** vài chục giây (chưa đo chính xác); nhãn "Đang dùng" chuyển sang BoT-SORT. Các
+  mô hình "Không khả dụng" (YOLO small, YOLOX) không chọn được.
+- **Lời thuyết trình:** "Đổi Tracker sang BoT-SORT; hệ thống nạp thử mô hình trước khi áp dụng nên mất vài chục giây."
+
+#### A6. Nhật ký hệ thống
+
+- **Dữ liệu:** không.
+- **Thao tác:** **Nhật ký hệ thống**.
+- **Kết quả mong đợi:** các sự kiện vừa thực hiện ở đầu danh sách: tạo camera, kiểm tra kết nối, bật
+  AI, đổi cấu hình mô hình, tạo và đóng vụ việc, đăng nhập/đăng xuất.
+- **Lời thuyết trình:** "Các thao tác vừa thực hiện đều được ghi nhật ký với người thực hiện và thời gian."
+
+#### A7. Kết thúc
+
+- **Thao tác:** **Xử lý AI** → tắt công tắc của `Camera sảnh chính (RTSP)` → **Tắt xử lý AI**; nếu
+  muốn, đổi lại Tracker về ByteTrack ở **Mô hình AI**.
+- **Lời thuyết trình:** "Tắt xử lý AI; dữ liệu đã phân tích được giữ nguyên."
+
+Sau buổi trình diễn hoặc diễn tập: tắt API và worker, chạy `demo-reset.ps1` (mục 6) để đưa dữ liệu và
+cấu hình mô hình về mốc.
 
 ### Truy vấn thay thế (nếu hội đồng muốn xem thêm)
 
@@ -161,7 +284,7 @@ bằng ảnh → 8/8 cùng một người (đã thử 2026-10-01; kết quả #1
 | Hiện tượng | Xử lý |
 | --- | --- |
 | Tìm kiếm quay lâu, báo không kết nối được | Chưa làm nóng (mục 3.4). Chờ ~1 phút rồi tìm lại; lần sau nhanh. |
-| A1 báo "Mất kết nối" hoặc lỗi địa chỉ không được phép | IP đổi: kiểm tra `rtsp.ps1 status`, sửa `PERSON_SEARCH_RTSP_NETWORKS`, khởi động lại API và worker. Nếu không kịp, bỏ phần A, nói bằng ảnh chụp trạng thái và video. |
+| A1 báo "Mất kết nối" hoặc lỗi địa chỉ không được phép | IP đổi: kiểm tra `rtsp.ps1 status`, sửa `PERSON_SEARCH_RTSP_NETWORKS`, khởi động lại API và worker. Nếu không kịp, bỏ A1–A3, làm tiếp A4–A6 với `RTSP Cam 1` hoặc camera WILDTRACK và nói phần RTSP bằng video. |
 | A3 camera không lên "Đang xử lý" sau 1 phút | Kiểm tra terminal worker; trang Trạng thái hệ thống phải thấy worker có heartbeat. Có thể bỏ qua: tìm kiếm dùng dữ liệu đã lập chỉ mục. |
 | Trang trắng hoặc lỗi giao diện | Tải lại trang (F5); đăng nhập lại. |
 | Máy/mạng hỏng hẳn | Chiếu video dự phòng (mục 2). |
@@ -193,59 +316,3 @@ npm run ui:demo           # ghi dữ liệu: chạy trên mốc rồi demo-reset
 
 Kết quả nằm ở `frontend/ui-smoke/output/demo/<thời điểm>/` (`demo.webm`, ảnh từng bước). Chuyển sang
 MP4: `ffmpeg -i demo.webm -c:v libx264 -pix_fmt yuv420p demo.mp4`.
-
-## 8. Quay video có thuyết minh (OBS)
-
-Nguyên tắc: chuẩn bị trước để bớt thời gian chờ, và khi dựng chỉ **rút gọn** đoạn chờ kèm ghi chú
-thời gian thật, không giấu nó. Video là sản phẩm của đồ án nên phải trung thực về tốc độ.
-
-### 8.1. Trước khi bấm quay
-
-- Khởi động đủ hệ thống theo mục 3, kể cả bước làm nóng tìm kiếm (lần tìm đầu sau khi khởi động API
-  mất ~30 giây; sau đó ảnh ~1–2 giây, văn bản/thuộc tính ~0,1 giây).
-- Dữ liệu ở mốc: nếu vừa diễn tập thì chạy `demo-reset.ps1` (mục 6) rồi khởi động lại API, worker.
-- Đóng trình duyệt nhiều tab, IDE và ứng dụng không cần thiết (khi đang xử lý, máy dùng gần hết 16 GB
-  RAM); cắm sạc, chọn chế độ hiệu năng cao.
-- Trình duyệt phóng to 110–125% để chữ đọc được trong video.
-
-### 8.2. Thứ tự quay
-
-Sắp theo thứ tự này để phần tìm kiếm chạy khi worker còn rảnh (worker xử lý RTSP làm tìm bằng ảnh chậm
-lên ~8 giây), và để phần đổi mô hình ở cuối:
-
-1. **Giám sát viên:** các bước B1–B7 ở mục 4 (tìm bằng ảnh, văn bản, văn bản rồi đến ảnh, thuộc tính;
-   tạo vụ việc và đánh dấu hoàn thành).
-2. **Quản lý:** các bước C1–C2 (dashboard, hồ sơ vụ việc).
-3. **Quản trị viên:**
-   1. A1–A3: thêm camera RTSP, kiểm tra kết nối, bật AI, xem worker tự tạo phiên.
-   2. **Kiểm tra AI** → chọn camera vừa thêm (hoặc `RTSP Cam 1`) → chạy kiểm tra.
-   3. **Mô hình AI** → chọn BoT-SORT → **Áp dụng cấu hình**.
-   4. D: tắt AI cho camera vừa thêm.
-4. Dừng quay, tắt API và worker, chạy `demo-reset.ps1` để đưa dữ liệu và cấu hình mô hình (về
-   YOLO11n + ByteTrack) về mốc.
-
-### 8.3. Các đoạn chờ và cách dựng
-
-| Chức năng | Thời gian chờ | Vì sao | Lời nói gợi ý |
-| --- | --- | --- | --- |
-| Áp dụng đổi mô hình | vài chục giây (chưa đo chính xác) | Hệ thống nạp thử Detector, Tracker, RaSa trước khi lưu | "Hệ thống nạp thử cả bộ mô hình trước khi áp dụng, để không đưa vào vận hành một cặp mô hình lỗi." |
-| Kiểm tra AI | vài chục giây (chưa đo chính xác) | Nạp mô hình, đọc khung hình, chạy thử từng bước | "Kiểm tra đi qua đúng các bước của pipeline thật và báo thời gian từng bước." |
-| Worker tự tạo phiên RTSP | 13–24 giây | Worker kiểm tra hàng đợi theo chu kỳ | "Không cần thao tác: worker tự nhận camera vừa bật AI." |
-| Tìm bằng ảnh lần đầu | ~30 giây | Nạp encoder RaSa | Tránh bằng bước làm nóng ở 8.1 |
-
-Cách dựng mỗi đoạn chờ (Clipchamp có sẵn trên Windows 11, hoặc Shotcut/DaVinci Resolve):
-
-1. Giữ 2–3 giây đầu (thấy "Đang áp dụng…" hoặc vòng xoay).
-2. Cắt phần giữa, **hoặc** tua nhanh ×4–×8 và đặt chữ "×8" ở góc.
-3. Giữ khoảnh khắc ra kết quả và dừng lâu ở màn hình kết quả (nhãn "Đang dùng" chuyển sang BoT-SORT;
-   bảng từng bước Nguồn khung hình → Detector → Tracker → Encoder của Kiểm tra AI; camera "Đang xử lý").
-4. Nếu cắt, chèn chữ nhỏ ở góc, ví dụ *(rút gọn — thực tế 40 giây)*, ghi đúng thời gian đã đo khi quay.
-
-### 8.4. Cấu hình OBS gợi ý
-
-- Nguồn: *Window Capture* cửa sổ trình duyệt (không quay cả màn hình để tránh lộ thông báo, ứng dụng
-  khác).
-- Video: 1920×1080, 30 fps. Ghi ra **MKV** (an toàn nếu OBS tắt đột ngột), sau đó *File → Remux
-  Recordings* sang MP4. Chất lượng CQP/CRF khoảng 20–23.
-- Quay liên tục, cắt khi dựng; không dùng nút tạm dừng của OBS để bỏ đoạn chờ (video nhảy cóc và mất
-  thời gian thật).
