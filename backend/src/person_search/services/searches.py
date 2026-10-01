@@ -236,15 +236,41 @@ ATTRIBUTE_UPPER_TYPES = {
     "dress": "dress",
 }
 ATTRIBUTE_UPPER_COLORS = frozenset(
-    {"black", "white", "gray", "red", "blue", "navy", "green", "yellow", "brown", "beige"}
+    {
+        "black",
+        "white",
+        "gray",
+        "red",
+        "pink",
+        "purple",
+        "orange",
+        "yellow",
+        "green",
+        "blue",
+        "navy",
+        "brown",
+        "beige",
+    }
 )
 # Plural garments take no article ("blue jeans"); a skirt does ("a black skirt").
 ATTRIBUTE_LOWER_TYPES = {"pants": "pants", "jeans": "jeans", "shorts": "shorts", "skirt": "skirt"}
-ATTRIBUTE_LOWER_COLORS = frozenset({"black", "white", "gray", "blue", "brown", "beige"})
-ATTRIBUTE_CARRYING = {"backpack": "backpack", "handbag": "handbag"}
+ATTRIBUTE_LOWER_COLORS = frozenset(
+    {"black", "white", "gray", "blue", "navy", "green", "brown", "beige", "khaki"}
+)
+# Each item maps to its full verb phrase: a suitcase is pulled, not carried.
+ATTRIBUTE_CARRYING = {
+    "backpack": "carrying a backpack",
+    "handbag": "carrying a handbag",
+    "shoulder_bag": "carrying a shoulder bag",
+    "suitcase": "pulling a suitcase",
+}
 ATTRIBUTE_FIELDS = frozenset(
     {"gender", "upper_type", "upper_color", "lower_type", "lower_color", "carrying"}
 )
+
+
+def _with_article(phrase: str) -> str:
+    return ("an " if phrase[0] in "aeiou" else "a ") + phrase
 
 
 def _choice(attributes: Mapping[str, object], field: str, allowed) -> str | None:
@@ -277,14 +303,14 @@ def attributes_prompt(attributes: Mapping[str, object]) -> str:
     garments: list[str] = []
     if upper_type or upper_color:
         words = [upper_color, ATTRIBUTE_UPPER_TYPES[upper_type] if upper_type else "top"]
-        garments.append("a " + " ".join(word for word in words if word))
+        garments.append(_with_article(" ".join(word for word in words if word)))
     if lower_type or lower_color:
         noun = ATTRIBUTE_LOWER_TYPES[lower_type] if lower_type else "pants"
         phrase = " ".join(word for word in (lower_color, noun) if word)
-        garments.append(f"a {phrase}" if noun == "skirt" else phrase)
+        garments.append(_with_article(phrase) if noun == "skirt" else phrase)
     parts = [f"wearing {' and '.join(garments)}"] if garments else []
     if carrying:
-        parts.append(f"carrying a {ATTRIBUTE_CARRYING[carrying]}")
+        parts.append(ATTRIBUTE_CARRYING[carrying])
     subject = f"A {ATTRIBUTE_GENDERS[gender]}" if gender else "A person"
     return f"{subject} {', '.join(parts)}." if parts else f"{subject}."
 

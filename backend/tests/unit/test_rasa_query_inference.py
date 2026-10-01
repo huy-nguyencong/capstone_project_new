@@ -110,6 +110,15 @@ def test_text_normalization_is_deterministic_without_translation():
         ({"upper_type": "dress"}, "A person wearing a dress."),
         ({"lower_type": "skirt", "lower_color": "black"}, "A person wearing a black skirt."),
         ({"gender": "woman", "carrying": "handbag"}, "A woman carrying a handbag."),
+        ({"carrying": "shoulder_bag"}, "A person carrying a shoulder bag."),
+        (
+            {"gender": "man", "upper_color": "orange", "carrying": "suitcase"},
+            "A man wearing an orange top, pulling a suitcase.",
+        ),
+        (
+            {"upper_color": "pink", "lower_color": "khaki"},
+            "A person wearing a pink top and khaki pants.",
+        ),
         ({"gender": "man"}, "A man."),
     ],
 )
@@ -143,9 +152,7 @@ def test_text_timeout_is_sanitized_and_closes_shared_process():
     assert backend.closed
 
 
-@pytest.mark.parametrize(
-    "output", [[float("inf")] + [0.0] * 255, [1.0] * 255, [2.0] + [0.0] * 255]
-)
+@pytest.mark.parametrize("output", [[float("inf")] + [0.0] * 255, [1.0] * 255, [2.0] + [0.0] * 255])
 def test_text_rejects_invalid_vectors(output):
     query, backend = gateway(MultimodalBackend(text_output=output))
     with pytest.raises(AIWorkerError) as caught:

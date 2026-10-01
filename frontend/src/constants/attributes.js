@@ -6,12 +6,16 @@ export const COLOR_SWATCH = {
   white: 'oklch(0.93 0.01 260)',
   gray: 'oklch(0.62 0.01 260)',
   red: 'oklch(0.58 0.16 25)',
+  pink: 'oklch(0.78 0.1 0)',
+  purple: 'oklch(0.5 0.14 305)',
+  orange: 'oklch(0.72 0.15 55)',
   blue: 'oklch(0.55 0.12 250)',
   navy: 'oklch(0.36 0.09 265)',
   green: 'oklch(0.58 0.1 150)',
   yellow: 'oklch(0.82 0.13 90)',
   brown: 'oklch(0.45 0.06 55)',
   beige: 'oklch(0.78 0.04 70)',
+  khaki: 'oklch(0.7 0.06 95)',
 }
 
 const colors = (values) =>
@@ -30,8 +34,11 @@ export const ATTRIBUTE_GROUPS = [
     key: 'carrying',
     label: 'Vật mang theo',
     options: [
-      { value: 'backpack', label: 'Backpack' },
-      { value: 'handbag', label: 'Handbag' },
+      { value: 'backpack', label: 'Backpack', phrase: 'carrying a backpack' },
+      { value: 'handbag', label: 'Handbag', phrase: 'carrying a handbag' },
+      { value: 'shoulder_bag', label: 'Shoulder bag', phrase: 'carrying a shoulder bag' },
+      // A suitcase is pulled, not carried (same phrase as the backend).
+      { value: 'suitcase', label: 'Suitcase', phrase: 'pulling a suitcase' },
     ],
   },
   {
@@ -54,10 +61,13 @@ export const ATTRIBUTE_GROUPS = [
       'white',
       'gray',
       'red',
+      'pink',
+      'purple',
+      'orange',
+      'yellow',
+      'green',
       'blue',
       'navy',
-      'green',
-      'yellow',
       'brown',
       'beige',
     ]),
@@ -75,29 +85,31 @@ export const ATTRIBUTE_GROUPS = [
   {
     key: 'lower_color',
     label: 'Màu quần/váy',
-    options: colors(['black', 'white', 'gray', 'blue', 'brown', 'beige']),
+    options: colors(['black', 'white', 'gray', 'blue', 'navy', 'green', 'brown', 'beige', 'khaki']),
   },
 ]
 
 export const EMPTY_ATTRIBUTES = Object.fromEntries(ATTRIBUTE_GROUPS.map((g) => [g.key, null]))
 
-const word = (key, value) =>
-  ATTRIBUTE_GROUPS.find((g) => g.key === key).options.find((o) => o.value === value)?.word
+const option = (key, value) =>
+  ATTRIBUTE_GROUPS.find((g) => g.key === key).options.find((o) => o.value === value)
+const word = (key, value) => option(key, value)?.word
+const withArticle = (phrase) => `${/^[aeiou]/.test(phrase) ? 'an' : 'a'} ${phrase}`
 
 // Mirrors backend attributes_prompt so the preview is exactly the sentence that is encoded.
 export const attributesToPrompt = (a) => {
   const garments = []
   if (a.upper_type || a.upper_color) {
     const words = [a.upper_color, a.upper_type ? word('upper_type', a.upper_type) : 'top']
-    garments.push(`a ${words.filter(Boolean).join(' ')}`)
+    garments.push(withArticle(words.filter(Boolean).join(' ')))
   }
   if (a.lower_type || a.lower_color) {
     const noun = a.lower_type ? word('lower_type', a.lower_type) : 'pants'
     const phrase = [a.lower_color, noun].filter(Boolean).join(' ')
-    garments.push(noun === 'skirt' ? `a ${phrase}` : phrase)
+    garments.push(noun === 'skirt' ? withArticle(phrase) : phrase)
   }
   const parts = garments.length ? [`wearing ${garments.join(' and ')}`] : []
-  if (a.carrying) parts.push(`carrying a ${a.carrying}`)
+  if (a.carrying) parts.push(option('carrying', a.carrying).phrase)
   const subject = a.gender ? `A ${a.gender}` : 'A person'
   if (!parts.length && !a.gender) return null
   return parts.length ? `${subject} ${parts.join(', ')}.` : `${subject}.`

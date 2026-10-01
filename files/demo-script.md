@@ -9,12 +9,12 @@
 | Phần | Vai trò | Nội dung | Thời gian thao tác |
 | --- | --- | --- | --- |
 | A | Quản trị viên | Thêm camera RTSP, kiểm tra kết nối, bật AI, xem worker tự tạo phiên | ~40 giây |
-| B | Giám sát viên | Tìm bằng ảnh, mở kết quả, tạo vụ việc và đánh dấu hoàn thành | ~25 giây |
+| B | Giám sát viên | Tìm bằng ảnh, mở kết quả, tạo vụ việc và đánh dấu hoàn thành; tìm bằng văn bản (kể cả văn bản rồi đến ảnh) và thuộc tính | ~25 giây + ~1 phút cho B5–B7 |
 | C | Quản lý | Dashboard, mở hồ sơ vụ việc | ~15 giây |
 | D | Quản trị viên | Tắt AI cho camera vừa thêm | ~10 giây |
 
 Thời gian thao tác đo khi diễn tập tự động (2026-09-28, hai lần liên tiếp đều đạt): 85–88 giây chưa kể
-lời thuyết minh. Khi trình bày có lời nói, dự kiến 6–8 phút.
+lời thuyết minh; bản tự động không gồm B5–B7 (tìm bằng văn bản/thuộc tính, thêm ~1 phút). Khi trình bày có lời nói, dự kiến 6–8 phút.
 
 Dữ liệu demo: 7 camera WILDTRACK (khu vực Gate A), 1.488 track trong 2 phút đầu của mỗi video, cùng
 camera `RTSP Cam 1` (35 track) và 1 vụ việc có sẵn ("Tìm người để quên hành lý", 3 kết quả); tổng
@@ -26,7 +26,7 @@ camera `RTSP Cam 1` (35 track) và 1 vụ việc có sẵn ("Tìm người để
       trống khi chạy đủ stack).
 - [ ] Chạy trọn kịch bản ít nhất một lần bằng tay trên chính máy demo; sau đó đưa dữ liệu về mốc
       (mục 6).
-- [ ] Quay video màn hình có thuyết minh làm phương án dự phòng. Bản dự phòng không lời do diễn tập tự
+- [ ] Quay video màn hình có thuyết minh làm phương án dự phòng (cách quay ở mục 8). Bản dự phòng không lời do diễn tập tự
       động tạo: `frontend/ui-smoke/output/demo/2026-09-28T18-28-24/demo.mp4` (83 giây). Chép video ra
       USB/Drive.
 - [ ] Chép ảnh truy vấn `backend/var/demo-queries/WT-Q00*.jpg` ra màn hình desktop để kéo thả nhanh.
@@ -89,7 +89,10 @@ hiện tại: **`rtsp://192.168.110.145:8554/cam2`**. Nếu `rtsp.ps1 up` in IP 
 | B2 | Bấm kết quả #1 | Khung hình toàn cảnh có viền người, điểm, camera, thời gian | Ảnh crop dựng động từ full frame + bbox, không lưu crop |
 | B3 | **Tạo vụ việc mới**: tiêu đề `Tìm người mang túi hoa, giày trắng`, ghi chú, bật **Đánh dấu vụ việc đã hoàn thành** → **Tạo vụ việc** → đóng | Thông báo đã lưu | Không lưu điểm vào vụ việc; vụ việc hoàn thành bị khóa, mở lại được |
 | B4 | **Vụ việc của tôi** → tab **Hoàn thành** → mở vụ việc | Vụ việc có 1 kết quả, trạng thái Hoàn thành | |
-| B5 | Đăng xuất | | |
+| B5 | **Tìm kiếm người** → tab **Văn bản** → gõ `A woman with long blonde hair wearing a black jacket.` → **Tìm kiếm** | Khoảng 1 giây hoặc nhanh hơn (đo lúc worker rảnh: ~0,1 s); khoảng 7/8 kết quả là phụ nữ tóc vàng dài, áo khoác tối, trên nhiều camera | Mô tả chỉ nhận tiếng Anh (gõ tiếng Việt có dấu bị từ chối); câu và ảnh được RaSa đưa vào cùng một không gian vector nên dùng chung chỉ mục với tìm bằng ảnh; điểm chỉ ~0,3 là bình thường khi so câu chữ với ảnh |
+| B6 | Tab **Văn bản** → gõ `A man carrying an orange backpack and pulling a black suitcase.` → **Tìm kiếm** → chuyển sang tab **Hình ảnh** (lưới kết quả vẫn giữ) → kéo thẻ kết quả **#1** trong lưới thả vào ô ảnh → **Tìm kiếm** | Văn bản: 4/8 là người đeo ba lô cam kéo vali, trên Cam 6, 4, 1. Ảnh: 8/8 đúng người đó trên Cam 6 và 4 (kết quả #1 là chính track vừa kéo vào) | Văn bản dùng để khoanh vùng khi chưa có ảnh; khi đã thấy người cần tìm thì chuyển sang tìm bằng ảnh để xác định chính xác |
+| B7 | Tab **Thuộc tính** → Giới tính `Woman`, Loại áo `Coat`, Màu áo `Black` → **Tìm kiếm** | Câu `A woman wearing a black coat.` được sinh ra; khoảng 6/8 là phụ nữ mặc áo khoác dài tối màu | Thuộc tính được ghép thành câu tiếng Anh có kiểm soát rồi đi qua cùng Text Encoder. Nói rõ giới hạn: mô hình nhận tốt giới tính, tóc, ba lô/vali và áo tối màu, nhưng kém với màu sáng (đỏ, be, trắng); Recall theo danh tính bằng văn bản/thuộc tính trên WILDTRACK là 0 |
+| B8 | Đăng xuất | | |
 
 ### C. Quản lý — theo dõi (UC-12, UC-13, UC-14)
 
@@ -190,3 +193,59 @@ npm run ui:demo           # ghi dữ liệu: chạy trên mốc rồi demo-reset
 
 Kết quả nằm ở `frontend/ui-smoke/output/demo/<thời điểm>/` (`demo.webm`, ảnh từng bước). Chuyển sang
 MP4: `ffmpeg -i demo.webm -c:v libx264 -pix_fmt yuv420p demo.mp4`.
+
+## 8. Quay video có thuyết minh (OBS)
+
+Nguyên tắc: chuẩn bị trước để bớt thời gian chờ, và khi dựng chỉ **rút gọn** đoạn chờ kèm ghi chú
+thời gian thật, không giấu nó. Video là sản phẩm của đồ án nên phải trung thực về tốc độ.
+
+### 8.1. Trước khi bấm quay
+
+- Khởi động đủ hệ thống theo mục 3, kể cả bước làm nóng tìm kiếm (lần tìm đầu sau khi khởi động API
+  mất ~30 giây; sau đó ảnh ~1–2 giây, văn bản/thuộc tính ~0,1 giây).
+- Dữ liệu ở mốc: nếu vừa diễn tập thì chạy `demo-reset.ps1` (mục 6) rồi khởi động lại API, worker.
+- Đóng trình duyệt nhiều tab, IDE và ứng dụng không cần thiết (khi đang xử lý, máy dùng gần hết 16 GB
+  RAM); cắm sạc, chọn chế độ hiệu năng cao.
+- Trình duyệt phóng to 110–125% để chữ đọc được trong video.
+
+### 8.2. Thứ tự quay
+
+Sắp theo thứ tự này để phần tìm kiếm chạy khi worker còn rảnh (worker xử lý RTSP làm tìm bằng ảnh chậm
+lên ~8 giây), và để phần đổi mô hình ở cuối:
+
+1. **Giám sát viên:** các bước B1–B7 ở mục 4 (tìm bằng ảnh, văn bản, văn bản rồi đến ảnh, thuộc tính;
+   tạo vụ việc và đánh dấu hoàn thành).
+2. **Quản lý:** các bước C1–C2 (dashboard, hồ sơ vụ việc).
+3. **Quản trị viên:**
+   1. A1–A3: thêm camera RTSP, kiểm tra kết nối, bật AI, xem worker tự tạo phiên.
+   2. **Kiểm tra AI** → chọn camera vừa thêm (hoặc `RTSP Cam 1`) → chạy kiểm tra.
+   3. **Mô hình AI** → chọn BoT-SORT → **Áp dụng cấu hình**.
+   4. D: tắt AI cho camera vừa thêm.
+4. Dừng quay, tắt API và worker, chạy `demo-reset.ps1` để đưa dữ liệu và cấu hình mô hình (về
+   YOLO11n + ByteTrack) về mốc.
+
+### 8.3. Các đoạn chờ và cách dựng
+
+| Chức năng | Thời gian chờ | Vì sao | Lời nói gợi ý |
+| --- | --- | --- | --- |
+| Áp dụng đổi mô hình | vài chục giây (chưa đo chính xác) | Hệ thống nạp thử Detector, Tracker, RaSa trước khi lưu | "Hệ thống nạp thử cả bộ mô hình trước khi áp dụng, để không đưa vào vận hành một cặp mô hình lỗi." |
+| Kiểm tra AI | vài chục giây (chưa đo chính xác) | Nạp mô hình, đọc khung hình, chạy thử từng bước | "Kiểm tra đi qua đúng các bước của pipeline thật và báo thời gian từng bước." |
+| Worker tự tạo phiên RTSP | 13–24 giây | Worker kiểm tra hàng đợi theo chu kỳ | "Không cần thao tác: worker tự nhận camera vừa bật AI." |
+| Tìm bằng ảnh lần đầu | ~30 giây | Nạp encoder RaSa | Tránh bằng bước làm nóng ở 8.1 |
+
+Cách dựng mỗi đoạn chờ (Clipchamp có sẵn trên Windows 11, hoặc Shotcut/DaVinci Resolve):
+
+1. Giữ 2–3 giây đầu (thấy "Đang áp dụng…" hoặc vòng xoay).
+2. Cắt phần giữa, **hoặc** tua nhanh ×4–×8 và đặt chữ "×8" ở góc.
+3. Giữ khoảnh khắc ra kết quả và dừng lâu ở màn hình kết quả (nhãn "Đang dùng" chuyển sang BoT-SORT;
+   bảng từng bước Nguồn khung hình → Detector → Tracker → Encoder của Kiểm tra AI; camera "Đang xử lý").
+4. Nếu cắt, chèn chữ nhỏ ở góc, ví dụ *(rút gọn — thực tế 40 giây)*, ghi đúng thời gian đã đo khi quay.
+
+### 8.4. Cấu hình OBS gợi ý
+
+- Nguồn: *Window Capture* cửa sổ trình duyệt (không quay cả màn hình để tránh lộ thông báo, ứng dụng
+  khác).
+- Video: 1920×1080, 30 fps. Ghi ra **MKV** (an toàn nếu OBS tắt đột ngột), sau đó *File → Remux
+  Recordings* sang MP4. Chất lượng CQP/CRF khoảng 20–23.
+- Quay liên tục, cắt khi dựng; không dùng nút tạm dừng của OBS để bỏ đoạn chờ (video nhảy cóc và mất
+  thời gian thật).

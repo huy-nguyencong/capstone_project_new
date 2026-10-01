@@ -72,7 +72,7 @@ def test_attribute_prompt_requires_supported_non_empty_attributes() -> None:
     with pytest.raises(ValueError):
         attributes_prompt({"hat": "red"})
     with pytest.raises(ValueError):
-        attributes_prompt({"upper_color": "purple"})
+        attributes_prompt({"upper_color": "magenta"})
     with pytest.raises(ValueError):
         # The negated backpack filter was removed; the old field is no longer accepted.
         attributes_prompt({"has_backpack": False})

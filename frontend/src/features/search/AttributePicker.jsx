@@ -8,7 +8,9 @@ import {
   HoodieIcon,
   PantsIcon,
   ShirtFoldedIcon,
+  SuitcaseRollingIcon,
   TShirtIcon,
+  ToteIcon,
 } from '@phosphor-icons/react'
 import { useId } from 'react'
 import { Dropdown } from '@/components/ui/Dropdown'
@@ -21,6 +23,8 @@ const ICONS = {
   woman: GenderFemaleIcon,
   backpack: BackpackIcon,
   handbag: HandbagIcon,
+  shoulder_bag: ToteIcon,
+  suitcase: SuitcaseRollingIcon,
   t_shirt: TShirtIcon,
   shirt: ShirtFoldedIcon,
   sweater: HoodieIcon,
