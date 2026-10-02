@@ -25,7 +25,7 @@ BRAIN = svg_uri(
     '<path d="M12 5v15M8 8.5c1 0 2 .7 2 2M16 8.5c-1 0-2 .7-2 2M7.5 14c1.2 0 2.2-.6 2.5-1.5M16.5 14c-1.2 0-2.2-.6-2.5-1.5" fill="none"/>'
     '</svg>')
 BUCKET = svg_uri(
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="#FFE6CC" stroke="#D79B00" stroke-width="1.5">'
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="#FFE6CC" stroke="#D79B00" stroke-width="0.67">'
     '<path d="M5 9l4 27c.3 2 22 2 22.3 0L35 9z"/><ellipse cx="20" cy="9" rx="15" ry="4.5"/></svg>')
 
 
@@ -81,7 +81,7 @@ v('END', 'End of job', TERM, 525, 830, 220, 60)
 # --- Kho dữ liệu ---
 v('S1', '<b>PostgreSQL</b><br>descriptions', DB, 930, 560, 190, 90)
 v('S3', '<b>MinIO</b><br>frames', ICON_R + BUCKET + ';', 935, 700, 60, 60)
-v('S2', '<b>Milvus</b><br>vector', DB, 930, 800, 190, 90)
+v('S2', '<b>Milvus</b><br>vector', DB + 'strokeWidth=3;', 930, 800, 190, 90)
 
 e('L0', 'L1', A + E.format(.5, 1, .5, 0))
 e('L1', 'L2', A + E.format(.5, 1, .5, 0))

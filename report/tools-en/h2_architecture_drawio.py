@@ -30,7 +30,7 @@ CAMERA = svg_uri(
     '<path d="M3 5l20 3v7L3 12z"/><path d="M23 9.5l6-2v7l-6-2"/>'
     '<path d="M9 13.5v4H4v3" fill="none"/><circle cx="7" cy="8.6" r="1.6"/></svg>')
 BUCKET = svg_uri(
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="#FFE6CC" stroke="#D79B00" stroke-width="1.5">'
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="#FFE6CC" stroke="#D79B00" stroke-width="0.57">'
     '<path d="M5 9l4 27c.3 2 22 2 22.3 0L35 9z"/><ellipse cx="20" cy="9" rx="15" ry="4.5"/></svg>')
 
 
@@ -105,7 +105,7 @@ v('C2', 'Query encoder<br>RaSa image / text', ICON_L + BRAIN + ';', 975, 740, 60
 # --- Tầng lưu trữ ---
 v('S', 'Storage layer', FRAME, 0, 1215, 1130, 200)
 v('S1', '<b>PostgreSQL</b><br>accounts, cameras, appearances,<br>cases, audit log, job queue', DB, 20, 1260, 290, 135)
-v('S2', '<b>Milvus</b> (vectors)<br>256-d vectors + area,<br>camera, time', DB, 780, 1260, 290, 135)
+v('S2', '<b>Milvus</b> (vectors)<br>256-d vectors + area,<br>camera, time', DB + 'strokeWidth=3;', 780, 1260, 290, 135)
 v('S3', '<b>MinIO</b><br>representative frames<br>(private bucket)', ICON_L + BUCKET + ';', 560, 1290, 70, 70)
 
 n = 0
