@@ -257,6 +257,15 @@ python tools/benchmark_sampling.py \
   đại diện và số track ngắn. `--profile` ghi nhãn môi trường (`local_cpu`, `colab_t4`...).
   Chạy lại với `--device cuda` trên Colab T4.
 - Thời gian publication và search latency sau khi index lấy từ `PERSON_SEARCH_E2E_REPORT`.
+- `measure_encoder_memory.py` đo bộ nhớ của riêng tiến trình encoder RaSa theo từng bước nạp
+  (import torch, khởi tạo mô-đun, `load_state_dict`, suy luận) và đỉnh working set, cùng kích
+  thước checkpoint theo từng mô-đun và phần suy luận thực dùng. Chạy lại với `--tag` khác sau mỗi
+  thay đổi cách nạp để so sánh; kết quả cho mục 8.3 của báo cáo và task A0/A1 trong
+  `files/part1-improvement-plan.md`:
+
+  ```bash
+  python tools/measure_encoder_memory.py --registry config/models.example.json     --artifact-root config --settings config/rasa_cuhk_pedes_runtime.json     --tag before --output var/benchmark/encoder-memory-before.json
+  ```
 
 Batch ngoài máy local (ví dụ Colab T4) xuất result bundle rồi import qua đúng invariant ingestion:
 

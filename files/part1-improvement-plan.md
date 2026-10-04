@@ -84,19 +84,47 @@ theo thứ tự lớn dần:
    ultralytics trước khi nạp trọng số nào. Vite dev server (318 MiB) và máy ảo Docker cũng tính
    vào tổng dù không thuộc ứng dụng.
 
-**Code.** Viết `backend/tools/measure_encoder_memory.py`: nạp encoder theo từng bước trong một
-tiến trình con (import torch, khởi tạo mô-đun, load_state_dict, một lần suy luận) và ghi RSS
-sau mỗi bước ra JSON tại `var/benchmark/encoder-memory-<tag>.json`. Chạy một lần với mã hiện
-tại để có baseline `before`.
+**Code.** `backend/tools/measure_encoder_memory.py` (đã viết): nạp encoder theo từng bước trong
+một tiến trình con (import torch, import mô-đun vendor, khởi tạo `ALBEF`, `torch.load` mmap,
+`load_state_dict`, giải phóng checkpoint, một lần suy luận ảnh và văn bản) và ghi RSS cùng đỉnh
+working set sau mỗi bước; chạy thêm một tiến trình con nữa đi đúng đường
+`RasaRuntimeFactory.load` của production. Kết quả tại `var/benchmark/encoder-memory-<tag>.json`.
 
-**Đo.** `tools/measure_stack_memory.py` ở ba trạng thái idle, searching, processing như đã làm,
-lưu lại thành `stack-memory-before.json` để so sánh về sau.
+**Đo (đã chạy 05/10/2026, tag `before`).**
 
-**Báo cáo.** Chưa sửa. Số liệu này là đầu vào cho A5.
+| Bước trong tiến trình encoder | RSS (MiB) | Đỉnh working set (MiB) |
+| --- | --- | --- |
+| Python trống | 22 | 22 |
+| Sau `import torch` | 197 | 197 |
+| Sau import mô-đun vendor (transformers, timm) | 410 | 410 |
+| Sau khởi tạo `ALBEF()` với trọng số ngẫu nhiên | 2,226 | 2,226 |
+| Sau `load_state_dict` từ checkpoint mmap | 3,961 | 3,961 |
+| Sau giải phóng checkpoint (trạng thái ổn định) | 2,229 | 3,961 |
+| Sau một lần suy luận ảnh và văn bản | 2,240 | 3,961 |
+| Đường production `RasaRuntimeFactory.load` rồi 7 lần suy luận | 2,239 | 3,961 |
 
-**Tiêu chí hoàn thành.** Có hai file JSON baseline và bảng nguyên nhân ở trên được xác nhận bằng số đo.
+Đọc số: một bản encoder chiếm ổn định 2.2 GiB, trong đó 1.9 GiB là trạng thái mô hình và
+0.4 GiB là runtime trước khi có trọng số nào; đỉnh lúc nạp 3.9 GiB vì trọng số ngẫu nhiên
+(2.2 GiB) và các trang checkpoint được chép (1.7 GiB) cùng tồn tại. Chỉ 891 MiB của checkpoint
+được suy luận dùng, và 583 MiB nếu bỏ 6 lớp fusion và đầu MLM (chế độ `text` chỉ chạy các lớp
+trước `fusion_layer = 6`). Hai số đo khớp với bảng 8.3: application server 1,978 MiB sau
+warm-up là một bản encoder; đỉnh "model processes" 4,267 MiB khi xử lý là đỉnh lúc nạp của bản
+thứ hai cộng tiến trình detector.
 
-**Trạng thái.** Chưa làm.
+Baseline toàn hệ thống: số đo ngày 29/09 (`stack-memory.json`, cùng mã nguồn hiện tại) được
+giữ nguyên thành `var/benchmark/stack-memory-before.json`; không đo lại vì stack Docker không
+chạy lúc làm A0 và mã chưa đổi. Tóm tắt (MiB): idle sau warm-up API 1,978, worker 338, Vite 318,
+FFmpeg 286, container 515, Docker VM 828; khi xử lý thêm pipeline 3,313 (đo bằng công cụ chạy
+pipeline thay worker), máy dùng tối đa 15,554 trên 16,122.
+
+**Báo cáo.** Chưa sửa. Số liệu này là đầu vào cho A5; ba file JSON là nguồn cho bảng mới ở mục 8.3.
+
+**Tiêu chí hoàn thành.** Đạt: có `encoder-memory-before.json`, `stack-memory-before.json`, và bảng
+nguyên nhân ở trên được xác nhận bằng số đo.
+
+**Trạng thái.** Xong 05/10/2026. File đổi: `backend/tools/measure_encoder_memory.py` (mới),
+`backend/README.md` (một dòng hướng dẫn chạy). Kỳ vọng cho A1 được cụ thể hóa: ổn định dưới
+1.0 GiB (0.4 runtime + 0.6 trọng số), đỉnh lúc nạp dưới 1.2 GiB nhờ khởi tạo `meta` và `assign=True`.
 
 ### A1. Chỉ nạp các mô-đun RaSa cần cho suy luận
 
