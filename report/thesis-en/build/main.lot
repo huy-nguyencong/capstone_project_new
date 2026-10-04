@@ -22,24 +22,24 @@
 \contentsline {table}{\numberline {6.1}{\ignorespaces Summary of technology and model choices}}{64}{table.caption.61}%
 \contentsline {table}{\numberline {6.2}{\ignorespaces Comparison of YOLO11 sizes on the COCO validation set~\blx@tocontentsinit {0}\cite {ultralytics2024yolo11docs}}}{66}{table.caption.63}%
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {7.1}{\ignorespaces Number of tracks in the demonstration data per camera (first 120 seconds of each video)}}{76}{table.caption.89}%
+\contentsline {table}{\numberline {7.1}{\ignorespaces Number of tracks in the demonstration data per camera (first 120 seconds of each video)}}{77}{table.caption.89}%
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {8.1}{\ignorespaces Test results by level}}{78}{table.caption.90}%
-\contentsline {table}{\numberline {8.2}{\ignorespaces Search quality results (6 queries)}}{79}{table.caption.93}%
-\contentsline {table}{\numberline {8.3}{\ignorespaces Comparison of the two sampling intervals on a 10-second video (confidence threshold 0.1)}}{81}{table.caption.98}%
-\contentsline {table}{\numberline {8.4}{\ignorespaces Search latency through the API (30 calls per form, $k = 8$)}}{82}{table.caption.101}%
+\contentsline {table}{\numberline {8.1}{\ignorespaces Test results by level}}{79}{table.caption.90}%
+\contentsline {table}{\numberline {8.2}{\ignorespaces Search quality results (6 queries)}}{80}{table.caption.93}%
+\contentsline {table}{\numberline {8.3}{\ignorespaces Comparison of the two sampling intervals on a 10-second video (confidence threshold 0.1)}}{82}{table.caption.98}%
+\contentsline {table}{\numberline {8.4}{\ignorespaces Search latency through the API (30 calls per form, $k = 8$)}}{83}{table.caption.101}%
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {9.1}{\ignorespaces The three places where the pipeline can be improved}}{87}{table.caption.104}%
-\contentsline {table}{\numberline {9.2}{\ignorespaces One model per slot. None of them is fine-tuned on this dataset.}}{90}{table.caption.106}%
+\contentsline {table}{\numberline {9.1}{\ignorespaces The three places where the pipeline can be improved}}{88}{table.caption.104}%
+\contentsline {table}{\numberline {9.2}{\ignorespaces One model per slot. None of them is fine-tuned on this dataset.}}{91}{table.caption.106}%
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {10.1}{\ignorespaces The attribute schema and the region each attribute is judged from}}{93}{table.caption.109}%
-\contentsline {table}{\numberline {10.2}{\ignorespaces VLM noise on one track}}{95}{table.caption.110}%
-\contentsline {table}{\numberline {10.3}{\ignorespaces What the CLIP score separates inside the pool}}{102}{table.caption.121}%
+\contentsline {table}{\numberline {10.1}{\ignorespaces The attribute schema and the region each attribute is judged from}}{94}{table.caption.109}%
+\contentsline {table}{\numberline {10.2}{\ignorespaces VLM noise on one track}}{96}{table.caption.110}%
+\contentsline {table}{\numberline {10.3}{\ignorespaces What the CLIP score separates inside the pool}}{103}{table.caption.121}%
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {11.1}{\ignorespaces Per-call token budget}}{106}{table.caption.125}%
-\contentsline {table}{\numberline {11.2}{\ignorespaces Main comparison on 100 identities}}{107}{table.caption.128}%
-\contentsline {table}{\numberline {11.3}{\ignorespaces Identities rescued and lost by the funnel}}{108}{table.caption.129}%
-\contentsline {table}{\numberline {11.4}{\ignorespaces Where the five lost identities went}}{109}{table.caption.130}%
-\contentsline {table}{\numberline {11.5}{\ignorespaces The five lost identities re-ranked by a larger model}}{110}{table.caption.131}%
-\contentsline {table}{\numberline {11.6}{\ignorespaces What each mechanism changed, and how strong the evidence is.}}{115}{table.11.6}%
+\contentsline {table}{\numberline {11.1}{\ignorespaces Per-call token budget}}{107}{table.caption.125}%
+\contentsline {table}{\numberline {11.2}{\ignorespaces Main comparison on 100 identities}}{108}{table.caption.128}%
+\contentsline {table}{\numberline {11.3}{\ignorespaces Identities rescued and lost by the funnel}}{109}{table.caption.129}%
+\contentsline {table}{\numberline {11.4}{\ignorespaces Where the five lost identities went}}{110}{table.caption.130}%
+\contentsline {table}{\numberline {11.5}{\ignorespaces The five lost identities re-ranked by a larger model}}{111}{table.caption.131}%
+\contentsline {table}{\numberline {11.6}{\ignorespaces What each mechanism changed, and how strong the evidence is.}}{116}{table.11.6}%
 \addvspace {10\p@ }

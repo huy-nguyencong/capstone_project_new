@@ -1,0 +1,14 @@
+# Resource limits of the WSL 2 virtual machine that Docker Desktop uses (the "Vmmem" process).
+# Without this file WSL 2 may claim up to 50% of the machine's RAM and gives it back slowly; on
+# the 16 GB demo laptop Vmmem measured 0.8 to 1.2 GiB while the containers need about 0.5 GiB.
+#
+# Usage (PowerShell, once, from the repository root):
+#   Copy-Item infra\wslconfig.example "$env:USERPROFILE\.wslconfig"
+#   wsl --shutdown          # then start Docker Desktop again
+#
+# Note: this file applies to every WSL 2 distro on the machine (Ubuntu included), not only Docker.
+# ASCII only: PowerShell 5.1 shows UTF-8 text in this file garbled, and the WSL parser expects plain text.
+[wsl2]
+memory=3GB
+processors=2
+swap=0

@@ -16,6 +16,7 @@ from person_search.ai.config_loader import (
 )
 from person_search.ai.registry import RegistryMode
 from person_search.api import register_api
+from person_search.api.frontend import register_static_frontend
 from person_search.auth.passwords import PasswordHasher
 from person_search.config import (
     StorageSettings,
@@ -68,6 +69,7 @@ def create_app(
         for origin in os.getenv("PERSON_SEARCH_CORS_ORIGINS", "").split(",")
         if origin.strip()
     )
+    app.config["STATIC_FRONTEND_DIR"] = os.getenv("PERSON_SEARCH_STATIC_DIR", "")
 
     if config:
         app.config.from_mapping(config)
@@ -104,9 +106,7 @@ def create_app(
                 UserService(lambda: UnitOfWork(session_factory), hasher=password_hasher),
             )
             camera_runtime = CameraRuntime.from_environment()
-            camera_registry = CameraService.registry_from_environment(
-                app.config["ENVIRONMENT"]
-            )
+            camera_registry = CameraService.registry_from_environment(app.config["ENVIRONMENT"])
             candidate_loader = None
             diagnostics = None
             query_encoder = None
@@ -132,9 +132,7 @@ def create_app(
                     settings=diagnostic_settings,
                 )
                 if not os.getenv("PERSON_SEARCH_ENCODER_URL", "").strip():
-                    query_encoder = InProcessQueryEncoder(
-                        camera_registry, components.query_gateway
-                    )
+                    query_encoder = InProcessQueryEncoder(camera_registry, components.query_gateway)
                     atexit.register(query_encoder.close)
             container.register(
                 "cameras.service",
@@ -192,5 +190,7 @@ def create_app(
 
     app.extensions["person_search.dependencies"] = container
     register_api(app)
+    # Registered after the API so that API and health rules take precedence over the page rules.
+    register_static_frontend(app)
 
     return app

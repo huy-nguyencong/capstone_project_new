@@ -227,24 +227,52 @@ track trong `tools/benchmark_sampling.py`; bộ nhớ encoder.
 
 ### A4. Cắt bộ nhớ nền không thuộc mô hình
 
-**Code.**
+**Khảo sát trước khi sửa (05/10/2026).**
 
-- Trình diễn bằng bản build tĩnh: `frontend/dist` đã có; thêm cách phục vụ nó (Flask
-  `send_from_directory` sau một cờ cấu hình, hoặc một static server nhẹ) để không chạy Vite dev
-  server khi demo. Tiết kiệm khoảng 300 MiB.
-- Kiểm tra tiến trình chính của worker và application server không import torch ở mức module
-  (grep `import torch` ngoài `ai/encoders`, `ai/detectors`); chuyển mọi import còn sót vào trong hàm.
-- Tiến trình con detector: import `ultralytics` trễ và chỉ phần cần; đặt `torch.set_num_threads`
-  theo `worker_threads` trong `config/ai_resources.json` (hiện chỉ đặt biến môi trường OMP).
-- Giới hạn máy ảo Docker bằng `%UserProfile%\.wslconfig` (`memory=3GB`) và ghi vào thủ tục triển
-  khai; Milvus standalone, etcd, MinIO, PostgreSQL, MediaMTX chỉ cần khoảng 515 MiB.
+- Application server và tiến trình chính của worker không import torch, ultralytics hay
+  transformers ở mức module: sau `create_app` và sau import `workers.production_main`, RSS đều
+  138 MiB và chỉ có PIL, av, numpy, flask, sqlalchemy, pymilvus, minio được nạp. Không cần sửa.
+- Tiến trình con detector đã import `ultralytics` trễ trong hàm con và nhận `OMP_NUM_THREADS = 2`
+  từ `apply_resource_environment`, nên torch chạy đúng 2 luồng. Đo từng bước: import torch
+  196 MiB, import ultralytics 214, nạp YOLO11n 234, sau lần dự đoán đầu 376, ổn định 403 MiB,
+  đỉnh 415 MiB. Đây là phần nền của torch, không cắt thêm được nếu không bỏ torch.
+- Vite dev server: 325 MiB với 4 tiến trình node (khớp 318 MiB ở bảng 8.3); `vite preview`
+  145 MiB; phục vụ `frontend/dist` từ chính API: 0 MiB thêm.
+- Máy ảo WSL 2 của Docker Desktop: không có `.wslconfig`, nên mặc định được phép tới 50% RAM;
+  đo 828 đến 1,156 MiB khi container chỉ dùng 515 MiB.
 
-**Đo.** `tools/measure_stack_memory.py` trạng thái idle trước và sau.
+**Code (đã làm).**
 
-**Báo cáo.** 7.1 "Start-up procedure" và "Environment" thêm hai điểm (bản build tĩnh, giới hạn
-Docker VM); 8.3 số đo ở A5.
+- Mới `backend/src/person_search/api/frontend.py`: khi `PERSON_SEARCH_STATIC_DIR` (hoặc
+  `STATIC_FRONTEND_DIR`) trỏ tới thư mục build, API phục vụ `index.html` cho mọi đường dẫn
+  không phải `/api/` hay `/health/`, phục vụ tệp tĩnh có thật, `assets/` băm tên được
+  `Cache-Control: public, max-age=31536000, immutable`, và trang nhận
+  Content-Security-Policy riêng (`default-src 'self'`, cho phép blob và data cho ảnh) thay cho
+  chính sách `default-src 'none'` của API. Đăng ký sau `register_api` nên các rule API và health
+  luôn thắng; đường dẫn ngoài thư mục bị chặn bởi `safe_join`. `app.py` đọc biến môi trường và
+  gọi `register_static_frontend`. `.env.example` có dòng mới kèm chú thích.
+- Kiểm chứng với bản build thật: `index.html` không có script hay style nội tuyến, hai tệp
+  `assets/*.js` và `*.css` trả 200 với cache dài hạn, đường dẫn SPA như `/cases` trả trang,
+  `/api/v1/<không tồn tại>` vẫn trả 404 JSON.
+- Mới `infra/wslconfig.example` (`memory=3GB`, `processors=2`, `swap=0`) kèm hướng dẫn; không
+  tự chép vào `%UserProfile%` vì file này áp dụng cho mọi distro WSL 2 trên máy, người dùng
+  chép bằng một lệnh trong README.
+- Không đổi gì ở detector và worker (xem khảo sát).
 
-**Trạng thái.** Chưa làm.
+**Kiểm thử.** Mới `tests/unit/test_static_frontend.py` (6 test: không cấu hình thì không phục
+vụ, trang và route SPA kèm CSP, cache của assets, API/health không rơi về trang, đường dẫn
+ngoài thư mục, thiếu index là lỗi cấu hình). `scripts/check.ps1` qua: 727 unit test, ruff,
+compileall.
+
+**Đo.** Với cách chạy demo mới, nhóm `frontend_vite` biến mất khỏi bảng bộ nhớ (trừ 318 MiB);
+Docker VM đợi người dùng áp `.wslconfig` rồi A5 đo lại. Số đo toàn hệ thống ở A5.
+
+**Báo cáo (đã sửa).** Mục 7.1 "Environment" nêu web application được build một lần và do
+application server phục vụ cùng origin, và máy ảo WSL 2 được giới hạn 3 GB; "Start-up
+procedure" bỏ bước khởi động web application riêng. README gốc có mục Terminal 4 mới và mục
+giới hạn RAM Docker. PDF build lại không lỗi.
+
+**Trạng thái.** Xong 05/10/2026, trừ việc chép `.wslconfig` vào máy (thủ công, một lệnh) trước A5.
 
 ### A5. Đo lại toàn hệ thống và cập nhật báo cáo
 

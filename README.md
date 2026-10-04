@@ -218,6 +218,20 @@ thị worker có heartbeat mới (`IDLE` khi chưa có job).
 
 ### Terminal 4 — Frontend
 
+Khi demo, dùng bản build tĩnh do chính API phục vụ (không cần terminal thứ tư, tiết kiệm
+khoảng 320 MiB RAM của Vite dev server và không cần proxy hay CORS):
+
+```powershell
+cd frontend
+npm run build
+```
+
+rồi đặt trong `backend/.env` đường dẫn tới thư mục build, ví dụ
+`PERSON_SEARCH_STATIC_DIR=../frontend/dist`, khởi động lại API và mở `http://127.0.0.1:5000`.
+Mỗi lần sửa frontend phải `npm run build` lại.
+
+Khi phát triển giao diện, chạy Vite dev server như cũ (và để trống `PERSON_SEARCH_STATIC_DIR`):
+
 ```powershell
 cd frontend
 npm run dev
@@ -227,6 +241,13 @@ Mở URL Vite in ra terminal, thông thường là `http://localhost:5173`.
 
 Nếu đổi `PERSON_SEARCH_PORT` trong `backend/.env`, phải đổi `VITE_API_PROXY_TARGET` trong
 `frontend/.env` tương ứng và khởi động lại cả API lẫn Vite.
+
+### Giới hạn RAM của máy ảo Docker (một lần)
+
+Docker Desktop chạy các container trong máy ảo WSL 2 (`Vmmem`), mặc định được phép chiếm tới
+50% RAM máy dù các container chỉ cần khoảng 0.5 GiB. Chép `infra/wslconfig.example` thành
+`%UserProfile%\.wslconfig` rồi `wsl --shutdown` và khởi động lại Docker Desktop (xem chú thích
+trong file; áp dụng cho mọi distro WSL 2 trên máy).
 
 ## C. Luồng kiểm tra end-to-end trên giao diện
 
