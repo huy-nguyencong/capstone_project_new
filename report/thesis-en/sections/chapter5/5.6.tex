@@ -3,12 +3,12 @@
 \section{User Interface Design}
 \label{sec:5.6}
 
-The interface was designed and built directly in the web application, without a separate mock-up stage; screenshots of the main screens are presented in Section~\ref{sec:6.3}.
+The interface was designed directly in the web application, without a mock-up stage; Section~\ref{sec:6.3} shows the main screens.
 
 \subsection{Screen Structure by Role}
 \label{sec:5.6.1}
 
-After logging in, each role is taken to its own home page and only sees the screens within its responsibility (Figure~\ref{fig:screen-flow}). In the figure, a bold arrow points to the page opened right after login, a dashed frame is a dialog opened on top of the current screen, and the screens of one role are reached from each other through the left-hand menu.
+Each role lands on its own home page and only sees its own screens (Figure~\ref{fig:screen-flow}). In the figure, bold arrows mark the page opened after login, dashed frames are dialogs, and screens of one role are linked through the left-hand menu.
 
 \begin{figure}[!htbp]
 \centering
@@ -18,16 +18,16 @@ After logging in, each role is taken to its own home page and only sees the scre
 \end{figure}
 
 \begin{itemize}
-    \item \textbf{The Administrator} has eight screens, in an \emph{Administration} group (accounts, cameras, AI processing, AI models, video processing) and a \emph{Monitoring} group (system status, AI check, audit log).
-    \item \textbf{The Operator} works mainly on the \emph{Person search} screen, where the query form and the result list share one page so that searches can be repeated; selecting a result opens a detail dialog, from which the result is saved into a case. The \emph{My cases} screen shows the list and the details of cases on one page.
-    \item \textbf{The Viewer} starts from the \emph{Overview} screen and opens cases on the \emph{Case files} screen, which has the same layout as the Operator's case screen but is read-only.
+    \item \textbf{The Administrator} has eight screens in an \emph{Administration} and a \emph{Monitoring} group.
+    \item \textbf{The Operator} works mainly on \emph{Person search}, where the query form and results share one page so searches can be repeated; a result opens a detail dialog from which it is saved into a case. \emph{My cases} shows the list and details of cases on one page.
+    \item \textbf{The Viewer} starts from \emph{Overview} and opens cases in \emph{Case files}, a read-only version of the Operator's case screen.
 \end{itemize}
 
 \subsection{Design Principles}
 \label{sec:5.6.2}
 
-Since search results always need the user's confirmation, the interface must first of all support visual assessment. Person images are placed in the context of the frame, and the person found is highlighted when the frame contains several people. The rank, camera and time of appearance are shown prominently. The relevance score is only shown as secondary information, and the models' internal confidence is not shown.
+Since every result needs the user's confirmation, the interface first supports visual assessment (NFR-20): person images are shown in their frame, with the person highlighted when there are several, and rank, camera and time come first while the score is secondary.
 
-The interface also reduces repetitive actions. A query image can be provided by file selection, drag and drop, pasting, or dragging a result directly into the search box to search again for the same person. The result list can be sorted and filtered again without sending a new query.
+It also saves repetitive actions: query images can be given in several ways, including dragging a result back into the search box (FR-O01), and results can be sorted and filtered without a new query.
 
-When there are no results, the interface explains why and suggests how to continue. Errors are shown with the server's Vietnamese messages, and when data has been changed elsewhere, the user is asked to reload instead of overwriting. The interface is also usable on a phone about 390 pixels wide: the left-hand menu collapses into a drop-down list and wide tables scroll horizontally.
+Empty results come with a reason and a suggestion, errors use the server's Vietnamese messages, and conflicting changes ask the user to reload. On a phone about 390 pixels wide, the menu becomes a drop-down list and wide tables scroll horizontally.

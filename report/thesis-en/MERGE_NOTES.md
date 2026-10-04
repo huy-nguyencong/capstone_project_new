@@ -90,3 +90,33 @@ Script gộp Part II: `report/tools-en/merge_research.py` (tách theo tiêu đ�
 - Đã xóa ghi chú đỏ ở trang Work Contribution (2026-09-30, SV yêu cầu); nội dung bảng vẫn cần hai SV xác nhận.
 - **Không chạy lại** `tools-en/merge_research.py`: script sẽ ghi đè các tệp trên bằng bản gốc chưa rà soát.
 - `prompts/*.txt` không sửa (là dữ liệu gửi cho mô hình).
+
+## 9. Timeline (2026-10-03)
+
+- Thêm mục 12.1 **Project Timeline** (`sections/chapter12/timeline.tex`) theo yêu cầu của khoa, với Hình 12.1 = `figures/S05-ke-hoach.png`
+  (trang xoay ngang như ERD). Các mục cũ của chương 12 lùi số: Achievements 12.2, Limitations 12.3, Future Work 12.4.
+- **Cần hai bạn xác nhận ngày:** hình sinh từ `tools-en/slide_plan_gantt_drawio.py`, script ghi rõ các mốc là *kế hoạch ước lượng*
+  (bắt đầu 15/6/2026), không phải nhật ký. Mốc "Mid-term review" 10/8 và "Report submitted" 30/9 cũng lấy từ script.
+  Nếu ngày thực tế khác, sửa danh sách `TASKS`/`MILESTONES` trong script, chạy lại, xuất PNG và sửa đoạn văn ở 12.1.
+
+## 10. Bỏ phụ lục prompt (2026-10-04)
+
+- Theo góp ý GVHD (chỉ giữ nội dung nổi bật; phần prompt không ai đọc khi in): bỏ Phụ lục A khỏi `main.tex` (để lại dạng chú thích,
+  bỏ dấu `%` hai dòng `\appendix` / `\input{...appendix-prompts}` nếu muốn khôi phục). Tệp `appendix-prompts.tex` và `prompts/` giữ nguyên.
+- Chương 10 thêm một câu: toàn văn prompt không in trong báo cáo, các quy tắc của từng giai đoạn được mô tả ở các mục sau (không trỏ tới thư mục hay link vì đồ án không nộp kèm link GitHub). Trang Work Contribution bỏ "Appendix A".
+- Báo cáo còn 167 trang (thân bài 1–138, References 139–145). Bạn Cường nên biết thay đổi này.
+
+## 11. Thay hình Part II bằng bản mới của Cường (2026-10-05)
+
+- 9 hình lấy từ `slides/images` (S23, S26, S31, S35–S40), chép vào `figures/research/` với tên mới; hình cũ (`*-000.png`) giữ lại.
+  overall→S23, zara→S26, offline→S31, online_full→S35, reasoning→S36, selector→S37, selector_work→S38, pruning→S39, pruning_work→S40.
+- Hai lỗi số liệu cũ đã hết: S38 ghi Male 60%/Female 40%; ghi chú trong S40 dùng đúng số của khối bằng chứng (8/10, 2/10, 0.57, 0.73).
+- Còn lại: bảng xếp hạng trong S40 vẫn bàn về "yellow and white / hair style" (các thuộc tính khác, có dấu "…"); không sai nhưng có thể gây thắc mắc.
+- Ca minh họa (case_lost, case_lost_fixed, case_rescued) không có bản mới nên giữ nguyên.
+
+## 12. Viết gọn Part II (2026-10-05)
+
+- Hai SV đồng ý. Chương 9: 1.784 → 1.426 chữ, Chương 10: 3.662 → 3.038, Chương 11: 4.033 → 3.372, `_limits` 474 → 400,
+  `_conclusion` 229 → 198. Lập luận "vì sao CLIP chưa đủ" chỉ nêu một lần (9.1.2); lý do không chạy YOLO/ByteTrack chỉ nêu ở
+  11.1.1; tính bất đối xứng hai vòng cắt dẫn chiếu về 10.2. Mọi số liệu, bảng, hình, nhãn, trích dẫn giữ nguyên.
+  Bản trước khi sửa lưu trong scratchpad (partII-before). Bạn Cường nên đọc lại.

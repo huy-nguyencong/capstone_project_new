@@ -5,11 +5,11 @@
 \section{Phạm vi của đề tài}
 \label{sec:1.3}
 
-Phạm vi của đề tài được xác định như sau.
+Phạm vi của đề tài như sau.
 
 \paragraph{Đối tượng tìm kiếm.} Hệ thống chỉ hỗ trợ tìm kiếm người. Việc tìm kiếm dựa trên đặc điểm ngoại hình tổng thể như trang phục, màu sắc và vật dụng mang theo, không dựa trên khuôn mặt hay các đặc điểm sinh trắc học.
 
-\paragraph{Dữ liệu camera.} Hệ thống tiếp nhận hình ảnh từ camera dưới dạng luồng video theo giao thức truyền phát thời gian thực RTSP (Real Time Streaming Protocol), là giao thức phổ biến của camera giám sát. Trong phạm vi đồ án, hệ thống camera được giả lập bằng cách phát các video của một bộ dữ liệu công khai, gồm bảy camera tĩnh cùng quan sát một địa điểm, thành các luồng RTSP; mỗi luồng đóng vai trò một camera và được gán vào một khu vực giám sát để thể hiện chức năng phân quyền theo khu vực. Do sử dụng cùng giao thức, luồng giả lập về nguyên tắc có thể được thay thế bằng camera thật. Hệ thống xử lý lần lượt từng luồng, không xử lý đồng thời nhiều luồng, và lưu lại kết quả phân tích để phục vụ tra cứu về sau. Do máy triển khai chỉ có bộ xử lý trung tâm nên không phân tích kịp luồng video độ phân giải cao theo thời gian thực; vì vậy, dữ liệu dùng cho trình diễn được lập chỉ mục trước từ chính các tệp video của bộ dữ liệu, thông qua cùng quy trình xử lý với luồng RTSP.
+\paragraph{Dữ liệu camera.} Hệ thống nhận video camera theo giao thức truyền phát thời gian thực RTSP (Real Time Streaming Protocol), giao thức phổ biến của camera giám sát. Camera được giả lập bằng cách phát video của một bộ dữ liệu công khai gồm bảy camera tĩnh cùng quan sát một địa điểm; mỗi luồng là một camera được gán vào một khu vực giám sát, và về nguyên tắc thay được bằng camera thật. Các luồng được xử lý lần lượt và kết quả được lưu để tra cứu. Vì máy triển khai chỉ có CPU, không phân tích kịp video độ phân giải cao theo thời gian thực, dữ liệu trình diễn được lập chỉ mục trước từ các tệp video của bộ dữ liệu qua cùng quy trình.
 
 \paragraph{Hình thức mô tả người cần tìm.} Người dùng mô tả người cần tìm bằng một trong ba hình thức:
 \begin{itemize}
@@ -19,11 +19,11 @@ Phạm vi của đề tài được xác định như sau.
 \end{itemize}
 Hệ thống không hỗ trợ truy vấn bằng tiếng Việt và không tự động dịch nội dung mô tả.
 
-\paragraph{Kết quả tìm kiếm.} Mỗi kết quả tương ứng với một lần xuất hiện của một người trên một camera, được sắp xếp theo mức độ phù hợp với mô tả. Người dùng chọn số lượng kết quả muốn xem và có thể giới hạn phạm vi tìm kiếm theo camera và khoảng thời gian. Mức độ phù hợp chỉ dùng để sắp xếp và hỗ trợ đánh giá trong lượt tìm kiếm hiện tại; hệ thống không đưa ra kết luận về danh tính và không lưu lịch sử các lượt tìm kiếm. Chỉ những kết quả được người dùng chủ động lưu mới được ghi vào hồ sơ vụ việc.
+\paragraph{Kết quả tìm kiếm.} Mỗi kết quả là một lần xuất hiện của một người trên một camera, xếp theo mức độ phù hợp. Người dùng chọn số kết quả và có thể giới hạn camera, khoảng thời gian. Điểm phù hợp chỉ dùng để xếp hạng trong một lượt tìm; hệ thống không kết luận về danh tính, không lưu lịch sử tìm kiếm, và chỉ ghi vào hồ sơ vụ việc những kết quả người dùng chủ động lưu.
 
-\paragraph{Người dùng.} Ứng dụng phục vụ nhiều nhóm người dùng với trách nhiệm và quyền hạn khác nhau; các vai trò cụ thể được xác định khi phân tích hệ thống tại Chương~\ref{chapter:phantich}. Việc tạo và quản lý danh mục khu vực giám sát không thuộc phạm vi đề tài; danh mục này được khai báo sẵn khi triển khai.
+\paragraph{Người dùng.} Ứng dụng phục vụ nhiều nhóm người dùng với quyền hạn khác nhau, được xác định ở Chương~\ref{chapter:phantich}. Việc quản lý danh mục khu vực giám sát không thuộc phạm vi đề tài; danh mục này được khai báo sẵn khi triển khai.
 
-\paragraph{Môi trường triển khai.} Hệ thống được triển khai dưới dạng ứng dụng web trên một máy tính cá nhân không có card đồ họa rời, phục vụ mục đích trình diễn trong phạm vi đồ án tốt nghiệp, không nhằm triển khai thương mại.
+\paragraph{Môi trường triển khai.} Ứng dụng web trên một máy tính cá nhân không có card đồ họa rời, phục vụ trình diễn, không nhằm triển khai thương mại.
 
 \paragraph{Ngoài phạm vi.} Đề tài không bao gồm các nội dung sau:
 \begin{itemize}

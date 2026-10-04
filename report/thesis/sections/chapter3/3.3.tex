@@ -12,14 +12,14 @@
 \label{sec:3.3.1}
 \label{sec:3.3.2}
 
-Mô hình phát hiện xử lý từng khung hình độc lập, nên không cho biết người ở khung hình này có phải là người đã xuất hiện ở khung hình trước hay không. Bài toán theo vết nhiều đối tượng (Multi-Object Tracking, MOT) gán cho mỗi đối tượng một mã định danh và duy trì mã đó qua các khung hình; chuỗi khung bao của cùng một đối tượng theo thời gian gọi là một \emph{track}. Trong đề tài, theo vết là bước biến các phát hiện rời rạc thành các \emph{lần xuất hiện}, đơn vị kết quả tìm kiếm (Mục~\ref{sec:3.1.6}).
+Mô hình phát hiện xử lý từng khung hình độc lập nên không biết một người có phải người đã thấy trước đó. Theo vết nhiều đối tượng (Multi-Object Tracking, MOT) gán cho mỗi đối tượng một mã giữ qua các khung hình; chuỗi khung bao của nó là một \emph{track}, trong đề tài trở thành một \emph{lần xuất hiện}, đơn vị kết quả tìm kiếm (Mục~\ref{sec:3.1.6}).
 
 Hướng phổ biến là \emph{theo vết dựa trên phát hiện} (tracking-by-detection), với nền tảng là thuật toán SORT~\cite{bewley2016sort} gồm ba thành phần. Thứ nhất, mỗi track gắn với một bộ lọc Kalman~\cite{kalman1960} dự đoán vị trí và kích thước khung bao ở khung hình hiện tại theo giả định chuyển động gần như đều, rồi được hiệu chỉnh bằng phát hiện thực tế. Thứ hai, mức độ khớp giữa track và phát hiện được đo bằng IoU (Công thức~\ref{eq:iou}) giữa khung bao dự đoán và khung bao phát hiện. Thứ ba, việc gán mỗi phát hiện cho tối đa một track với tổng chi phí nhỏ nhất được giải bằng thuật toán Hungary~\cite{kuhn1955hungarian}; phát hiện chưa được ghép có thể khởi tạo track mới, còn track chưa được ghép được xem là đang mất dấu.
 
 \subsection{Thuật toán ByteTrack}
 \label{sec:3.3.3}
 
-Các phương pháp trước đây thường loại bỏ ngay các phát hiện có độ tin cậy thấp, trong khi một người bị che khuất một phần thường chỉ được phát hiện với độ tin cậy thấp, khiến track dễ bị đứt. ByteTrack~\cite{zhang2022bytetrack} tận dụng mọi phát hiện qua hai bước liên kết: các phát hiện có độ tin cậy cao được ghép trước với toàn bộ track; các track còn lại tiếp tục được ghép với các phát hiện có độ tin cậy thấp, nhờ đó người bị che khuất vẫn giữ được track, còn các phát hiện thấp không ghép được bị loại vì phần lớn là nền hoặc sai. Chỉ phát hiện có độ tin cậy cao mới khởi tạo track mới, và track mất dấu được giữ thêm một thời gian ngắn để có thể nối lại.
+Các phương pháp trước loại bỏ phát hiện độ tin cậy thấp, nên người bị che khuất một phần dễ bị đứt track. ByteTrack~\cite{zhang2022bytetrack} liên kết hai bước: phát hiện độ tin cậy cao được ghép trước với mọi track, rồi các track còn lại ghép với phát hiện độ tin cậy thấp, nhờ đó người bị che khuất vẫn giữ track; phát hiện thấp không ghép được bị loại vì phần lớn là nền. Chỉ phát hiện độ tin cậy cao khởi tạo track, và track mất dấu được giữ thêm một lúc để nối lại.
 
 \subsection{Thuật toán BoT-SORT}
 \label{sec:3.3.4}
@@ -33,6 +33,6 @@ Thuật toán theo vết nhận các phát hiện trên những khung hình đã
 \begin{itemize}
     \item \textbf{Ngưỡng độ tin cậy:} phát hiện từ 0,25 trở lên được xem là cao và có thể khởi tạo track mới; phát hiện từ 0,1 đến dưới 0,25 chỉ dùng trong bước liên kết thứ hai.
     \item \textbf{Xác nhận:} track chỉ được xác nhận sau ít nhất hai lần quan sát; track chưa xác nhận không tạo ra kết quả.
-    \item \textbf{Kết thúc:} track kết thúc khi mất dấu quá ba khung hình được xử lý liên tiếp hoặc quá hai giây kể từ lần quan sát cuối, và khi luồng dữ liệu kết thúc. Với tệp video, mốc thời gian là dấu thời gian ghi trong tệp nên quy tắc không phụ thuộc tốc độ máy; với luồng RTSP, mốc thời gian là thời điểm hệ thống nhận khung hình, nên khi xử lý chậm hơn tốc độ phát, điều kiện hai giây có thể khiến track kết thúc sớm.
+    \item \textbf{Kết thúc:} track kết thúc khi mất dấu quá ba khung hình xử lý liên tiếp hoặc quá hai giây không quan sát, hoặc khi luồng kết thúc. Tệp video dùng dấu thời gian trong tệp nên không phụ thuộc tốc độ máy; luồng RTSP dùng thời điểm nhận, nên khi xử lý chậm, quy tắc hai giây có thể kết thúc track sớm.
     \item \textbf{Phạm vi mã định danh:} chỉ trong một camera và một phiên xử lý; hệ thống không liên kết track của cùng một người giữa nhiều camera.
 \end{itemize}

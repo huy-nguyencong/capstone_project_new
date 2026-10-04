@@ -6,12 +6,12 @@
 \section{Thiết kế giao diện người dùng}
 \label{sec:5.6}
 
-Giao diện được thiết kế và xây dựng trực tiếp trên ứng dụng web, không qua bước tạo bản mẫu riêng; hình ảnh các màn hình chính được trình bày tại Mục~\ref{sec:6.3}.
+Giao diện được thiết kế trực tiếp trên ứng dụng web, không qua bước bản mẫu; Mục~\ref{sec:6.3} trình bày các màn hình chính.
 
 \subsection{Cấu trúc màn hình theo vai trò}
 \label{sec:5.6.1}
 
-Sau khi đăng nhập, mỗi vai trò được đưa tới trang chủ riêng và chỉ thấy các màn hình thuộc trách nhiệm của mình (Hình~\ref{fig:screen-flow}). Trong hình, mũi tên đậm chỉ trang mở ra ngay sau khi đăng nhập, khung nét đứt là hộp thoại mở chồng lên màn hình hiện tại, còn các màn hình của cùng một vai trò chuyển qua lại bằng menu bên trái.
+Mỗi vai trò vào trang chủ riêng và chỉ thấy màn hình của mình (Hình~\ref{fig:screen-flow}). Trong hình, mũi tên đậm chỉ trang mở sau khi đăng nhập, khung nét đứt là hộp thoại, còn các màn hình cùng vai trò nối với nhau qua menu bên trái.
 
 \begin{figure}[!htbp]
 \centering
@@ -21,16 +21,16 @@ Sau khi đăng nhập, mỗi vai trò được đưa tới trang chủ riêng v�
 \end{figure}
 
 \begin{itemize}
-    \item \textbf{Quản trị viên} có tám màn hình, chia thành nhóm \emph{Quản trị} (tài khoản, camera, xử lý AI, mô hình AI, xử lý video) và nhóm \emph{Giám sát} (trạng thái hệ thống, kiểm tra AI, nhật ký hệ thống).
-    \item \textbf{Giám sát viên} làm việc chủ yếu trên màn hình \emph{Tìm kiếm người}, nơi biểu mẫu truy vấn và danh sách kết quả nằm cùng một trang để có thể tìm lại nhiều lần; chọn một kết quả mở hộp thoại chi tiết, từ đó lưu kết quả vào vụ việc. Màn hình \emph{Vụ việc của tôi} gồm danh sách và chi tiết vụ việc trên cùng một trang.
-    \item \textbf{Quản lý} bắt đầu từ màn hình \emph{Tổng quan} và mở vụ việc trên màn hình \emph{Hồ sơ vụ việc}, có cùng bố cục như màn hình vụ việc của Giám sát viên nhưng ở chế độ chỉ đọc.
+    \item \textbf{Quản trị viên} có tám màn hình trong hai nhóm \emph{Quản trị} và \emph{Giám sát}.
+    \item \textbf{Giám sát viên} làm việc chủ yếu trên \emph{Tìm kiếm người}, nơi biểu mẫu và kết quả cùng một trang để tìm lại nhiều lần; một kết quả mở hộp thoại chi tiết, từ đó lưu vào vụ việc. \emph{Vụ việc của tôi} gồm danh sách và chi tiết trên cùng một trang.
+    \item \textbf{Quản lý} bắt đầu từ \emph{Tổng quan} và mở vụ việc ở \emph{Hồ sơ vụ việc}, là bản chỉ đọc của màn hình vụ việc của Giám sát viên.
 \end{itemize}
 
 \subsection{Các nguyên tắc thiết kế}
 \label{sec:5.6.2}
 
-Vì kết quả tìm kiếm luôn cần người dùng xác nhận, giao diện trước hết phải hỗ trợ việc đánh giá bằng mắt. Ảnh người được đặt trong ngữ cảnh khung hình, và người được tìm thấy được làm nổi bật khi khung hình có nhiều người. Thứ hạng, camera và giờ xuất hiện được ưu tiên hiển thị. Điểm phù hợp chỉ hiển thị ở dạng phụ, còn độ tin cậy nội bộ của các mô hình không được hiển thị.
+Vì mọi kết quả đều cần người dùng xác nhận, giao diện trước hết hỗ trợ đánh giá bằng mắt (NFR-20): ảnh người đặt trong khung hình, người được tìm thấy được làm nổi bật khi có nhiều người, thứ hạng, camera và giờ xuất hiện được ưu tiên, còn điểm phù hợp chỉ là thông tin phụ.
 
-Giao diện cũng giảm các thao tác lặp lại. Ảnh truy vấn có thể đưa vào bằng chọn tệp, kéo thả, dán, hoặc kéo trực tiếp một kết quả vào ô tìm kiếm để tìm tiếp chính người đó. Danh sách kết quả có thể sắp xếp và lọc lại mà không cần gửi truy vấn mới.
+Giao diện cũng giảm thao tác lặp: ảnh truy vấn đưa vào được nhiều cách, kể cả kéo một kết quả vào ô tìm kiếm (FR-O01), và kết quả sắp xếp, lọc lại được mà không cần truy vấn mới.
 
-Khi không có kết quả, giao diện giải thích nguyên nhân và gợi ý cách tiếp tục. Lỗi được hiển thị bằng thông báo tiếng Việt của máy chủ, và khi dữ liệu đã bị thay đổi ở nơi khác, người dùng được yêu cầu tải lại thay vì ghi đè. Ngoài ra, giao diện dùng được trên điện thoại có độ rộng khoảng 390 điểm ảnh: menu bên trái thu lại thành danh sách chọn và các bảng rộng được cuộn ngang.
+Khi không có kết quả, giao diện nêu lý do và gợi ý cách tiếp tục; lỗi dùng thông báo tiếng Việt của máy chủ, và khi dữ liệu đã đổi ở nơi khác thì người dùng được yêu cầu tải lại. Trên điện thoại rộng khoảng 390 điểm ảnh, menu trái thành danh sách chọn và bảng rộng được cuộn ngang.

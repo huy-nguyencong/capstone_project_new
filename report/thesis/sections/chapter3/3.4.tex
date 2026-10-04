@@ -6,11 +6,11 @@
 \label{sec:3.4}
 \label{sec:3.4.3}
 
-Video giám sát thường có vài chục khung hình mỗi giây; video của bộ dữ liệu trong đề tài có khoảng 60 khung hình mỗi giây, nên hai khung hình liên tiếp chỉ cách nhau khoảng 17 mili giây và gần như giống hệt nhau. Chạy các mô hình trên mọi khung hình vì vậy rất tốn kém mà mang lại ít thông tin mới. Đề tài lấy mẫu đều theo chỉ số khung hình: với chỉ số $i$ và khoảng lấy mẫu $N$, khung hình được chọn khi và chỉ khi
+Video của đề tài có khoảng 60 khung hình mỗi giây, nên hai khung liên tiếp chỉ cách nhau khoảng 17 mili giây và gần như giống hệt nhau; chạy mô hình trên mọi khung rất tốn kém mà ít thông tin mới. Đề tài lấy mẫu đều theo chỉ số: với khoảng lấy mẫu $N$, khung hình $i$ được chọn khi và chỉ khi
 \begin{equation}
     i \bmod N = 0,
     \label{eq:sampling}
 \end{equation}
 và vẫn giữ nguyên chỉ số cùng mốc thời gian gốc, để thời điểm xuất hiện của người được xác định theo đúng dòng thời gian của camera. Với nguồn $f$ khung hình mỗi giây, hai khung hình được xử lý cách nhau $N/f$ giây: khoảng 0,17 giây với $N = 10$ và 0,33 giây với $N = 20$.
 
-Khoảng lấy mẫu là một đánh đổi. Lấy mẫu đứng trước mô hình phát hiện nên số lần chạy các mô hình AI giảm khoảng $N$ lần; riêng bước giải mã vẫn phải thực hiện trên mọi khung hình, vì phần lớn khung hình H.264 chỉ giải mã được khi đã giải mã các khung trước đó (Mục~\ref{sec:3.7.1}). Ngược lại, $N$ càng lớn thì người xuất hiện quá ngắn càng dễ bị bỏ sót, vì track cần ít nhất hai lần quan sát, và người di chuyển càng xa giữa hai lần quan sát, khiến việc liên kết theo IoU khó hơn và track dễ bị đứt. Hệ thống cung cấp hai cấu hình định sẵn: \emph{baseline} với $N = 10$ ưu tiên chất lượng track, và \emph{throughput} với $N = 20$ ưu tiên tốc độ, được chọn làm mặc định dựa trên đo đạc trên máy triển khai (Mục~\ref{sec:8.5}). Mỗi công việc lưu lại giá trị $N$ đã dùng để kết quả có thể được đối chiếu và tái lập.
+Khoảng lấy mẫu là một đánh đổi. Lấy mẫu đứng trước bộ phát hiện nên số lần chạy mô hình giảm khoảng $N$ lần, nhưng vẫn phải giải mã mọi khung vì phần lớn khung H.264 phụ thuộc các khung trước (Mục~\ref{sec:3.7.1}). $N$ lớn dễ bỏ sót người xuất hiện ngắn, vì track cần hai lần quan sát, và để người di chuyển xa hơn giữa hai lần quan sát, khiến liên kết theo IoU khó hơn. Hệ thống cung cấp hai cấu hình định sẵn: \emph{baseline} với $N = 10$ ưu tiên chất lượng track, và \emph{throughput} với $N = 20$ ưu tiên tốc độ, được chọn làm mặc định dựa trên đo đạc trên máy triển khai (Mục~\ref{sec:8.5}). Mỗi công việc lưu lại giá trị $N$ đã dùng để kết quả có thể được đối chiếu và tái lập.

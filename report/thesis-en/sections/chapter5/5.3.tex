@@ -7,7 +7,7 @@
 \subsection{Relational Database}
 \label{sec:5.3.1}
 
-PostgreSQL stores all the business data and is the source of truth for permissions and states. The database has 12 tables in five groups, as in Table~\ref{tab:db-tables}.
+PostgreSQL holds the business data and is the source of truth for permissions and states. Its 12 tables fall into five groups (Table~\ref{tab:db-tables}).
 
 \begin{table}[H]
 \centering
@@ -30,7 +30,7 @@ Traceability & \path{audit_logs} & Audit log, append-only \\
 \end{tabularx}
 \end{table}
 
-Figure~\ref{fig:erd} shows the entity-relationship diagram of the 11 tables that have foreign keys, in crow's foot notation; each table only shows its primary key, foreign keys and main attributes. The \path{worker_heartbeats} table has no foreign key and is not drawn.
+Figure~\ref{fig:erd} shows the 11 tables with foreign keys in crow's foot notation, with their keys and main attributes; \path{worker_heartbeats} has no foreign key and is not drawn.
 
 \afterpage{%
 \begin{landscape}
@@ -43,23 +43,23 @@ Figure~\ref{fig:erd} shows the entity-relationship diagram of the 11 tables that
 \end{landscape}
 }
 
-\paragraph{Relationships.} Most foreign keys are mandatory: each camera belongs to exactly one area, each case has exactly one owner, and each appearance belongs to exactly one camera and was created by exactly one job with one AI configuration version. Three foreign keys may be null: an account only has an area when it is an Operator, a job only has a requester when it was created from an uploaded file, and a log entry may not be tied to a user, for example when it records a technical error. \texttt{cases} and \path{person_tracks} have a many-to-many relationship through \path{case_results}. Each row of this table has its own primary key, stores a snapshot of the information at the time of saving, and has \emph{no} uniqueness constraint on the case-appearance pair, since each save creates a new entry.
+\paragraph{Relationships.} Most foreign keys are mandatory: a camera has one area, a case one owner, and an appearance one camera, one job and one AI configuration version. Three may be null: only Operators have an area, only upload jobs have a requester, and a log entry such as a technical error may have no user. \texttt{cases} and \path{person_tracks} have a many-to-many relationship through \path{case_results}. Each row of this table has its own primary key, stores a snapshot of the information at the time of saving, and has \emph{no} uniqueness constraint on the case-appearance pair, since each save creates a new entry.
 
-\paragraph{Integrity constraints.} Many business rules are expressed directly in the database, so that invalid data cannot be written even if the application layer has a bug:
+\paragraph{Integrity constraints.} Many business rules are enforced by the database itself, so a bug in the application cannot write invalid data:
 \begin{itemize}
     \item An Operator account always has an area and the other two roles never do; a case has a closing time if and only if it is \texttt{CLOSED}; only one AI configuration version is \texttt{ACTIVE}; the area code and the area of a camera do not change after creation.
     \item Most foreign keys use the RESTRICT rule, so data that is still referenced cannot be deleted; accounts and cameras are not deleted but change status (\texttt{INACTIVE}, \texttt{RETIRED}). Only login sessions and result entries are deleted with their parent.
     \item An appearance can only be \texttt{READY} when it has the object key, hash and size of its frame and the time its vector was written. No table stores a relevance score.
     \item The \texttt{users}, \texttt{cameras} and \texttt{cases} tables have a version column to prevent overwriting on concurrent updates (Section~\ref{sec:5.2.4}); the requester-idempotency key pair of \path{processing_jobs} is unique, so a repeated upload request creates no additional job.
 \end{itemize}
-Indexes are also created for frequent queries, such as appearances by camera and time (with a separate index containing only ready appearances), cases by owner, and log entries by actor.
+Indexes serve the frequent queries, such as appearances by camera and time, cases by owner and log entries by actor.
 
 \subsection{Feature Vector Storage}
 \label{sec:5.3.2}
 
-Milvus serves a single purpose: quickly finding the vectors closest to the query vector within a filtered scope; all other information and every permission decision live in PostgreSQL.
+Milvus only finds the vectors closest to a query within a filtered scope; everything else, permissions included, lives in PostgreSQL.
 
-\paragraph{One collection per encoder version.} Milvus organises data into \emph{collections}, similar to tables. The system creates a separate collection for each encoder version, for example \path{person_track_embeddings_rasa_cuhk_pedes_v1}, because vectors from two versions belong to two representation spaces that cannot be compared. A fixed alias always points to the collection of the version in use; when the background worker starts, the dimension of the collection is checked against the configuration. Each appearance corresponds to one record with the fields of Table~\ref{tab:milvus-schema}.
+\paragraph{One collection per encoder version.} Each encoder version has its own Milvus \emph{collection}, such as \path{person_track_embeddings_rasa_cuhk_pedes_v1}, because vectors of two versions cannot be compared. A fixed alias points to the collection in use, and its dimension is checked when the worker starts. Each appearance corresponds to one record with the fields of Table~\ref{tab:milvus-schema}.
 
 \begin{table}[H]
 \centering
@@ -84,29 +84,29 @@ Milvus serves a single purpose: quickly finding the vectors closest to the query
 \end{tabularx}
 \end{table}
 
-The area, camera and time fields are copied from PostgreSQL so that Milvus can pre-filter before searching (Section~\ref{sec:3.6.3}); since the area of a camera does not change after creation, this copy cannot diverge. The operational status of a camera, by contrast, changes with the Administrator's actions and is not copied: each search takes the list of operational cameras from PostgreSQL and puts it in the filter, so the data of a retired camera is hidden immediately without updating Milvus.
+The area, camera and time are copied from PostgreSQL for pre-filtering (Section~\ref{sec:3.6.3}); a camera's area never changes, so the copy cannot diverge. The operational status does change and is not copied: each search puts the current list of operational cameras into the filter, so a retired camera is hidden at once without touching Milvus.
 
-\paragraph{Index and operations.} The vector field has an HNSW index with the inner-product metric, $M = 16$, \textit{ef\-Con\-struc\-tion}~$= 128$, and $\mathit{ef} = 64$ at search time (Section~\ref{sec:3.6.4}). Vectors are written with an \emph{upsert} keyed by the appearance identifier, so retries create no duplicate records, and are checked for the right dimension, the absence of invalid values and unit length before writing or searching. Every operation uses strong consistency, so a vector just written appears in the very next search.
+\paragraph{Index and operations.} The vector field has an HNSW index with the inner-product metric, $M = 16$, \textit{ef\-Con\-struc\-tion}~$= 128$, and $\mathit{ef} = 64$ at search time (Section~\ref{sec:3.6.4}). Vectors are written by \emph{upsert} on the appearance identifier, so retries create no duplicates, after checking their dimension, values and unit length; strong consistency makes a new vector visible to the next search.
 
 \subsection{Frame Storage}
 \label{sec:5.3.3}
 
-Each appearance has exactly one image file in MinIO: the representative full frame, stored as JPEG at quality 90; PostgreSQL only stores the object key, hash and file size. The system does not store cropped person images as separate files: the person image in the result list is rendered from the full frame and the bounding box on request (Section~\ref{sec:6.3.3}). One file therefore serves both views, the cropping can change without regenerating data, and no standalone person images exist that could be copied out of control. The original video is not stored.
+Each appearance has one file in MinIO, its representative full frame as JPEG at quality 90; PostgreSQL keeps the object key, hash and size. Person images are not stored but rendered from the frame and box on request (Section~\ref{sec:6.3.3}), so one file serves both views, cropping can change without new data, and no loose person images exist. The original video is not stored.
 
 The key of each file is derived deterministically from the appearance, following the pattern
 \begin{center}
 \texttt{tracks/v1/}\allowbreak \textit{camera code}\texttt{/}\allowbreak \textit{year}\texttt{/}\allowbreak \textit{month}\texttt{/}\allowbreak \textit{day}\texttt{/}\allowbreak \textit{appearance id}\texttt{/}\allowbreak \texttt{representative.jpg}
 \end{center}
-so a retry rewrites the same file instead of creating a new one; the versioned prefix allows the layout to change later, and grouping by camera and day makes clean-up by camera or time range easy.
+so a retry rewrites the same file; the versioned prefix allows a later change of layout, and grouping by camera and day eases clean-up.
 
-Before writing, the file is checked for the right format, a size of at most 20~MB and dimensions matching its description; its SHA-256 hash is stored in both MinIO and PostgreSQL. A write to an existing key with the same hash reuses the existing file, and one with a different hash is rejected as a conflict; on reading, the hash is recomputed to detect corruption. The files live in a private bucket, the application accesses it with an account that only has rights on that bucket, and the browser never receives a direct address to MinIO.
+Each file is checked for format, size (at most 20~MB) and dimensions, and its SHA-256 hash is kept in both stores: an existing key with the same hash is reused, a different hash is a conflict, and reads recompute the hash to detect corruption. The bucket is private, accessed by an account limited to it, and never exposed to the browser.
 
 \subsection{Consistency Across the Stores}
 \label{sec:5.3.4}
 
-An appearance is stored as three parts in three stores, linked by the same identifier. The three stores share no transaction, so the process may stop midway or a store may be temporarily unreachable. The system guarantees that incomplete data never appears in search results and can be completed or detected later.
+An appearance is stored in three parts across three stores that share no transaction, so writing may stop midway or a store may be unreachable. The system guarantees that incomplete data never appears in results and can later be completed or detected.
 
-\paragraph{Appearance states.} Each appearance record has a synchronisation state, with the allowed transitions of Figure~\ref{fig:track-state}. Only appearances in the \emph{Ready} state can be searched; transitions not shown in the figure are rejected by the application layer.
+\paragraph{Appearance states.} Each appearance has a synchronisation state with the transitions of Figure~\ref{fig:track-state}; only \emph{Ready} appearances are searched, and other transitions are rejected.
 
 \begin{figure}[!htbp]
 \centering
@@ -122,8 +122,8 @@ An appearance is stored as three parts in three stores, linked by the same ident
     \item Write the vector to Milvus, then read it back to confirm the record exists with the right area and camera.
     \item In a new transaction, move the record to \emph{Ready}, store the hash and size of the frame and the time the vector was written, and mark the outbox event as done.
 \end{enumerate}
-Because PostgreSQL is always written \emph{first}, every frame and vector can be matched with a known record, and anything without a matching record is orphaned data. Because the \emph{Ready} state is set \emph{last}, an appearance can only be found once all its data is present. Steps 2 and 3 can both be repeated safely thanks to the deterministic key and the upsert.
+Writing PostgreSQL \emph{first} means every frame and vector matches a known record, so anything else is orphaned; setting \emph{Ready} \emph{last} means an appearance is found only when complete. Steps 2 and 3 can be repeated safely thanks to the deterministic key and the upsert.
 
-\paragraph{Error handling and maintenance tools.} If step 2 or 3 fails with a transient error, the record stays \emph{Pending} and the outbox event is scheduled for retry, with a delay starting at 2 seconds, doubling each time, up to 300 seconds. After five unsuccessful attempts, or on an unrecoverable error such as a hash conflict, the record moves to \emph{Failed} and the incident is written to the audit log. Since the outbox event holds all the data, a retry does not need to rerun the video analysis. Operators also have a command-line tool to complete pending appearances; to reconcile the three stores, finding records pending for too long, ready records missing their frame or vector, and orphaned data (by default it only reports; on request it quarantines broken records and deletes orphans); to move a failed appearance back to pending; and to rebuild the Milvus data from the outbox events. These commands are currently run by hand.
+\paragraph{Error handling and maintenance tools.} A transient failure in step 2 or 3 leaves the record \emph{Pending} and schedules a retry, from 2 seconds doubling up to 300 seconds. After five attempts, or on an unrecoverable error such as a hash conflict, the record becomes \emph{Failed} and is logged. Since the outbox event holds all the data, retries never rerun the analysis. Operators also have a command-line tool to complete pending appearances; to reconcile the three stores, finding records pending for too long, ready records missing their frame or vector, and orphaned data (by default it only reports; on request it quarantines broken records and deletes orphans); to move a failed appearance back to pending; and to rebuild the Milvus data from the outbox events. These commands are currently run by hand.
 
-\paragraph{Protection at search time.} Even when the three stores are temporarily out of sync, users never see wrong data: every result returned by Milvus is checked again against PostgreSQL, and results that do not exist or are outside the permitted scope are removed before being shown (Section~\ref{sec:3.6.4}).
+\paragraph{Protection at search time.} Even when the stores are out of sync, users see no wrong data: every Milvus result is checked against PostgreSQL, and missing or out-of-scope results are dropped (Section~\ref{sec:3.6.4}).

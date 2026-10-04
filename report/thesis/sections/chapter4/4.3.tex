@@ -8,13 +8,13 @@
 \section{Các yêu cầu phi chức năng}
 \label{sec:4.3}
 
-Các yêu cầu về chất lượng dưới đây xuất phát từ ba đặc điểm của bài toán: dữ liệu camera nhạy cảm, dữ liệu mỗi lần xuất hiện gồm nhiều phần phải nhất quán, và hệ thống chạy trên một máy tính cá nhân không có card đồ họa rời.
+Các yêu cầu chất lượng xuất phát từ ba đặc điểm của bài toán: dữ liệu camera nhạy cảm, mỗi lần xuất hiện được lưu thành nhiều phần phải nhất quán, và hệ thống chạy trên máy tính cá nhân không có card đồ họa rời.
 
 \subsection{Bảo mật và phân quyền}
 \label{sec:4.3.1}
 
 \begin{reqlist}
-    \item[NFR-01] \textbf{Kiểm tra quyền tại máy chủ} cho mọi yêu cầu, kể cả lấy ảnh, dựa trên phiên đăng nhập chứ không dựa trên dữ liệu trình duyệt gửi lên; việc ẩn chức năng trên giao diện không được xem là phân quyền.
+    \item[NFR-01] \textbf{Kiểm tra quyền tại máy chủ} cho mọi yêu cầu, kể cả lấy ảnh, dựa trên phiên đăng nhập chứ không dựa trên dữ liệu trình duyệt gửi lên; ẩn chức năng trên giao diện không phải là phân quyền.
     \item[NFR-02] \textbf{Xác thực:} mật khẩu chỉ lưu dạng băm một chiều, phiên đăng nhập theo FR-C02, và thao tác thay đổi dữ liệu được chống giả mạo yêu cầu (CSRF).
     \item[NFR-03] \textbf{Bảo vệ hình ảnh:} khung hình không được truy cập công khai, chỉ đến trình duyệt qua máy chủ sau khi kiểm tra quyền.
     \item[NFR-04] \textbf{Bảo vệ kết nối camera:} thông tin xác thực RTSP được mã hóa và không hiển thị lại; hệ thống chỉ kết nối tới dải mạng camera được khai báo khi triển khai.
@@ -27,12 +27,12 @@ Các yêu cầu về chất lượng dưới đây xuất phát từ ba đặc �
 
 \begin{reqlist}
     \item[NFR-06] \textbf{Nhất quán dữ liệu:} lần xuất hiện chỉ được tìm thấy khi thông tin mô tả, vector và khung hình đều đã được lưu; dữ liệu dở dang phải hoàn tất hoặc dọn dẹp được.
-    \item[NFR-07] \textbf{Không phá hủy dữ liệu lịch sử:} loại camera, tắt xử lý AI, khóa hay xóa tài khoản, loại kết quả khỏi vụ việc đều không xóa dữ liệu gốc; vụ việc của tài khoản bị khóa hay xóa giữ nguyên người phụ trách và Quản lý vẫn xem được.
+    \item[NFR-07] \textbf{Không phá hủy dữ liệu lịch sử:} loại camera, tắt xử lý AI, khóa hay xóa tài khoản, loại kết quả khỏi vụ việc đều giữ dữ liệu gốc; vụ việc của tài khoản bị khóa hay xóa giữ người phụ trách và Quản lý vẫn xem được.
     \item[NFR-08] \textbf{Toàn vẹn của vụ việc:} kết quả trong vụ việc lưu bản chụp tên camera, khu vực và thời điểm; các cập nhật đồng thời không ghi đè nhau một cách âm thầm.
     \item[NFR-09] \textbf{Không trộn không gian vector} của các phiên bản bộ mã hóa khác nhau.
-    \item[NFR-10] \textbf{Cô lập lỗi:} lỗi của một thành phần chỉ làm thất bại chức năng liên quan, được báo đúng thành phần, và không làm dừng việc xử lý các camera khác.
+    \item[NFR-10] \textbf{Cô lập lỗi:} lỗi của một thành phần chỉ làm thất bại chức năng của nó, được báo đúng tên và không làm dừng các camera khác.
     \item[NFR-11] \textbf{Tự phục hồi:} hệ thống tự thử kết nối lại khi luồng RTSP bị gián đoạn.
-    \item[NFR-12] \textbf{Không trả kết quả sai lệch:} khi thành phần tìm kiếm không khả dụng, hệ thống báo thất bại thay vì trả kết quả rỗng; khi thiếu ảnh, các thông tin còn lại vẫn được hiển thị.
+    \item[NFR-12] \textbf{Không trả kết quả sai lệch:} thành phần tìm kiếm không khả dụng thì báo lỗi, không trả kết quả rỗng; thiếu ảnh thì vẫn hiển thị các thông tin khác.
     \item[NFR-13] \textbf{Thử lại an toàn:} thao tác nhiều bước để lại trạng thái hợp lệ khi bị gián đoạn và thử lại được mà không tạo dữ liệu trùng.
 \end{reqlist}
 
@@ -41,8 +41,8 @@ Các yêu cầu về chất lượng dưới đây xuất phát từ ba đặc �
 
 \begin{reqlist}
     \item[NFR-14] \textbf{Chạy trên máy triển khai:} toàn bộ hệ thống chạy được trên máy tính xách tay Intel Core i5-11300H, 16~GB bộ nhớ, không có card đồ họa rời.
-    \item[NFR-15] \textbf{Tìm kiếm độc lập với lập chỉ mục:} việc phân tích chạy nền, còn tìm kiếm chỉ so khớp với dữ liệu đã lập chỉ mục, nên vẫn dùng được khi hệ thống đang phân tích camera.
-    \item[NFR-16] \textbf{Không yêu cầu thời gian thực:} không bắt buộc phân tích kịp mọi luồng hay xử lý đồng thời nhiều luồng; khoảng lấy mẫu được chọn từ các cấu hình định sẵn.
+    \item[NFR-15] \textbf{Tìm kiếm độc lập với lập chỉ mục:} phân tích chạy nền và tìm kiếm chỉ dùng dữ liệu đã lập chỉ mục, nên tìm kiếm vẫn dùng được trong lúc phân tích.
+    \item[NFR-16] \textbf{Không yêu cầu thời gian thực:} không bắt buộc phân tích kịp thời gian thực hay đồng thời nhiều luồng; khoảng lấy mẫu chọn từ các cấu hình định sẵn.
 \end{reqlist}
 
 \subsection{Truy vết, khả năng sử dụng và bảo trì}
@@ -54,8 +54,8 @@ Các yêu cầu về chất lượng dưới đây xuất phát từ ba đặc �
     \item[NFR-17] \textbf{Nhật ký kiểm toán} (FR-A11) không sửa được, không chứa mật khẩu hay thông tin xác thực, và giữ thông tin người thực hiện khi tài khoản bị xóa.
     \item[NFR-18] \textbf{Tái lập nguồn gốc:} mỗi lần xuất hiện ghi lại phiên bản Detector, Tracker, bộ mã hóa và khoảng lấy mẫu đã dùng.
     \item[NFR-19] \textbf{Ngôn ngữ:} giao diện dùng tiếng Việt; chỉ nội dung truy vấn dùng tiếng Anh.
-    \item[NFR-20] \textbf{Hỗ trợ đánh giá bằng mắt:} ảnh người được đặt trong ngữ cảnh, điểm phù hợp chỉ để tham khảo, hệ thống không kết luận về danh tính và không hiển thị độ tin cậy nội bộ của mô hình.
+    \item[NFR-20] \textbf{Hỗ trợ đánh giá bằng mắt:} ảnh người hiển thị trong ngữ cảnh, điểm phù hợp chỉ để tham khảo, hệ thống không kết luận về danh tính và không hiển thị độ tin cậy nội bộ của mô hình.
     \item[NFR-21] \textbf{Nhiều kích thước màn hình:} dùng được trên máy tính và trên điện thoại rộng khoảng 390 điểm ảnh.
-    \item[NFR-22] \textbf{Thay thế mô hình:} thêm Detector hay Tracker mới không đòi hỏi sửa các thành phần khác; luồng RTSP và tệp video dùng chung quy trình sau bước đọc khung hình.
-    \item[NFR-23] \textbf{Thay thế nguồn camera:} giao tiếp qua RTSP chuẩn, nên luồng giả lập có thể được thay bằng camera thật mà không đổi quy trình xử lý.
+    \item[NFR-22] \textbf{Thay thế mô hình:} thêm Detector hay Tracker mới không cần sửa chỗ khác; luồng RTSP và tệp video dùng chung quy trình sau bước đọc khung hình.
+    \item[NFR-23] \textbf{Thay thế nguồn camera:} dùng RTSP chuẩn nên camera thật thay được luồng giả lập mà không đổi quy trình.
 \end{reqlist}

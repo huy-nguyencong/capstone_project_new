@@ -10,7 +10,7 @@
 
 Cho một tập hình ảnh người được trích xuất từ video của nhiều camera, gọi là \emph{tập dữ liệu tìm kiếm} (gallery) $\mathcal{G} = \{g_1, g_2, \ldots, g_n\}$, và một \emph{truy vấn} $q$ mô tả người cần tìm, hệ thống cần xếp hạng các phần tử của $\mathcal{G}$ theo mức độ phù hợp với $q$ và trả về $k$ phần tử phù hợp nhất. Cách tiếp cận phổ biến là học một hàm biểu diễn ánh xạ truy vấn và từng phần tử vào một không gian vector, rồi đo mức độ phù hợp bằng một hàm tương đồng $s(q, g_i)$; việc tìm kiếm khi đó trở thành tìm các vector gần nhất.
 
-Trong dữ liệu camera giám sát, người cần lập chỉ mục không có sẵn dưới dạng ảnh cắt gọn như trong các bộ dữ liệu chuẩn, mà xuất hiện trong khung hình toàn cảnh cùng nhiều người và vật thể khác, nên bài toán hoàn chỉnh còn gồm bước phát hiện người. Xiao và cộng sự học đồng thời phát hiện và nhận dạng trong một mô hình~\cite{xiao2017personsearch}; một hướng khác dùng riêng một bộ phát hiện và một mô hình nhận dạng~\cite{zheng2017reidwild}. Đề tài đi theo hướng thứ hai để có thể thay thế độc lập từng thành phần.
+Trong video giám sát, người không có sẵn dưới dạng ảnh cắt gọn như các bộ dữ liệu chuẩn mà nằm trong khung hình toàn cảnh cùng nhiều người khác, nên bài toán còn gồm bước phát hiện. Xiao và cộng sự học đồng thời phát hiện và nhận dạng~\cite{xiao2017personsearch}, còn một hướng khác tách bộ phát hiện khỏi mô hình nhận dạng~\cite{zheng2017reidwild}; đề tài theo hướng sau để thay thế độc lập từng thành phần.
 
 \subsection{Ba hình thức truy vấn}
 \label{sec:3.1.2}
@@ -21,9 +21,9 @@ Trong dữ liệu camera giám sát, người cần lập chỉ mục không có
 
 \paragraph{Tìm bằng mô tả văn bản.} Khi người dùng chỉ có lời mô tả, ví dụ ``a man wearing a black jacket and blue jeans, carrying a backpack'', bài toán là tìm kiếm người bằng văn bản (Text-Based Person Search, TBPS), được Li và cộng sự đề xuất cùng bộ dữ liệu CUHK-PEDES gồm ảnh người kèm mô tả tiếng Anh~\cite{li2017cuhkpedes}. Đây là bài toán liên phương thức: mô hình phải đưa văn bản và ảnh về cùng một không gian biểu diễn, trong khi mô tả thường mơ hồ và khác biệt giữa những người thường nằm ở chi tiết nhỏ.
 
-\paragraph{Tìm theo thuộc tính.} Người dùng chọn các thuộc tính ngoại hình từ danh sách định sẵn như giới tính, loại và màu trang phục, vật mang theo. Có hai cách hiện thực: dùng một mô hình nhận dạng thuộc tính người đi bộ~\cite{wang2022parsurvey} rồi lọc theo nhãn, cách này cần dữ liệu gán nhãn cho từng thuộc tính; hoặc ghép các thuộc tính thành một câu mô tả theo mẫu cố định rồi xử lý như truy vấn văn bản. Đề tài dùng cách thứ hai để dùng chung mô hình với tìm bằng văn bản, đổi lại thuộc tính chỉ ảnh hưởng tới thứ hạng chứ không phải điều kiện lọc bắt buộc. Lựa chọn phủ định như ``không mang ba lô'' không được hỗ trợ, vì các mô hình ngôn ngữ-thị giác kiểu CLIP gặp khó khăn đáng kể với phủ định, nhiều trường hợp chỉ đạt mức ngẫu nhiên~\cite{alhamoud2025negation}.
+\paragraph{Tìm theo thuộc tính.} Người dùng chọn thuộc tính như giới tính, loại và màu trang phục, vật mang theo. Có thể dùng một mô hình nhận dạng thuộc tính người đi bộ~\cite{wang2022parsurvey} để lọc theo nhãn, cần dữ liệu gán nhãn cho từng thuộc tính, hoặc ghép thuộc tính thành câu theo mẫu cố định rồi tìm như văn bản. Đề tài chọn cách sau để dùng chung mô hình văn bản, nên thuộc tính ảnh hưởng thứ hạng chứ không phải điều kiện lọc bắt buộc. Lựa chọn phủ định như ``không mang ba lô'' không được hỗ trợ, vì các mô hình ngôn ngữ-thị giác kiểu CLIP gặp khó khăn đáng kể với phủ định, nhiều trường hợp chỉ đạt mức ngẫu nhiên~\cite{alhamoud2025negation}.
 
-Tìm kiếm theo ngoại hình khác với nhận dạng khuôn mặt: nó không dựa trên đặc điểm sinh trắc học, vốn đòi hỏi khuôn mặt đủ rõ, mà dựa trên trang phục, màu sắc và vật dụng, là những đặc điểm dễ quan sát từ camera đặt cao và xa nhưng có thể thay đổi và trùng lặp giữa nhiều người. Vì vậy kết quả chỉ mang tính gợi ý cho người dùng đánh giá, không phải kết luận về danh tính.
+Khác nhận dạng khuôn mặt, tìm theo ngoại hình không dựa trên sinh trắc học, vốn cần khuôn mặt rõ, mà dựa trên trang phục, màu sắc và vật dụng, dễ thấy từ camera cao và xa nhưng có thể thay đổi và trùng giữa nhiều người. Kết quả vì vậy là gợi ý để đánh giá, không phải kết luận về danh tính.
 
 \subsection{Hướng tiếp cận của đề tài}
 \label{sec:3.1.6}
@@ -48,8 +48,8 @@ Thuộc tính & Giới tính, loại và màu trang phục trên, dưới, vật
 \end{table}
 
 \begin{itemize}
-    \item \textbf{Một không gian biểu diễn chung.} Mô hình RaSa~\cite{bai2023rasa} mã hóa cả ảnh và văn bản vào cùng một không gian vector, nên ảnh người trong video, ảnh truy vấn, câu mô tả và câu sinh từ thuộc tính đều so sánh được trực tiếp với nhau (Mục~\ref{sec:3.5}).
-    \item \textbf{Đơn vị kết quả là một lần xuất hiện.} Người được phát hiện và theo vết qua các khung hình (Mục~\ref{sec:3.2} và~\ref{sec:3.3}); mỗi lần xuất hiện liên tục của một người trên một camera (track) được biểu diễn bằng một khung hình đại diện và một vector, giúp giảm số phần tử cần so khớp và tránh kết quả trùng lặp.
-    \item \textbf{Hai giai đoạn tách biệt.} Giai đoạn lập chỉ mục chạy nền, xử lý luồng camera và lưu đặc trưng; giai đoạn truy vấn chỉ mã hóa mô tả của người dùng và tìm các vector gần nhất (Mục~\ref{sec:3.6}), không xử lý lại dữ liệu hình ảnh.
-    \item \textbf{Con người ra quyết định cuối cùng.} Hệ thống chỉ xếp hạng; người dùng đánh giá từng kết quả trên hình ảnh gốc trước khi lưu vào hồ sơ vụ việc.
+    \item \textbf{Một không gian biểu diễn chung.} RaSa~\cite{bai2023rasa} mã hóa ảnh và văn bản vào cùng một không gian vector, nên ảnh người, ảnh truy vấn, câu mô tả và câu từ thuộc tính so sánh trực tiếp được (Mục~\ref{sec:3.5}).
+    \item \textbf{Đơn vị kết quả là một lần xuất hiện.} Người được phát hiện và theo vết (Mục~\ref{sec:3.2} và~\ref{sec:3.3}); mỗi lần xuất hiện liên tục trên một camera (track) có một khung hình đại diện và một vector, giảm số phần tử cần so khớp và tránh kết quả trùng.
+    \item \textbf{Hai giai đoạn tách biệt.} Lập chỉ mục chạy nền và lưu đặc trưng; truy vấn chỉ mã hóa mô tả và tìm các vector gần nhất (Mục~\ref{sec:3.6}).
+    \item \textbf{Con người ra quyết định cuối cùng.} Hệ thống chỉ xếp hạng; người dùng đánh giá từng kết quả trên hình ảnh gốc trước khi lưu.
 \end{itemize}

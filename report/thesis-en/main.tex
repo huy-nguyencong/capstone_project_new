@@ -52,7 +52,11 @@
 \pgfplotsset{compat=1.17}
 \linespread{1.5}
 \usepackage{hyperref}
+\setlength{\emergencystretch}{3em} % lets TeX loosen a line instead of pushing a word into the right margin
+\usepackage{bookmark} % chapter 12 and the back matter start at the root of the PDF outline, not under Part II
 \hypersetup{
+    pdftitle={Developing a Person Search System from Multimodal Descriptions},
+    pdfauthor={Nguyen Cong Huy, Nguyen Huu Cuong},
     colorlinks,
     citecolor=black,
     filecolor=black,
@@ -125,11 +129,16 @@
 \input{sections/research/chapter11}
 
 % ---- Shared
+% Chapter 12 is shared by both parts: a gap in the TOC and a root-level bookmark keep it out of Part II.
+\addtocontents{toc}{\protect\addvspace{1.5em}}
+\bookmarksetup{startatroot}
 \input{sections/chapter12/chapter12}
 
 \printbibliography[heading=bibintoc,title={References}]
 
-\appendix
-\input{sections/research/appendix-prompts}
+% Appendix A (verbatim prompts, ~54 pages) removed 2026-10-04 on the supervisor's advice: nobody reads it in print;
+% the prompts stay in prompts/ beside the source. Restore with the two lines below.
+% \appendix
+% \input{sections/research/appendix-prompts}
 
 \end{document}

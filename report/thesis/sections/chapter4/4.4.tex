@@ -5,7 +5,7 @@
 \section{Sơ đồ use case tổng thể}
 \label{sec:4.4}
 
-Các yêu cầu chức năng ở Mục~\ref{sec:4.2} được tổ chức thành 15 use case. Hình~\ref{fig:usecase} thể hiện toàn bộ các use case của hệ thống cùng quan hệ giữa chúng và các tác nhân, còn Bảng~\ref{tab:usecases} liệt kê từng use case với tác nhân và mục đích tương ứng.
+Các yêu cầu chức năng được tổ chức thành 15 use case, thể hiện cùng tác nhân và quan hệ trong Hình~\ref{fig:usecase} và liệt kê kèm mục đích trong Bảng~\ref{tab:usecases}.
 
 \begin{figure}[H]
 \centering
@@ -14,15 +14,15 @@ Các yêu cầu chức năng ở Mục~\ref{sec:4.2} được tổ chức thành
 \label{fig:usecase}
 \end{figure}
 
-Sơ đồ được tổ chức theo các điểm sau:
+Sơ đồ theo bốn lựa chọn sau:
 \begin{itemize}
-    \item \textbf{Tác nhân trừu tượng \emph{Người dùng}.} Ba tác nhân cụ thể đều dùng chung đăng nhập (UC-01) và đăng xuất (UC-15), nên sơ đồ nối hai use case này với một tác nhân trừu tượng \emph{Người dùng}, và ba tác nhân cụ thể được tổng quát hóa về tác nhân này.
-    \item \textbf{Phân chia theo vai trò.} Quản trị viên liên kết với UC-02 đến UC-08, Giám sát viên với UC-09 đến UC-11, Quản lý với UC-12 đến UC-14; không có use case nào dùng chung giữa các tác nhân này.
-    \item \textbf{Quan hệ mở rộng.} UC-10 mở rộng UC-09 và UC-11 mở rộng UC-10: sau khi tìm kiếm, Giám sát viên có thể xem chi tiết một kết quả rồi lưu kết quả đó vào vụ việc. Tương tự, UC-13 mở rộng UC-12 và UC-14 mở rộng UC-13. Các use case mở rộng vẫn được nối trực tiếp với tác nhân, vì tác nhân cũng có thể bắt đầu chúng độc lập, chẳng hạn mở danh sách vụ việc mà không cần tìm kiếm trước.
-    \item \textbf{Đăng nhập là tiền điều kiện} của mọi use case khác, không phải một bước bên trong chúng, nên sơ đồ không vẽ quan hệ «include» tới UC-01.
+    \item \textbf{Tác nhân trừu tượng \emph{Người dùng}.} Đăng nhập (UC-01) và đăng xuất (UC-15) được nối với tác nhân trừu tượng \emph{Người dùng}, mà ba tác nhân cụ thể tổng quát hóa về.
+    \item \textbf{Phân chia theo vai trò.} Quản trị viên có UC-02 đến UC-08, Giám sát viên UC-09 đến UC-11, Quản lý UC-12 đến UC-14, không use case nào dùng chung.
+    \item \textbf{Quan hệ mở rộng.} UC-10 mở rộng UC-09 và UC-11 mở rộng UC-10 (tìm kiếm, xem một kết quả, lưu vào vụ việc); tương tự, UC-13 mở rộng UC-12 và UC-14 mở rộng UC-13. Các use case mở rộng vẫn nối với tác nhân, vì tác nhân có thể bắt đầu chúng độc lập, chẳng hạn mở danh sách vụ việc mà không tìm kiếm.
+    \item \textbf{Đăng nhập là tiền điều kiện} của mọi use case khác, không phải một bước bên trong, nên không vẽ quan hệ «include» tới UC-01.
 \end{itemize}
 
-Các chức năng hệ thống tự động thực hiện (Mục~\ref{sec:4.2.5}) không có use case riêng vì không do tác nhân nào kích hoạt; chúng diễn ra khi Quản trị viên bật xử lý AI trong UC-04.
+Các chức năng tự động (Mục~\ref{sec:4.2.5}) không có use case riêng vì không do tác nhân nào kích hoạt; chúng chạy khi xử lý AI được bật trong UC-04.
 
 \begin{table}[H]
 \centering

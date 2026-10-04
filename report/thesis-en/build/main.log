@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2026.5.25)  30 SEP 2026 16:44
+This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2026.5.25)  5 OCT 2026 02:22
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -1508,7 +1508,14 @@ Package uniquecounter Info: New unique counter `rerunfilecheck' on input line 2
 )
 \Hy@SectionHShift=\skip105
 )
-Package hyperref Info: Option `colorlinks' set `true' on input line 61.
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/bookmark\bookmark.sty
+Package: bookmark 2026-05-21 v1.32 PDF bookmarks (HO)
+
+(C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/bookmark\bkm-xetex.def
+File: bkm-xetex.def 2026-05-21 v1.32 bookmark driver for xetex (HO)
+\BKM@id=\count546
+))
+Package hyperref Info: Option `colorlinks' set `true' on input line 65.
 Package csquotes Info: Checking for multilingual support...
 Package csquotes Info: ... found 'babel' package.
 
@@ -1516,26 +1523,26 @@ Package csquotes Info: ... found 'babel' package.
 ux)
 \openout1 = `main.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 83.
-LaTeX Font Info:    ... okay on input line 83.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 83.
-LaTeX Font Info:    ... okay on input line 83.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 83.
-LaTeX Font Info:    ... okay on input line 83.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 83.
-LaTeX Font Info:    ... okay on input line 83.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 83.
-LaTeX Font Info:    ... okay on input line 83.
-LaTeX Font Info:    Checking defaults for TU/lmr/m/n on input line 83.
-LaTeX Font Info:    ... okay on input line 83.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 83.
-LaTeX Font Info:    ... okay on input line 83.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 83.
-LaTeX Font Info:    ... okay on input line 83.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 83.
-LaTeX Font Info:    ... okay on input line 83.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 83.
-LaTeX Font Info:    ... okay on input line 83.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 87.
+LaTeX Font Info:    ... okay on input line 87.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 87.
+LaTeX Font Info:    ... okay on input line 87.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 87.
+LaTeX Font Info:    ... okay on input line 87.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 87.
+LaTeX Font Info:    ... okay on input line 87.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 87.
+LaTeX Font Info:    ... okay on input line 87.
+LaTeX Font Info:    Checking defaults for TU/lmr/m/n on input line 87.
+LaTeX Font Info:    ... okay on input line 87.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 87.
+LaTeX Font Info:    ... okay on input line 87.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 87.
+LaTeX Font Info:    ... okay on input line 87.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 87.
+LaTeX Font Info:    ... okay on input line 87.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 87.
+LaTeX Font Info:    ... okay on input line 87.
 
 *geometry* driver: auto-detecting
 *geometry* detected driver: xetex
@@ -1578,63 +1585,63 @@ Package fontspec Info:
 
 \symlegacymaths=\mathgroup6
 LaTeX Font Info:    Overwriting symbol font `legacymaths' in version `bold'
-(Font)                  OT1/cmr/m/n --> OT1/cmr/bx/n on input line 83.
-LaTeX Font Info:    Redeclaring math accent \acute on input line 83.
-LaTeX Font Info:    Redeclaring math accent \grave on input line 83.
-LaTeX Font Info:    Redeclaring math accent \ddot on input line 83.
-LaTeX Font Info:    Redeclaring math accent \tilde on input line 83.
-LaTeX Font Info:    Redeclaring math accent \bar on input line 83.
-LaTeX Font Info:    Redeclaring math accent \breve on input line 83.
-LaTeX Font Info:    Redeclaring math accent \check on input line 83.
-LaTeX Font Info:    Redeclaring math accent \hat on input line 83.
-LaTeX Font Info:    Redeclaring math accent \dot on input line 83.
-LaTeX Font Info:    Redeclaring math accent \mathring on input line 83.
-LaTeX Font Info:    Redeclaring math symbol \Gamma on input line 83.
-LaTeX Font Info:    Redeclaring math symbol \Delta on input line 83.
-LaTeX Font Info:    Redeclaring math symbol \Theta on input line 83.
-LaTeX Font Info:    Redeclaring math symbol \Lambda on input line 83.
-LaTeX Font Info:    Redeclaring math symbol \Xi on input line 83.
-LaTeX Font Info:    Redeclaring math symbol \Pi on input line 83.
-LaTeX Font Info:    Redeclaring math symbol \Sigma on input line 83.
-LaTeX Font Info:    Redeclaring math symbol \Upsilon on input line 83.
-LaTeX Font Info:    Redeclaring math symbol \Phi on input line 83.
-LaTeX Font Info:    Redeclaring math symbol \Psi on input line 83.
-LaTeX Font Info:    Redeclaring math symbol \Omega on input line 83.
-LaTeX Font Info:    Redeclaring math symbol \mathdollar on input line 83.
-LaTeX Font Info:    Redeclaring symbol font `operators' on input line 83.
+(Font)                  OT1/cmr/m/n --> OT1/cmr/bx/n on input line 87.
+LaTeX Font Info:    Redeclaring math accent \acute on input line 87.
+LaTeX Font Info:    Redeclaring math accent \grave on input line 87.
+LaTeX Font Info:    Redeclaring math accent \ddot on input line 87.
+LaTeX Font Info:    Redeclaring math accent \tilde on input line 87.
+LaTeX Font Info:    Redeclaring math accent \bar on input line 87.
+LaTeX Font Info:    Redeclaring math accent \breve on input line 87.
+LaTeX Font Info:    Redeclaring math accent \check on input line 87.
+LaTeX Font Info:    Redeclaring math accent \hat on input line 87.
+LaTeX Font Info:    Redeclaring math accent \dot on input line 87.
+LaTeX Font Info:    Redeclaring math accent \mathring on input line 87.
+LaTeX Font Info:    Redeclaring math symbol \Gamma on input line 87.
+LaTeX Font Info:    Redeclaring math symbol \Delta on input line 87.
+LaTeX Font Info:    Redeclaring math symbol \Theta on input line 87.
+LaTeX Font Info:    Redeclaring math symbol \Lambda on input line 87.
+LaTeX Font Info:    Redeclaring math symbol \Xi on input line 87.
+LaTeX Font Info:    Redeclaring math symbol \Pi on input line 87.
+LaTeX Font Info:    Redeclaring math symbol \Sigma on input line 87.
+LaTeX Font Info:    Redeclaring math symbol \Upsilon on input line 87.
+LaTeX Font Info:    Redeclaring math symbol \Phi on input line 87.
+LaTeX Font Info:    Redeclaring math symbol \Psi on input line 87.
+LaTeX Font Info:    Redeclaring math symbol \Omega on input line 87.
+LaTeX Font Info:    Redeclaring math symbol \mathdollar on input line 87.
+LaTeX Font Info:    Redeclaring symbol font `operators' on input line 87.
 LaTeX Font Info:    Encoding `OT1' has changed to `TU' for symbol font
-(Font)              `operators' in the math version `normal' on input line 83.
+(Font)              `operators' in the math version `normal' on input line 87.
 LaTeX Font Info:    Overwriting symbol font `operators' in version `normal'
 (Font)                  OT1/cmr/m/n --> TU/TimesNewRoman(0)/m/n on input line 8
-3.
+7.
 LaTeX Font Info:    Encoding `OT1' has changed to `TU' for symbol font
-(Font)              `operators' in the math version `bold' on input line 83.
+(Font)              `operators' in the math version `bold' on input line 87.
 LaTeX Font Info:    Overwriting symbol font `operators' in version `bold'
 (Font)                  OT1/cmr/bx/n --> TU/TimesNewRoman(0)/m/n on input line 
-83.
+87.
 LaTeX Font Info:    Overwriting symbol font `operators' in version `normal'
 (Font)                  TU/TimesNewRoman(0)/m/n --> TU/TimesNewRoman(0)/m/n on 
-input line 83.
+input line 87.
 LaTeX Font Info:    Overwriting math alphabet `\mathit' in version `normal'
 (Font)                  OT1/cmr/m/it --> TU/TimesNewRoman(0)/m/it on input line
- 83.
+ 87.
 LaTeX Font Info:    Overwriting math alphabet `\mathbf' in version `normal'
 (Font)                  OT1/cmr/bx/n --> TU/TimesNewRoman(0)/b/n on input line 
-83.
+87.
 LaTeX Font Info:    Overwriting math alphabet `\mathsf' in version `normal'
-(Font)                  OT1/cmss/m/n --> TU/lmss/m/n on input line 83.
+(Font)                  OT1/cmss/m/n --> TU/lmss/m/n on input line 87.
 LaTeX Font Info:    Overwriting math alphabet `\mathtt' in version `normal'
-(Font)                  OT1/cmtt/m/n --> TU/lmtt/m/n on input line 83.
+(Font)                  OT1/cmtt/m/n --> TU/lmtt/m/n on input line 87.
 LaTeX Font Info:    Overwriting symbol font `operators' in version `bold'
 (Font)                  TU/TimesNewRoman(0)/m/n --> TU/TimesNewRoman(0)/b/n on 
-input line 83.
+input line 87.
 LaTeX Font Info:    Overwriting math alphabet `\mathit' in version `bold'
 (Font)                  OT1/cmr/bx/it --> TU/TimesNewRoman(0)/b/it on input lin
-e 83.
+e 87.
 LaTeX Font Info:    Overwriting math alphabet `\mathsf' in version `bold'
-(Font)                  OT1/cmss/bx/n --> TU/lmss/b/n on input line 83.
+(Font)                  OT1/cmss/bx/n --> TU/lmss/b/n on input line 87.
 LaTeX Font Info:    Overwriting math alphabet `\mathtt' in version `bold'
-(Font)                  OT1/cmtt/m/n --> TU/lmtt/b/n on input line 83.
+(Font)                  OT1/cmtt/m/n --> TU/lmtt/b/n on input line 87.
 Package biblatex Info: Trying to load language 'english'...
 Package biblatex Info: ... file 'english.lbx' found.
 
@@ -1653,8 +1660,8 @@ Package biblatex Info: ... file 'main.bbl' found.
 
 (D:\uni-studies\semester-253\capstone_project_new\report\thesis-en\build\main.b
 bl)
-Package biblatex Info: Reference section=0 on input line 83.
-Package biblatex Info: Reference segment=0 on input line 83.
+Package biblatex Info: Reference section=0 on input line 87.
+Package biblatex Info: Reference segment=0 on input line 87.
 
 (C:\Users\congh\AppData\Local\Programs\MiKTeX\tex/latex/pdflscape\pdflscape.sty
 Package: pdflscape 2022-10-27 v0.13 Display of landscape pages in PDF
@@ -1666,7 +1673,7 @@ F (HO)
 Package pdflscape Info: Auto-detected driver: dvipdfm (xetex) on input line 98.
 
 ))
-\c@lstlisting=\count546
+\c@lstlisting=\count547
 Package caption Info: Begin \AtBeginDocument code.
 Package caption Info: hyperref package is loaded.
 Package caption Info: End \AtBeginDocument code.
@@ -1674,16 +1681,8 @@ Package caption Info: End \AtBeginDocument code.
 Package pgfplots notification 'compat/show suggested version=true': you might b
 enefit from \pgfplotsset{compat=1.18} (current compat level: 1.17).
 
-Package hyperref Info: Link coloring ON on input line 83.
-
-(D:\uni-studies\semester-253\capstone_project_new\report\thesis-en\build\main.o
-ut)
-(D:\uni-studies\semester-253\capstone_project_new\report\thesis-en\build\main.o
-ut)
-\@outlinefile=\write6
-\openout6 = `main.out'.
-
- (sections/front/cover-page.tex
+Package hyperref Info: Link coloring ON on input line 87.
+(sections/front/cover-page.tex
 File: images/Logo_BK.png Graphic file (type bmp)
 <images/Logo_BK.png>
 LaTeX Font Info:    Calculating math sizes for size <15> on input line 64.
@@ -1717,27 +1716,15 @@ LaTeX Font Info:    Calculating math sizes for size <13> on input line 16.
 ])
 (sections/front/chapter-summary.tex [4
 
-] [5]
-Overfull \hbox (4.86993pt too wide) in paragraph at lines 14--15
-\TU/TimesNewRoman(0)/m/n/13 Presents the architecture that separates the AI pro
-cessing from the application server,
- []
-
-
-Overfull \hbox (4.06337pt too wide) in paragraph at lines 14--15
-\TU/TimesNewRoman(0)/m/n/13 Milvus and MinIO stores, the application programmin
-g interface, the security mech-
- []
-
-[6
+] [5] [6
 
 ] [7]) [8]
 (D:\uni-studies\semester-253\capstone_project_new\report\thesis-en\build\main.t
 oc [9
 
 ] [10] [11] [12] [13] [14])
-\tf@toc=\write7
-\openout7 = `main.toc'.
+\tf@toc=\write6
+\openout6 = `main.toc'.
 
  [15]
 (D:\uni-studies\semester-253\capstone_project_new\report\thesis-en\build\main.l
@@ -1745,15 +1732,9 @@ of [16
 
 
 
-]
-Overfull \hbox (2.47859pt too wide) in paragraph at lines 38--38
- [][] [][][]\TU/TimesNewRoman(0)/m/n/13 The semantic reasoning block. The knowl
-edge base supplies per-attribute 
- []
-
-)
-\tf@lof=\write8
-\openout8 = `main.lof'.
+])
+\tf@lof=\write7
+\openout7 = `main.lof'.
 
  [17]
 (D:\uni-studies\semester-253\capstone_project_new\report\thesis-en\build\main.l
@@ -1761,137 +1742,63 @@ ot [18
 
 
 
-]
-Overfull \hbox (12.48386pt too wide) in paragraph at lines 36--36
- [][] [][][]\TU/TimesNewRoman(0)/m/n/13 VLM noise on one track. A majority vote
- would report \TU/lmtt/m/n/13 hair_color$[]$\TU/TimesNewRoman(0)/m/n/13 black 
- []
+])
+\tf@lot=\write8
+\openout8 = `main.lot'.
 
+ (sections/front/abbreviations.tex [19]
+sections/front/abbreviations.tex:91: ignored error: Infinite glue shrinkage fou
+nd in box being split [20
 
-Overfull \hbox (7.43568pt too wide) in paragraph at lines 36--36
- \TU/TimesNewRoman(0)/m/n/13 on a 40/30/30 split, and would break the 40/40 tie
- on \TU/lmtt/m/n/13 upper_inner_color 
- []
-
-[19])
-\tf@lot=\write9
-\openout9 = `main.lot'.
-
- (sections/front/abbreviations.tex [20]
-sections/front/abbreviations.tex:87: ignored error: Infinite glue shrinkage fou
-nd in box being split [21
-
-]) [22] (sections/chapter1/chapter1.tex
+]) [21] (sections/chapter1/chapter1.tex
 Chapter 1.
 (sections/chapter1/1.1.tex [1
 
 
 ]) (sections/chapter1/1.2.tex [2])
-(sections/chapter1/1.3.tex [3] [4]) (sections/chapter1/1.4.tex
-Overfull \hbox (4.05077pt too wide) in paragraph at lines 8--9
-\TU/TimesNewRoman(0)/m/n/13 from contexts different from the project’s camera d
-ata and are not fine-tuned. Search
- []
+(sections/chapter1/1.3.tex [3] [4]) (sections/chapter1/1.4.tex)) [5] [6
 
-[5])) [6] [7
-
-] (sections/chapter2/chapter2.tex
+]
+(sections/chapter2/chapter2.tex
 Chapter 2.
 (sections/chapter2/2.1.tex
 File: figures/briefcam.png Graphic file (type bmp)
 <figures/briefcam.png>
- [8
+ [7
 
 ]
 File: figures/avigilon.png Graphic file (type bmp)
 <figures/avigilon.png>
- [9]
+ [8]
 File: figures/verkada.png Graphic file (type bmp)
 <figures/verkada.png>
- [10]) (sections/chapter2/2.2.tex
+ [9]) (sections/chapter2/2.2.tex
 sections/chapter2/2.2.tex:35: ignored error: Infinite glue shrinkage found in b
-ox being split [11] [12]) (sections/chapter2/2.3.tex [13]))
-(sections/chapter3/chapter3.tex [14]
+ox being split [10] [11]) (sections/chapter2/2.3.tex))
+(sections/chapter3/chapter3.tex [12]
 Chapter 3.
-(sections/chapter3/3.1.tex [15
+(sections/chapter3/3.1.tex [13
 
-] [16]) (sections/chapter3/3.2.tex [17]
-Overfull \hbox (8.06004pt too wide) in paragraph at lines 26--26
-|[]\TU/TimesNewRoman(0)/b/n/15.59996 Post-Processing: Confidence Threshold and 
-Duplicate Removal| 
- []
-
-[18]) (sections/chapter3/3.3.tex
-Overfull \hbox (1.1841pt too wide) in paragraph at lines 12--13
+] [14]) (sections/chapter3/3.2.tex [15] [16])
+(sections/chapter3/3.3.tex
+Underfull \hbox (badness 1910) in paragraph at lines 12--13
 []\TU/TimesNewRoman(0)/m/n/13 The common approach is \TU/TimesNewRoman(0)/m/it/
-13 tracking-by-detection\TU/TimesNewRoman(0)/m/n/13 , founded on the SORT algor
-ithm [[][]24[][]],
+13 tracking-by-detection\TU/TimesNewRoman(0)/m/n/13 , founded on the SORT algo-
+
  []
 
-[19] [20]) (sections/chapter3/3.4.tex) (sections/chapter3/3.5.tex [21] [22]
-[23]) (sections/chapter3/3.6.tex [24]) (sections/chapter3/3.7.tex [25] [26]))
-(sections/chapter4/chapter4.tex [27]
+[17]) (sections/chapter3/3.4.tex [18]) (sections/chapter3/3.5.tex [19] [20])
+(sections/chapter3/3.6.tex [21]) (sections/chapter3/3.7.tex [22]))
+(sections/chapter4/chapter4.tex [23] [24]
 Chapter 4.
+(sections/chapter4/4.1.tex [25
 
-Overfull \hbox (10.32353pt too wide) in paragraph at lines 7--8
-\TU/TimesNewRoman(0)/m/it/13 This chapter analyses the requirements of the syst
-em: actors, functional and non-functional
- []
-
-(sections/chapter4/4.1.tex [28
-
-] [29]) (sections/chapter4/4.2.tex [30] [31]
-[32] [33]) (sections/chapter4/4.3.tex [34]
-Overfull \hbox (1.95564pt too wide) in paragraph at lines 12--13
-[]\TU/TimesNewRoman(0)/b/n/13 Server-side permission checks \TU/TimesNewRoman(0
-)/m/n/13 for every request, including image requests,
- []
-
-[35] [36]
-Overfull \hbox (1.08763pt too wide) in paragraph at lines 54--55
-\TU/TimesNewRoman(0)/m/n/13 changing other components; RTSP streams and video f
-iles share the pipeline
- []
-
-) (sections/chapter4/4.4.tex
+] [26]) (sections/chapter4/4.2.tex [27] [28]
+[29]) (sections/chapter4/4.3.tex [30] [31] [32]) (sections/chapter4/4.4.tex
 File: figures/H1-use-case.png Graphic file (type bmp)
 <figures/H1-use-case.png>
- [37] [38]
-Overfull \hbox (4.64813pt too wide) in paragraph at lines 63--63
-[]|\TU/TimesNewRoman(0)/m/n/13 Administrator|  
- []
 
-
-Overfull \hbox (4.64813pt too wide) in paragraph at lines 63--63
-[]|\TU/TimesNewRoman(0)/m/n/13 Administrator|  
- []
-
-
-Overfull \hbox (4.64813pt too wide) in paragraph at lines 63--63
-[]|\TU/TimesNewRoman(0)/m/n/13 Administrator|  
- []
-
-
-Overfull \hbox (4.64813pt too wide) in paragraph at lines 63--63
-[]|\TU/TimesNewRoman(0)/m/n/13 Administrator|  
- []
-
-
-Overfull \hbox (4.64813pt too wide) in paragraph at lines 63--63
-[]|\TU/TimesNewRoman(0)/m/n/13 Administrator|  
- []
-
-
-Overfull \hbox (4.64813pt too wide) in paragraph at lines 63--63
-[]|\TU/TimesNewRoman(0)/m/n/13 Administrator|  
- []
-
-
-Overfull \hbox (4.64813pt too wide) in paragraph at lines 63--63
-[]|\TU/TimesNewRoman(0)/m/n/13 Administrator|  
- []
-
-) (sections/chapter4/4.5.tex [39] [40]
+[33] [34]) (sections/chapter4/4.5.tex [35] [36]
 Overfull \hbox (2.43767pt too wide) in alignment at lines 9--16
  [] [] 
  []
@@ -1921,7 +1828,8 @@ Overfull \hbox (2.43767pt too wide) in alignment at lines 40--52
  [] [] 
  []
 
-[41]
+sections/chapter4/4.5.tex:52: ignored error: Infinite glue shrinkage found in b
+ox being split [37]
 Overfull \hbox (2.43767pt too wide) in alignment at lines 54--61
  [] [] 
  []
@@ -1936,7 +1844,8 @@ Overfull \hbox (2.43767pt too wide) in alignment at lines 64--75
  [] [] 
  []
 
-[42]
+sections/chapter4/4.5.tex:75: ignored error: Infinite glue shrinkage found in b
+ox being split [38]
 Overfull \hbox (2.43767pt too wide) in alignment at lines 77--84
  [] [] 
  []
@@ -1951,7 +1860,6 @@ Overfull \hbox (2.43767pt too wide) in alignment at lines 87--95
  [] [] 
  []
 
-[43]
 LaTeX Font Info:    Calculating math sizes for size <11.86258> on input line 10
 3.
 
@@ -1969,8 +1877,7 @@ Overfull \hbox (2.43767pt too wide) in alignment at lines 107--118
  [] [] 
  []
 
-sections/chapter4/4.5.tex:118: ignored error: Infinite glue shrinkage found in 
-box being split [44]
+[39]
 Overfull \hbox (2.43767pt too wide) in alignment at lines 120--127
  [] [] 
  []
@@ -1985,7 +1892,8 @@ Overfull \hbox (2.43767pt too wide) in alignment at lines 130--139
  [] [] 
  []
 
-
+sections/chapter4/4.5.tex:139: ignored error: Infinite glue shrinkage found in 
+box being split [40]
 Overfull \hbox (2.43767pt too wide) in alignment at lines 141--148
  [] [] 
  []
@@ -2000,7 +1908,7 @@ Overfull \hbox (2.43767pt too wide) in alignment at lines 151--163
  [] [] 
  []
 
-[45]
+
 Overfull \hbox (2.43767pt too wide) in alignment at lines 165--172
  [] [] 
  []
@@ -2015,55 +1923,47 @@ Overfull \hbox (2.43767pt too wide) in alignment at lines 175--184
  [] [] 
  []
 
-sections/chapter4/4.5.tex:184: ignored error: Infinite glue shrinkage found in 
-box being split [46]) (sections/chapter4/4.6.tex [47]))
-(sections/chapter5/chapter5.tex [48]
+[41]) (sections/chapter4/4.6.tex [42])) (sections/chapter5/chapter5.tex
+[43]
 Chapter 5.
 (sections/chapter5/5.1.tex
 File: figures/H2-kien-truc.png Graphic file (type bmp)
 <figures/H2-kien-truc.png>
- [49
+ [44
 
-] [50]) (sections/chapter5/5.2.tex [51]
+] [45]) (sections/chapter5/5.2.tex [46]
 File: figures/H7-trang-thai-cong-viec.png Graphic file (type bmp)
 <figures/H7-trang-thai-cong-viec.png>
- [52]
-[53]
+ [47]
 File: figures/H3-luu-do-xu-ly-camera.png Graphic file (type bmp)
 <figures/H3-luu-do-xu-ly-camera.png>
- [54]
+
+[48]
 File: figures/H4-tuan-tu-tim-kiem.png Graphic file (type bmp)
 <figures/H4-tuan-tu-tim-kiem.png>
- [55] [56]
+ [49] [50]
 File: figures/H5-tuan-tu-vu-viec.png Graphic file (type bmp)
 <figures/H5-tuan-tu-vu-viec.png>
-) (sections/chapter5/5.3.tex [57] [58] [59]
+) (sections/chapter5/5.3.tex [51] [52] [53]
 File: figures/H8-erd.png Graphic file (type bmp)
 <figures/H8-erd.png>
- [60] [61
+ [54] [55
 
 
-]
-[62]
+] [56]
 File: figures/H6-trang-thai-lan-xuat-hien.png Graphic file (type bmp)
 <figures/H6-trang-thai-lan-xuat-hien.png>
- [63] [64]) (sections/chapter5/5.4.tex [65]) (sections/chapter5/5.5.tex
-[66] [67]) (sections/chapter5/5.6.tex [68]
+
+[57]) (sections/chapter5/5.4.tex [58]) (sections/chapter5/5.5.tex [59])
+(sections/chapter5/5.6.tex [60]
 File: figures/H12-luong-man-hinh.png Graphic file (type bmp)
 <figures/H12-luong-man-hinh.png>
- [69]))
-(sections/chapter6/chapter6.tex [70]
+ [61])) (sections/chapter6/chapter6.tex [62]
 Chapter 6.
-(sections/chapter6/6.1.tex [71
+(sections/chapter6/6.1.tex [63
 
-] [72] [73]
-Overfull \hbox (7.4967pt too wide) in paragraph at lines 74--75
-[] []\TU/TimesNewRoman(0)/b/n/13 Tracking.[] \TU/TimesNewRoman(0)/m/n/13 Algori
-thms that add appearance features, such as DeepSORT [[][]44[][]] and Strong-
- []
-
-) (sections/chapter6/6.2.tex [74] [75]) (sections/chapter6/6.3.tex [76]
-[77]
+] [64] [65]) (sections/chapter6/6.2.tex [66])
+(sections/chapter6/6.3.tex [67] [68]
 File: figures/H10a-tim-kiem-anh-cat.png Graphic file (type bmp)
 <figures/H10a-tim-kiem-anh-cat.png>
 File: figures/H10b-tim-kiem-thuoc-tinh-cat.png Graphic file (type bmp)
@@ -2076,7 +1976,6 @@ File: figures/H10e-vu-viec-cua-toi-cat.png Graphic file (type bmp)
 <figures/H10e-vu-viec-cua-toi-cat.png>
 File: figures/H10f-tong-quan-cat.png Graphic file (type bmp)
 <figures/H10f-tong-quan-cat.png>
- [78] [79] [80]
 File: figures/H10g-camera-cat.png Graphic file (type bmp)
 <figures/H10g-camera-cat.png>
 File: figures/H10h-mo-hinh-ai-cat.png Graphic file (type bmp)
@@ -2087,145 +1986,112 @@ File: figures/H10j-trang-thai-he-thong-cat.png Graphic file (type bmp)
 <figures/H10j-trang-thai-he-thong-cat.png>
 File: figures/H10k-kiem-tra-ai-cat.png Graphic file (type bmp)
 <figures/H10k-kiem-tra-ai-cat.png>
-) (sections/chapter6/6.4.tex [81] [82]))
-(sections/chapter7/chapter7.tex [83]
+) (sections/chapter6/6.4.tex [69] [70]
+[71] [72] [73])) (sections/chapter7/chapter7.tex [74]
 Chapter 7.
-(sections/chapter7/7.1.tex) (sections/chapter7/7.2.tex [84
+(sections/chapter7/7.1.tex) (sections/chapter7/7.2.tex [75
 
-]))
-(sections/chapter8/chapter8.tex [85]
+]
+Underfull \hbox (badness 1776) in paragraph at lines 8--9
+[] []\TU/TimesNewRoman(0)/b/n/13 Simulated cameras.[] \TU/TimesNewRoman(0)/m/n/
+13 The seven videos are streamed through MediaMTX (Sec-
+ []
+
+)) (sections/chapter8/chapter8.tex [76]
 Chapter 8.
-(sections/chapter8/8.1.tex [86
+(sections/chapter8/8.1.tex [77
 
-] [87]) (sections/chapter8/8.2.tex [88])
-(sections/chapter8/8.3.tex
-Overfull \hbox (8.00366pt too wide) in paragraph at lines 32--4
-[] []\TU/TimesNewRoman(0)/b/n/13 Qualitative check on the demonstration data.[]
- \TU/TimesNewRoman(0)/m/n/13 On the demonstration data (Section [][]7.2[][]),
- []
+] [78]) (sections/chapter8/8.2.tex [79])
+(sections/chapter8/8.3.tex [80] [81])) [82] [83] [84
 
-[89] [90] [91])) [92] [93
-
-] (sections/research/chapter9.tex
+]
+(sections/research/chapter9.tex
 Chapter 9.
-[94
+[85
 
-] [95]
-File: figures/research/overall-000.png Graphic file (type bmp)
-<figures/research/overall-000.png>
-
-Underfull \hbox (badness 10000) in paragraph at lines 103--103
-[]|\TU/TimesNewRoman(0)/m/n/13 Detect people cor-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 105--105
-[]|\TU/TimesNewRoman(0)/m/n/13 Maintain identity
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 108--108
-[]|\TU/TimesNewRoman(0)/m/n/13 Image/text en-
- []
-
-[96] [97]
-File: figures/research/zara-000.png Graphic file (type bmp)
-<figures/research/zara-000.png>
- [98] [99]
-File: figures/research/offline-000.png Graphic file (type bmp)
-<figures/research/offline-000.png>
- [100]
-File: figures/research/online_full-000.png Graphic file (type bmp)
-<figures/research/online_full-000.png>
- [101]) (sections/research/chapter10.tex [102]
+] [86]
+File: figures/research/S23-overall-pipeline.png Graphic file (type bmp)
+<figures/research/S23-overall-pipeline.png>
+ [87]
+File: figures/research/S26-zara.png Graphic file (type bmp)
+<figures/research/S26-zara.png>
+ [88] [89]
+File: figures/research/S31-offline-indexing.png Graphic file (type bmp)
+<figures/research/S31-offline-indexing.png>
+File: figures/research/S35-text-retrieval.png Graphic file (type bmp)
+<figures/research/S35-text-retrieval.png>
+ [90]) (sections/research/chapter10.tex [91]
 Chapter 10.
-[103
+[92
 
-] [104] [105] [106]
-File: figures/research/reasoning-000.png Graphic file (type bmp)
-<figures/research/reasoning-000.png>
- [107] [108]
-File: figures/research/selector-000.png Graphic file (type bmp)
-<figures/research/selector-000.png>
- [109]
-File: figures/research/selector_work-000.png Graphic file (type bmp)
-<figures/research/selector_work-000.png>
- [110]
-File: figures/research/pruning-000.png Graphic file (type bmp)
-<figures/research/pruning-000.png>
-File: figures/research/pruning_work-000.png Graphic file (type bmp)
-<figures/research/pruning_work-000.png>
- [111]
-Overfull \hbox (2.32437pt too wide) in paragraph at lines 320--324
-\TU/TimesNewRoman(0)/m/n/13 pool’s own distribution, for example \TU/lmtt/m/n/1
-3 sharp 21.5 (-1.5) mid\TU/TimesNewRoman(0)/m/n/13 , \TU/lmtt/m/n/13 contrast 1
-20.7
- []
-
-[112] [113] [114] [115]) (sections/research/chapter11.tex [116]
+] [93] [94] [95]
+File: figures/research/S36-reasoning-block.png Graphic file (type bmp)
+<figures/research/S36-reasoning-block.png>
+ [96] [97]
+File: figures/research/S37-selector.png Graphic file (type bmp)
+<figures/research/S37-selector.png>
+File: figures/research/S38-selector-example.png Graphic file (type bmp)
+<figures/research/S38-selector-example.png>
+ [98]
+File: figures/research/S39-evidence-ranker.png Graphic file (type bmp)
+<figures/research/S39-evidence-ranker.png>
+File: figures/research/S40-evidence-example.png Graphic file (type bmp)
+<figures/research/S40-evidence-example.png>
+ [99] [100] [101] [102])
+(sections/research/chapter11.tex [103]
 Chapter 11.
-[117
+[104
 
-] [118] [119] [120] [121] [122] [123]
+] [105] [106] [107] [108] [109]
 File: figures/research/case_lost.png Graphic file (type bmp)
 <figures/research/case_lost.png>
- [124]
+ [110]
 File: figures/research/case_lost_fixed.png Graphic file (type bmp)
 <figures/research/case_lost_fixed.png>
- [125]
+ [111]
 File: figures/research/case_rescued.png Graphic file (type bmp)
 <figures/research/case_rescued.png>
- [126] [127]
-sections/research/chapter11.tex:466: ignored error: Infinite glue shrinkage fou
-nd in box being split [128] [129]) (sections/chapter12/chapter12.tex [130]
+ [112] [113] [114]
+Underfull \hbox (badness 3735) in paragraph at lines 421--430
+[] []\TU/TimesNewRoman(0)/b/n/13 Switchable but not yet measured.[] \TU/TimesNe
+wRoman(0)/m/n/13 The pipeline keeps one flag per experi-
+ []
+
+
+Underfull \hbox (badness 7667) in paragraph at lines 421--430
+\TU/TimesNewRoman(0)/m/n/13 ment: \TU/lmtt/m/n/13 LAB_QUALITY_POPULATION \TU/Ti
+mesNewRoman(0)/m/n/13 (region quartiles over the candidate crops
+ []
+
+
+Underfull \hbox (badness 1215) in paragraph at lines 421--430
+\TU/TimesNewRoman(0)/m/n/13 rather than every frame of their tracks), \TU/lmtt/
+m/n/13 LAB_PAIR_PROFILE \TU/TimesNewRoman(0)/m/n/13 (the per-pair statis-
+ []
+
+
+Underfull \hbox (badness 1577) in paragraph at lines 421--430
+\TU/TimesNewRoman(0)/m/n/13 tics block), \TU/lmtt/m/n/13 LAB_FRAME_AGREEMENT \T
+U/TimesNewRoman(0)/m/n/13 (the \TU/lmtt/m/n/13 agrees \TU/TimesNewRoman(0)/m/n/
+13 line under each quoted frame),
+ []
+
+[115] [116]) (sections/chapter12/chapter12.tex [117]
 Chapter 12.
-(sections/chapter12/12.1.tex [131
+(sections/chapter12/timeline.tex) (sections/chapter12/12.1.tex [118
 
-] (sections/research/_conclusion.tex))
-(sections/chapter12/12.2.tex [132] (sections/research/_limits.tex [133]
-[134])) (sections/chapter12/12.3.tex)) [135] [136]
-Overfull \hbox (3.35936pt too wide) in paragraph at lines 130--130
-[]\TU/TimesNewRoman(0)/m/n/13 Milestone Systems. “  BriefCam video analytics so
-ftware,” Accessed: Sep. 27, 2026.
- []
-
-[137
-
-] [138] [139]
-Overfull \hbox (0.90617pt too wide) in paragraph at lines 130--130
-[]\TU/TimesNewRoman(0)/m/n/13 N. Aharon, R. Orfaig, and B.[]Z. Bobrovsky, \TU/T
-imesNewRoman(0)/m/it/13 BoT-SORT: Robust associations multi-
- []
+]
+File: figures/S05-ke-hoach.png Graphic file (type bmp)
+<figures/S05-ke-hoach.png>
+ [119]
+(sections/research/_conclusion.tex [120
 
 
-Overfull \hbox (7.34782pt too wide) in paragraph at lines 130--130
-\TU/TimesNewRoman(0)/m/it/13 Learning (ICML)\TU/TimesNewRoman(0)/m/n/13 , ser. 
-Proceedings of Machine Learning Research, vol. 139, PMLR,
- []
+])) (sections/chapter12/12.2.tex
+(sections/research/_limits.tex [121] [122])) (sections/chapter12/12.3.tex))
+[123] [124] [125
 
-[140]
-Overfull \hbox (1.49413pt too wide) in paragraph at lines 130--130
-[]\TU/TimesNewRoman(0)/m/n/13 pgvector. “  Pgvector: Open-source vector similar
-ity search for postgres,” Accessed:
- []
-
-[141]
-Overfull \hbox (3.05675pt too wide) in paragraph at lines 130--130
-[]\TU/TimesNewRoman(0)/m/n/13 Qwen Team, \TU/TimesNewRoman(0)/m/it/13 Qwen2.5-V
-L-3B-Instruct\TU/TimesNewRoman(0)/m/n/13 , Hugging Face model repository, 2024.
- [On-
- []
-
-(sections/research/appendix-prompts.tex [142]
-Appendix A.
-LaTeX Font Info:    Calculating math sizes for size <10.83347> on input line 19
-.
-LaTeX Font Info:    Calculating math sizes for size <6.5> on input line 19.
-[143
-
-] [144] [145] [146] [147] [148] [149] [150] [151] [152] [153] [154]
-[155] [156] [157] [158] [159] [160] [161] [162] [163] [164] [165] [166]
-[167] [168] [169] [170] [171] [172]) [173]
+] [126] [127] [128] [129] [130]
 
 enddocument/afterlastpage (AED): lastpage setting LastPage.
 
@@ -2235,20 +2101,18 @@ ux)
 LaTeX2e <2025-11-01>
 L3 programming layer <2025-11-06>
  ***********
-Package rerunfilecheck Info: File `main.out' has not changed.
-(rerunfilecheck)             Checksum: 6CDBB86AA3C2C84890EA14AC2766CF2C;32219.
 Package logreq Info: Writing requests to 'main.run.xml'.
 \openout1 = `main.run.xml'.
 
  ) 
 Here is how much of TeX's memory you used:
- 51351 strings out of 402987
- 1167906 string characters out of 5448524
- 2207700 words of memory out of 5000000
- 79112 multiletter control sequences out of 15000+600000
- 650263 words of font info for 192 fonts, out of 8000000 for 9000
+ 51573 strings out of 402987
+ 1169263 string characters out of 5448524
+ 2206853 words of memory out of 5000000
+ 79363 multiletter control sequences out of 15000+600000
+ 642423 words of font info for 145 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
- 108i,15n,107p,1744b,5142s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 108i,15n,107p,1199b,5142s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
 Output written on D:\uni-studies\semester-253\capstone_project_new\report\thesi
-s-en\build\main.xdv (197 pages, 3268164 bytes).
+s-en\build\main.xdv (153 pages, 2402932 bytes).

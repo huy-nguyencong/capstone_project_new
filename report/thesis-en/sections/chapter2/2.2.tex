@@ -3,7 +3,7 @@
 \section{Comparison and Discussion}
 \label{sec:2.2}
 
-Table~\ref{tab:related-comparison} compares the three surveyed systems with the project's system, based on the vendors' published documentation (Section~\ref{sec:2.1}); what the documentation does not state is marked ``not mentioned''.
+Table~\ref{tab:related-comparison} compares the three systems with the project, based on the vendors' documentation; anything not stated is marked ``not mentioned''.
 
 \begin{longtable}{|>{\raggedright\arraybackslash}p{2.2cm}|>{\raggedright\arraybackslash}p{2.85cm}|>{\raggedright\arraybackslash}p{2.85cm}|>{\raggedright\arraybackslash}p{2.85cm}|>{\raggedright\arraybackslash}p{2.85cm}|}
 \caption{Comparison of systems for searching people in video}\label{tab:related-comparison}\\
@@ -36,7 +36,7 @@ Distribution & Commercial software & Commercial software and devices & Commercia
 
 The comparison leads to the following observations:
 \begin{itemize}
-    \item \textbf{Supporting several forms of description has become the norm.} All three systems support search by attributes and by an image or appearance sample, but within the surveyed documentation only Verkada supports free-text search, a function that appeared in 2024. Verkada's approach, encoding images and query sentences into one representation space and searching a vector database, lets one mechanism serve both forms.
-    \item \textbf{Search usually comes with tools for compiling results}, such as Avigilon's bookmarking and evidence export: users also need to store and share results during an investigation.
-    \item \textbf{Commercial systems are tied to the vendor's infrastructure}: BriefCam needs a server with a dedicated graphics card, Avigilon needs the vendor's software and devices, and Verkada runs on the vendor's cloud. Cost and vendor lock-in are barriers for small organisations or those that must keep data on premises. These products also bundle many functions beyond search, such as alerts, face recognition, licence plates and statistics.
+    \item \textbf{Supporting several forms of description has become the norm.} All three search by attributes and by an image or sample, but only Verkada offers free-text search (since 2024), encoding images and sentences into one space searched in a vector database, so one mechanism serves both forms.
+    \item \textbf{Search usually comes with tools for compiling results}, such as Avigilon's bookmarks and evidence export, since investigators need to store and share results.
+    \item \textbf{Commercial systems are tied to the vendor's infrastructure}: BriefCam needs a graphics card, Avigilon the vendor's software and devices, Verkada the vendor's cloud. Cost and lock-in are barriers for small organisations or those that must keep data on premises, and the products bundle many functions beyond search.
 \end{itemize}

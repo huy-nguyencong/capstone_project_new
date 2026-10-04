@@ -1,22 +1,21 @@
 % !TEX root = ../../main.tex
 % Part II (Nguyen Huu Cuong) - merged from the research report (report_latex_v3), see MERGE_NOTES.md.
 % Style pass 2026-09-30: em dashes and rhetorical sentences removed; technical content, numbers and references unchanged.
+% Tightened 2026-10-05 (both authors agreed).
 % Used by Chapter 12, section 12.1 (Part II results).
 Attribute-level evidence, rendered as text and reasoned over by a small LLM,
 recovers 28 of the 67 identities that CLIP alone ranks outside its top 10, a gain
 of 23 points in R@10, with no fine-tuning and on a pool produced by CLIP itself.
-The gain does not come from a better similarity measure but from making the
-evidence readable: what this crop read, what the rest of the track read, how
-strongly those frames link to each other, and under what imaging conditions each
-reading was made. Measured directly, the similarity score that the system does not
-use for ranking separates the ground truth from the rest of its own pool with an
-AUC of 0.601: CLIP retrieves well but ranks the retrieved pool poorly.
+The gain comes not from a better similarity measure but from readable evidence:
+what this crop and the rest of the track read, how strongly those frames link, and
+under what imaging conditions. The CLIP score, which the ranker does not use,
+separates the ground truth within its pool at an AUC of only 0.601: CLIP retrieves
+well but ranks its pool poorly.
 
 The cost is small: five of the 33 identities already found by retrieval are pushed
-out, and four of those five are recovered when only the two ranking calls are
-given a larger model over the same evidence. Most of what remains is not a ranking
-problem. Three of 100 identities were never retrieved, and the rest of the
-remainder comes from attributes that the describer could not read or did not
-write. Both causes are measurable, and this part reports the ceiling next to every
-number, which gives a clearer starting point for further work than the one the
-project began with.
+out, and four of them are recovered when only the two ranking calls use a larger
+model over the same evidence. Most of what remains is not a ranking problem: three
+of 100 identities were never retrieved, and the rest comes from attributes the
+describer could not read or did not write. Both causes are measurable, and with the
+ceiling reported next to every number, further work starts from a clearer position
+than the project did.

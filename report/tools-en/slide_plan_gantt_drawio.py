@@ -1,4 +1,4 @@
-"""Sinh figures/S05-ke-hoach.drawio: biểu đồ Gantt kế hoạch thực hiện của cả nhóm (Part I + Part II) cho slide (không dùng trong báo cáo).
+"""Sinh figures/S05-ke-hoach.drawio: biểu đồ Gantt kế hoạch thực hiện của cả nhóm (Part I + Part II) cho slide và Hình 12.1 (mục 12.1 Project Timeline) của bản tiếng Anh.
 
 Mốc là kế hoạch ước lượng (bắt đầu 15/6/2026), không phải nhật ký chính xác. Font và bảng màu như các sơ đồ
 khác (figures/README.md mục 3). Chạy: python report/tools-en/slide_plan_gantt_drawio.py

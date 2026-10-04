@@ -4,11 +4,11 @@
 \section{Định hướng phát triển của hệ thống}
 \label{sec:2.3}
 
-Dựa trên các nhận xét tại Mục~\ref{sec:2.2}, đề tài xác định các định hướng phát triển sau:
+Từ các nhận xét trên, đề tài xác định các định hướng sau:
 \begin{enumerate}
-    \item \textbf{Hỗ trợ đủ ba hình thức mô tả trong cùng một cơ chế tìm kiếm}: ảnh tham chiếu, câu mô tả tự do bằng tiếng Anh, và tập thuộc tính chọn sẵn. Tương tự cách tiếp cận của Verkada, cả ba được đưa về cùng một không gian biểu diễn; tập thuộc tính được chuyển thành một câu mô tả có cấu trúc nên không cần mô hình riêng cho từng thuộc tính.
-    \item \textbf{Tổ chức kết quả theo từng lần xuất hiện} của một người trên một camera, sắp xếp theo mức độ phù hợp và luôn kèm khung hình gốc để người dùng tự đánh giá; hệ thống không đưa ra kết luận về danh tính (Mục~\ref{sec:1.2}).
-    \item \textbf{Quản lý kết quả thành hồ sơ vụ việc}, tương tự việc tổng hợp bằng chứng của Avigilon, để người có trách nhiệm xem lại mà không cần tìm kiếm lại.
-    \item \textbf{Phân quyền theo vai trò và khu vực giám sát}, tách trách nhiệm quản trị kỹ thuật, tìm kiếm và theo dõi kết quả; người tìm kiếm chỉ truy cập dữ liệu của khu vực được giao (Mục~\ref{sec:1.1}).
-    \item \textbf{Triển khai tại chỗ, không phụ thuộc nhà cung cấp phần cứng}: một ứng dụng web nhận hình ảnh qua giao thức RTSP phổ biến, xử lý và lưu trữ toàn bộ dữ liệu trên một máy tính không có card đồ họa rời.
+    \item \textbf{Hỗ trợ đủ ba hình thức mô tả trong cùng một cơ chế tìm kiếm}: ảnh tham chiếu, câu mô tả tiếng Anh và thuộc tính chọn sẵn, cùng đưa về một không gian biểu diễn như Verkada; thuộc tính được chuyển thành câu có cấu trúc nên không cần mô hình riêng cho từng thuộc tính.
+    \item \textbf{Tổ chức kết quả theo từng lần xuất hiện} của một người trên một camera, xếp theo mức độ phù hợp và kèm khung hình gốc để người dùng tự đánh giá (Mục~\ref{sec:1.2}).
+    \item \textbf{Quản lý kết quả thành hồ sơ vụ việc}, như việc tổng hợp bằng chứng của Avigilon, để xem lại mà không cần tìm lại.
+    \item \textbf{Phân quyền theo vai trò và khu vực giám sát}, tách quản trị, tìm kiếm và theo dõi kết quả, người tìm kiếm chỉ truy cập dữ liệu khu vực được giao (Mục~\ref{sec:1.1}).
+    \item \textbf{Triển khai tại chỗ, không phụ thuộc nhà cung cấp phần cứng}: một ứng dụng web nhận luồng RTSP, xử lý và lưu toàn bộ dữ liệu trên một máy tính không có card đồ họa rời.
     \end{enumerate}

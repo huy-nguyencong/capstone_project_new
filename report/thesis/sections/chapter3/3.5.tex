@@ -10,12 +10,12 @@
 \label{sec:3.5.1}
 \label{sec:3.5.2}
 
-Để so sánh một câu mô tả với một ảnh người, hệ thống dùng hai bộ mã hóa (encoder): bộ mã hóa ảnh biến ảnh thành một vector đặc trưng, bộ mã hóa văn bản biến câu thành một vector cùng số chiều. Hai bộ mã hóa được huấn luyện sao cho vector của một ảnh và của câu mô tả đúng ảnh đó nằm gần nhau, còn các cặp không tương ứng nằm xa nhau; không gian có tính chất này gọi là \emph{không gian biểu diễn chung} (joint embedding space). Mức độ gần nhau được đo bằng độ tương đồng cosine
+Để so sánh câu mô tả với ảnh người, bộ mã hóa (encoder) ảnh và bộ mã hóa văn bản tạo các vector cùng số chiều, được huấn luyện để ảnh và câu mô tả đúng của nó nằm gần nhau, còn cặp không tương ứng nằm xa, tạo thành \emph{không gian biểu diễn chung} (joint embedding space). Độ gần được đo bằng độ tương đồng cosine
 \begin{equation}
     s(\mathbf{u}, \mathbf{v}) = \frac{\mathbf{u}^\top \mathbf{v}}{\lVert \mathbf{u} \rVert \, \lVert \mathbf{v} \rVert},
     \label{eq:cosine}
 \end{equation}
-trở thành tích vô hướng $\mathbf{u}^\top \mathbf{v}$ khi các vector đã được chuẩn hóa độ dài bằng 1 (chuẩn hóa L2). Ưu điểm quan trọng là ảnh trong kho chỉ cần mã hóa một lần khi lập chỉ mục; khi truy vấn, hệ thống chỉ mã hóa truy vấn rồi so sánh với các vector đã có (Mục~\ref{sec:3.1.6}).
+là tích vô hướng $\mathbf{u}^\top \mathbf{v}$ khi vector đã chuẩn hóa độ dài bằng 1 (chuẩn hóa L2). Ảnh trong kho chỉ mã hóa một lần khi lập chỉ mục, còn truy vấn chỉ cần mã hóa chính nó (Mục~\ref{sec:3.1.6}).
 
 Phương pháp huấn luyện phổ biến là \emph{học tương phản} (contrastive learning): trong mỗi nhóm $B$ cặp ảnh-văn bản, câu đúng của một ảnh là mẫu dương, $B-1$ câu còn lại là mẫu âm, và hàm mất mát
 \begin{equation}
@@ -27,17 +27,17 @@ khuyến khích độ tương đồng với mẫu dương cao hơn hẳn các m�
 \subsection{Mô hình RaSa}
 \label{sec:3.5.3}
 
-Mô hình tổng quát như CLIP và ALBEF khó phân biệt những khác biệt nhỏ giữa người có ngoại hình tương tự, chẳng hạn cùng áo khoác nhưng khác màu quần. RaSa (Relation and Sensitivity Aware representation learning)~\cite{bai2023rasa} được xây dựng trên nền ALBEF và thiết kế riêng cho tìm kiếm người bằng văn bản, gồm bộ mã hóa ảnh 12 lớp transformer, bộ mã hóa văn bản 6 lớp và bộ mã hóa đa phương thức 6 lớp. Ba điểm chính của RaSa:
+Mô hình tổng quát như CLIP và ALBEF khó phân biệt khác biệt nhỏ giữa người giống nhau, như cùng áo khoác nhưng khác màu quần. RaSa (Relation and Sensitivity Aware representation learning)~\cite{bai2023rasa} được xây dựng trên nền ALBEF và thiết kế riêng cho tìm kiếm người bằng văn bản, gồm bộ mã hóa ảnh 12 lớp transformer, bộ mã hóa văn bản 6 lớp và bộ mã hóa đa phương thức 6 lớp. Ba điểm chính của RaSa:
 \begin{itemize}
-    \item \textbf{Học tương phản trong và giữa các phương thức.} Ngoài ghép ảnh với câu, các ảnh của cùng một người cũng được kéo lại gần nhau. Tính chất này làm vector của hai ảnh cùng một người nằm gần nhau, là cơ sở để đề tài dùng cùng không gian vector cho truy vấn bằng ảnh.
-    \item \textbf{Học nhận biết quan hệ.} Mỗi câu mô tả được viết cho \emph{một} ảnh cụ thể và có thể không hoàn toàn đúng với các ảnh khác của cùng người đó; RaSa phân biệt hai loại cặp dương này để không học những chi tiết không đúng.
-    \item \textbf{Học nhạy với thay đổi.} Mô hình được huấn luyện để nhận ra khi một từ quan trọng, như ``áo đỏ'' thành ``áo xanh'', bị thay, làm thay đổi ý nghĩa của câu.
+    \item \textbf{Học tương phản trong và giữa các phương thức.} Ngoài ghép ảnh với câu, các ảnh cùng một người cũng được kéo gần nhau, là cơ sở để đề tài dùng cùng không gian cho truy vấn bằng ảnh.
+    \item \textbf{Học nhận biết quan hệ.} Câu mô tả viết cho \emph{một} ảnh có thể không đúng với ảnh khác của cùng người, nên RaSa phân biệt hai loại cặp dương này.
+    \item \textbf{Học nhạy với thay đổi.} Mô hình học nhận ra từ quan trọng bị thay, như ``áo đỏ'' thành ``áo xanh''.
 \end{itemize}
-Khi truy vấn, RaSa có thể xếp hạng lại 128 kết quả đầu bằng bộ mã hóa đa phương thức để tăng độ chính xác, nhưng cách này tốn kém hơn nhiều so với chỉ so sánh vector. Trên tập kiểm tra của CUHK-PEDES, RaSa đạt Rank-1 là 76,51\% và mAP là 69,38\%~\cite{bai2023rasa}.
+RaSa có thể xếp hạng lại 128 kết quả đầu bằng bộ mã hóa đa phương thức, nhưng tốn kém hơn nhiều so với chỉ so sánh vector. Trên tập kiểm tra của CUHK-PEDES, RaSa đạt Rank-1 là 76,51\% và mAP là 69,38\%~\cite{bai2023rasa}.
 
 \subsection{Sử dụng RaSa trong hệ thống}
 \label{sec:3.5.4}
 
-Hệ thống dùng trọng số RaSa đã huấn luyện sẵn trên CUHK-PEDES, không huấn luyện lại. Bộ mã hóa ảnh mã hóa ảnh người cắt từ khung hình đại diện khi lập chỉ mục và ảnh truy vấn khi tìm bằng ảnh, với ảnh đầu vào được đưa về $384 \times 384$ điểm ảnh; bộ mã hóa văn bản mã hóa câu mô tả và câu sinh từ thuộc tính. Vector có 256 chiều, đã chuẩn hóa L2, nên cả ba kiểu truy vấn được so sánh với cùng một tập vector bằng tích vô hướng, và mỗi track chỉ cần một vector. Bước xếp hạng lại không được bật, vì chỉ áp dụng cho truy vấn văn bản, tốn kém trên máy chỉ có CPU, và chưa có số đo cho thấy nó cải thiện kết quả trên dữ liệu của đề tài.
+Hệ thống dùng trọng số RaSa huấn luyện sẵn trên CUHK-PEDES, không huấn luyện lại. Bộ mã hóa ảnh xử lý ảnh người cắt khi lập chỉ mục và ảnh truy vấn, đưa về $384 \times 384$ điểm ảnh; bộ mã hóa văn bản xử lý câu mô tả và câu từ thuộc tính. Vector 256 chiều đã chuẩn hóa L2 cho phép cả ba hình thức truy vấn dùng chung tập vector bằng tích vô hướng, mỗi track một vector. Bước xếp hạng lại không bật: nó chỉ áp dụng cho truy vấn văn bản, tốn kém trên CPU và chưa được chứng minh có ích trên dữ liệu của đề tài.
 
-Cần lưu ý hai điểm. Thứ nhất, RaSa được thiết kế và đánh giá cho tìm kiếm bằng văn bản; dùng bộ mã hóa ảnh của nó cho truy vấn ảnh-ảnh là lựa chọn của đề tài dựa trên tính chất học tương phản trong cùng phương thức, không phải kết quả đã được công bố. Thứ hai, CUHK-PEDES được xây dựng từ ảnh của năm bộ dữ liệu tái nhận dạng người có sẵn~\cite{li2017cuhkpedes}, mỗi ảnh là một người đã được cắt gọn kèm câu mô tả viết riêng cho ảnh đó; còn ảnh người trong đề tài được cắt tự động từ khung hình toàn cảnh của một khu vực đông người, với bối cảnh và góc quay khác, và thường bị người xung quanh che khuất một phần. Sự khác biệt về miền dữ liệu (domain gap) này ảnh hưởng trực tiếp đến chất lượng truy vấn bằng văn bản và thuộc tính (Mục~\ref{sec:8.4}).
+Cần lưu ý hai điểm. RaSa được thiết kế và đánh giá cho tìm bằng văn bản; dùng bộ mã hóa ảnh cho truy vấn ảnh-ảnh là lựa chọn của đề tài dựa trên học tương phản trong cùng phương thức, không phải kết quả đã công bố. Và CUHK-PEDES gồm ảnh người cắt gọn từ năm bộ dữ liệu tái nhận dạng, mỗi ảnh một câu mô tả riêng~\cite{li2017cuhkpedes}, còn ảnh người của đề tài được cắt tự động từ khung hình toàn cảnh khu vực đông người, khác góc quay và thường bị che khuất; khác biệt miền dữ liệu (domain gap) này ảnh hưởng trực tiếp tới truy vấn văn bản và thuộc tính (Mục~\ref{sec:8.4}).

@@ -8,21 +8,21 @@
 \label{sec:6.3.1}
 \label{sec:6.3.2}
 
-The web application is a single-page application built with React, with screen navigation handled by React Router. The routes are split into three groups by role: a user who is not logged in is sent to the login screen, and a user who opens a route of another role is sent to the home page of his or her own role. This guard only avoids showing unusable screens; the actual permissions are always checked by the server on every request.
+Navigation uses React Router with routes grouped by role: a user without a session goes to the login screen, and a route of another role redirects to the user's own home page. This guard only hides unusable screens; permissions are checked by the server (NFR-01).
 
-Every request to the server goes through a common API layer. This layer attaches the CSRF token to every data-changing request (Section~\ref{sec:5.5.2}). The CSRF token is only kept in the page's memory, never in browser storage. Error responses are turned into Vietnamese messages. For server-side errors, the message includes a \emph{lookup code}, the first eight characters of the request identifier, so that the Administrator can find the matching log line (Section~\ref{sec:6.4}). When any request receives 401, the application clears the login state and returns the user to the login screen. The session is only refreshed when the user is actually active. Automatic background requests do not keep the session alive, and the time of the last user action is shared between browser tabs.
+All requests go through one API layer. It attaches the CSRF token, kept only in page memory, to every data-changing request (Section~\ref{sec:5.5.2}), and turns errors into Vietnamese messages. Server errors also show a \emph{lookup code}, the first eight characters of the request identifier, so that the matching log line can be found (Section~\ref{sec:6.4}). A 401 response clears the login state and returns to the login screen. The session is refreshed only on real user activity, shared across browser tabs, so background requests do not keep it alive.
 
 \subsection{Rendering Person Images in the Results}
 \label{sec:6.3.3}
 
-The person images of the result list are rendered by the server from the full frame and the bounding box on each request (Section~\ref{sec:5.3.3}). A result card in the interface has a 3:5 aspect ratio; the crop is widened from the bounding box with the real surrounding scene until it reaches this ratio, only ever growing, never cutting into the person. Since a wide crop may contain other people, the surroundings are dimmed to 60\% brightness and the person found is outlined in an accent colour. The full frame in the detail dialog has a red bounding box drawn around the person. Images are only returned when the requester has the right to see the corresponding result, with instructions not to cache them; if the frame is no longer in the store, the result card shows an \emph{Image unavailable} icon.
+The server renders each person image from the full frame and bounding box (Section~\ref{sec:5.3.3}). For the 3:5 result card, the crop is widened with the real surrounding scene until it fits, never cutting into the person; since it may then include other people, the surroundings are dimmed to 60\% and the person is outlined in an accent colour. The detail dialog shows the full frame with a red box. Images are sent only to users entitled to the result, marked not to be cached, and a missing frame shows an \emph{Image unavailable} icon.
 
 \subsection{Main Screens}
 \label{sec:6.3.4}
 
-The figures below show the main screens of the application by role, captured on the demonstration data (Section~\ref{sec:7.2}). The application's interface is in Vietnamese (NFR-19); the names used below are the English meaning of the screen and label names.
+The figures show the main screens by role on the demonstration data (Section~\ref{sec:7.2}). The interface is in Vietnamese (NFR-19); screen and label names are given by their English meaning.
 
-\paragraph{Operator.} The \emph{Person search} screen (Figure~\ref{fig:ui-search-image}) has the query form on the left, with the query image, the cameras of the area, the date range and the number of results, and the ranked result list on the right. Each result shows the person image in context, the camera, the time of appearance and the relevance score; the shared area and date are only shown once at the top of the list, and the list can be filtered again by time or camera or sorted by time without sending a new query. When searching by attributes (Figure~\ref{fig:ui-search-attr}), the English description generated from the selected attributes is shown in the form, so that users know which description the system actually searches for. Selecting a result opens the detail dialog with the full frame (Figure~\ref{fig:ui-result}), from which the result is saved into a new case, with the logged-in account as owner and the option to close the case right away (Figure~\ref{fig:ui-create-case}). The \emph{My cases} screen (Figure~\ref{fig:ui-cases}) shows the list of cases by status and the details of the selected case; a closed case is locked and can only be reopened.
+\paragraph{Operator.} \emph{Person search} (Figure~\ref{fig:ui-search-image}) has the query form on the left (image, cameras of the area, date range, number of results) and the ranked results on the right, each with the person image in context, camera, time and score; the shared area and date appear once above the list. In attribute search (Figure~\ref{fig:ui-search-attr}), the form shows the generated English description, so users see what is actually searched. A result opens the detail dialog (Figure~\ref{fig:ui-result}), from which it is saved into a case (Figure~\ref{fig:ui-create-case}). \emph{My cases} (Figure~\ref{fig:ui-cases}) lists the cases by status with the details of the selected one; a closed case is locked until reopened.
 
 \begin{figure}[!htbp]
 \centering
@@ -63,7 +63,7 @@ The figures below show the main screens of the application by role, captured on 
 \label{fig:ui-cases}
 \end{figure}
 
-\paragraph{Viewer.} The \emph{Overview} screen (Figure~\ref{fig:ui-overview}) shows the number of cases by status, the number of saved results and the list of recent cases; selecting a case opens the \emph{Case files} screen, which has the same layout as Figure~\ref{fig:ui-cases} but is read-only.
+\paragraph{Viewer.} \emph{Overview} (Figure~\ref{fig:ui-overview}) shows cases by status, saved results and recent cases; a case opens in \emph{Case files}, a read-only version of Figure~\ref{fig:ui-cases}.
 
 \begin{figure}[!htbp]
 \centering
@@ -72,7 +72,7 @@ The figures below show the main screens of the application by role, captured on 
 \label{fig:ui-overview}
 \end{figure}
 
-\paragraph{Administrator.} The \emph{Cameras} screen (Figure~\ref{fig:ui-cameras}) lists the cameras by area with their connection status, where a camera processed only through video files is shown as \emph{Uploaded video}, their AI processing status and the actions to check the connection, edit and retire them. The \emph{AI models} screen (Figure~\ref{fig:ui-models}) lets the Administrator choose the Detector and Tracker; models that do not meet the conditions are marked \emph{Unavailable}, and the encoder is shown as a fixed component (Section~\ref{sec:6.2.1}). The \emph{Video processing} screen (Figure~\ref{fig:ui-video}) uploads a video for a camera with a predefined sampling mode and follows the progress of each job by the number of frames and ready tracks. The two monitoring screens are \emph{System status} (Figure~\ref{fig:ui-status}, Section~\ref{sec:6.4}) and \emph{AI check} (Figure~\ref{fig:ui-diagnostics}, Section~\ref{sec:6.2.5}).
+\paragraph{Administrator.} \emph{Cameras} (Figure~\ref{fig:ui-cameras}) lists the cameras by area with their connection status (\emph{Uploaded video} for file-only cameras), AI processing status and actions. \emph{AI models} (Figure~\ref{fig:ui-models}) selects the Detector and Tracker, marking unusable models and showing the encoder as fixed (Section~\ref{sec:6.2.1}). \emph{Video processing} (Figure~\ref{fig:ui-video}) uploads a video with a sampling preset and follows each job by frames and ready tracks. The monitoring screens are \emph{System status} (Figure~\ref{fig:ui-status}, Section~\ref{sec:6.4}) and \emph{AI check} (Figure~\ref{fig:ui-diagnostics}, Section~\ref{sec:6.2.5}).
 
 \begin{figure}[!htbp]
 \centering

@@ -3,7 +3,7 @@
 \section{Permission Matrix}
 \label{sec:4.6}
 
-The use case diagram (Figure~\ref{fig:usecase}) shows which functions each actor uses. For the same function, however, the roles also differ in the \emph{scope of data} they may access. Table~\ref{tab:permissions} summarises the rights of each role for each group of actions, with the conditions on the scope of data.
+Besides the functions of each actor (Figure~\ref{fig:usecase}), the roles differ in the \emph{scope of data} they may access. Table~\ref{tab:permissions} gives the rights of each role for each group of actions, with these conditions.
 
 \begin{table}[H]
 \centering
@@ -32,6 +32,6 @@ View the overview dashboard & No & No & System-wide \\
 \end{tabularx}
 \end{table}
 
-The images and frame of an appearance are granted on one of two grounds: the search right, meaning the appearance belongs to an operational camera in the Operator's current area; or the right over a case, meaning the appearance has been saved in a case the user may see. Thanks to the second ground, an Operator who has moved to another area and a Viewer can still see the images in a case, even without the right to search on that camera. Every right in the matrix is checked on the server (NFR-01).
+The images of an appearance are granted on one of two grounds: the search right (an operational camera in the Operator's current area) or the right over a case that contains it. The second ground lets a Viewer, or an Operator who has changed area, see the images in a case without the right to search that camera. Every right is checked on the server (NFR-01).
 
-How the tests verify that the system enforces every cell of this matrix is presented in Section~\ref{sec:8.3}.
+Section~\ref{sec:8.3} shows how the tests check every cell of this matrix.

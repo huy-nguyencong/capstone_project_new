@@ -7,7 +7,7 @@
 \section{Thiết kế kiến trúc hệ thống}
 \label{sec:5.1}
 
-Hình~\ref{fig:architecture} trình bày kiến trúc tổng thể của hệ thống, tổ chức quanh hai giai đoạn đã nêu ở Mục~\ref{sec:3.1.6}: luồng \emph{lập chỉ mục} ở cột trái biến dữ liệu camera thành các lần xuất hiện có thể tìm kiếm, và luồng \emph{tìm kiếm} ở cột phải phục vụ thao tác của người dùng. Hai luồng gặp nhau ở tầng lưu trữ phía dưới. Trên hình, đường màu đen là luồng lập chỉ mục, đường màu xanh là luồng tìm kiếm và truy cập dữ liệu, đường nét đứt là việc tạo và nhận công việc, còn đường nét đậm là luồng RTSP liên tục từ camera.
+Hình~\ref{fig:architecture} trình bày kiến trúc hệ thống, tổ chức quanh hai giai đoạn ở Mục~\ref{sec:3.1.6}: luồng \emph{lập chỉ mục} (cột trái) biến dữ liệu camera thành các lần xuất hiện tìm kiếm được, luồng \emph{tìm kiếm} (cột phải) phục vụ người dùng, và hai luồng gặp nhau ở tầng lưu trữ. Đường màu đen là lập chỉ mục, đường màu xanh là tìm kiếm và truy cập dữ liệu, đường nét đứt là tạo và nhận công việc, đường nét đậm là luồng RTSP liên tục.
 
 \begin{figure}[!tbp]
 \centering
@@ -21,20 +21,20 @@ Hình~\ref{fig:architecture} trình bày kiến trúc tổng thể của hệ th
 \label{sec:5.1.1}
 
 \begin{itemize}
-    \item \textbf{Nguồn dữ liệu camera.} Các tệp video của bộ dữ liệu thử nghiệm được FFmpeg phát liên tục lên máy chủ MediaMTX thành các luồng RTSP; mỗi luồng là một camera logic (Mục~\ref{sec:3.7.3}) và đối với hệ thống không khác camera IP thật.
-    \item \textbf{Ứng dụng web.} Giao diện xây dựng bằng React, dùng chung cho cả ba vai trò; ứng dụng web chỉ giao tiếp với máy chủ ứng dụng, không truy cập trực tiếp kho dữ liệu nào.
-    \item \textbf{Máy chủ ứng dụng.} Một tiến trình Flask cung cấp API cho toàn bộ chức năng, và nạp sẵn bộ mã hóa RaSa để mã hóa truy vấn tìm kiếm.
-    \item \textbf{Tiến trình xử lý nền.} Một tiến trình Python riêng thực hiện toàn bộ phần xử lý AI: tự tạo các phiên xử lý RTSP xoay vòng giữa các camera, lần lượt nhận từng công việc trong hàng đợi và chạy quy trình phân tích.
-    \item \textbf{Tầng lưu trữ.} PostgreSQL lưu dữ liệu nghiệp vụ và hàng đợi công việc; Milvus lưu vector đặc trưng kèm các trường dùng để lọc; MinIO lưu khung hình toàn cảnh đại diện của mỗi lần xuất hiện.
+    \item \textbf{Nguồn dữ liệu camera.} FFmpeg phát các video thử nghiệm lên máy chủ MediaMTX; mỗi luồng RTSP là một camera logic (Mục~\ref{sec:3.7.3}), với hệ thống không khác camera IP thật.
+    \item \textbf{Ứng dụng web.} Giao diện React dùng chung cho ba vai trò, chỉ giao tiếp với máy chủ ứng dụng, không truy cập kho dữ liệu.
+    \item \textbf{Máy chủ ứng dụng.} Một tiến trình Flask cung cấp API và nạp sẵn bộ mã hóa RaSa cho truy vấn tìm kiếm.
+    \item \textbf{Tiến trình xử lý nền.} Một tiến trình Python riêng chạy toàn bộ xử lý AI: tạo các phiên RTSP xoay vòng giữa các camera và lần lượt chạy các công việc trong hàng đợi.
+    \item \textbf{Tầng lưu trữ.} PostgreSQL lưu dữ liệu nghiệp vụ và hàng đợi công việc, Milvus lưu vector đặc trưng kèm các trường lọc, MinIO lưu khung hình đại diện của mỗi lần xuất hiện.
 \end{itemize}
 
 \subsection{Các nguyên tắc thiết kế}
 \label{sec:5.1.3}
 
-Nguyên tắc quan trọng nhất là tách xử lý AI khỏi máy chủ ứng dụng. Trên máy triển khai, việc phân tích video chậm hơn thời gian thực khoảng bảy lần, nên máy chủ ứng dụng không đọc luồng RTSP hay chạy quy trình phân tích mà chỉ tạo công việc. Tiến trình xử lý nền thực hiện các công việc này một cách độc lập. Người dùng vẫn tìm kiếm bình thường trong khi hệ thống đang lập chỉ mục, và lỗi khi phân tích không làm dừng máy chủ ứng dụng.
+Nguyên tắc chính là tách xử lý AI khỏi máy chủ ứng dụng. Trên máy triển khai, phân tích video chậm hơn thời gian thực khoảng bảy lần, nên máy chủ chỉ tạo công việc, còn tiến trình xử lý nền thực hiện chúng. Người dùng vẫn tìm kiếm được trong lúc lập chỉ mục, và lỗi phân tích không làm dừng máy chủ.
 
-Hàng đợi công việc được đặt ngay trong PostgreSQL: mỗi công việc là một bản ghi, thay vì dùng thêm một hệ thống hàng đợi thông điệp riêng. Cách này giảm số thành phần phải triển khai trên máy cá nhân và giữ trạng thái công việc cùng chỗ với dữ liệu nghiệp vụ. Tiến trình xử lý nền thực hiện tuần tự một công việc tại một thời điểm, còn các phiên RTSP có thời lượng giới hạn được xoay vòng giữa các camera, để mọi camera đều lần lượt được phân tích mà không làm quá tải máy chỉ có CPU.
+Hàng đợi công việc là một bảng trong PostgreSQL thay vì một hệ thống hàng đợi thông điệp riêng, nên bớt một thành phần phải triển khai và trạng thái công việc nằm cùng dữ liệu nghiệp vụ. Tiến trình nền chạy một công việc mỗi lúc, và các phiên RTSP có giới hạn xoay vòng giữa các camera để camera nào cũng lần lượt được phân tích mà không làm quá tải CPU.
 
-Về lưu trữ, mỗi kho giữ một loại dữ liệu và PostgreSQL là nơi quyết định. Ba phần của cùng một lần xuất hiện được liên kết bằng một mã chung, và mọi kết quả do Milvus trả về đều được đối chiếu lại với PostgreSQL trước khi hiển thị. Mọi truy cập dữ liệu, kể cả ảnh, đều đi qua máy chủ ứng dụng, để ma trận phân quyền ở Mục~\ref{sec:4.6} được áp dụng tại một điểm duy nhất.
+Mỗi kho giữ một loại dữ liệu, liên kết bằng mã chung của lần xuất hiện, và PostgreSQL là nơi quyết định (Mục~\ref{sec:5.3.4}). Mọi truy cập dữ liệu, kể cả ảnh, đều đi qua máy chủ ứng dụng, để ma trận phân quyền ở Mục~\ref{sec:4.6} được áp dụng tại một điểm.
 
-Cuối cùng, hai luồng dùng chung bộ mã hóa và quy trình. Truy vấn được mã hóa bằng đúng trọng số RaSa đã dùng khi lập chỉ mục, để hai bên nằm trong cùng một không gian vector. Luồng RTSP và tệp video chỉ khác nhau ở bước đọc khung hình.
+Cuối cùng, truy vấn được mã hóa bằng đúng trọng số RaSa đã dùng khi lập chỉ mục để hai bên cùng một không gian vector, và luồng RTSP với tệp video dùng chung quy trình sau bước đọc khung hình.

@@ -6,7 +6,7 @@
 \section{Ma trận phân quyền}
 \label{sec:4.6}
 
-Sơ đồ use case (Hình~\ref{fig:usecase}) cho biết mỗi tác nhân sử dụng những chức năng nào. Tuy nhiên, với cùng một chức năng, các vai trò còn khác nhau ở \emph{phạm vi dữ liệu} được phép truy cập. Bảng~\ref{tab:permissions} tổng hợp quyền của từng vai trò theo từng nhóm hành động, kèm điều kiện về phạm vi dữ liệu.
+Ngoài chức năng của từng tác nhân (Hình~\ref{fig:usecase}), các vai trò còn khác nhau ở \emph{phạm vi dữ liệu} được truy cập. Bảng~\ref{tab:permissions} nêu quyền của từng vai trò theo nhóm hành động, kèm các điều kiện này.
 
 \begin{table}[H]
 \centering
@@ -35,6 +35,6 @@ Xem bảng tổng quan & Không & Không & Toàn hệ thống \\
 \end{tabularx}
 \end{table}
 
-Ảnh và khung hình của một lần xuất hiện được cấp theo một trong hai căn cứ: quyền tìm kiếm, tức lần xuất hiện thuộc camera đang vận hành trong khu vực hiện tại của Giám sát viên; hoặc quyền đối với vụ việc, tức lần xuất hiện đã được lưu trong một vụ việc mà người dùng được xem. Nhờ căn cứ thứ hai, Giám sát viên đã chuyển khu vực và Quản lý vẫn xem được ảnh trong vụ việc, dù không có quyền tìm kiếm trên camera đó. Mọi quyền trong ma trận đều được kiểm tra tại máy chủ (NFR-01).
+Ảnh của một lần xuất hiện được cấp theo một trong hai căn cứ: quyền tìm kiếm (camera đang vận hành trong khu vực hiện tại của Giám sát viên) hoặc quyền đối với vụ việc chứa nó. Căn cứ thứ hai cho Quản lý, và Giám sát viên đã đổi khu vực, xem được ảnh trong vụ việc dù không có quyền tìm kiếm trên camera đó. Mọi quyền đều được kiểm tra tại máy chủ (NFR-01).
 
-Việc kiểm thử hệ thống có thực thi đúng từng ô của ma trận này hay không được trình bày tại Mục~\ref{sec:8.3}.
+Mục~\ref{sec:8.3} trình bày cách kiểm thử từng ô của ma trận này.

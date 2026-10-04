@@ -7,12 +7,12 @@
 \label{sec:3.5.1}
 \label{sec:3.5.2}
 
-To compare a description with a person image, the system uses two encoders: an image encoder turns an image into a feature vector, and a text encoder turns a sentence into a vector of the same dimension. The two encoders are trained so that the vector of an image and the vector of the sentence describing that image are close, while non-matching pairs are far apart; a space with this property is called a \emph{joint embedding space}. Closeness is measured with the cosine similarity
+To compare a description with a person image, an image encoder and a text encoder produce vectors of the same dimension, trained so that an image and its description are close and non-matching pairs far apart, forming a \emph{joint embedding space}. Closeness is the cosine similarity
 \begin{equation}
     s(\mathbf{u}, \mathbf{v}) = \frac{\mathbf{u}^\top \mathbf{v}}{\lVert \mathbf{u} \rVert \, \lVert \mathbf{v} \rVert},
     \label{eq:cosine}
 \end{equation}
-which becomes the inner product $\mathbf{u}^\top \mathbf{v}$ when the vectors are normalised to unit length (L2 normalisation). An important advantage is that the gallery images only need to be encoded once, at indexing time; at query time, the system only encodes the query and compares it with the stored vectors (Section~\ref{sec:3.1.6}).
+which is the inner product $\mathbf{u}^\top \mathbf{v}$ for unit-length (L2-normalised) vectors. Gallery images are encoded once at indexing, and a query only needs its own encoding (Section~\ref{sec:3.1.6}).
 
 The common training method is \emph{contrastive learning}: in each batch of $B$ image-text pairs, the correct sentence of an image is the positive sample, the other $B-1$ sentences are negatives, and the loss
 \begin{equation}
@@ -24,17 +24,17 @@ pushes the similarity to the positive well above the negatives, with $\tau$ a te
 \subsection{The RaSa Model}
 \label{sec:3.5.3}
 
-General models such as CLIP and ALBEF struggle to separate small differences between people who look alike, for example the same jacket with trousers of a different colour. RaSa (Relation and Sensitivity Aware representation learning)~\cite{bai2023rasa} is built on ALBEF and designed specifically for text-based person search, with a 12-layer transformer image encoder, a 6-layer text encoder and a 6-layer multimodal encoder. Its three key points are:
+General models such as CLIP and ALBEF struggle with small differences between similar people, such as the same jacket over trousers of another colour. RaSa (Relation and Sensitivity Aware representation learning)~\cite{bai2023rasa} is built on ALBEF and designed specifically for text-based person search, with a 12-layer transformer image encoder, a 6-layer text encoder and a 6-layer multimodal encoder. Its three key points are:
 \begin{itemize}
-    \item \textbf{Intra- and inter-modal contrastive learning.} Besides pairing images with sentences, images of the same person are also pulled together. This makes the vectors of two images of one person close, which is the basis for using the same vector space for image queries in the project.
-    \item \textbf{Relation-aware learning.} Each description is written for \emph{one} specific image and may not be fully true of the other images of that person; RaSa separates these two kinds of positive pairs so as not to learn details that are not true.
-    \item \textbf{Sensitivity-aware learning.} The model is trained to notice when an important word is replaced, such as ``red shirt'' becoming ``blue shirt'', which changes the meaning of the sentence.
+    \item \textbf{Intra- and inter-modal contrastive learning.} Besides pairing images with sentences, images of the same person are pulled together, which is what lets the project use the same space for image queries.
+    \item \textbf{Relation-aware learning.} A description is written for \emph{one} image and may not hold for the person's other images, so RaSa treats these two kinds of positive pairs differently.
+    \item \textbf{Sensitivity-aware learning.} The model learns to notice replaced key words, such as ``red shirt'' becoming ``blue shirt''.
 \end{itemize}
-At query time, RaSa can re-rank the top 128 results with the multimodal encoder to improve accuracy, but this is far more costly than comparing vectors alone. On the CUHK-PEDES test set, RaSa reaches a Rank-1 of 76.51\% and an mAP of 69.38\%~\cite{bai2023rasa}.
+RaSa can re-rank the top 128 results with its multimodal encoder, at a much higher cost than comparing vectors. On the CUHK-PEDES test set, RaSa reaches a Rank-1 of 76.51\% and an mAP of 69.38\%~\cite{bai2023rasa}.
 
 \subsection{Use of RaSa in the System}
 \label{sec:3.5.4}
 
-The system uses RaSa weights pre-trained on CUHK-PEDES, without retraining. The image encoder encodes the person image cropped from the representative frame at indexing time and the query image when searching by image, with input images resized to $384 \times 384$ pixels; the text encoder encodes description sentences and sentences generated from attributes. Vectors have 256 dimensions and are L2-normalised, so all three kinds of query are compared with the same set of vectors by inner product, and each track needs only one vector. Re-ranking is not enabled, because it only applies to text queries, is costly on a CPU-only machine, and no measurement yet shows that it improves results on the project's data.
+The system uses RaSa weights pre-trained on CUHK-PEDES without retraining. The image encoder handles person crops at indexing and query images, resized to $384 \times 384$ pixels; the text encoder handles descriptions and attribute sentences. The 256-dimensional L2-normalised vectors let all three query forms use the same vectors by inner product, with one vector per track. Re-ranking is disabled: it only applies to text queries, is costly on a CPU, and has not been shown to help on the project's data.
 
-Two points should be noted. First, RaSa was designed and evaluated for text-based search; using its image encoder for image-to-image queries is the project's choice based on its intra-modal contrastive learning, not a published result. Second, CUHK-PEDES was built from the images of five existing person re-identification datasets~\cite{li2017cuhkpedes}, each image being a tightly cropped person with a sentence written for that image; the person images in the project are cropped automatically from full frames of a crowded area, with a different context and viewpoint, and are often partially occluded by the people around them. This domain gap directly affects the quality of text and attribute queries (Section~\ref{sec:8.4}).
+Two caveats apply. RaSa was designed and evaluated for text search; using its image encoder for image queries is the project's choice, based on its intra-modal learning, not a published result. And CUHK-PEDES consists of tightly cropped people from five ReID datasets with a sentence per image~\cite{li2017cuhkpedes}, while the project's crops come automatically from full frames of a crowded area, with other viewpoints and frequent occlusion; this domain gap directly affects text and attribute queries (Section~\ref{sec:8.4}).

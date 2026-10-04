@@ -20,7 +20,9 @@
    - **Tiêu đề**, **Nội dung**: dán nguyên văn phần trong khung trích dẫn (`>`).
    - **Hình**: đường dẫn tệp, vị trí `x, y` (góc trên trái), kích thước `rộng × cao`.
    - **Ý chính để nói**: một câu để nhớ khi trình bày. Câu này không đưa lên slide.
-3. Đường dẫn hình tính từ thư mục gốc repo. Có hai thư mục:
+3. Mọi hình dùng cho slide nằm ở `slides/images/` (hình chỉ dùng cho slide được chuyển hẳn sang đây; hình dùng cả
+   trong báo cáo là bản sao, bản gốc vẫn ở `report/thesis-en/`). Nguồn `.drawio` của hình chỉ dùng cho slide ở
+   `slides/drawio/`, script sinh ở `slides/tools/`. Ghi chú cũ về hai thư mục của báo cáo:
    - `report/thesis-en/images/`: 11 ảnh chụp màn hình **đầy đủ** (2560×1440, đúng 16:9) và logo.
    - `report/thesis-en/figures/`: sơ đồ H1–H12, ảnh chụp màn hình **đã cắt** (`*-cat.png`), ảnh sản
      phẩm thương mại, và `figures/research/` (hình của Part II).
@@ -103,19 +105,19 @@ nội dung (L3–L7) đều có:
 
 | Tệp | Tỉ lệ | Slide chính | Ghi chú |
 | --- | --- | --- | --- |
-| `report/thesis-en/images/Logo_BK.png` | 1,10 | 1, 31 | |
-| `report/thesis-en/images/H10a-tim-kiem-anh.png` | 16:9 | 13 | ảnh đầy đủ |
-| `report/thesis-en/figures/H10c-chi-tiet-ket-qua-cat.png` | 1,95 | 1, 14 | dùng cắt nền cho bìa |
-| `report/thesis-en/figures/H10d-tao-vu-viec-cat.png` | 1,09 | 14 | |
-| `report/thesis-en/figures/H10f-tong-quan-cat.png` | 3,83 | 15 | |
-| `report/thesis-en/figures/H10h-mo-hinh-ai-cat.png` | 2,31 | 15 | |
-| `report/thesis-en/figures/H10k-kiem-tra-ai-cat.png` | 2,58 | 15 | |
-| `report/thesis-en/figures/briefcam.png`, `avigilon.png`, `verkada.png` | 1,49 / 0,95 / 1,55 | 7 | |
-| `report/thesis-en/figures/H2-kien-truc-slide.png` | 1,89 | 9 | bản ngang riêng cho slide; bản dọc `H2-kien-truc.png` chỉ dùng trong báo cáo |
-| `report/thesis-en/figures/H3-luu-do-xu-ly-camera.png` | 1,17 | 10 | |
-| `report/thesis-en/figures/S11-luong-tim-kiem.png` | 5,11 | 11 | chỉ dùng cho slide |
-| `report/thesis-en/figures/S12-track-id.png` | 0,76 | 12 | chỉ dùng cho slide |
-| `report/thesis-en/figures/H6-trang-thai-lan-xuat-hien.png` | 1,82 | 12 | |
+| `slides/images/Logo_BK.png` | 1,10 | 1, 31 | |
+| `slides/images/H10a-tim-kiem-anh.png` | 16:9 | 13 | ảnh đầy đủ |
+| `slides/images/H10c-chi-tiet-ket-qua-cat.png` | 1,95 | 1, 14 | dùng cắt nền cho bìa |
+| `slides/images/H10d-tao-vu-viec-cat.png` | 1,09 | 14 | |
+| `slides/images/H10f-tong-quan-cat.png` | 3,83 | 15 | |
+| `slides/images/H10h-mo-hinh-ai-cat.png` | 2,31 | 15 | |
+| `slides/images/H10k-kiem-tra-ai-cat.png` | 2,58 | 15 | |
+| `slides/images/briefcam.png`, `avigilon.png`, `verkada.png` | 1,49 / 0,95 / 1,55 | 7 | |
+| `slides/images/H2-kien-truc-slide.png` | 1,89 | 9 | bản ngang riêng cho slide; bản dọc `H2-kien-truc.png` chỉ dùng trong báo cáo |
+| `slides/images/H3-luu-do-xu-ly-camera.png` | 1,17 | 10 | |
+| `slides/images/S11-luong-tim-kiem.png` | 5,11 | 11 | chỉ dùng cho slide |
+| `slides/images/S12-track-id.png` | 0,76 | 12 | chỉ dùng cho slide |
+| `slides/images/H6-trang-thai-lan-xuat-hien.png` | 1,82 | 12 | |
 | `report/thesis-en/figures/research/overall-000.png` | 1,74 | 19 | |
 | `report/thesis-en/figures/research/offline-000.png` | 1,43 | 21 | |
 | `report/thesis-en/figures/research/online_full-000.png` | 3,17 | 21 | |
@@ -291,7 +293,7 @@ lớn 56 (thẻ 1–2 và 4 màu tím, thẻ 3 màu mòng két). Dưới thẻ, 
 
 - Cột 1 (`x 80`, rộng 380): 3 hộp đầu vào xếp dọc tại `y 240`, `y 460`, `y 680`, mỗi hộp `380 × 160`,
   nền phụ, bo góc 16.
-  - Hộp 1 "Image": chèn một ảnh crop nhỏ (cắt một người từ `images/H10a-tim-kiem-anh.png`, ô ảnh truy
+  - Hộp 1 "Image": chèn một ảnh crop nhỏ (cắt một người từ `slides/images/H10a-tim-kiem-anh.png`, ô ảnh truy
     vấn bên trái), cao 120.
   - Hộp 2 "Sentence": chữ nghiêng `"A woman with long blonde hair wearing a black jacket."`
   - Hộp 3 "Attributes": 3 chip `Woman`, `Coat`, `Black`.
@@ -408,9 +410,9 @@ lớn 56 (thẻ 1–2 và 4 màu tím, thẻ 3 màu mòng két). Dưới thẻ, 
 
 **Bố cục**
 
-- Dùng bản **nằm ngang dành cho slide** `figures/H2-kien-truc-slide.png` (tỉ lệ 1,59), không dùng
+- Dùng bản **nằm ngang dành cho slide** `slides/images/H2-kien-truc-slide.png` (tỉ lệ 1,59), không dùng
   `H2-kien-truc.png` của báo cáo (bản dọc, chèn vào slide ngang thì chữ chỉ còn khoảng một nửa). Nguồn:
-  `figures/H2-kien-truc-slide.drawio`, sinh bằng `report/tools-en/h2_architecture_slide_drawio.py`;
+  `slides/drawio/H2-kien-truc-slide.drawio`, sinh bằng `slides/tools/h2_architecture_slide_drawio.py`;
   muốn chỉnh thì mở `.drawio`, sửa rồi xuất lại PNG (Zoom 200%, Border 20).
 - Hình có đủ mọi khối, nhãn đầu ra và mũi tên của H2 trong báo cáo (đã đối chiếu từng mục); pipeline
   của tiến trình nền đi thành hai hàng: lấy mẫu → phát hiện → theo vết → bộ đệm track, rồi quay ngược
@@ -446,7 +448,7 @@ khỏi request của API.
 
 **Bố cục**
 
-- Hình `figures/H3-luu-do-xu-ly-camera.png` tại `x 80, y 200`, cỡ `936 × 800`, trong thẻ trắng.
+- Hình `slides/images/H3-luu-do-xu-ly-camera.png` tại `x 80, y 200`, cỡ `936 × 800`, trong thẻ trắng.
 - Cột phải `x 1080`, rộng 760: 4 khối quyết định, mỗi khối có tiêu đề 20 Semibold màu tím và 1–2 dòng 18,
   cách nhau 30.
 
@@ -470,9 +472,9 @@ khỏi request của API.
 
 **Bố cục**
 
-- Hình `figures/S11-luong-tim-kiem.png` (tỉ lệ 5,11) tại `x 80, y 250`, cỡ `1760 × 344`, không đặt trong
-  thẻ có viền. Nguồn: `figures/S11-luong-tim-kiem.drawio`, sinh bằng
-  `report/tools-en/slide11_search_flow_drawio.py`; muốn chỉnh thì mở `.drawio`, sửa rồi xuất lại PNG
+- Hình `slides/images/S11-luong-tim-kiem.png` (tỉ lệ 5,11) tại `x 80, y 250`, cỡ `1760 × 344`, không đặt trong
+  thẻ có viền. Nguồn: `slides/drawio/S11-luong-tim-kiem.drawio`, sinh bằng
+  `slides/tools/slide11_search_flow_drawio.py`; muốn chỉnh thì mở `.drawio`, sửa rồi xuất lại PNG
   (Zoom 200%, Border 20). Hình gồm đầu vào, 5 bước, đầu ra; trên mỗi bước có ký hiệu thành phần thực
   hiện (máy chủ Flask, bộ não RaSa, hình trụ PostgreSQL, hình trụ viền đậm Milvus); bước 3 và 4 viền cam,
   có ngoặc cam kèm chữ `filtered inside the search, before top-k`.
@@ -514,11 +516,11 @@ khỏi request của API.
 
 **Bố cục**
 
-- Trái: hình `figures/S12-track-id.png` (cột hẹp, tỉ lệ 0,76) tại `x 80, y 230`, cỡ `489 × 640`, không đặt
-  trong thẻ có viền. Nguồn: `figures/S12-track-id.drawio`, sinh bằng
-  `report/tools-en/slide12_track_id_drawio.py`. Ô `track_id` màu tím ở góc trên, trục dọc bên trái rẽ vào ba
+- Trái: hình `slides/images/S12-track-id.png` (cột hẹp, tỉ lệ 0,76) tại `x 80, y 230`, cỡ `489 × 640`, không đặt
+  trong thẻ có viền. Nguồn: `slides/drawio/S12-track-id.drawio`, sinh bằng
+  `slides/tools/slide12_track_id_drawio.py`. Ô `track_id` màu tím ở góc trên, trục dọc bên trái rẽ vào ba
   kho xếp chồng; ký hiệu giống H2 (PostgreSQL hình trụ viền mảnh, MinIO hình xô, Milvus hình trụ viền đậm).
-- Phải: hình `figures/H6-trang-thai-lan-xuat-hien.png` (tỉ lệ 1,82) tại `x 660, y 230`, cỡ `1180 × 647`.
+- Phải: hình `slides/images/H6-trang-thai-lan-xuat-hien.png` (tỉ lệ 1,82) tại `x 660, y 230`, cỡ `1180 × 647`.
 - Dưới H6: khối chữ tại `x 660, y 905`, rộng 1180 (gõ trong Canva): tiêu đề in đậm và một câu, cỡ 19, tối
   đa 2 dòng.
 
@@ -543,7 +545,7 @@ khỏi request của API.
 
 **Bố cục**
 
-- Ảnh `images/H10a-tim-kiem-anh.png` tại `x 80, y 190`, cỡ `1424 × 801`.
+- Ảnh `slides/images/H10a-tim-kiem-anh.png` tại `x 80, y 190`, cỡ `1424 × 801`.
 - Vòng tròn số trên ảnh: (1) ô ảnh truy vấn bên trái; (2) danh sách camera trong khu vực; (3) nhóm nút số
   kết quả 4/8/12/16; (4) lưới kết quả; (5) ô "Khu vực giám sát Gate A" góc trên phải.
 - Chú thích tại `x 1540`, rộng 300, từ `y 220`, mỗi chú thích 2–3 dòng 16.
@@ -570,8 +572,8 @@ khỏi request của API.
 
 **Bố cục**
 
-- Ảnh `figures/H10c-chi-tiet-ket-qua-cat.png` tại `x 80, y 210`, cỡ `1170 × 600`.
-- Cột phải `x 1300`, rộng 540: ảnh `figures/H10d-tao-vu-viec-cat.png` cỡ `400 × 367` tại `y 210`; dưới ảnh
+- Ảnh `slides/images/H10c-chi-tiet-ket-qua-cat.png` tại `x 80, y 210`, cỡ `1170 × 600`.
+- Cột phải `x 1300`, rộng 540: ảnh `slides/images/H10d-tao-vu-viec-cat.png` cỡ `400 × 367` tại `y 210`; dưới ảnh
   3 gạch đầu dòng 18 tại `y 610`.
 
 **Nội dung, cột phải**
@@ -591,7 +593,7 @@ khỏi request của API.
 
 **Bố cục**
 
-- Ảnh `figures/H10f-tong-quan-cat.png` (tỉ lệ 3,83) tại `x 80, y 210`, cỡ `1760 × 460`, toàn bề ngang.
+- Ảnh `slides/images/H10f-tong-quan-cat.png` (tỉ lệ 3,83) tại `x 80, y 210`, cỡ `1760 × 460`, toàn bề ngang.
 - 3 vòng tròn số trên ảnh: (1) `x 1096, y 340` ngay bên phải bốn ô số đếm; (2) `x 238, y 426` cạnh chữ
   "Vụ việc gần đây"; (3) `x 860, y 462` trên cột "Trạng thái".
 - Dưới ảnh, tại `y 720`, ba thẻ `560 × 220` (L5), mỗi thẻ bắt đầu bằng vòng tròn số tương ứng.
@@ -613,7 +615,7 @@ khỏi request của API.
 
 **Bố cục**
 
-- Ảnh `figures/H10h-mo-hinh-ai-cat.png` (tỉ lệ 2,31) tại `x 80, y 200`, cỡ `1500 × 650`.
+- Ảnh `slides/images/H10h-mo-hinh-ai-cat.png` (tỉ lệ 2,31) tại `x 80, y 200`, cỡ `1500 × 650`.
 - 4 vòng tròn số trên ảnh: (1) `x 161, y 285` sau chữ "Detector"; (2) `x 900, y 285` sau chữ "Tracker";
   (3) `x 590, y 700` trong khung "Thành phần cố định"; (4) `x 1395, y 796` cạnh nút "Áp dụng cấu hình".
 - Cột chú thích tại `x 1620`, rộng 220, bắt đầu `y 230`, cách nhau 150; mỗi chú thích là vòng tròn số và
@@ -643,7 +645,7 @@ khỏi request của API.
 
 **Bố cục**
 
-- Ảnh `figures/H10k-kiem-tra-ai-cat.png` (tỉ lệ 2,58) tại `x 80, y 200`, cỡ `1760 × 682`.
+- Ảnh `slides/images/H10k-kiem-tra-ai-cat.png` (tỉ lệ 2,58) tại `x 80, y 200`, cỡ `1760 × 682`.
 - 4 vòng tròn số trên ảnh: (1) `x 925, y 300` ở mép phải thẻ "Camera Processing Pipeline"; (2) `x 565, y 470`
   cạnh nút "Chạy kiểm tra"; (3) `x 1110, y 545` bên phải cột "Hoạt động"; (4) `x 470, y 822` cạnh dòng
   "Tất cả thành phần hoạt động bình thường".
@@ -727,11 +729,11 @@ hoạt động hay không, không đánh giá độ chính xác của mô hình.
 
 **Nội dung, bảng** (ô số 0 tô chữ cam, ô 0.833 và 1.0 tô chữ xanh lá)
 
-| Form | R@4 | R@8 | R@16 | MRR |
-| --- | --- | --- | --- | --- |
-| By image | **0.833** | **1.0** | **1.0** | 0.867 |
-| By text | 0 | 0 | 0 | 0.01 |
-| By attributes | 0 | 0 | 0 | 0.005 |
+| Form | R@4 | R@8 | R@12 | R@16 | MRR |
+| --- | --- | --- | --- | --- | --- |
+| By image | **0.833** | **1.0** | **1.0** | **1.0** | 0.867 |
+| By text | 0 | 0 | 0 | 0 | 0.01 |
+| By attributes | 0 | 0 | 0 | 0 | 0.005 |
 
 > *6 queries on the WILDTRACK evaluation set, detector threshold 0.25, 1,552 appearances. A re-run of attribute search at threshold 0.1 (1,526 appearances) was also 0 at every k.*
 
@@ -1104,15 +1106,15 @@ Mỗi slide dự phòng dùng layout L4: tiêu đề + một hình lớn canh gi
 
 | Mã | Tiêu đề (dán nguyên văn) | Hình | Dùng khi bị hỏi |
 | --- | --- | --- | --- |
-| B1 | `Use case diagram (15 use cases)` | `figures/H1-use-case.png` (cao 800, rộng 672) | chức năng cụ thể của từng vai trò |
+| B1 | `Use case diagram (15 use cases)` | `slides/images/H1-use-case.png` (cao 800, rộng 672) | chức năng cụ thể của từng vai trò |
 | B2 | `Permission matrix` | bảng 8 hàng của Mục 4.6 báo cáo, dựng lại bằng bảng Canva | phân quyền chi tiết |
-| B3 | `Entity-relationship diagram` | `figures/H8-erd.png` (rộng 1224, cao 800) | thiết kế CSDL |
-| B4 | `Search sequence` | `figures/H4-tuan-tu-tim-kiem.png` (cao 800) | trình tự lọc quyền khi tìm kiếm |
-| B5 | `Saving a result into a case` | `figures/H5-tuan-tu-vu-viec.png` (cao 800) | luồng lưu vụ việc |
-| B6 | `Processing job states` | `figures/H7-trang-thai-cong-viec.png` (rộng 1064, cao 800) | worker, hủy job, thử lại |
-| B7 | `Screen flow by role` | `figures/H12-luong-man-hinh.png` (rộng 984, cao 800) | giao diện tổng thể |
-| B8 | `Search by attributes` | `images/H10b-tim-kiem-thuoc-tinh.png` (rộng 1422, cao 800) | prompt builder hoạt động thế nào |
-| B9 | `Other screens` | `figures/H10e-vu-viec-cua-toi-cat.png`, `H10g-camera-cat.png`, `H10i-xu-ly-video-cat.png`, `H10j-trang-thai-he-thong-cat.png`; mỗi slide dự phòng một ảnh (B9a–B9d), không xếp lưới | các màn hình còn lại |
+| B3 | `Entity-relationship diagram` | `slides/images/H8-erd.png` (rộng 1224, cao 800) | thiết kế CSDL |
+| B4 | `Search sequence` | `slides/images/H4-tuan-tu-tim-kiem.png` (cao 800) | trình tự lọc quyền khi tìm kiếm |
+| B5 | `Saving a result into a case` | `slides/images/H5-tuan-tu-vu-viec.png` (cao 800) | luồng lưu vụ việc |
+| B6 | `Processing job states` | `slides/images/H7-trang-thai-cong-viec.png` (rộng 1064, cao 800) | worker, hủy job, thử lại |
+| B7 | `Screen flow by role` | `slides/images/H12-luong-man-hinh.png` (rộng 984, cao 800) | giao diện tổng thể |
+| B8 | `Search by attributes` | `slides/images/H10b-tim-kiem-thuoc-tinh.png` (rộng 1422, cao 800) | prompt builder hoạt động thế nào |
+| B9 | `Other screens` | `slides/images/H10e-vu-viec-cua-toi-cat.png`, `H10g-camera-cat.png`, `H10i-xu-ly-video-cat.png`, `H10j-trang-thai-he-thong-cat.png`; mỗi slide dự phòng một ảnh (B9a–B9d), không xếp lưới | các màn hình còn lại |
 | B10 | `RTSP handling and memory` | bảng chữ, nội dung bên dưới | độ tin cậy RTSP, RAM |
 | B11 | `ZARA and the selector` | `figures/research/zara-000.png` và `selector-000.png` xếp dọc | nguồn cảm hứng ZARA, stage 1 |
 | B12 | `A lost case, before and after the larger ranker` | `figures/research/case_lost.png` và `case_lost_fixed.png` cạnh nhau (mỗi hình cao 780) | ca thất bại cụ thể |

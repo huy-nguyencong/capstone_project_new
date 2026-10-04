@@ -3,13 +3,13 @@
 \section{Non-Functional Requirements}
 \label{sec:4.3}
 
-The quality requirements below stem from three characteristics of the problem: camera data is sensitive, the data of each appearance consists of several parts that must stay consistent, and the system runs on a personal computer without a discrete graphics card.
+The quality requirements stem from three traits of the problem: camera data is sensitive, each appearance is stored in several parts that must stay consistent, and the system runs on a personal computer without a graphics card.
 
 \subsection{Security and Access Control}
 \label{sec:4.3.1}
 
 \begin{reqlist}
-    \item[NFR-01] \textbf{Server-side permission checks} for every request, including image requests, based on the login session rather than on data sent by the browser; hiding a function in the interface is not considered access control.
+    \item[NFR-01] \textbf{Server-side permission checks} for every request, images included, based on the login session rather than on data sent by the browser; hiding a function in the interface is not access control.
     \item[NFR-02] \textbf{Authentication:} passwords are only stored as one-way hashes, sessions follow FR-C02, and requests that change data are protected against cross-site request forgery (CSRF).
     \item[NFR-03] \textbf{Image protection:} frames are never publicly accessible; they only reach the browser through the server after a permission check.
     \item[NFR-04] \textbf{Camera connection protection:} RTSP credentials are encrypted and never shown again; the system only connects to the camera network ranges declared at deployment.
@@ -22,12 +22,12 @@ The quality requirements below stem from three characteristics of the problem: c
 
 \begin{reqlist}
     \item[NFR-06] \textbf{Data consistency:} an appearance can only be found once its description, vector and frame are all stored; incomplete data must be completable or cleanable.
-    \item[NFR-07] \textbf{No destruction of historical data:} retiring a camera, disabling AI processing, locking or deleting an account and removing a result from a case never delete the original data; the cases of a locked or deleted account keep their owner and remain visible to Viewers.
+    \item[NFR-07] \textbf{No destruction of historical data:} retiring a camera, disabling AI processing, locking or deleting an account and removing a result from a case keep the original data; the cases of a locked or deleted account keep their owner and stay visible to Viewers.
     \item[NFR-08] \textbf{Case integrity:} results in a case keep a snapshot of the camera name, area and time; concurrent updates never silently overwrite each other.
     \item[NFR-09] \textbf{No mixing of vector spaces} from different encoder versions.
-    \item[NFR-10] \textbf{Fault isolation:} a failing component only fails the related function, is reported as that component, and does not stop the processing of other cameras.
+    \item[NFR-10] \textbf{Fault isolation:} a failing component only fails its own function, is reported by name and does not stop other cameras.
     \item[NFR-11] \textbf{Self-recovery:} the system reconnects automatically when an RTSP stream is interrupted.
-    \item[NFR-12] \textbf{No misleading results:} when the search components are unavailable, the system reports a failure instead of returning empty results; when an image is missing, the remaining information is still shown.
+    \item[NFR-12] \textbf{No misleading results:} unavailable search components produce an error, not an empty result; a missing image does not hide the other information.
     \item[NFR-13] \textbf{Safe retries:} multi-step operations leave a valid state when interrupted and can be retried without creating duplicate data.
 \end{reqlist}
 
@@ -36,8 +36,8 @@ The quality requirements below stem from three characteristics of the problem: c
 
 \begin{reqlist}
     \item[NFR-14] \textbf{Runs on the target machine:} the whole system runs on an Intel Core i5-11300H laptop with 16~GB of memory and no discrete graphics card.
-    \item[NFR-15] \textbf{Search independent of indexing:} analysis runs in the background, and search only matches against indexed data, so it remains usable while the system is analysing cameras.
-    \item[NFR-16] \textbf{No real-time requirement:} analysing every stream in time or processing several streams concurrently is not required; the sampling interval is chosen from predefined presets.
+    \item[NFR-15] \textbf{Search independent of indexing:} analysis runs in the background and search only uses indexed data, so search stays usable during analysis.
+    \item[NFR-16] \textbf{No real-time requirement:} streams need not be analysed in real time or concurrently; the sampling interval is chosen from presets.
 \end{reqlist}
 
 \subsection{Traceability, Usability and Maintainability}
@@ -49,8 +49,8 @@ The quality requirements below stem from three characteristics of the problem: c
     \item[NFR-17] \textbf{The audit log} (FR-A11) cannot be modified, contains no passwords or credentials, and keeps the actor's information when the account is deleted.
     \item[NFR-18] \textbf{Reproducible provenance:} each appearance records the versions of the Detector, Tracker and encoder and the sampling interval used.
     \item[NFR-19] \textbf{Language:} the interface is in Vietnamese; only the query content is in English.
-    \item[NFR-20] \textbf{Support for visual assessment:} person images are placed in context, the relevance score is for reference only, the system draws no conclusion about identity and does not show the models' internal confidence.
+    \item[NFR-20] \textbf{Support for visual assessment:} person images are shown in context, the relevance score is for reference only, and the system neither concludes on identity nor shows the models' internal confidence.
     \item[NFR-21] \textbf{Several screen sizes:} usable on a computer and on a phone about 390 pixels wide.
-    \item[NFR-22] \textbf{Replaceable models:} adding a new Detector or Tracker does not require changing other components; RTSP streams and video files share the pipeline after frame reading.
-    \item[NFR-23] \textbf{Replaceable camera source:} communication uses standard RTSP, so the simulated streams can be replaced by real cameras without changing the processing pipeline.
+    \item[NFR-22] \textbf{Replaceable models:} a new Detector or Tracker needs no change elsewhere; RTSP streams and video files share the pipeline after frame reading.
+    \item[NFR-23] \textbf{Replaceable camera source:} standard RTSP lets real cameras replace the simulated streams without changing the pipeline.
 \end{reqlist}

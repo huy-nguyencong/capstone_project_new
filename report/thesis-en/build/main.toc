@@ -6,263 +6,251 @@
 \contentsline {chapter}{Chapter Summary}{vi}{chapter*.6}%
 \contentsline {chapter}{List of Figures}{xvi}{section*.8}%
 \contentsline {chapter}{List of Tables}{xviii}{section*.10}%
-\contentsline {chapter}{List of Abbreviations}{xxi}{chapter*.12}%
+\contentsline {chapter}{List of Abbreviations}{xx}{chapter*.12}%
 \contentsline {chapter}{\numberline {1}Introduction}{1}{chapter.1}%
 \contentsline {section}{\numberline {1.1}Motivation}{1}{section.1.1}%
 \contentsline {section}{\numberline {1.2}Objectives}{2}{section.1.2}%
 \contentsline {section}{\numberline {1.3}Scope}{3}{section.1.3}%
 \contentsline {paragraph}{Search target.}{3}{paragraph*.13}%
 \contentsline {paragraph}{Camera data.}{3}{paragraph*.14}%
-\contentsline {paragraph}{Forms of description.}{4}{paragraph*.15}%
+\contentsline {paragraph}{Forms of description.}{3}{paragraph*.15}%
 \contentsline {paragraph}{Search results.}{4}{paragraph*.16}%
 \contentsline {paragraph}{Users.}{4}{paragraph*.17}%
 \contentsline {paragraph}{Deployment environment.}{4}{paragraph*.18}%
-\contentsline {paragraph}{Research on the search block.}{5}{paragraph*.19}%
-\contentsline {paragraph}{Out of scope.}{5}{paragraph*.20}%
+\contentsline {paragraph}{Research on the search block.}{4}{paragraph*.19}%
+\contentsline {paragraph}{Out of scope.}{4}{paragraph*.20}%
 \contentsline {section}{\numberline {1.4}Limitations}{5}{section.1.4}%
-\contentsline {part}{I\hspace {1em}The Person Search Application}{7}{part.1}%
-\contentsline {chapter}{\numberline {2}Related Systems}{8}{chapter.2}%
-\contentsline {section}{\numberline {2.1}Existing Systems on the Market}{8}{section.2.1}%
-\contentsline {subsection}{\numberline {2.1.1}BriefCam}{8}{subsection.2.1.1}%
-\contentsline {paragraph}{Relation to the project.}{9}{paragraph*.22}%
-\contentsline {subsection}{\numberline {2.1.2}Avigilon Appearance Search}{9}{subsection.2.1.2}%
-\contentsline {paragraph}{Relation to the project.}{10}{paragraph*.24}%
-\contentsline {subsection}{\numberline {2.1.3}Verkada AI-Powered Search}{10}{subsection.2.1.3}%
-\contentsline {paragraph}{Relation to the project.}{11}{paragraph*.26}%
-\contentsline {section}{\numberline {2.2}Comparison and Discussion}{11}{section.2.2}%
-\contentsline {section}{\numberline {2.3}Development Directions}{13}{section.2.3}%
-\contentsline {chapter}{\numberline {3}Theoretical Background}{15}{chapter.3}%
-\contentsline {section}{\numberline {3.1}Person Search and Cross-Modal Retrieval}{15}{section.3.1}%
-\contentsline {subsection}{\numberline {3.1.1}Problem Statement}{15}{subsection.3.1.1}%
-\contentsline {subsection}{\numberline {3.1.2}Three Forms of Query}{16}{subsection.3.1.2}%
-\contentsline {paragraph}{Search by image.}{16}{paragraph*.27}%
-\contentsline {paragraph}{Search by text.}{16}{paragraph*.28}%
-\contentsline {paragraph}{Search by attributes.}{16}{paragraph*.29}%
-\contentsline {subsection}{\numberline {3.1.3}Approach of the Project}{17}{subsection.3.1.3}%
-\contentsline {section}{\numberline {3.2}Person Detection}{18}{section.3.2}%
-\contentsline {subsection}{\numberline {3.2.1}Object Detection}{18}{subsection.3.2.1}%
-\contentsline {subsection}{\numberline {3.2.2}Two-Stage and One-Stage Detectors}{18}{subsection.3.2.2}%
-\contentsline {subsection}{\numberline {3.2.3}The YOLO Family}{18}{subsection.3.2.3}%
-\contentsline {subsection}{\numberline {3.2.4}Post-Processing: Confidence Threshold and Duplicate Removal}{19}{subsection.3.2.4}%
-\contentsline {subsection}{\numberline {3.2.5}Role of Detection in the System}{19}{subsection.3.2.5}%
-\contentsline {section}{\numberline {3.3}Multi-Object Tracking}{19}{section.3.3}%
-\contentsline {subsection}{\numberline {3.3.1}Problem and Basic Components}{19}{subsection.3.3.1}%
-\contentsline {subsection}{\numberline {3.3.2}ByteTrack}{20}{subsection.3.3.2}%
-\contentsline {subsection}{\numberline {3.3.3}BoT-SORT}{20}{subsection.3.3.3}%
-\contentsline {subsection}{\numberline {3.3.4}Track Life Cycle in the System}{20}{subsection.3.3.4}%
-\contentsline {section}{\numberline {3.4}Frame Sampling}{21}{section.3.4}%
-\contentsline {section}{\numberline {3.5}Joint Image-Text Representation Learning}{22}{section.3.5}%
-\contentsline {subsection}{\numberline {3.5.1}Joint Embedding Space and Contrastive Learning}{22}{subsection.3.5.1}%
-\contentsline {subsection}{\numberline {3.5.2}The RaSa Model}{23}{subsection.3.5.2}%
-\contentsline {subsection}{\numberline {3.5.3}Use of RaSa in the System}{23}{subsection.3.5.3}%
-\contentsline {section}{\numberline {3.6}Vector Search}{24}{section.3.6}%
-\contentsline {subsection}{\numberline {3.6.1}Nearest Neighbour Search and the HNSW Index}{24}{subsection.3.6.1}%
-\contentsline {subsection}{\numberline {3.6.2}Vector Search with Filters}{25}{subsection.3.6.2}%
-\contentsline {subsection}{\numberline {3.6.3}Vector Search in the System}{25}{subsection.3.6.3}%
-\contentsline {section}{\numberline {3.7}RTSP and Camera Stream Simulation}{26}{section.3.7}%
-\contentsline {subsection}{\numberline {3.7.1}H.264 Compressed Video}{26}{subsection.3.7.1}%
-\contentsline {subsection}{\numberline {3.7.2}RTSP and RTP}{26}{subsection.3.7.2}%
-\contentsline {subsection}{\numberline {3.7.3}Simulating Cameras with a Streaming Server}{26}{subsection.3.7.3}%
-\contentsline {subsection}{\numberline {3.7.4}Receiving RTSP Streams in the System}{27}{subsection.3.7.4}%
-\contentsline {chapter}{\numberline {4}System Analysis}{28}{chapter.4}%
-\contentsline {section}{\numberline {4.1}Actors}{28}{section.4.1}%
-\contentsline {subsection}{\numberline {4.1.1}Administrator}{29}{subsection.4.1.1}%
-\contentsline {subsection}{\numberline {4.1.2}Operator}{29}{subsection.4.1.2}%
-\contentsline {subsection}{\numberline {4.1.3}Viewer}{30}{subsection.4.1.3}%
-\contentsline {subsection}{\numberline {4.1.4}Principles of Role Separation}{30}{subsection.4.1.4}%
-\contentsline {section}{\numberline {4.2}Functional Requirements}{31}{section.4.2}%
-\contentsline {subsection}{\numberline {4.2.1}Common Functions}{31}{subsection.4.2.1}%
-\contentsline {subsection}{\numberline {4.2.2}Administrator Functions}{31}{subsection.4.2.2}%
-\contentsline {paragraph}{Account management.}{31}{paragraph*.31}%
-\contentsline {paragraph}{Camera management.}{31}{paragraph*.32}%
-\contentsline {paragraph}{AI processing management.}{32}{paragraph*.33}%
-\contentsline {paragraph}{Operation monitoring.}{32}{paragraph*.34}%
-\contentsline {subsection}{\numberline {4.2.3}Operator Functions}{32}{subsection.4.2.3}%
-\contentsline {paragraph}{Searching for people.}{32}{paragraph*.35}%
-\contentsline {paragraph}{Viewing and assessing results.}{33}{paragraph*.36}%
-\contentsline {paragraph}{Case management.}{33}{paragraph*.37}%
-\contentsline {subsection}{\numberline {4.2.4}Viewer Functions}{34}{subsection.4.2.4}%
-\contentsline {subsection}{\numberline {4.2.5}Automatic System Functions}{34}{subsection.4.2.5}%
-\contentsline {section}{\numberline {4.3}Non-Functional Requirements}{34}{section.4.3}%
-\contentsline {subsection}{\numberline {4.3.1}Security and Access Control}{35}{subsection.4.3.1}%
-\contentsline {subsection}{\numberline {4.3.2}Data Integrity and Recoverability}{35}{subsection.4.3.2}%
-\contentsline {subsection}{\numberline {4.3.3}Performance and Resources}{36}{subsection.4.3.3}%
-\contentsline {subsection}{\numberline {4.3.4}Traceability, Usability and Maintainability}{36}{subsection.4.3.4}%
-\contentsline {section}{\numberline {4.4}Use Case Diagram}{37}{section.4.4}%
-\contentsline {section}{\numberline {4.5}Use Case Specifications}{40}{section.4.5}%
-\contentsline {section}{\numberline {4.6}Permission Matrix}{47}{section.4.6}%
-\contentsline {chapter}{\numberline {5}System Design}{49}{chapter.5}%
-\contentsline {section}{\numberline {5.1}System Architecture}{49}{section.5.1}%
-\contentsline {subsection}{\numberline {5.1.1}Components}{49}{subsection.5.1.1}%
-\contentsline {subsection}{\numberline {5.1.2}Design Principles}{51}{subsection.5.1.2}%
-\contentsline {section}{\numberline {5.2}Main Processing Flows}{52}{section.5.2}%
-\contentsline {subsection}{\numberline {5.2.1}Camera Data Processing Flow}{52}{subsection.5.2.1}%
-\contentsline {paragraph}{Job life cycle.}{52}{paragraph*.42}%
-\contentsline {paragraph}{Processing steps.}{52}{paragraph*.44}%
-\contentsline {subsection}{\numberline {5.2.2}Representative Frame Selection}{55}{subsection.5.2.2}%
-\contentsline {subsection}{\numberline {5.2.3}Search Flow}{55}{subsection.5.2.3}%
-\contentsline {subsection}{\numberline {5.2.4}Case Management Flow}{57}{subsection.5.2.4}%
-\contentsline {section}{\numberline {5.3}Database Design}{59}{section.5.3}%
-\contentsline {subsection}{\numberline {5.3.1}Relational Database}{59}{subsection.5.3.1}%
-\contentsline {paragraph}{Relationships.}{59}{paragraph*.49}%
-\contentsline {paragraph}{Integrity constraints.}{61}{paragraph*.51}%
-\contentsline {subsection}{\numberline {5.3.2}Feature Vector Storage}{61}{subsection.5.3.2}%
-\contentsline {paragraph}{One collection per encoder version.}{61}{paragraph*.52}%
-\contentsline {paragraph}{Index and operations.}{62}{paragraph*.54}%
-\contentsline {subsection}{\numberline {5.3.3}Frame Storage}{63}{subsection.5.3.3}%
-\contentsline {subsection}{\numberline {5.3.4}Consistency Across the Stores}{63}{subsection.5.3.4}%
-\contentsline {paragraph}{Appearance states.}{63}{paragraph*.55}%
-\contentsline {paragraph}{Write order.}{64}{paragraph*.57}%
-\contentsline {paragraph}{Error handling and maintenance tools.}{65}{paragraph*.58}%
-\contentsline {paragraph}{Protection at search time.}{65}{paragraph*.59}%
-\contentsline {section}{\numberline {5.4}Application Programming Interface Design}{65}{section.5.4}%
-\contentsline {section}{\numberline {5.5}Security and Access Control Design}{66}{section.5.5}%
-\contentsline {subsection}{\numberline {5.5.1}Authentication and Sessions}{66}{subsection.5.5.1}%
-\contentsline {subsection}{\numberline {5.5.2}Cross-Site Request Forgery Protection}{67}{subsection.5.5.2}%
-\contentsline {subsection}{\numberline {5.5.3}Access Control}{67}{subsection.5.5.3}%
-\contentsline {subsection}{\numberline {5.5.4}Data Protection and Abuse Limitation}{68}{subsection.5.5.4}%
-\contentsline {section}{\numberline {5.6}User Interface Design}{68}{section.5.6}%
-\contentsline {subsection}{\numberline {5.6.1}Screen Structure by Role}{68}{subsection.5.6.1}%
-\contentsline {subsection}{\numberline {5.6.2}Design Principles}{70}{subsection.5.6.2}%
-\contentsline {chapter}{\numberline {6}System Implementation}{71}{chapter.6}%
-\contentsline {section}{\numberline {6.1}Evaluation and Choice of Technologies and Models}{71}{section.6.1}%
-\contentsline {subsection}{\numberline {6.1.1}Front-End Technologies}{72}{subsection.6.1.1}%
-\contentsline {subsection}{\numberline {6.1.2}Server-Side Technologies}{73}{subsection.6.1.2}%
-\contentsline {subsection}{\numberline {6.1.3}Database and Storage}{73}{subsection.6.1.3}%
-\contentsline {subsection}{\numberline {6.1.4}AI Models}{74}{subsection.6.1.4}%
-\contentsline {paragraph}{Person detection.}{74}{paragraph*.62}%
-\contentsline {paragraph}{Tracking.}{74}{paragraph*.64}%
-\contentsline {paragraph}{Encoder.}{74}{paragraph*.65}%
-\contentsline {section}{\numberline {6.2}Background AI Worker Implementation}{75}{section.6.2}%
-\contentsline {subsection}{\numberline {6.2.1}Model Management and Packaging}{75}{subsection.6.2.1}%
-\contentsline {subsection}{\numberline {6.2.2}Resource Limits and Error Handling}{75}{subsection.6.2.2}%
-\contentsline {paragraph}{AI check.}{76}{paragraph*.66}%
-\contentsline {section}{\numberline {6.3}User Interface Implementation}{76}{section.6.3}%
-\contentsline {subsection}{\numberline {6.3.1}Navigation and Communication with the Server}{76}{subsection.6.3.1}%
-\contentsline {subsection}{\numberline {6.3.2}Rendering Person Images in the Results}{77}{subsection.6.3.2}%
-\contentsline {subsection}{\numberline {6.3.3}Main Screens}{77}{subsection.6.3.3}%
-\contentsline {paragraph}{Operator.}{77}{paragraph*.67}%
-\contentsline {paragraph}{Viewer.}{78}{paragraph*.72}%
-\contentsline {paragraph}{Administrator.}{78}{paragraph*.74}%
-\contentsline {section}{\numberline {6.4}Operation Monitoring}{81}{section.6.4}%
-\contentsline {paragraph}{Technical logs.}{81}{paragraph*.80}%
-\contentsline {paragraph}{Audit log.}{83}{paragraph*.81}%
-\contentsline {paragraph}{Metrics and system status.}{83}{paragraph*.82}%
-\contentsline {chapter}{\numberline {7}System Deployment}{84}{chapter.7}%
-\contentsline {section}{\numberline {7.1}Environment and Deployment Procedure}{84}{section.7.1}%
-\contentsline {paragraph}{Environment.}{84}{paragraph*.83}%
-\contentsline {paragraph}{Start-up procedure.}{84}{paragraph*.84}%
-\contentsline {paragraph}{Backup and restore.}{84}{paragraph*.85}%
-\contentsline {section}{\numberline {7.2}Test Data and Simulated Cameras}{85}{section.7.2}%
-\contentsline {paragraph}{Dataset.}{85}{paragraph*.86}%
-\contentsline {paragraph}{Simulated cameras.}{85}{paragraph*.87}%
-\contentsline {paragraph}{Preparing the demonstration data.}{85}{paragraph*.88}%
-\contentsline {chapter}{\numberline {8}Testing and Evaluation}{86}{chapter.8}%
-\contentsline {section}{\numberline {8.1}Software Testing}{86}{section.8.1}%
-\contentsline {paragraph}{Access control and security tests.}{87}{paragraph*.91}%
-\contentsline {section}{\numberline {8.2}Search Quality Evaluation}{88}{section.8.2}%
-\contentsline {paragraph}{Method.}{88}{paragraph*.92}%
-\contentsline {paragraph}{Person detection.}{89}{paragraph*.94}%
-\contentsline {paragraph}{Discussion.}{89}{paragraph*.95}%
-\contentsline {paragraph}{Qualitative check on the demonstration data.}{89}{paragraph*.96}%
-\contentsline {section}{\numberline {8.3}Performance and Camera Stream Handling}{89}{section.8.3}%
-\contentsline {paragraph}{Sampling interval.}{89}{paragraph*.97}%
-\contentsline {paragraph}{RTSP stream handling.}{90}{paragraph*.99}%
-\contentsline {paragraph}{Search latency.}{91}{paragraph*.100}%
-\contentsline {paragraph}{Storage and memory.}{91}{paragraph*.102}%
-\contentsline {part}{II\hspace {1em}Semantic Reasoning for Text-Based Person Search}{93}{part.2}%
-\contentsline {chapter}{\numberline {9}Semantic Reasoning: Motivation and Overview}{94}{chapter.9}%
-\contentsline {section}{\numberline {9.1}Motivation and Contributions}{94}{section.9.1}%
-\contentsline {subsection}{\numberline {9.1.1}Problem}{94}{subsection.9.1.1}%
-\contentsline {subsection}{\numberline {9.1.2}Why a reasoning layer}{94}{subsection.9.1.2}%
-\contentsline {subsection}{\numberline {9.1.3}Contributions}{95}{subsection.9.1.3}%
-\contentsline {section}{\numberline {9.2}The Pipeline, and Where to Improve It}{96}{section.9.2}%
-\contentsline {subsection}{\numberline {9.2.1}The pipeline in the abstract}{96}{subsection.9.2.1}%
-\contentsline {subsection}{\numberline {9.2.2}Possible directions for improvement}{97}{subsection.9.2.2}%
-\contentsline {paragraph}{Why an LLM-based search block.}{97}{paragraph*.105}%
-\contentsline {subsection}{\numberline {9.2.3}ZARA: related work and inspiration}{98}{subsection.9.2.3}%
-\contentsline {section}{\numberline {9.3}System Overview}{99}{section.9.3}%
-\contentsline {subsection}{\numberline {9.3.1}Filling the slots}{99}{subsection.9.3.1}%
-\contentsline {subsection}{\numberline {9.3.2}Offline indexing}{100}{subsection.9.3.2}%
-\contentsline {subsection}{\numberline {9.3.3}Online search}{101}{subsection.9.3.3}%
-\contentsline {chapter}{\numberline {10}Attribute Index and Multi-Agent Reasoning}{103}{chapter.10}%
-\contentsline {section}{\numberline {10.1}The Attribute Index}{103}{section.10.1}%
-\contentsline {subsection}{\numberline {10.1.1}Schema}{103}{subsection.10.1.1}%
-\contentsline {subsection}{\numberline {10.1.2}Visual context}{104}{subsection.10.1.2}%
-\contentsline {subsection}{\numberline {10.1.3}Three different counts}{105}{subsection.10.1.3}%
-\contentsline {subsection}{\numberline {10.1.4}The image-quality problem, and why voting does not work}{106}{subsection.10.1.4}%
-\contentsline {section}{\numberline {10.2}Multi-Agent Semantic Reasoning}{106}{section.10.2}%
-\contentsline {subsection}{\numberline {10.2.1}The funnel}{106}{subsection.10.2.1}%
-\contentsline {paragraph}{Why stage 0 is not in the funnel.}{107}{paragraph*.113}%
-\contentsline {subsection}{\numberline {10.2.2}Stage 0: query analyst}{108}{subsection.10.2.2}%
-\contentsline {paragraph}{Why a separate pre-run.}{108}{paragraph*.114}%
-\contentsline {subsection}{\numberline {10.2.3}Stage 1: attribute-value selector}{109}{subsection.10.2.3}%
-\contentsline {subsection}{\numberline {10.2.4}Stage 2A: evidence reader}{111}{subsection.10.2.4}%
-\contentsline {subsection}{\numberline {10.2.5}Stage 2B: the ranker}{113}{subsection.10.2.5}%
-\contentsline {paragraph}{Reliability, not direction.}{114}{paragraph*.119}%
-\contentsline {paragraph}{What each query value is worth.}{114}{paragraph*.120}%
-\contentsline {paragraph}{The coverage floor.}{114}{paragraph*.121}%
-\contentsline {subsection}{\numberline {10.2.6}What the CLIP score is worth inside the pool}{115}{subsection.10.2.6}%
-\contentsline {subsection}{\numberline {10.2.7}Stages 3 and 4}{116}{subsection.10.2.7}%
-\contentsline {subsection}{\numberline {10.2.8}Engineering}{116}{subsection.10.2.8}%
-\contentsline {chapter}{\numberline {11}Experiments and Results}{117}{chapter.11}%
-\contentsline {section}{\numberline {11.1}Experimental Setup}{117}{section.11.1}%
-\contentsline {subsection}{\numberline {11.1.1}Dataset}{117}{subsection.11.1.1}%
-\contentsline {paragraph}{Why Market-1501, and how it stands in for a tracker.}{117}{paragraph*.123}%
-\contentsline {paragraph}{Why YOLO11n and ByteTrack are not in the experiment.}{118}{paragraph*.124}%
-\contentsline {paragraph}{The 496-identity subset.}{118}{paragraph*.125}%
-\contentsline {subsection}{\numberline {11.1.2}Models}{118}{subsection.11.1.2}%
-\contentsline {subsection}{\numberline {11.1.3}Funnel sizes and token budget}{119}{subsection.11.1.3}%
-\contentsline {subsection}{\numberline {11.1.4}Baseline}{119}{subsection.11.1.4}%
-\contentsline {paragraph}{image-clip.}{119}{paragraph*.127}%
-\contentsline {paragraph}{A grouped baseline, considered and not reported.}{119}{paragraph*.128}%
-\contentsline {subsection}{\numberline {11.1.5}Metrics}{120}{subsection.11.1.5}%
-\contentsline {section}{\numberline {11.2}Results}{120}{section.11.2}%
-\contentsline {subsection}{\numberline {11.2.1}Main comparison}{120}{subsection.11.2.1}%
-\contentsline {subsection}{\numberline {11.2.2}What the funnel changed: rescued and lost}{121}{subsection.11.2.2}%
-\contentsline {subsection}{\numberline {11.2.3}Where the losses happen}{122}{subsection.11.2.3}%
-\contentsline {subsection}{\numberline {11.2.4}Is the ranker the bottleneck? A targeted re-run}{123}{subsection.11.2.4}%
-\contentsline {subsection}{\numberline {11.2.5}Case studies}{124}{subsection.11.2.5}%
-\contentsline {paragraph}{A lost case (Figure~\ref {fig:r-case-lost}).}{124}{paragraph*.133}%
-\contentsline {paragraph}{The same case after the re-run (Figure~\ref {fig:r-case-lost-fixed}).}{125}{paragraph*.135}%
-\contentsline {paragraph}{A rescued case (Figure~\ref {fig:r-case-rescued}).}{125}{paragraph*.137}%
-\contentsline {subsection}{\numberline {11.2.6}Error analysis}{126}{subsection.11.2.6}%
-\contentsline {section}{\numberline {11.3}Ablations and Design Decisions}{127}{section.11.3}%
-\contentsline {paragraph}{The sample behind a prompt measurement is a batch, not a sweep.}{127}{paragraph*.139}%
-\contentsline {paragraph}{The model fixes a style per call.}{127}{paragraph*.140}%
-\contentsline {paragraph}{Switchable but not yet measured.}{129}{paragraph*.141}%
-\contentsline {paragraph}{The ablation this part could not run.}{129}{paragraph*.142}%
-\contentsline {section}{\numberline {11.4}Evaluation Tooling and Reproducibility}{129}{section.11.4}%
-\contentsline {paragraph}{Records are rebuilt from replies, not trusted.}{129}{paragraph*.143}%
-\contentsline {paragraph}{Every rate is reported with its denominator and its ceiling.}{130}{paragraph*.144}%
-\contentsline {chapter}{\numberline {12}Conclusion and Future Work}{131}{chapter.12}%
-\contentsline {section}{\numberline {12.1}Achievements}{131}{section.12.1}%
-\contentsline {subsection}{\numberline {12.1.1}Part I: The Application}{131}{subsection.12.1.1}%
-\contentsline {subsection}{\numberline {12.1.2}Part II: The Reasoning Layer}{132}{subsection.12.1.2}%
-\contentsline {section}{\numberline {12.2}Limitations}{133}{section.12.2}%
-\contentsline {subsection}{\numberline {12.2.1}Part I: The Application}{133}{subsection.12.2.1}%
-\contentsline {subsection}{\numberline {12.2.2}Part II: The Reasoning Layer}{133}{subsection.12.2.2}%
-\contentsline {paragraph}{Model.}{133}{paragraph*.145}%
-\contentsline {paragraph}{Data.}{134}{paragraph*.146}%
-\contentsline {paragraph}{The blocks this part did not change.}{134}{paragraph*.147}%
-\contentsline {paragraph}{The refine round.}{134}{paragraph*.148}%
-\contentsline {paragraph}{Rarity versus mismatch cost.}{134}{paragraph*.149}%
-\contentsline {paragraph}{Output truncation.}{134}{paragraph*.150}%
-\contentsline {paragraph}{Single phrasing.}{135}{paragraph*.151}%
-\contentsline {section}{\numberline {12.3}Future Work}{135}{section.12.3}%
-\contentsline {subsection}{\numberline {12.3.1}Part I: The Application}{135}{subsection.12.3.1}%
-\contentsline {subsection}{\numberline {12.3.2}Bringing the Two Parts Together}{136}{subsection.12.3.2}%
-\contentsline {chapter}{References}{137}{chapter*.152}%
-\contentsline {chapter}{\numberline {A}System Prompts of Part II}{143}{appendix.A}%
-\contentsline {section}{\numberline {A.1}Stage 0: query analyst}{143}{section.A.1}%
-\contentsline {paragraph}{User message.}{145}{paragraph*.153}%
-\contentsline {section}{\numberline {A.2}Stage 1: attribute-value selector}{146}{section.A.2}%
-\contentsline {paragraph}{User message.}{148}{paragraph*.154}%
-\contentsline {section}{\numberline {A.3}Stage 3: the refine selector's insertion}{149}{section.A.3}%
-\contentsline {section}{\numberline {A.4}Stage 2A / 4A: evidence reader}{149}{section.A.4}%
-\contentsline {paragraph}{User message.}{158}{paragraph*.155}%
-\contentsline {section}{\numberline {A.5}Stage 2B / 4B: the ranker}{159}{section.A.5}%
-\contentsline {paragraph}{User message.}{171}{paragraph*.156}%
-\contentsline {section}{\numberline {A.6}The coverage blocks}{172}{section.A.6}%
-\contentsline {paragraph}{Coarse round ($75\rightarrow 25$).}{172}{paragraph*.157}%
-\contentsline {paragraph}{Final round ($25\rightarrow 10$).}{173}{paragraph*.158}%
+\contentsline {part}{I\hspace {1em}The Person Search Application}{6}{part.1}%
+\contentsline {chapter}{\numberline {2}Related Systems}{7}{chapter.2}%
+\contentsline {section}{\numberline {2.1}Existing Systems on the Market}{7}{section.2.1}%
+\contentsline {subsection}{\numberline {2.1.1}BriefCam}{7}{subsection.2.1.1}%
+\contentsline {paragraph}{Relation to the project.}{8}{paragraph*.22}%
+\contentsline {subsection}{\numberline {2.1.2}Avigilon Appearance Search}{8}{subsection.2.1.2}%
+\contentsline {paragraph}{Relation to the project.}{9}{paragraph*.24}%
+\contentsline {subsection}{\numberline {2.1.3}Verkada AI-Powered Search}{9}{subsection.2.1.3}%
+\contentsline {paragraph}{Relation to the project.}{10}{paragraph*.26}%
+\contentsline {section}{\numberline {2.2}Comparison and Discussion}{10}{section.2.2}%
+\contentsline {section}{\numberline {2.3}Development Directions}{12}{section.2.3}%
+\contentsline {chapter}{\numberline {3}Theoretical Background}{13}{chapter.3}%
+\contentsline {section}{\numberline {3.1}Person Search and Cross-Modal Retrieval}{13}{section.3.1}%
+\contentsline {subsection}{\numberline {3.1.1}Problem Statement}{13}{subsection.3.1.1}%
+\contentsline {subsection}{\numberline {3.1.2}Three Forms of Query}{13}{subsection.3.1.2}%
+\contentsline {paragraph}{Search by image.}{13}{paragraph*.27}%
+\contentsline {paragraph}{Search by text.}{14}{paragraph*.28}%
+\contentsline {paragraph}{Search by attributes.}{14}{paragraph*.29}%
+\contentsline {subsection}{\numberline {3.1.3}Approach of the Project}{14}{subsection.3.1.3}%
+\contentsline {section}{\numberline {3.2}Person Detection}{15}{section.3.2}%
+\contentsline {subsection}{\numberline {3.2.1}Object Detection}{15}{subsection.3.2.1}%
+\contentsline {subsection}{\numberline {3.2.2}Two-Stage and One-Stage Detectors}{16}{subsection.3.2.2}%
+\contentsline {subsection}{\numberline {3.2.3}The YOLO Family}{16}{subsection.3.2.3}%
+\contentsline {subsection}{\numberline {3.2.4}Post-Processing: Thresholding and Duplicate Removal}{16}{subsection.3.2.4}%
+\contentsline {subsection}{\numberline {3.2.5}Role of Detection in the System}{17}{subsection.3.2.5}%
+\contentsline {section}{\numberline {3.3}Multi-Object Tracking}{17}{section.3.3}%
+\contentsline {subsection}{\numberline {3.3.1}Problem and Basic Components}{17}{subsection.3.3.1}%
+\contentsline {subsection}{\numberline {3.3.2}ByteTrack}{18}{subsection.3.3.2}%
+\contentsline {subsection}{\numberline {3.3.3}BoT-SORT}{18}{subsection.3.3.3}%
+\contentsline {subsection}{\numberline {3.3.4}Track Life Cycle in the System}{18}{subsection.3.3.4}%
+\contentsline {section}{\numberline {3.4}Frame Sampling}{19}{section.3.4}%
+\contentsline {section}{\numberline {3.5}Joint Image-Text Representation Learning}{19}{section.3.5}%
+\contentsline {subsection}{\numberline {3.5.1}Joint Embedding Space and Contrastive Learning}{19}{subsection.3.5.1}%
+\contentsline {subsection}{\numberline {3.5.2}The RaSa Model}{20}{subsection.3.5.2}%
+\contentsline {subsection}{\numberline {3.5.3}Use of RaSa in the System}{21}{subsection.3.5.3}%
+\contentsline {section}{\numberline {3.6}Vector Search}{21}{section.3.6}%
+\contentsline {subsection}{\numberline {3.6.1}Nearest Neighbour Search and the HNSW Index}{21}{subsection.3.6.1}%
+\contentsline {subsection}{\numberline {3.6.2}Vector Search with Filters}{22}{subsection.3.6.2}%
+\contentsline {subsection}{\numberline {3.6.3}Vector Search in the System}{22}{subsection.3.6.3}%
+\contentsline {section}{\numberline {3.7}RTSP and Camera Stream Simulation}{22}{section.3.7}%
+\contentsline {subsection}{\numberline {3.7.1}H.264 Compressed Video}{22}{subsection.3.7.1}%
+\contentsline {subsection}{\numberline {3.7.2}RTSP and RTP}{23}{subsection.3.7.2}%
+\contentsline {subsection}{\numberline {3.7.3}Simulating Cameras with a Streaming Server}{23}{subsection.3.7.3}%
+\contentsline {subsection}{\numberline {3.7.4}Receiving RTSP Streams in the System}{23}{subsection.3.7.4}%
+\contentsline {chapter}{\numberline {4}System Analysis}{25}{chapter.4}%
+\contentsline {section}{\numberline {4.1}Actors}{25}{section.4.1}%
+\contentsline {subsection}{\numberline {4.1.1}Administrator}{25}{subsection.4.1.1}%
+\contentsline {subsection}{\numberline {4.1.2}Operator}{26}{subsection.4.1.2}%
+\contentsline {subsection}{\numberline {4.1.3}Viewer}{26}{subsection.4.1.3}%
+\contentsline {subsection}{\numberline {4.1.4}Principles of Role Separation}{26}{subsection.4.1.4}%
+\contentsline {section}{\numberline {4.2}Functional Requirements}{27}{section.4.2}%
+\contentsline {subsection}{\numberline {4.2.1}Common Functions}{27}{subsection.4.2.1}%
+\contentsline {subsection}{\numberline {4.2.2}Administrator Functions}{27}{subsection.4.2.2}%
+\contentsline {paragraph}{Account management.}{27}{paragraph*.31}%
+\contentsline {paragraph}{Camera management.}{27}{paragraph*.32}%
+\contentsline {paragraph}{AI processing management.}{28}{paragraph*.33}%
+\contentsline {paragraph}{Operation monitoring.}{28}{paragraph*.34}%
+\contentsline {subsection}{\numberline {4.2.3}Operator Functions}{29}{subsection.4.2.3}%
+\contentsline {paragraph}{Searching for people.}{29}{paragraph*.35}%
+\contentsline {paragraph}{Viewing and assessing results.}{29}{paragraph*.36}%
+\contentsline {paragraph}{Case management.}{29}{paragraph*.37}%
+\contentsline {subsection}{\numberline {4.2.4}Viewer Functions}{30}{subsection.4.2.4}%
+\contentsline {subsection}{\numberline {4.2.5}Automatic System Functions}{30}{subsection.4.2.5}%
+\contentsline {section}{\numberline {4.3}Non-Functional Requirements}{31}{section.4.3}%
+\contentsline {subsection}{\numberline {4.3.1}Security and Access Control}{31}{subsection.4.3.1}%
+\contentsline {subsection}{\numberline {4.3.2}Data Integrity and Recoverability}{31}{subsection.4.3.2}%
+\contentsline {subsection}{\numberline {4.3.3}Performance and Resources}{32}{subsection.4.3.3}%
+\contentsline {subsection}{\numberline {4.3.4}Traceability, Usability and Maintainability}{32}{subsection.4.3.4}%
+\contentsline {section}{\numberline {4.4}Use Case Diagram}{33}{section.4.4}%
+\contentsline {section}{\numberline {4.5}Use Case Specifications}{37}{section.4.5}%
+\contentsline {section}{\numberline {4.6}Permission Matrix}{42}{section.4.6}%
+\contentsline {chapter}{\numberline {5}System Design}{44}{chapter.5}%
+\contentsline {section}{\numberline {5.1}System Architecture}{44}{section.5.1}%
+\contentsline {subsection}{\numberline {5.1.1}Components}{44}{subsection.5.1.1}%
+\contentsline {subsection}{\numberline {5.1.2}Design Principles}{46}{subsection.5.1.2}%
+\contentsline {section}{\numberline {5.2}Main Processing Flows}{46}{section.5.2}%
+\contentsline {subsection}{\numberline {5.2.1}Camera Data Processing Flow}{46}{subsection.5.2.1}%
+\contentsline {paragraph}{Job life cycle.}{47}{paragraph*.42}%
+\contentsline {paragraph}{Processing steps.}{47}{paragraph*.44}%
+\contentsline {subsection}{\numberline {5.2.2}Representative Frame Selection}{49}{subsection.5.2.2}%
+\contentsline {subsection}{\numberline {5.2.3}Search Flow}{49}{subsection.5.2.3}%
+\contentsline {subsection}{\numberline {5.2.4}Case Management Flow}{51}{subsection.5.2.4}%
+\contentsline {section}{\numberline {5.3}Database Design}{51}{section.5.3}%
+\contentsline {subsection}{\numberline {5.3.1}Relational Database}{51}{subsection.5.3.1}%
+\contentsline {paragraph}{Relationships.}{53}{paragraph*.49}%
+\contentsline {paragraph}{Integrity constraints.}{53}{paragraph*.50}%
+\contentsline {subsection}{\numberline {5.3.2}Feature Vector Storage}{55}{subsection.5.3.2}%
+\contentsline {paragraph}{One collection per encoder version.}{55}{paragraph*.52}%
+\contentsline {paragraph}{Index and operations.}{56}{paragraph*.54}%
+\contentsline {subsection}{\numberline {5.3.3}Frame Storage}{56}{subsection.5.3.3}%
+\contentsline {subsection}{\numberline {5.3.4}Consistency Across the Stores}{56}{subsection.5.3.4}%
+\contentsline {paragraph}{Appearance states.}{57}{paragraph*.55}%
+\contentsline {paragraph}{Write order.}{57}{paragraph*.57}%
+\contentsline {paragraph}{Error handling and maintenance tools.}{58}{paragraph*.58}%
+\contentsline {paragraph}{Protection at search time.}{58}{paragraph*.59}%
+\contentsline {section}{\numberline {5.4}Application Programming Interface Design}{58}{section.5.4}%
+\contentsline {section}{\numberline {5.5}Security and Access Control Design}{59}{section.5.5}%
+\contentsline {subsection}{\numberline {5.5.1}Authentication and Sessions}{59}{subsection.5.5.1}%
+\contentsline {subsection}{\numberline {5.5.2}Cross-Site Request Forgery Protection}{59}{subsection.5.5.2}%
+\contentsline {subsection}{\numberline {5.5.3}Access Control}{60}{subsection.5.5.3}%
+\contentsline {subsection}{\numberline {5.5.4}Data Protection and Abuse Limitation}{60}{subsection.5.5.4}%
+\contentsline {section}{\numberline {5.6}User Interface Design}{61}{section.5.6}%
+\contentsline {subsection}{\numberline {5.6.1}Screen Structure by Role}{61}{subsection.5.6.1}%
+\contentsline {subsection}{\numberline {5.6.2}Design Principles}{62}{subsection.5.6.2}%
+\contentsline {chapter}{\numberline {6}System Implementation}{63}{chapter.6}%
+\contentsline {section}{\numberline {6.1}Evaluation and Choice of Technologies and Models}{63}{section.6.1}%
+\contentsline {subsection}{\numberline {6.1.1}Front-End Technologies}{64}{subsection.6.1.1}%
+\contentsline {subsection}{\numberline {6.1.2}Server-Side Technologies}{65}{subsection.6.1.2}%
+\contentsline {subsection}{\numberline {6.1.3}Database and Storage}{65}{subsection.6.1.3}%
+\contentsline {subsection}{\numberline {6.1.4}AI Models}{65}{subsection.6.1.4}%
+\contentsline {paragraph}{Person detection.}{65}{paragraph*.62}%
+\contentsline {paragraph}{Tracking.}{66}{paragraph*.64}%
+\contentsline {paragraph}{Encoder.}{66}{paragraph*.65}%
+\contentsline {section}{\numberline {6.2}Background AI Worker Implementation}{66}{section.6.2}%
+\contentsline {subsection}{\numberline {6.2.1}Model Management and Packaging}{66}{subsection.6.2.1}%
+\contentsline {subsection}{\numberline {6.2.2}Resource Limits and Error Handling}{67}{subsection.6.2.2}%
+\contentsline {paragraph}{AI check.}{67}{paragraph*.66}%
+\contentsline {section}{\numberline {6.3}User Interface Implementation}{68}{section.6.3}%
+\contentsline {subsection}{\numberline {6.3.1}Navigation and Communication with the Server}{68}{subsection.6.3.1}%
+\contentsline {subsection}{\numberline {6.3.2}Rendering Person Images in the Results}{68}{subsection.6.3.2}%
+\contentsline {subsection}{\numberline {6.3.3}Main Screens}{68}{subsection.6.3.3}%
+\contentsline {paragraph}{Operator.}{68}{paragraph*.67}%
+\contentsline {paragraph}{Viewer.}{69}{paragraph*.72}%
+\contentsline {paragraph}{Administrator.}{69}{paragraph*.74}%
+\contentsline {section}{\numberline {6.4}Operation Monitoring}{74}{section.6.4}%
+\contentsline {paragraph}{Technical logs.}{74}{paragraph*.80}%
+\contentsline {paragraph}{Audit log.}{74}{paragraph*.81}%
+\contentsline {paragraph}{Metrics and system status.}{74}{paragraph*.82}%
+\contentsline {chapter}{\numberline {7}System Deployment}{75}{chapter.7}%
+\contentsline {section}{\numberline {7.1}Environment and Deployment Procedure}{75}{section.7.1}%
+\contentsline {paragraph}{Environment.}{75}{paragraph*.83}%
+\contentsline {paragraph}{Start-up procedure.}{75}{paragraph*.84}%
+\contentsline {paragraph}{Backup and restore.}{75}{paragraph*.85}%
+\contentsline {section}{\numberline {7.2}Test Data and Simulated Cameras}{76}{section.7.2}%
+\contentsline {paragraph}{Dataset.}{76}{paragraph*.86}%
+\contentsline {paragraph}{Simulated cameras.}{76}{paragraph*.87}%
+\contentsline {paragraph}{Preparing the demonstration data.}{76}{paragraph*.88}%
+\contentsline {chapter}{\numberline {8}Testing and Evaluation}{77}{chapter.8}%
+\contentsline {section}{\numberline {8.1}Software Testing}{77}{section.8.1}%
+\contentsline {paragraph}{Access control and security tests.}{78}{paragraph*.91}%
+\contentsline {section}{\numberline {8.2}Search Quality Evaluation}{79}{section.8.2}%
+\contentsline {paragraph}{Method.}{79}{paragraph*.92}%
+\contentsline {paragraph}{Person detection.}{79}{paragraph*.94}%
+\contentsline {paragraph}{Discussion.}{80}{paragraph*.95}%
+\contentsline {paragraph}{Qualitative check on the demonstration data.}{80}{paragraph*.96}%
+\contentsline {section}{\numberline {8.3}Performance and Camera Stream Handling}{80}{section.8.3}%
+\contentsline {paragraph}{Sampling interval.}{80}{paragraph*.97}%
+\contentsline {paragraph}{RTSP stream handling.}{81}{paragraph*.99}%
+\contentsline {paragraph}{Search latency.}{82}{paragraph*.100}%
+\contentsline {paragraph}{Storage and memory.}{82}{paragraph*.102}%
+\contentsline {part}{II\hspace {1em}Semantic Reasoning for Text-Based Person Search}{84}{part.2}%
+\contentsline {chapter}{\numberline {9}Semantic Reasoning: Motivation and Overview}{85}{chapter.9}%
+\contentsline {section}{\numberline {9.1}Motivation and Contributions}{85}{section.9.1}%
+\contentsline {subsection}{\numberline {9.1.1}Problem}{85}{subsection.9.1.1}%
+\contentsline {subsection}{\numberline {9.1.2}Why a reasoning layer}{85}{subsection.9.1.2}%
+\contentsline {subsection}{\numberline {9.1.3}Contributions}{86}{subsection.9.1.3}%
+\contentsline {section}{\numberline {9.2}The Pipeline, and Where to Improve It}{87}{section.9.2}%
+\contentsline {subsection}{\numberline {9.2.1}The pipeline in the abstract}{87}{subsection.9.2.1}%
+\contentsline {subsection}{\numberline {9.2.2}Possible directions for improvement}{87}{subsection.9.2.2}%
+\contentsline {subsection}{\numberline {9.2.3}ZARA: related work and inspiration}{88}{subsection.9.2.3}%
+\contentsline {section}{\numberline {9.3}System Overview}{89}{section.9.3}%
+\contentsline {subsection}{\numberline {9.3.1}Filling the slots}{89}{subsection.9.3.1}%
+\contentsline {subsection}{\numberline {9.3.2}Offline indexing}{90}{subsection.9.3.2}%
+\contentsline {subsection}{\numberline {9.3.3}Online search}{90}{subsection.9.3.3}%
+\contentsline {chapter}{\numberline {10}Attribute Index and Multi-Agent Reasoning}{92}{chapter.10}%
+\contentsline {section}{\numberline {10.1}The Attribute Index}{92}{section.10.1}%
+\contentsline {subsection}{\numberline {10.1.1}Schema}{92}{subsection.10.1.1}%
+\contentsline {subsection}{\numberline {10.1.2}Visual context}{93}{subsection.10.1.2}%
+\contentsline {subsection}{\numberline {10.1.3}Three different counts}{94}{subsection.10.1.3}%
+\contentsline {subsection}{\numberline {10.1.4}The image-quality problem, and why voting does not work}{94}{subsection.10.1.4}%
+\contentsline {section}{\numberline {10.2}Multi-Agent Semantic Reasoning}{95}{section.10.2}%
+\contentsline {subsection}{\numberline {10.2.1}The funnel}{95}{subsection.10.2.1}%
+\contentsline {paragraph}{Why stage 0 is not in the funnel.}{96}{paragraph*.112}%
+\contentsline {subsection}{\numberline {10.2.2}Stage 0: query analyst}{97}{subsection.10.2.2}%
+\contentsline {paragraph}{Why a separate pre-run.}{97}{paragraph*.113}%
+\contentsline {subsection}{\numberline {10.2.3}Stage 1: attribute-value selector}{98}{subsection.10.2.3}%
+\contentsline {subsection}{\numberline {10.2.4}Stage 2A: evidence reader}{99}{subsection.10.2.4}%
+\contentsline {subsection}{\numberline {10.2.5}Stage 2B: the ranker}{101}{subsection.10.2.5}%
+\contentsline {paragraph}{Reliability, not direction.}{101}{paragraph*.118}%
+\contentsline {paragraph}{What each query value is worth.}{101}{paragraph*.119}%
+\contentsline {paragraph}{The coverage floor.}{101}{paragraph*.120}%
+\contentsline {subsection}{\numberline {10.2.6}What the CLIP score is worth inside the pool}{102}{subsection.10.2.6}%
+\contentsline {subsection}{\numberline {10.2.7}Stages 3 and 4}{103}{subsection.10.2.7}%
+\contentsline {subsection}{\numberline {10.2.8}Engineering}{103}{subsection.10.2.8}%
+\contentsline {chapter}{\numberline {11}Experiments and Results}{104}{chapter.11}%
+\contentsline {section}{\numberline {11.1}Experimental Setup}{104}{section.11.1}%
+\contentsline {subsection}{\numberline {11.1.1}Dataset}{104}{subsection.11.1.1}%
+\contentsline {paragraph}{Why Market-1501, and how it stands in for a tracker.}{104}{paragraph*.122}%
+\contentsline {paragraph}{Why YOLO11n and ByteTrack are not in the experiment.}{105}{paragraph*.123}%
+\contentsline {paragraph}{The 496-identity subset.}{105}{paragraph*.124}%
+\contentsline {subsection}{\numberline {11.1.2}Models}{105}{subsection.11.1.2}%
+\contentsline {subsection}{\numberline {11.1.3}Funnel sizes and token budget}{105}{subsection.11.1.3}%
+\contentsline {subsection}{\numberline {11.1.4}Baseline}{106}{subsection.11.1.4}%
+\contentsline {paragraph}{image-clip.}{106}{paragraph*.126}%
+\contentsline {paragraph}{A grouped baseline, considered and not reported.}{106}{paragraph*.127}%
+\contentsline {subsection}{\numberline {11.1.5}Metrics}{106}{subsection.11.1.5}%
+\contentsline {section}{\numberline {11.2}Results}{107}{section.11.2}%
+\contentsline {subsection}{\numberline {11.2.1}Main comparison}{107}{subsection.11.2.1}%
+\contentsline {subsection}{\numberline {11.2.2}What the funnel changed: rescued and lost}{107}{subsection.11.2.2}%
+\contentsline {subsection}{\numberline {11.2.3}Where the losses happen}{108}{subsection.11.2.3}%
+\contentsline {subsection}{\numberline {11.2.4}Is the ranker the bottleneck? A targeted re-run}{109}{subsection.11.2.4}%
+\contentsline {subsection}{\numberline {11.2.5}Case studies}{110}{subsection.11.2.5}%
+\contentsline {paragraph}{A lost case (Figure~\ref {fig:r-case-lost}).}{110}{paragraph*.132}%
+\contentsline {paragraph}{The same case after the re-run (Figure~\ref {fig:r-case-lost-fixed}).}{111}{paragraph*.134}%
+\contentsline {paragraph}{A rescued case (Figure~\ref {fig:r-case-rescued}).}{112}{paragraph*.136}%
+\contentsline {subsection}{\numberline {11.2.6}Error analysis}{113}{subsection.11.2.6}%
+\contentsline {section}{\numberline {11.3}Ablations and Design Decisions}{114}{section.11.3}%
+\contentsline {paragraph}{The sample behind a prompt measurement is a batch, not a sweep.}{114}{paragraph*.138}%
+\contentsline {paragraph}{The model fixes a style per call.}{114}{paragraph*.139}%
+\contentsline {paragraph}{Switchable but not yet measured.}{116}{paragraph*.140}%
+\contentsline {paragraph}{The ablation this part could not run.}{116}{paragraph*.141}%
+\contentsline {section}{\numberline {11.4}Evaluation Tooling and Reproducibility}{116}{section.11.4}%
+\contentsline {paragraph}{Records are rebuilt from replies, not trusted.}{116}{paragraph*.142}%
+\contentsline {paragraph}{Every rate is reported with its denominator and its ceiling.}{117}{paragraph*.143}%
+\addvspace {1.5em}
+\contentsline {chapter}{\numberline {12}Conclusion and Future Work}{118}{chapter.12}%
+\contentsline {section}{\numberline {12.1}Project Timeline}{118}{section.12.1}%
+\contentsline {section}{\numberline {12.2}Achievements}{118}{section.12.2}%
+\contentsline {subsection}{\numberline {12.2.1}Part I: The Application}{118}{subsection.12.2.1}%
+\contentsline {subsection}{\numberline {12.2.2}Part II: The Reasoning Layer}{120}{subsection.12.2.2}%
+\contentsline {section}{\numberline {12.3}Limitations}{121}{section.12.3}%
+\contentsline {subsection}{\numberline {12.3.1}Part I: The Application}{121}{subsection.12.3.1}%
+\contentsline {subsection}{\numberline {12.3.2}Part II: The Reasoning Layer}{122}{subsection.12.3.2}%
+\contentsline {paragraph}{Model.}{122}{paragraph*.145}%
+\contentsline {paragraph}{Data.}{122}{paragraph*.146}%
+\contentsline {paragraph}{The blocks this part did not change.}{122}{paragraph*.147}%
+\contentsline {paragraph}{The refine round.}{122}{paragraph*.148}%
+\contentsline {paragraph}{Rarity versus mismatch cost.}{122}{paragraph*.149}%
+\contentsline {paragraph}{Output truncation.}{123}{paragraph*.150}%
+\contentsline {paragraph}{Single phrasing.}{123}{paragraph*.151}%
+\contentsline {section}{\numberline {12.4}Future Work}{123}{section.12.4}%
+\contentsline {subsection}{\numberline {12.4.1}Part I: The Application}{123}{subsection.12.4.1}%
+\contentsline {subsection}{\numberline {12.4.2}Bringing the Two Parts Together}{124}{subsection.12.4.2}%
+\contentsline {chapter}{References}{125}{chapter*.152}%

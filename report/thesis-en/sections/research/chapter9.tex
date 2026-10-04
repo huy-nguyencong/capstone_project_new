@@ -1,6 +1,7 @@
 % !TEX root = ../../main.tex
 % Part II (Nguyen Huu Cuong) - merged from the research report (report_latex_v3), see MERGE_NOTES.md.
 % Style pass 2026-09-30: em dashes and rhetorical sentences removed; technical content, numbers and references unchanged.
+% Tightened 2026-10-05 (both authors agreed): shorter sentences; the "why not CLIP alone" argument is stated once (9.1.2).
 \chapter{Semantic Reasoning: Motivation and Overview}
 \label{chapter:r-overview}
 
@@ -10,60 +11,52 @@
 \label{sec:r-intro}
 
 \subsection{Problem}
-Given a free-text description of a person, such as \emph{``a teenage woman, with
-short hair, wearing a short-sleeve red top and shorts, with a bag''}, and a
-gallery of person crops extracted from surveillance video, the task is to return
-the crops that show that person. This is text-based person search: a retrieval
-problem whose query and gallery live in different modalities, over imagery that
-is small, motion-blurred, badly lit and taken from arbitrary viewpoints.
+Given a free-text description such as \emph{``a teenage woman, with short hair,
+wearing a short-sleeve red top and shorts, with a bag''} and a gallery of person
+crops from surveillance video, the task is to return the crops that show that
+person. This is text-based person search (Section~\ref{sec:3.1}), here over small,
+blurred, badly lit crops taken from arbitrary viewpoints.
 
 \subsection{Why a reasoning layer}
-A dual-encoder model such as CLIP answers this problem in one shot: encode the
-sentence, encode every crop, sort by cosine similarity. This is fast and is the
-right first stage, but it has two properties that limit what it can do.
+A dual-encoder model such as CLIP encodes the sentence and every crop and sorts by
+cosine similarity. This is fast and the right first stage, but it has two limits.
 
 \begin{itemize}
-\item It gives one opaque number per crop. A cosine similarity cannot be
-      interrogated: when the right person is ranked 37th, nothing in the score
-      says whether the top was read in the wrong colour, the sleeves were wrong,
-      or the gender was read wrong, so nothing can be corrected.
-\item It makes no use of the track. The gallery is not a set of independent
-      images: tracking groups crops into tracks, so the same person is observed
-      several times under different blur, lighting and pose. CLIP scores each
-      crop alone and discards that redundancy.
+\item It gives one opaque number per crop. When the right person is ranked 37th,
+      the score cannot say whether the top colour, the sleeves or the gender was
+      misread, so nothing can be corrected, and fine-tuning only changes the number.
+\item It ignores the track. Tracking groups crops of the same person seen under
+      different blur, lighting and pose, but CLIP scores each crop alone and
+      discards that redundancy.
 \end{itemize}
 
-An attribute-level representation addresses both: it is readable, and it can be
-aggregated across the frames of a track. The difficulty is that the attributes
-themselves come from a small VLM and are noisy. This is the subject of
-Section~\ref{sec:r-noise}, and it is the reason the aggregation is done by an LLM
+An attribute-level representation addresses both: it is readable and can be
+aggregated across the frames of a track. The attributes, however, come from a small
+VLM and are noisy (Section~\ref{sec:r-noise}), so they are aggregated by an LLM
 that reasons over evidence rather than by a majority vote.
 
 \subsection{Contributions}
 \begin{enumerate}
 \item A statement of where the improvement should go: the pipeline is read as a
-      template of replaceable blocks, the requirement of each block is stated,
-      and the search block is chosen because it is the one that must both
-      generalise semantically and tolerate the errors of every block upstream
-      (Section~\ref{sec:r-directions}).
-\item An attribute-centric index over tracked person crops. Each crop has 18
-      attributes read by Qwen2.5-VL-3B and image-quality statistics for each body
-      region (sharpness, contrast, brightness, saturation), which let a later
-      stage reason about \emph{why} two readings disagree.
+      template of replaceable blocks, and the search block is chosen because it
+      must both generalise semantically and tolerate the errors of every block
+      upstream (Section~\ref{sec:r-directions}).
+\item An attribute-centric index over tracked person crops: 18 attributes per crop
+      read by Qwen2.5-VL-3B, with image-quality statistics per body region
+      (sharpness, contrast, brightness, saturation) that let a later stage reason
+      about \emph{why} two readings disagree.
 \item An adaptation of the ZARA evidence-and-reasoning pattern from motion-sensor
       activity recognition to image-text person retrieval
       (Section~\ref{sec:r-zara}).
 \item A four-stage multi-agent funnel (query analyst, feature selector, evidence
-      reader, ranker) run over two rounds with different cut semantics, and the
-      prompt mechanisms that make it work: a citation rule, a
-      reliability-not-direction ranking rule, a rarity table and a
-      round-dependent coverage floor.
-\item An evaluation protocol and tooling that reconstruct every ranking from the
-      saved model replies, so that results survive a corrupted record file, and
-      that separate retrieval failures from reasoning failures by reporting the
-      pool ceiling next to every recall number.
-\item A measured result on 100 identities, decomposed into what the layer
-      rescues and what it costs, with an error analysis of both.
+      reader, ranker) over two rounds with different cut semantics, with the prompt
+      mechanisms that make it work: a citation rule, a reliability-not-direction
+      ranking rule, a rarity table and a round-dependent coverage floor.
+\item An evaluation protocol and tooling that rebuild every ranking from the saved
+      model replies, and that separate retrieval from reasoning failures by
+      reporting the pool ceiling next to every recall number.
+\item A measured result on 100 identities, decomposed into what the layer rescues
+      and what it costs, with an error analysis of both.
 \end{enumerate}
 
 % ============================================================= 2 background =
@@ -71,14 +64,14 @@ that reasons over evidence rather than by a majority vote.
 
 \subsection{The pipeline in the abstract}
 \label{sec:r-pipeline}
-Figure~\ref{fig:r-overall} shows the system with every block named by what it
-\emph{does} rather than by what implements it. Seen this way, a person search
-system has five replaceable parts and two phases.
+Figure~\ref{fig:r-overall} names every block by what it \emph{does} rather than by
+what implements it: a person search system has five replaceable parts and two
+phases. The question is then which block a fixed budget should go into.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.98\textwidth]{overall-000.png}
-\caption{The pipeline as a template. Offline: video $\rightarrow$ object
+\includegraphics[width=\textwidth]{S23-overall-pipeline.png}
+\caption[The pipeline as a template of replaceable blocks]{The pipeline as a template. Offline: video $\rightarrow$ object
 detection $\rightarrow$ tracker $\rightarrow$ image encoder $\rightarrow$
 database. Online: text query $\rightarrow$ text encoder $\rightarrow$ similarity
 search against the same database. Every box is a slot for any detector, tracker
@@ -86,17 +79,14 @@ or encoder.}
 \label{fig:r-overall}
 \end{figure}
 
-This view makes the next question precise: with a fixed budget, which block
-should the work go into?
-
 \subsection{Possible directions for improvement}
 \label{sec:r-directions}
-Each block has a requirement it must meet and a way it fails.
-Table~\ref{tab:r-directions} is the comparison we used to choose.
+Table~\ref{tab:r-directions} compares the blocks by what each must achieve and how
+it fails.
 
 \begin{table}[H]
 \centering
-\begin{tabular}{@{}p{3.2cm}p{4.0cm}p{6.4cm}@{}}
+\begin{tabular}{@{}P{3.2cm}P{4.0cm}P{6.4cm}@{}}
 \toprule
 \textbf{Direction} & \textbf{Main requirement} & \textbf{Our consideration}\\
 \midrule
@@ -110,59 +100,43 @@ Needs semantic generalisation and robustness to upstream errors, at the image
 quality of deployed cameras.\\
 \bottomrule
 \end{tabular}
-\caption{The three places the pipeline can be improved, what each has to do, and
+\caption[The three places where the pipeline can be improved]{The three places the pipeline can be improved, what each has to do, and
 what that costs.}
 \label{tab:r-directions}
 \end{table}
 
-The first two directions are well studied, and improving them mostly means
-substituting a better model into a slot. Their failures are also
-\emph{upstream}, so they reach the search block whatever is done about them: a
-missed detection is a crop that never exists, and a tracker that merges two
-people gives the search block a track that contains two people.
+Detection and tracking are well studied, and improving them mostly means a better
+model in the slot. Their failures also reach the search block anyway: a missed
+detection is a crop that never exists, and a merged track contains two people.
 
-The search block is different. It is the only block that must do three things at
-once: generalise semantically from a sentence to an appearance, tolerate what the
-detector and the tracker got wrong, and do both on crops from a deployed camera
-rather than on photographs. It is also where the system's answer is decided. For
-these reasons, the work of this part is placed in the search block.
-
-\paragraph{Why an LLM-based search block.} Once the block is chosen, the question
-is what to put in it. A dual-encoder such as CLIP gives one opaque number per
-crop: it cannot be interrogated when it is wrong, and it scores each crop alone,
-so the redundancy of a track is discarded. Fine-tuning the encoder addresses
-neither problem: it changes the number, but there is still only one number and
-nothing explains it. The block needs a representation that can be \emph{read},
-namely attributes with the evidence behind them, and a component able to weigh
-several partially contradictory readings of one person. This is a reasoning
-problem over text, which suits an LLM, and ZARA made the same observation in
-another domain.
+The search block alone must generalise from a sentence to an appearance, tolerate
+the detector's and tracker's mistakes, and do both on deployed-camera crops; it is
+also where the answer is decided. The work of this part is therefore placed there.
+Given the two limits of CLIP above, the block needs a representation that can be
+\emph{read}, attributes with their evidence, and a component able to weigh several
+partly contradictory readings of one person. This is a reasoning problem over text,
+which suits an LLM, as ZARA observed in another domain.
 
 \subsection{ZARA: related work and inspiration}
 \label{sec:r-zara}
-The closest prior work to this system is ZARA~\cite{li2025zara}. The reasoning
-pattern comes from ZARA; the domain and the evidence are those of this project.
+The closest prior work is ZARA~\cite{li2025zara}, from which the reasoning pattern
+is taken; the domain and the evidence are this project's own. ZARA's key idea is
+that an LLM reasons poorly over raw numerical signals but well over \emph{textual}
+evidence, so it first converts statistical patterns of the reference data into a
+textual knowledge base and, at inference, retrieves the discriminative evidence for
+the candidate classes (Figure~\ref{fig:r-zara}).
 
-The key idea of ZARA is that an LLM reasons poorly over raw numerical signals and
-well over \emph{textual} evidence. Instead of feeding the model the signal, ZARA
-first converts statistical patterns of the reference data into a textual
-knowledge base, and at inference retrieves the discriminative evidence relevant
-to the candidate classes.
+We keep this structure and change the domain. ZARA's statistics come from motion
+signals; ours are human-readable person attributes extracted offline by Qwen-VL.
+In ZARA, several sensors give complementary views of one activity; here, the
+frames of one track give complementary views of one person. The difference is that
+a tracker can group two people in one track, an upstream failure that ZARA's
+sensors do not have (Section~\ref{sec:r-directions}).
 
-We keep this structure and change the domain. In ZARA the statistics come from
-motion signals; here they are human-readable person attributes extracted offline
-from images by Qwen-VL. In ZARA several sensors give complementary views of one
-activity; here the frames of one track give complementary views of one person,
-with the caveat that a tracker can group two different people. This failure mode
-does not exist for ZARA's sensors, and Section~\ref{sec:r-directions} has already
-identified it as coming from upstream.
-
-Unlike conventional statistical aggregation, we do not treat the offline
-attribute statistics as ground truth. Qwen-VL makes mistakes, especially with the
-image quality and viewpoints of real surveillance cameras, and the tracker adds
-its own. The statistics are therefore given to an LLM as \emph{evidence to be
-reasoned over}, and the aggregated track-level reading is used to re-rank the
-candidates against the query:
+The attribute statistics are not treated as ground truth, since Qwen-VL errs,
+especially on real surveillance image quality and viewpoints, and the tracker adds
+its own errors. They are given to an LLM as \emph{evidence to be reasoned over},
+and the aggregated track-level reading re-ranks the candidates against the query:
 
 \begin{center}
 \small
@@ -180,27 +154,25 @@ Ours & person images $\rightarrow$ human-readable attributes $\rightarrow$
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{zara-000.png}
-\caption{ZARA's retrieval of discriminative evidence for candidate classes, the
+\includegraphics[width=\textwidth]{S26-zara.png}
+\caption[ZARA's retrieval of discriminative evidence]{ZARA's retrieval of discriminative evidence for candidate classes, the
 pattern this project adapts.}
 \label{fig:r-zara}
 \end{figure}
 
-One more element is taken directly from ZARA: the coarse-to-fine iteration. ZARA
-prunes before it decides, and the funnel of Section~\ref{sec:r-reasoning} keeps
-this structure, with a coarse round over the whole pool followed by a finer round
-over the candidates that survive.
+The coarse-to-fine iteration is also taken from ZARA: the funnel of
+Section~\ref{sec:r-reasoning} prunes before it decides, with a coarse round over the
+whole pool and a finer round over the survivors.
 
 \section{System Overview}
 
 \subsection{Filling the slots}
 \label{sec:r-choices}
-Table~\ref{tab:r-choices} puts a concrete model into each block of
-Figure~\ref{fig:r-overall}. The detector and the tracker are current, well
-established defaults, chosen so that the upstream blocks are not the bottleneck
-and not studied further in this part. The work is in the search block: CLIP is
-kept as the \emph{base encoder} that builds the candidate pool, and an LLM-based
-reasoning layer is added after it.
+Table~\ref{tab:r-choices} puts a model into each block of Figure~\ref{fig:r-overall}.
+The detector and tracker are established defaults, chosen so that they are not the
+bottleneck, and are not studied further. In the search block, CLIP stays as the
+\emph{base encoder} that builds the candidate pool, followed by an LLM-based
+reasoning layer.
 
 \begin{table}[H]
 \centering
@@ -224,42 +196,37 @@ LLM (reasoning)             & Gemini Flash-Lite 3.5       & \cite{googledeepmind
 
 \subsection{Offline indexing}
 \label{sec:r-offline}
-Figure~\ref{fig:r-offline-new} shows the indexing phase with the choices of
-Table~\ref{tab:r-choices}. Detection (YOLO11n) and tracking (ByteTrack) are the
-unchanged blocks of the template; the new element is that each tracked crop now
-passes through \emph{two} describers. CLIP produces the embedding used for
-retrieval, and Qwen2.5-VL-3B produces the attribute record used for reasoning.
-Both are written to the database, keyed by (video, track, frame), so a crop
-returned by a similarity search can be joined with its attributes and with every
-other frame of its track in one lookup.
+In the indexing phase (Figure~\ref{fig:r-offline-new}), detection and tracking are
+unchanged; the new element is that each tracked crop passes through \emph{two}
+describers: CLIP for the retrieval embedding and Qwen2.5-VL-3B for the attribute
+record. Both are stored under (video, track, frame), so a retrieved crop is joined
+with its attributes and with the other frames of its track in one lookup.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{offline-000.png}
-\caption{Extended offline indexing. The Qwen2.5-VL-3B branch turns each crop into
+\includegraphics[width=\textwidth]{S31-offline-indexing.png}
+\caption[Extended offline indexing with the attribute describer]{Extended offline indexing. The Qwen2.5-VL-3B branch turns each crop into
 18 readable attributes alongside its embedding, which the reasoning stages need.}
 \label{fig:r-offline-new}
 \end{figure}
 
 \subsection{Online search}
 \label{sec:r-online}
-Figure~\ref{fig:r-online-full} shows the search path. CLIP retrieval is kept as
-it was, but its output is no longer the answer: it becomes an
-\emph{intermediate candidate pool}. The multi-agent semantic reasoning block
-takes this pool together with the original text and returns the final top-$K$.
+In the search path (Figure~\ref{fig:r-online-full}), CLIP retrieval is unchanged,
+but its output becomes an \emph{intermediate candidate pool}, which the multi-agent
+reasoning block takes together with the original text to return the final top-$K$.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.95\textwidth]{online_full-000.png}
-\caption{Online search with the reasoning layer. CLIP produces the candidates and
+\includegraphics[width=0.95\textwidth]{S35-text-retrieval.png}
+\caption[Online search with the reasoning layer]{Online search with the reasoning layer. CLIP produces the candidates and
 the funnel orders them. The user's text reaches the reasoning block directly and
 is not summarised by the retrieval stage.}
 \label{fig:r-online-full}
 \end{figure}
 
-This arrangement has a hard ceiling, reported throughout: the reasoning layer can
-only reorder what retrieval gave it. If the right person is not in the pool, no
-reasoning can return them. Section~\ref{sec:r-metrics} therefore reports this
+The reasoning layer can only reorder what retrieval gave it: a person missing from
+the pool cannot be returned. Section~\ref{sec:r-metrics} therefore reports this
 ceiling, \code{cap@75}, next to every recall number.
 
 % ============================================================ 4 the index ===

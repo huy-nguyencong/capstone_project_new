@@ -3,7 +3,7 @@
 \section{Use Case Diagram}
 \label{sec:4.4}
 
-The functional requirements of Section~\ref{sec:4.2} are organised into 15 use cases. Figure~\ref{fig:usecase} shows all the use cases of the system with their relations and actors, and Table~\ref{tab:usecases} lists each use case with its actor and purpose.
+The functional requirements are organised into 15 use cases, shown with their actors and relations in Figure~\ref{fig:usecase} and listed with their purpose in Table~\ref{tab:usecases}.
 
 \begin{figure}[H]
 \centering
@@ -12,21 +12,21 @@ The functional requirements of Section~\ref{sec:4.2} are organised into 15 use c
 \label{fig:usecase}
 \end{figure}
 
-The diagram is organised as follows:
+The diagram follows four choices:
 \begin{itemize}
-    \item \textbf{An abstract \emph{User} actor.} The three concrete actors share login (UC-01) and logout (UC-15), so the diagram links these two use cases to an abstract \emph{User} actor, which the three concrete actors generalise to.
-    \item \textbf{Division by role.} The Administrator is linked to UC-02 to UC-08, the Operator to UC-09 to UC-11 and the Viewer to UC-12 to UC-14; no use case is shared among these actors.
-    \item \textbf{Extend relations.} UC-10 extends UC-09 and UC-11 extends UC-10: after searching, the Operator can view the details of a result and then save it into a case. Likewise, UC-13 extends UC-12 and UC-14 extends UC-13. The extending use cases are still linked directly to their actor, because the actor can also start them independently, for example opening the list of cases without searching first.
-    \item \textbf{Login is a precondition} of every other use case, not a step inside them, so the diagram draws no «include» relation to UC-01.
+    \item \textbf{An abstract \emph{User} actor.} Login (UC-01) and logout (UC-15) are linked to an abstract \emph{User} actor, which the three concrete actors generalise.
+    \item \textbf{Division by role.} The Administrator has UC-02 to UC-08, the Operator UC-09 to UC-11 and the Viewer UC-12 to UC-14, with no use case shared.
+    \item \textbf{Extend relations.} UC-10 extends UC-09 and UC-11 extends UC-10 (search, view a result, save it into a case); likewise UC-13 extends UC-12 and UC-14 extends UC-13. The extending use cases are also linked to their actor, who can start them alone, for example opening the cases without searching.
+    \item \textbf{Login is a precondition} of every other use case, not a step inside them, so no «include» relation to UC-01 is drawn.
 \end{itemize}
 
-The automatic system functions (Section~\ref{sec:4.2.5}) have no use case of their own because no actor triggers them; they take place when the Administrator enables AI processing in UC-04.
+The automatic functions (Section~\ref{sec:4.2.5}) have no use case, since no actor triggers them; they run once AI processing is enabled in UC-04.
 
 \begin{table}[H]
 \centering
 \caption{List of use cases}
 \label{tab:usecases}
-\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{1.4cm}|>{\raggedright\arraybackslash}p{3.8cm}|>{\raggedright\arraybackslash}p{2.4cm}|L|}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{1.4cm}|>{\raggedright\arraybackslash}p{3.8cm}|>{\raggedright\arraybackslash}p{2.75cm}|L|}
 \hline
 \textbf{Code} & \textbf{Use case} & \textbf{Actor} & \textbf{Purpose} \\
 \hline

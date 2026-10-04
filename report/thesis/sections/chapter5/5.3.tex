@@ -14,7 +14,7 @@
 \subsection{Cơ sở dữ liệu quan hệ}
 \label{sec:5.3.1}
 
-PostgreSQL lưu toàn bộ dữ liệu nghiệp vụ và là nơi quyết định về quyền và trạng thái. Cơ sở dữ liệu gồm 12 bảng, chia thành năm nhóm như Bảng~\ref{tab:db-tables}.
+PostgreSQL lưu dữ liệu nghiệp vụ và là nơi quyết định về quyền và trạng thái. 12 bảng của nó chia thành năm nhóm (Bảng~\ref{tab:db-tables}).
 
 \begin{table}[H]
 \centering
@@ -37,7 +37,7 @@ Truy vết & \path{audit_logs} & Nhật ký hệ thống, chỉ được thêm, 
 \end{tabularx}
 \end{table}
 
-Hình~\ref{fig:erd} trình bày sơ đồ thực thể - liên kết của 11 bảng có quan hệ khóa ngoại theo ký hiệu chân quạ; mỗi bảng chỉ thể hiện khóa chính, khóa ngoại và các thuộc tính chính. Bảng \path{worker_heartbeats} không có khóa ngoại nên không được vẽ.
+Hình~\ref{fig:erd} là sơ đồ thực thể - liên kết của 11 bảng có khóa ngoại theo ký hiệu chân quạ, gồm khóa và các thuộc tính chính; bảng \path{worker_heartbeats} không có khóa ngoại nên không được vẽ.
 
 \afterpage{%
 \begin{landscape}
@@ -50,23 +50,23 @@ Hình~\ref{fig:erd} trình bày sơ đồ thực thể - liên kết của 11 b�
 \end{landscape}
 }
 
-\paragraph{Các quan hệ.} Phần lớn khóa ngoại là bắt buộc: mỗi camera thuộc đúng một khu vực, mỗi vụ việc có đúng một người phụ trách, mỗi lần xuất hiện thuộc đúng một camera và được tạo bởi đúng một công việc với một phiên bản cấu hình AI. Ba khóa ngoại được phép rỗng: tài khoản chỉ có khu vực khi là Giám sát viên, công việc chỉ có người yêu cầu khi được tạo từ tệp tải lên, và bản ghi nhật ký có thể không gắn với người dùng, chẳng hạn khi ghi một lỗi kỹ thuật. Giữa \texttt{cases} và \path{person_tracks} là quan hệ nhiều - nhiều qua bảng \path{case_results}. Mỗi dòng của bảng này có khóa chính riêng, lưu bản chụp thông tin tại thời điểm lưu, và \emph{không} có ràng buộc duy nhất trên cặp vụ việc - lần xuất hiện, vì mỗi lần lưu tạo một mục mới.
+\paragraph{Các quan hệ.} Phần lớn khóa ngoại là bắt buộc: camera có một khu vực, vụ việc có một người phụ trách, lần xuất hiện có một camera, một công việc và một phiên bản cấu hình AI. Ba khóa ngoại được rỗng: chỉ Giám sát viên có khu vực, chỉ công việc từ tệp tải lên có người yêu cầu, và bản ghi nhật ký như một lỗi kỹ thuật có thể không gắn với người dùng. Giữa \texttt{cases} và \path{person_tracks} là quan hệ nhiều - nhiều qua bảng \path{case_results}. Mỗi dòng của bảng này có khóa chính riêng, lưu bản chụp thông tin tại thời điểm lưu, và \emph{không} có ràng buộc duy nhất trên cặp vụ việc - lần xuất hiện, vì mỗi lần lưu tạo một mục mới.
 
-\paragraph{Các ràng buộc toàn vẹn.} Nhiều quy tắc nghiệp vụ được thể hiện trực tiếp trong cơ sở dữ liệu, để dữ liệu sai không thể được ghi vào dù tầng ứng dụng có lỗi:
+\paragraph{Các ràng buộc toàn vẹn.} Nhiều quy tắc nghiệp vụ do chính cơ sở dữ liệu ràng buộc, nên lỗi ở tầng ứng dụng không ghi được dữ liệu sai:
 \begin{itemize}
     \item Tài khoản Giám sát viên luôn có khu vực, hai vai trò còn lại thì không; vụ việc có thời điểm hoàn thành khi và chỉ khi ở trạng thái \texttt{CLOSED}; chỉ một phiên bản cấu hình AI ở trạng thái \texttt{ACTIVE}; mã khu vực và khu vực của camera không đổi sau khi tạo.
     \item Hầu hết khóa ngoại dùng quy tắc RESTRICT, nên dữ liệu còn được tham chiếu không thể bị xóa; tài khoản và camera không bị xóa dòng mà được chuyển trạng thái (\texttt{INACTIVE}, \texttt{RETIRED}). Chỉ phiên đăng nhập và mục kết quả được xóa theo bảng cha.
     \item Một lần xuất hiện chỉ có thể ở trạng thái \texttt{READY} khi đã có đủ khóa đối tượng, mã băm và kích thước khung hình, và thời điểm ghi vector. Không bảng nào lưu điểm phù hợp.
     \item Các bảng \texttt{users}, \texttt{cameras} và \texttt{cases} có cột số phiên bản để chống ghi đè khi cập nhật đồng thời (Mục~\ref{sec:5.2.4}); cặp người yêu cầu - khóa chống trùng của \path{processing_jobs} là duy nhất, nên một yêu cầu tải lên gửi lặp không tạo thêm công việc.
 \end{itemize}
-Ngoài ra, các chỉ mục được tạo cho những truy vấn thường gặp, như lần xuất hiện theo camera và thời điểm (có chỉ mục riêng chỉ chứa các lần xuất hiện đã sẵn sàng), vụ việc theo người phụ trách, và nhật ký theo người thực hiện.
+Các chỉ mục phục vụ truy vấn thường gặp như lần xuất hiện theo camera và thời điểm, vụ việc theo người phụ trách, nhật ký theo người thực hiện.
 
 \subsection{Lưu trữ vector đặc trưng}
 \label{sec:5.3.2}
 
-Milvus chỉ phục vụ một việc: tìm nhanh các vector gần nhất với vector truy vấn trong một phạm vi đã lọc; mọi thông tin khác và mọi quyết định về quyền đều nằm ở PostgreSQL.
+Milvus chỉ tìm các vector gần nhất với truy vấn trong một phạm vi đã lọc; mọi thứ khác, kể cả quyền, nằm ở PostgreSQL.
 
-\paragraph{Mỗi phiên bản bộ mã hóa một collection.} Milvus tổ chức dữ liệu thành các \emph{collection}, tương tự bảng. Hệ thống tạo một collection riêng cho mỗi phiên bản bộ mã hóa, ví dụ \path{person_track_embeddings_rasa_cuhk_pedes_v1}, vì vector của hai phiên bản khác nhau thuộc hai không gian biểu diễn không so sánh được với nhau. Một bí danh cố định luôn trỏ tới collection của phiên bản đang dùng; khi tiến trình xử lý nền khởi động, số chiều của collection được kiểm tra khớp với cấu hình. Mỗi lần xuất hiện ứng với một bản ghi gồm các trường ở Bảng~\ref{tab:milvus-schema}.
+\paragraph{Mỗi phiên bản bộ mã hóa một collection.} Mỗi phiên bản bộ mã hóa có một \emph{collection} (tương tự bảng) riêng trong Milvus, ví dụ \path{person_track_embeddings_rasa_cuhk_pedes_v1}, vì vector của hai phiên bản không so sánh được với nhau. Một bí danh cố định trỏ tới collection đang dùng, và số chiều được kiểm tra khi tiến trình nền khởi động. Mỗi lần xuất hiện ứng với một bản ghi gồm các trường ở Bảng~\ref{tab:milvus-schema}.
 
 \begin{table}[H]
 \centering
@@ -91,29 +91,29 @@ Milvus chỉ phục vụ một việc: tìm nhanh các vector gần nhất với
 \end{tabularx}
 \end{table}
 
-Các trường khu vực, camera và thời điểm được sao từ PostgreSQL để Milvus lọc trước khi tìm (Mục~\ref{sec:3.6.3}); vì khu vực của camera không thay đổi sau khi tạo, bản sao này không thể sai lệch. Trạng thái vận hành của camera thì thay đổi theo thao tác của Quản trị viên nên không được sao chép: mỗi lượt tìm kiếm lấy danh sách camera đang vận hành từ PostgreSQL và đưa vào điều kiện lọc, nên dữ liệu của một camera bị loại khỏi vận hành được ẩn ngay mà không phải cập nhật Milvus.
+Khu vực, camera và thời điểm được sao từ PostgreSQL để lọc trước (Mục~\ref{sec:3.6.3}); khu vực của camera không đổi nên bản sao không thể lệch. Trạng thái vận hành thì thay đổi nên không sao chép: mỗi lượt tìm đưa danh sách camera đang vận hành vào điều kiện lọc, nên camera bị loại được ẩn ngay mà không phải sửa Milvus.
 
-\paragraph{Chỉ mục và thao tác.} Trường vector được đánh chỉ mục HNSW với độ đo tích vô hướng, $M = 16$, \textit{ef\-Con\-struc\-tion}~$= 128$, và $\mathit{ef} = 64$ khi tìm (Mục~\ref{sec:3.6.4}). Vector được ghi bằng thao tác \emph{upsert} theo mã lần xuất hiện, nên thử lại không tạo bản ghi trùng, và được kiểm tra đúng số chiều, không chứa giá trị không hợp lệ và có độ dài bằng 1 trước khi ghi hoặc tìm. Mọi thao tác dùng mức nhất quán mạnh (strong consistency) để vector vừa ghi xuất hiện ngay trong lần tìm tiếp theo.
+\paragraph{Chỉ mục và thao tác.} Trường vector được đánh chỉ mục HNSW với độ đo tích vô hướng, $M = 16$, \textit{ef\-Con\-struc\-tion}~$= 128$, và $\mathit{ef} = 64$ khi tìm (Mục~\ref{sec:3.6.4}). Vector được ghi bằng \emph{upsert} theo mã lần xuất hiện nên thử lại không tạo bản ghi trùng, sau khi kiểm tra số chiều, giá trị và độ dài bằng 1; mức nhất quán mạnh (strong consistency) giúp vector vừa ghi có ngay trong lần tìm tiếp theo.
 
 \subsection{Lưu trữ khung hình}
 \label{sec:5.3.3}
 
-Mỗi lần xuất hiện có đúng một tệp ảnh trong MinIO: khung hình toàn cảnh đại diện, định dạng JPEG chất lượng 90; PostgreSQL chỉ lưu khóa đối tượng, mã băm và kích thước tệp. Hệ thống không lưu ảnh người đã cắt thành tệp riêng: ảnh người trong danh sách kết quả được dựng từ khung hình toàn cảnh và khung bao khi được yêu cầu (Mục~\ref{sec:6.3.3}). Nhờ vậy một tệp phục vụ cả hai cách xem, cách cắt có thể thay đổi mà không phải tạo lại dữ liệu, và không phát sinh tệp ảnh người độc lập có thể bị sao chép ngoài kiểm soát. Video gốc không được lưu.
+Mỗi lần xuất hiện có một tệp trong MinIO là khung hình toàn cảnh đại diện, JPEG chất lượng 90; PostgreSQL lưu khóa đối tượng, mã băm và kích thước. Ảnh người không được lưu mà dựng từ khung hình và khung bao khi cần (Mục~\ref{sec:6.3.3}), nên một tệp phục vụ cả hai cách xem, cách cắt đổi được mà không tạo lại dữ liệu, và không có tệp ảnh người rời. Video gốc không được lưu.
 
 Khóa của mỗi tệp được sinh xác định từ thông tin của lần xuất hiện, theo mẫu
 \begin{center}
 \texttt{tracks/v1/}\allowbreak \textit{mã camera}\texttt{/}\allowbreak \textit{năm}\texttt{/}\allowbreak \textit{tháng}\texttt{/}\allowbreak \textit{ngày}\texttt{/}\allowbreak \textit{mã lần xuất hiện}\texttt{/}\allowbreak \texttt{representative.jpg}
 \end{center}
-nên ghi lại khi thử lại không tạo tệp mới; tiền tố có số phiên bản cho phép đổi cách tổ chức về sau, và việc nhóm theo camera và ngày giúp dọn dẹp theo camera hoặc khoảng thời gian.
+nên thử lại chỉ ghi đè đúng tệp đó; tiền tố có số phiên bản cho phép đổi cách tổ chức về sau, và nhóm theo camera và ngày giúp dọn dẹp dễ.
 
-Trước khi ghi, tệp được kiểm tra đúng định dạng, không quá 20~MB và có kích thước khớp thông tin mô tả; mã băm SHA-256 được lưu ở cả MinIO và PostgreSQL. Ghi trùng khóa với cùng mã băm thì tệp cũ được dùng lại, khác mã băm thì bị từ chối như một xung đột; khi đọc, mã băm được tính lại để phát hiện tệp hỏng. Tệp nằm trong một bucket riêng tư, ứng dụng truy cập bằng tài khoản chỉ có quyền trên đúng bucket này, và trình duyệt không nhận địa chỉ trực tiếp tới MinIO.
+Tệp được kiểm tra định dạng, dung lượng (không quá 20~MB) và kích thước, và mã băm SHA-256 lưu ở cả hai kho: trùng khóa cùng mã băm thì dùng lại tệp, khác mã băm là xung đột, và khi đọc mã băm được tính lại để phát hiện tệp hỏng. Bucket là riêng tư, truy cập bằng tài khoản chỉ có quyền trên nó, và không lộ ra trình duyệt.
 
 \subsection{Đảm bảo nhất quán giữa các kho dữ liệu}
 \label{sec:5.3.4}
 
-Một lần xuất hiện được lưu thành ba phần ở ba kho, liên kết bằng cùng một mã. Ba kho không có giao dịch chung, nên tiến trình có thể dừng giữa chừng hoặc một kho có thể tạm thời không truy cập được. Hệ thống bảo đảm dữ liệu dở dang không xuất hiện trong kết quả tìm kiếm, và có thể được hoàn tất hoặc phát hiện về sau.
+Một lần xuất hiện được lưu thành ba phần ở ba kho không có giao dịch chung, nên việc ghi có thể dừng giữa chừng hoặc một kho có thể tạm không truy cập được. Hệ thống bảo đảm dữ liệu dở dang không xuất hiện trong kết quả, và có thể được hoàn tất hoặc phát hiện về sau.
 
-\paragraph{Trạng thái của lần xuất hiện.} Mỗi bản ghi lần xuất hiện có một trạng thái đồng bộ, với các chuyển trạng thái được phép như Hình~\ref{fig:track-state}. Chỉ những lần xuất hiện ở trạng thái \emph{Sẵn sàng} mới được tìm kiếm; các chuyển trạng thái không có trong hình bị tầng ứng dụng từ chối.
+\paragraph{Trạng thái của lần xuất hiện.} Mỗi lần xuất hiện có một trạng thái đồng bộ với các chuyển trạng thái ở Hình~\ref{fig:track-state}; chỉ lần xuất hiện \emph{Sẵn sàng} mới được tìm, và các chuyển trạng thái khác bị từ chối.
 
 \begin{figure}[!htbp]
 \centering
@@ -129,8 +129,8 @@ Một lần xuất hiện được lưu thành ba phần ở ba kho, liên kết
     \item Ghi vector vào Milvus, rồi đọc lại để xác nhận bản ghi đã tồn tại với đúng khu vực và camera.
     \item Trong một giao dịch mới, chuyển bản ghi sang \emph{Sẵn sàng}, lưu mã băm, kích thước khung hình và thời điểm ghi vector, và đánh dấu sự kiện outbox đã hoàn tất.
 \end{enumerate}
-Vì PostgreSQL luôn được ghi \emph{trước}, mọi khung hình và vector đều đối chiếu được với một bản ghi đã biết, và phần nào không có bản ghi tương ứng là dữ liệu mồ côi. Vì trạng thái \emph{Sẵn sàng} được đặt \emph{cuối cùng}, một lần xuất hiện chỉ được tìm thấy khi đã đủ dữ liệu. Bước 2 và 3 đều lặp lại được an toàn nhờ khóa xác định và thao tác upsert.
+Ghi PostgreSQL \emph{trước} nên mọi khung hình và vector đều đối chiếu được với một bản ghi, phần còn lại là dữ liệu mồ côi; đặt \emph{Sẵn sàng} \emph{cuối cùng} nên lần xuất hiện chỉ tìm được khi đủ dữ liệu. Bước 2 và 3 lặp lại an toàn nhờ khóa xác định và upsert.
 
-\paragraph{Xử lý lỗi và công cụ bảo trì.} Nếu bước 2 hoặc 3 thất bại do lỗi tạm thời, bản ghi giữ trạng thái \emph{Chờ} và sự kiện outbox được hẹn thử lại, với khoảng chờ bắt đầu từ 2 giây, tăng gấp đôi sau mỗi lần và tối đa 300 giây. Sau năm lần không thành công, hoặc khi gặp lỗi không thể phục hồi như xung đột mã băm, bản ghi chuyển sang \emph{Thất bại} và sự cố được ghi vào nhật ký hệ thống. Vì sự kiện outbox chứa đủ dữ liệu, việc thử lại không cần chạy lại quy trình phân tích video. Người vận hành có thêm một công cụ dòng lệnh để hoàn tất các lần xuất hiện còn dở, đối soát ba kho nhằm tìm bản ghi chờ quá lâu, bản ghi sẵn sàng nhưng thiếu khung hình hoặc vector, và dữ liệu mồ côi (mặc định chỉ báo cáo; khi được yêu cầu thì cách ly bản ghi hỏng và xóa dữ liệu mồ côi), đưa một lần xuất hiện thất bại về trạng thái chờ, và dựng lại dữ liệu Milvus từ các sự kiện outbox. Các lệnh này hiện được chạy thủ công.
+\paragraph{Xử lý lỗi và công cụ bảo trì.} Lỗi tạm thời ở bước 2 hoặc 3 giữ bản ghi ở \emph{Chờ} và hẹn thử lại, từ 2 giây tăng gấp đôi tới tối đa 300 giây. Sau năm lần, hoặc khi gặp lỗi không phục hồi như xung đột mã băm, bản ghi chuyển sang \emph{Thất bại} và được ghi nhật ký. Vì sự kiện outbox chứa đủ dữ liệu, việc thử lại không phải chạy lại phân tích. Người vận hành có thêm một công cụ dòng lệnh để hoàn tất các lần xuất hiện còn dở, đối soát ba kho nhằm tìm bản ghi chờ quá lâu, bản ghi sẵn sàng nhưng thiếu khung hình hoặc vector, và dữ liệu mồ côi (mặc định chỉ báo cáo; khi được yêu cầu thì cách ly bản ghi hỏng và xóa dữ liệu mồ côi), đưa một lần xuất hiện thất bại về trạng thái chờ, và dựng lại dữ liệu Milvus từ các sự kiện outbox. Các lệnh này hiện được chạy thủ công.
 
-\paragraph{Lớp bảo vệ khi tìm kiếm.} Kể cả khi ba kho tạm thời không khớp, người dùng vẫn không thấy dữ liệu sai: mỗi kết quả Milvus trả về đều được đối chiếu lại với PostgreSQL, và kết quả không tồn tại hoặc ngoài phạm vi được phép bị loại trước khi hiển thị (Mục~\ref{sec:3.6.4}).
+\paragraph{Lớp bảo vệ khi tìm kiếm.} Kể cả khi các kho chưa khớp, người dùng không thấy dữ liệu sai: mỗi kết quả Milvus đều được đối chiếu với PostgreSQL, và kết quả không tồn tại hoặc ngoài phạm vi bị loại (Mục~\ref{sec:3.6.4}).

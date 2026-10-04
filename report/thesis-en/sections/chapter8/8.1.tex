@@ -5,7 +5,7 @@
 \label{sec:8.2}
 \label{sec:8.3}
 
-The system was tested at five levels, from individual functions to the whole demonstration script; the results are summarised in Table~\ref{tab:test-levels}. The server-side code is tested with pytest and the interface with automated Playwright tests in the Edge browser. Integration and end-to-end tests only run on a disposable database: the test suite refuses to run if the database name does not carry the suffix reserved for tests, so that the demonstration data is never written by mistake.
+The system was tested at five levels, from single functions to the whole demonstration script (Table~\ref{tab:test-levels}), with pytest on the server side and automated Playwright tests in Edge for the interface. Integration and end-to-end tests refuse to run unless the database name carries the test suffix, so the demonstration data is never overwritten.
 
 \begin{table}[H]
 \centering
@@ -28,11 +28,11 @@ Demonstration script & The steps of the three roles, from adding an RTSP camera 
 \end{tabularx}
 \end{table}
 
-The three interface bugs found were: a model could not be selected on the AI models screen, the first search reported a lost connection because the timeout was shorter than the time needed to load the encoder, and the AI processing status was shown wrongly on the camera screen.
+The three interface bugs were: a model could not be selected on the AI models screen, the first search timed out before the encoder finished loading, and the camera screen showed a wrong AI processing status.
 
 \paragraph{Access control and security tests.} These tests belong to the unit tests and cover the permission matrix of Section~\ref{sec:4.6}:
 \begin{itemize}
-    \item Every API must declare an access rule; one test calls every API with every role and without login, and checks that only the permitted roles are not rejected.
+    \item Every API must declare an access rule; one test calls every API with every role and without login, and checks that only permitted roles get through.
     \item An Operator opening another Operator's case receives 404; a Viewer can only read cases; appearances outside the area and images belonging to another case are blocked. The end-to-end tests further confirm that an Operator in another area can neither find nor open the frame of an appearance, and that a Viewer cannot call the search function.
     \item Every write requires the anti-forgery token. Login is rate-limited per IP address and username, and search per account. The security headers are present in both successful and error responses, and only the configured origins may call the API with cookies.
 \end{itemize}

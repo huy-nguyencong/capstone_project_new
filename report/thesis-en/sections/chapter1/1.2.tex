@@ -4,20 +4,20 @@
 \section{Objectives}
 \label{sec:1.2}
 
-The overall objective of the project is to build an application that helps users search for people in the data collected by a surveillance camera system, letting them describe the person in several ways instead of reviewing video by hand. The application plays a supporting role: the system proposes and ranks matching results, while the final decision on whether a result is the person being sought remains with the user.
+The overall objective is an application that helps users search for people in surveillance camera data by describing them in several ways instead of reviewing video by hand. The system proposes and ranks results; the decision whether a result is the person sought remains with the user.
 
-To reach this overall objective, the project sets the following specific objectives:
+The specific objectives are:
 
 \begin{enumerate}
-    \item \textbf{Turn camera data into searchable data.} The application automatically analyses the images from the cameras, detects and follows the people appearing in the video, and stores each appearance of a person as a unit that can be searched.
+    \item \textbf{Turn camera data into searchable data.} Automatically analyse the camera images, detect and track people, and store each appearance of a person as a searchable unit.
 
-    \item \textbf{Search for people with multimodal descriptions.} Users can describe the person with a reference image, a sentence or a set of predefined appearance features; all three forms are matched against the analysed data and the results are ranked by relevance.
+    \item \textbf{Search for people with multimodal descriptions.} Describe the person with a reference image, a sentence or predefined appearance features, all matched against the analysed data and ranked by relevance.
 
-    \item \textbf{Support the assessment and management of search results.} Users can review each result in its original context to judge it themselves, and save the confirmed results into case files for later follow-up and reference.
+    \item \textbf{Support the assessment and management of search results.} Review each result in its original context and save confirmed results into case files for follow-up.
 
-    \item \textbf{Operate safely with many users.} The application grants permissions according to the responsibility of each group of users, limits the data each person may search to the surveillance areas assigned to them, and provides the functions needed to administer and monitor the system.
+    \item \textbf{Operate safely with many users.} Grant permissions by responsibility, limit each person's searches to their assigned area, and provide administration and monitoring functions.
 
-    \item \textbf{Assess the applicability of existing artificial intelligence models.} The project does not train new models; it selects published models suited to the problem and to commodity hardware, then evaluates the search quality and processing cost when they are integrated into the application.
+    \item \textbf{Assess the applicability of existing artificial intelligence models.} Without training new models, select published models suited to the problem and to commodity hardware, and evaluate their search quality and processing cost in the application.
 
     % [MERGE] Part II objective.
     \item \textbf{Study how to improve search from text descriptions.} Separately from the application, the project investigates a reasoning layer that reads human-readable attribute evidence about each candidate and re-ranks the results of text-based search, and measures what it gains and what it costs against a conventional retrieval baseline.

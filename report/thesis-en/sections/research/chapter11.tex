@@ -1,6 +1,8 @@
 % !TEX root = ../../main.tex
 % Part II (Nguyen Huu Cuong) - merged from the research report (report_latex_v3), see MERGE_NOTES.md.
 % Style pass 2026-09-30: em dashes and rhetorical sentences removed; technical content, numbers and references unchanged.
+% Tightened 2026-10-05 (both authors agreed): shorter sentences; "why no YOLO/ByteTrack" stated once (dataset), the
+% coarse/refine asymmetry referred back to Section 10.2.5. All numbers, tables and figures unchanged.
 \chapter{Experiments and Results}
 \label{chapter:r-experiments}
 
@@ -11,73 +13,58 @@
 \subsection{Dataset}
 \label{sec:r-dataset}
 The experiments use Market-1501~\cite{zheng2015market1501}, with the attribute
-labels of the Market-1501\_\allowbreak Attribute project~\cite{lin2019market1501attr}. The
-dataset contains 1501 identities, captured by six cameras on a university campus,
-and its person boxes were produced by an automatic pedestrian detector rather than
-drawn by hand.
+labels of the Market-1501\_\allowbreak Attribute project~\cite{lin2019market1501attr}:
+1501 identities from six cameras on a university campus, with person boxes from an
+automatic pedestrian detector rather than drawn by hand.
 
 \paragraph{Why Market-1501, and how it stands in for a tracker.} The reasoning
-layer needs several crops of the same person, grouped together, so that the frames
-of a track can agree or disagree about an attribute. Market-1501 provides this,
-because every crop carries an identity label. Grouping crops by identity gives each
-person a set of observations under different viewpoints, lighting, blur and
-occlusion, which is what a tracker passes to the search block in the deployed
-pipeline.
+layer needs several crops of the same person grouped together, so that the frames
+of a track can agree or disagree about an attribute. Market-1501 labels every crop
+with its identity, and grouping by identity gives each person observations under
+different viewpoints, lighting, blur and occlusion, as a tracker would in the
+deployed pipeline.
 
-This is not a single-camera setting. A single-camera tracker links a person across
-consecutive frames of one view, whereas the identity groups of Market-1501 span up
-to six cameras. They therefore play the role of an \emph{ideal} tracker, one that
-never switches identities, never merges two people, and follows a person across
-cameras. The views inside one group differ more than the frames of a single-camera
-track would, so disagreement between readings, which the funnel is built to reason
-about, is more frequent rather than less. Market-1501 also carries third-party
-hand annotation of attributes~\cite{lin2019market1501attr}, which makes an
-attribute-level error analysis possible.
+The groups span up to six cameras, so they act as an \emph{ideal} tracker that
+never switches or merges identities and follows a person across cameras. Their
+views differ more than the frames of a single-camera track, making disagreement
+between readings, which the funnel reasons about, more frequent rather than less.
+The third-party hand annotation of attributes~\cite{lin2019market1501attr} also
+makes an attribute-level error analysis possible.
 
 \paragraph{Why YOLO11n and ByteTrack are not in the experiment.} The experiment
-tests the search block in isolation: the encoder, the retrieval of the candidate
-pool, and the reasoning funnel behind it. Detection and tracking are left out on
-purpose. Market-1501 already supplies the detected person crops and the identity
-grouping, i.e.\ the outputs those two blocks would produce, so running YOLO11n and
-ByteTrack on top would add nothing the dataset does not already provide, while
-mixing their errors into the measurement. With them removed, every failure
-reported in Section~\ref{sec:r-error} belongs to retrieval or to reasoning. The
-cost of this isolation is that upstream errors are not measured at all;
-Section~\ref{sec:r-limits} returns to this point. YOLO11n and ByteTrack remain the
-chosen blocks of the deployed pipeline (Table~\ref{tab:r-choices}).
+isolates the search block: the encoder, the retrieval of the candidate pool and
+the funnel behind it. Market-1501 already supplies the detected crops and the
+identity grouping that detection and tracking would produce, so running YOLO11n and
+ByteTrack would add nothing but their own errors. Every failure in
+Section~\ref{sec:r-error} therefore belongs to retrieval or reasoning, at the cost
+of not measuring upstream errors at all (Section~\ref{sec:r-limits}). Both remain
+the chosen blocks of the deployed pipeline (Table~\ref{tab:r-choices}).
 
-\paragraph{The 496-identity subset.} From the dataset and its hand annotation we
-keep only the identities that are \emph{uniquely identified} by their annotated
-attributes, that is, no other identity carries the same attribute vector. This
-reduces 1501 identities to 496, and every rate in this part is drawn from that
-population.
+\paragraph{The 496-identity subset.} We keep only identities \emph{uniquely
+identified} by their annotated attributes, that is, whose attribute vector no other
+identity shares. This reduces 1501 identities to 496, the population behind every
+rate in this part.
 
-The reason is that the task has to be answerable from the description alone. If
-two people in the gallery are described identically, a text query giving that
-description has two correct answers while the annotation records only one, so a
-system that returns the other is marked wrong although it is right. Removing those
-identities removes a source of noise that the system cannot act on. It also makes
-the benchmark \emph{easier} than the full 1501 identities, which must be taken into
-account whenever these numbers are compared with published Market-1501 results,
-since those are not computed on this subset.
+The task must be answerable from the description alone. If two people are described
+identically, a query has two correct answers but the annotation records one, so
+returning the other would be marked wrong although it is right. Removing them
+removes noise the system cannot act on, but also makes the benchmark \emph{easier}
+than the full 1501 identities, which matters whenever these numbers are compared
+with published Market-1501 results.
 
 \subsection{Models}
-The models used in the experiment are the search-block entries of
-Table~\ref{tab:r-choices}: CLIP ViT-H/14 (laion2B) as the base encoder, Milvus as
-the vector database, Qwen2.5-VL-3B-Instruct as the attribute describer, and Gemini
-Flash-Lite 3.5 as the reasoning LLM at thinking level HIGH for every stage.
-Detection and tracking are supplied by the dataset itself
-(Section~\ref{sec:r-dataset}), so YOLO11n and ByteTrack, the deployed pipeline's
-choices for those blocks, are not run here.
-
-No model is fine-tuned on this dataset, and every number below is zero-shot.
-Sampling temperature is left at the provider default, following the guidance for
-this model family.
+The experiment runs the search-block entries of Table~\ref{tab:r-choices}: CLIP
+ViT-H/14 (laion2B) as base encoder, Milvus as vector database,
+Qwen2.5-VL-3B-Instruct as attribute describer and Gemini Flash-Lite 3.5 as
+reasoning LLM at thinking level HIGH for every stage. No model is fine-tuned, every
+number below is zero-shot, and sampling temperature is left at the provider
+default, as advised for this model family.
 
 \subsection{Funnel sizes and token budget}
-To fit the token limits of the free Google AI Studio tier, we retrieve a cached
-pool of 150 crops and use the top 75; the coarse round keeps 25 and the final
-round returns 10. Stage 2A is split into three calls of 25 candidates.
+To fit the token limits of the free Google AI Studio tier, a cached pool of 150
+crops is retrieved and its top 75 used; the coarse round keeps 25 and the final
+round returns 10, with stage 2A split into three calls of 25.
+Table~\ref{tab:r-tokens} gives the budget of each call.
 
 \begin{table}[H]
 \centering
@@ -91,7 +78,7 @@ round returns 10. Stage 2A is split into three calls of 25 candidates.
 4B                       & $\sim$20k         & $\sim$1k\\
 \bottomrule
 \end{tabular}
-\caption{Per-call token budget. Output excludes thinking tokens, which are billed
+\caption[Per-call token budget]{Per-call token budget. Output excludes thinking tokens, which are billed
 as output and counted against the same rate window, so the real output load is
 higher than this column. The reliable signal for a truncated reply is the API's
 \code{finish\_reason}, not the reported output count.}
@@ -100,31 +87,27 @@ higher than this column. The reliable signal for a truncated reply is the API's
 
 \subsection{Baseline}
 \paragraph{image-clip.} The baseline returns the top-10 \emph{crops} of the
-75-candidate pool by cosine similarity, ungrouped, with repeats kept. Every table
-reports this baseline. It is a like-for-like comparison: it returns the same kind
-of result as the funnel, from the same pool.
+75-candidate pool by cosine similarity, ungrouped, repeats kept: the same kind of
+result as the funnel, from the same pool. Every table reports it.
 
-\paragraph{A grouped baseline, considered and not reported.} An earlier sweep
-also scored a \emph{track-naive} row, which assumes a perfect tracker: the pool's
-crops are grouped by track, each person is scored by the maximum cosine over their
-crops blended with how many of their crops surfaced
-($0.7\,s_{\text{norm}} + 0.3\,c_{\text{norm}}$, both normalised within the
-query's own pool), and the people are ranked by this score. It is not carried into
-the results below, for two reasons. It answers a different question: it returns
-ten distinct \emph{people} where image-clip and the funnel return ten
-\emph{crops}, so its R@10 has a different denominator of opportunity. In addition,
-on the earlier 44-identity sweep where it was measured, it tied image-clip exactly
-at every $k$ and recovered no identity that CLIP's raw ordering had missed. This
-cheaper grouping alternative to the reasoning layer therefore did not help.
+\paragraph{A grouped baseline, considered and not reported.} An earlier sweep also
+scored a \emph{track-naive} row assuming a perfect tracker: crops grouped by track,
+each person scored by the maximum cosine over their crops blended with how many
+surfaced ($0.7\,s_{\text{norm}} + 0.3\,c_{\text{norm}}$, normalised within the
+query's pool). It is left out for two reasons. It returns ten \emph{people} rather
+than ten \emph{crops}, so its R@10 has a different denominator of opportunity. And
+on the 44-identity sweep where it was measured, it tied image-clip at every $k$ and
+recovered no identity CLIP had missed, so this cheaper grouping alternative did not
+help.
 
 \subsection{Metrics}
 \label{sec:r-metrics}
 R@$k$ is the fraction of queries whose ground-truth identity appears in the
-returned top-$k$. Alongside it we report \code{cap@75}, how often the ground truth
-was in the 75-crop pool at all. No reranking can exceed it, so the gap between
-R@10 and \code{cap@75} is what reasoning could still gain, and the gap from
-\code{cap@75} to 100\% can only be closed by retrieval. Reporting recall without
-this ceiling would make a retrieval failure and a reasoning failure look the same.
+top-$k$. Alongside it, \code{cap@75} is how often the ground truth was in the
+75-crop pool at all. No reranking can exceed it, so the gap from R@10 to
+\code{cap@75} is what reasoning could still gain, and the gap from \code{cap@75} to
+100\% belongs to retrieval. Without this ceiling, retrieval and reasoning failures
+would look the same.
 
 % =============================================================== 7 results ==
 \section{Results}
@@ -142,7 +125,7 @@ CLIP (image-clip)   & \textbf{26.0\%} & 29.0\%          & 33.0\%\\
 4 stages            & 15.0\%          & 38.0\%          & \textbf{56.0\%}\\
 \bottomrule
 \end{tabular}
-\caption{100 identities out of the 496-identity subset
+\caption[Main comparison on 100 identities]{100 identities out of the 496-identity subset
 (Section~\ref{sec:r-dataset}), pool of 75 candidates, zero-shot, one descriptive
 phrasing each. At $n=100$ a percentage point is one identity.}
 \label{tab:r-main}
@@ -150,31 +133,28 @@ phrasing each. At $n=100$ a percentage point is one identity.}
 
 Table~\ref{tab:r-main} gives three results.
 
-First, the reasoning layer improves recall at depth. The four-stage funnel returns
-the right person in the top 10 for 56 of 100 queries against CLIP's 33, that is,
-23 more identities, from reranking alone, with no fine-tuning and no change to
-retrieval. At R@5 the gain of the four-stage funnel is smaller, 9 points (38.0\%
-against 29.0\%); the two-stage variant gains 17 points there (46.0\% against
-29.0\%).
+First, the reasoning layer improves recall at depth: the four-stage funnel returns
+the right person in the top 10 for 56 of 100 queries against CLIP's 33, 23 more
+identities from reranking alone, without fine-tuning or changing retrieval. At R@5
+its gain is 9 points (38.0\% against 29.0\%), while the two-stage variant gains 17
+(46.0\% against 29.0\%).
 
-Second, the funnel is worse at the first rank. CLIP is the best method at R@1 (26
-against 23 and 15). This is not a rounding effect: the funnel is consistently
-better at placing the right person somewhere in the top ten and consistently worse
-at placing them first. Section~\ref{sec:r-lost} shows where this happens.
+Second, the funnel is worse at the first rank: CLIP leads at R@1 (26 against 23 and
+15). This is not a rounding effect; the funnel is consistently better at placing
+the right person somewhere in the top ten and worse at placing them first
+(Section~\ref{sec:r-lost}).
 
 Third, the refine round trades precision for depth. Two stages are better at R@1
-and R@5, four stages at R@10. The second round moves into the top 10 candidates
-that the coarse round had placed below it, rescuing three more identities, while
-costing eight identities at R@1 and eight at R@5. Which of the two rounds should
-decide rank 1 remains an open question of the project: the coarse ranker sees 75
-candidates with sparse evidence, and the refine ranker sees 25 with dense
-evidence.
+and R@5, four at R@10: the second round lifts candidates the coarse round had
+placed below the top 10, rescuing three more identities, but costs eight at R@1 and
+eight at R@5. Which round should decide rank 1 remains open: the coarse ranker sees
+75 candidates with sparse evidence, the refine ranker 25 with dense evidence.
 
 \subsection{What the funnel changed: rescued and lost}
 \label{sec:r-lost}
-A recall figure combines two opposite effects. Table~\ref{tab:r-lost} separates
-them: of the 33 identities CLIP already had in its top 10, how many survived; and
-of the 67 it missed, how many the funnel recovered.
+A recall figure hides two opposite effects. Table~\ref{tab:r-lost} separates them:
+of the 33 identities in CLIP's top 10, how many survived, and of the 67 it missed,
+how many the funnel recovered.
 
 \begin{table}[H]
 \centering
@@ -186,34 +166,30 @@ of the 67 it missed, how many the funnel recovered.
 4 stages & 100 & 5/33 \ (15\%) & 28/67 \ (42\%) & 3/100\\
 \bottomrule
 \end{tabular}
-\caption{Lost: inside CLIP's top 10, not in the funnel's. Rescued: outside CLIP's
+\caption[Identities rescued and lost by the funnel]{Lost: inside CLIP's top 10, not in the funnel's. Rescued: outside CLIP's
 top 10, inside the funnel's. No pool: the ground truth was not among the 75
 retrieved crops at all, so no reranking could have returned it.}
 \label{tab:r-lost}
 \end{table}
 
-The table reproduces Table~\ref{tab:r-main} exactly, which confirms that it
-measures the same thing: $33 - 5 + 28 = 56$ for four stages and $33 - 5 + 25 = 53$
-for two.
+The table reproduces Table~\ref{tab:r-main} exactly ($33 - 5 + 28 = 56$ for four
+stages, $33 - 5 + 25 = 53$ for two), confirming it measures the same thing.
 
-The rescue rate is the main result: 42\% of the identities that CLIP could not
-find in its top ten are found by reasoning over attributes, on a pool that CLIP
-itself produced. The loss rate is the cost: about one in seven of the identities
-already found by retrieval is pushed out. The ceiling is also close: only 3 of 100
-ground truths were never retrieved, so 97 of the 100 identities could have been
-returned; 56 of them are, and the other 41 (41\% of the sample) are lost somewhere
-inside the funnel. The 3 identities outside the pool are not part of these 41,
-since no reranking could have returned them. The remaining room for improvement is
-therefore in the ranking, not in retrieval.
+The rescue rate is the main result: 42\% of the identities CLIP missed in its top
+ten are found by reasoning over attributes, on a pool CLIP itself produced. The loss
+rate is the cost: about one in seven identities already found is pushed out. The
+ceiling is close: only 3 of 100 ground truths were never retrieved, so 97 could
+have been returned; 56 are, and the other 41 (41\% of the sample, not counting the
+3 outside the pool) are lost inside the funnel. The remaining room is in the
+ranking, not in retrieval.
 
-The loss count is also the same for two and four stages (5 in both), while the
-rescue count differs (25 against 28). The refine round adds rescues without adding
-losses at the top-10 boundary; its cost appears at R@1 and R@5, inside the top ten.
+Losses are the same for two and four stages (5), while rescues differ (25 against
+28): the refine round adds rescues without adding losses at the top-10 boundary,
+and its cost appears at R@1 and R@5.
 
 \subsection{Where the losses happen}
 \label{sec:r-lostwhere}
-The five lost identities were traced through both rounds. Table~\ref{tab:r-lostwhy}
-gives, for each, the rank assigned by CLIP and by each round.
+Table~\ref{tab:r-lostwhy} traces the five lost identities through both rounds.
 
 \begin{table}[H]
 \centering
@@ -230,37 +206,31 @@ gives, for each, the rank assigned by CLIP and by each round.
 5 & 6 & 30/73 & n/a & LOST AT THE COARSE CUT (rank 30 $>$ 25)\\
 \bottomrule
 \end{tabular}
-\caption{The five identities CLIP had in its top 10 and the funnel did not
+\caption[Where the five lost identities went]{The five identities CLIP had in its top 10 and the funnel did not
 return. `Stage 2' is the coarse round's rank out of the candidates it ranked;
 `n/a' in stage 4 means the refine round never saw that candidate.}
 \label{tab:r-lostwhy}
 \end{table}
 
-Two were cut by the coarse round, at ranks 27 and 30 against a cut of 25. These
-were near misses, but they cannot be recovered, because stages 3 and 4 never see
-them. Three survived the coarse round and were then pushed out by the refine round,
-one of them from rank 7 to rank 22. Four of the five were at CLIP rank 1.
-
-That the refine round causes most of the losses is consistent with
-Table~\ref{tab:r-main}, where the second round costs R@1 and R@5 while gaining
-R@10. It is also why the coarse and refine rounds receive \emph{different}
-instructions about absence (Section~\ref{sec:r-coverage}): the coarse cut cannot be
-undone and the refine cut can, so the two mistakes are not symmetric and the
-prompts should not treat them alike.
+Two were cut by the coarse round at ranks 27 and 30 against a cut of 25, near misses
+that stages 3 and 4 never see. Three survived it and were pushed out by the refine
+round, one from rank 7 to 22; four of the five were at CLIP rank 1. That the refine
+round causes most losses matches Table~\ref{tab:r-main}, and the unrecoverable
+coarse cut is why the two rounds get different instructions about absence
+(Section~\ref{sec:r-coverage}).
 
 \subsection{Is the ranker the bottleneck? A targeted re-run}
 \label{sec:r-rerun}
-The losses in Table~\ref{tab:r-lostwhy} are ranking failures by construction: the
+The losses of Table~\ref{tab:r-lostwhy} are ranking failures by construction: the
 right person was retrieved, described and ranked, but not high enough. They are
-therefore the one set on which the question \emph{``is the small model the
-limitation?''} can be asked directly.
+therefore where the question \emph{``is the small model the limitation?''} can be
+asked directly.
 
 The five were re-run with only the ranking stages switched to a larger model
-(Gemini Flash 3.8 in place of Flash-Lite 3.5). Everything else was held fixed:
-stages 0, 1 and 2A were \emph{replayed} from the original run's saved replies
-rather than sent again, so the new ranker read exactly the same evidence as the old
-one. Stages 3 and 4A were run again, because their inputs change as soon as the
-coarse ranking does.
+(Gemini Flash 3.8 instead of Flash-Lite 3.5). Stages 0, 1 and 2A were
+\emph{replayed} from the saved replies, so the new ranker read exactly the same
+evidence; stages 3 and 4A ran again, since their inputs change with the coarse
+ranking.
 
 \begin{table}[H]
 \centering
@@ -277,124 +247,107 @@ coarse ranking does.
 5 & 6 & 30 $\rightarrow$ 1 of 73 & n/a $\rightarrow$ 1 of 24 & FIXED\\
 \bottomrule
 \end{tabular}
-\caption{The five lost identities re-ranked by a larger model at stages 2B and 4B
+\caption[The five lost identities re-ranked by a larger model]{The five lost identities re-ranked by a larger model at stages 2B and 4B
 only. `Stage 2' and `Stage 4' read \emph{before} $\rightarrow$ \emph{after}.}
 \label{tab:r-rerun}
 \end{table}
 
-Four of the five are recovered, and three of them reach rank 1 of the refine
-round. Both coarse-cut losses (candidates 2 and 5) pass the cut easily once a
-larger model does the coarse ranking, moving from 27 to 1 and from 30 to 1. The
-one that stays wrong, candidate 4, is also the one that the original refine round
-demoted the most.
+Four of five are recovered, three at rank 1 of the refine round. Both coarse-cut
+losses (candidates 2 and 5) pass the cut easily, from 27 and 30 to 1; the one still
+wrong, candidate 4, is the one the original refine round demoted most. These losses
+thus came from Flash-Lite's capacity at the ranking stages, not from the evidence:
+the notes were sufficient, but the small model used them poorly.
 
-This indicates that these losses came from the capacity of Flash-Lite at the
-ranking stages, not from the evidence. The notes were sufficient, but the small
-model did not use them well enough.
-
-This result has one important limitation. The five identities were selected using
-the ground truth: they are exactly the queries that the original run got wrong
-while CLIP got them right. The experiment therefore answers whether the ranker is
-the bottleneck \emph{on these failures}. It does not show what the system would
-score with the larger model, which only a full sweep can measure, and these four
-recoveries must not be added to Table~\ref{tab:r-main}.
+One limitation is important: the five identities were chosen with the ground
+truth, as exactly the queries the original run lost while CLIP had them. The
+experiment shows whether the ranker is the bottleneck \emph{on these failures}, not
+what the system would score with the larger model, which needs a full sweep; these
+four recoveries must not be added to Table~\ref{tab:r-main}.
 
 \subsection{Case studies}
 
 \paragraph{A lost case (Figure~\ref{fig:r-case-lost}).}
 Query: \emph{``A teenage man, with long hair, wearing a short-sleeve red top and
-white trousers.''} The ground truth is at CLIP rank 1. The reasoning layer keeps
-red tops throughout the ten results it returns, so the garment evidence is used,
-but the person it returns first is a different individual in a similar red top,
-and the correct identity falls out of the top ten. This is a ranking failure with
-correct evidence behind it, of the kind counted in Table~\ref{tab:r-lostwhy}.
+white trousers.''} The ground truth is at CLIP rank 1. The funnel keeps red tops
+throughout its ten results, so the garment evidence is used, but ranks first a
+different person in a similar red top, and the correct identity drops out: a
+ranking failure with correct evidence, as counted in Table~\ref{tab:r-lostwhy}.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth,height=0.78\textheight,keepaspectratio]{case_lost.png}
-\caption{A lost case. Left: three gallery crops of the correct person. Right:
+\caption[A lost case]{A lost case. Left: three gallery crops of the correct person. Right:
 the CLIP ordering and the two funnel rounds, ranks 1 to 5 and 6 to 10.}
 \label{fig:r-case-lost}
 \end{figure}
 
 \paragraph{The same case after the re-run (Figure~\ref{fig:r-case-lost-fixed}).}
-The query and the evidence are identical, and only the two ranking calls are
-answered by the larger model. The correct identity returns to the top of both
-rounds. Nothing else in the pipeline changed, which makes the comparison direct.
+With the same query and evidence and only the two ranking calls answered by the
+larger model, the correct identity returns to the top of both rounds.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth,height=0.78\textheight,keepaspectratio]{case_lost_fixed.png}
-\caption{The same query after re-ranking with the larger model at stages 2B and
+\caption[The lost case after re-ranking with the larger model]{The same query after re-ranking with the larger model at stages 2B and
 4B only. Stages 0, 1 and 2A were replayed unchanged.}
 \label{fig:r-case-lost-fixed}
 \end{figure}
 
 \paragraph{A rescued case (Figure~\ref{fig:r-case-rescued}).}
 Query: \emph{``A teenage man, with long hair, wearing a short-sleeve purple top
-and blue trousers, with a handbag.''} CLIP's top 10 does not contain the right
-person, while the funnel's does and places them first. The figure also shows
-something that the recall figure cannot: the funnel gathers \emph{several crops of
-the same identity} into its ten results without being told that the crops of one
-track belong to one person. The grouping follows from the attribute evidence.
+and blue trousers, with a handbag.''} The right person is absent from CLIP's top 10
+but first in the funnel's. The funnel also gathers \emph{several crops of the same
+identity} into its ten without being told they belong to one person: the grouping
+follows from the attribute evidence.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth,height=0.78\textheight,keepaspectratio]{case_rescued.png}
-\caption{A rescued case: outside CLIP's top 10, first after reasoning.}
+\caption[A rescued case]{A rescued case: outside CLIP's top 10, first after reasoning.}
 \label{fig:r-case-rescued}
 \end{figure}
 
 \subsection{Error analysis}
 \label{sec:r-error}
-Combining the three tables, the sample of 100 identities divides as follows.
+Combining the three tables, the 100 identities divide as follows.
 
 \begin{itemize}
-\item 3 were never retrieved. The ground truth is outside the 75-crop pool, so no
-      reranking could return it. This can only be fixed in retrieval, and the
-      number is small.
+\item 3 were never retrieved: outside the 75-crop pool, fixable only in retrieval.
 \item 56 are returned, 28 of them only because the reasoning layer rescued them.
-\item 5 were lost by the funnel after being found by CLIP.
-      Section~\ref{sec:r-rerun} shows that four of these five are recovered by a
-      larger model reading the \emph{same} evidence, so they are ranking failures,
-      not evidence failures.
-\item 36 were missed by both methods. They fall into two kinds that can be named
-      but have not yet been counted separately at $n=100$: ambiguous attributes,
-      where the describer itself is unsure (above all gender on small,
-      rear-facing crops), and unread attributes, where a value was never written.
-      Accessories are the clearest example: \at{carrying} is unread 28\% of the
-      time, more often than its most common value \at{backpack} is read, so a
-      query that relies on an accessory favours candidates whose accessory
-      \emph{happened} to be described.
+\item 5 were found by CLIP and lost by the funnel; four are recovered by a larger
+      model reading the \emph{same} evidence (Section~\ref{sec:r-rerun}), so they
+      are ranking, not evidence, failures.
+\item 36 were missed by both. They are of two kinds, named but not yet counted
+      separately: ambiguous attributes, where the describer is unsure (above all
+      gender on small, rear-facing crops), and unread attributes, never written.
+      Accessories are the clearest case: \at{carrying} is unread 28\% of the time,
+      more often than its most common value \at{backpack} is read, so an
+      accessory-based query favours candidates whose accessory \emph{happened} to be
+      described.
 \end{itemize}
 
-The failures of the reasoning layer itself, the five lost identities, form the
-smallest category and the easiest to address; the large remainder comes from
-upstream, from what the index contains.
+The reasoning layer's own failures, the five lost identities, are the smallest and
+most tractable category; the large remainder comes from upstream, from what the
+index contains.
 
 % =========================================================== 8 ablations ====
 \section{Ablations and Design Decisions}
 \label{sec:r-ablation}
 
-Almost every mechanism in Section~\ref{sec:r-reasoning} was added in response to a
-measured failure rather than planned in advance, and most of them can still be
-switched off. This section states, for each mechanism, what it changed and how
-strong the evidence is, separating what was \emph{measured} from what is only
-\emph{switchable}.
-
-Two limitations apply to all of these numbers.
+Almost every mechanism of Section~\ref{sec:r-reasoning} was added after a measured
+failure, and most can still be switched off. This section states what each changed
+and how strong the evidence is, separating what was \emph{measured} from what is
+only \emph{switchable}. Two limitations apply to all these numbers.
 
 \paragraph{The sample behind a prompt measurement is a batch, not a sweep.} The
-prompt-level numbers below were collected while developing each stage, on batches
-of 25 to 75 candidates. They are large, categorical differences (19 to 0, 0 of 82)
-rather than narrow ones, which is why they are reported, but they are not recall
-measurements over 100 identities.
+prompt-level numbers were collected while developing each stage, on batches of 25
+to 75 candidates. They are large, categorical differences (19 to 0, 0 of 82), but
+not recall measurements over 100 identities.
 
-\paragraph{The model fixes a style per call.} Two batches with the same prompt,
-run one after the other, produced 0 of 73 and 73 of 73 notes carrying a boundary
-citation. The convention a call adopts at its first contested note holds for the
-rest of that call. Any A/B comparison of prompt wording must therefore be read
-across several calls, since a single-call comparison of two prompts may only
+\paragraph{The model fixes a style per call.} Two back-to-back batches with the
+same prompt produced 0 of 73 and 73 of 73 notes with a boundary citation: the
+convention adopted at a call's first contested note holds for the rest of it. A/B
+comparisons of prompt wording must therefore span several calls, or they may only
 reflect this style lock.
 
 % Longtable (2026-09-30): the table is taller than a page and a [H] float ran into the bottom margin.
@@ -465,59 +418,55 @@ Model at the ranking stages
 & \textsc{measured} on 5 oracle-selected queries (Table~\ref{tab:r-rerun}).\\
 \end{longtable}
 
-\paragraph{Switchable but not yet measured.} The pipeline has one flag per
-experiment so that these comparisons can be run: \code{LAB\_QUALITY\_POPULATION}
-(region quartiles over the candidate crops rather than over every frame of their
-tracks), \code{LAB\_PAIR\_PROFILE} (the per-pair statistics block),
-\code{LAB\_FRAME\_AGREEMENT} (the \code{agrees} line under each quoted frame),
-\code{LAB\_TYPICAL\_GUARD}, and \code{VIEW\_MIN\_UNUSUAL} (how unusual a frame must
-be before a \code{view} line is printed). They are separate flags rather than one
-switch on purpose: the quality-population flag \emph{corrects} an earlier error,
-while the others \emph{add} signal, and a result obtained with all of them on
-would not show which one caused it.
+\paragraph{Switchable but not yet measured.} The pipeline keeps one flag per
+experiment: \code{LAB\_QUALITY\_POPULATION} (region quartiles over the candidate
+crops rather than every frame of their tracks), \code{LAB\_PAIR\_PROFILE} (the
+per-pair statistics block), \code{LAB\_FRAME\_AGREEMENT} (the \code{agrees} line
+under each quoted frame), \code{LAB\_TYPICAL\_GUARD}, and \code{VIEW\_MIN\_UNUSUAL}
+(how unusual a frame must be to print a \code{view} line). They are separate on
+purpose: the quality-population flag \emph{corrects} an earlier error while the
+others \emph{add} signal, and a result with all of them on would not show which one
+caused it.
 
-{\sloppy Three further settings are configuration rather than prompt design and are also
-untested: \code{CANDIDATES\_PER\_CALL} (25, the source of the output truncation
-discussed in Section~\ref{sec:r-engineering}), \code{RANK\_KEEP\_EXTRA} (how many
-rows past the cut the ranker must write), and the thinking level, which is HIGH at
-every stage and uses roughly 70\% of the output budget on a 2A call.\par}
+{\sloppy Three configuration settings are also untested: \code{CANDIDATES\_PER\_CALL}
+(25, the source of the output truncation of Section~\ref{sec:r-engineering}),
+\code{RANK\_KEEP\_EXTRA} (rows the ranker must write past the cut), and the
+thinking level, HIGH at every stage and using roughly 70\% of a 2A call's output
+budget.\par}
 
 \paragraph{The ablation this part could not run.} The most informative experiment,
-the whole sweep on the larger model, is limited by quota rather than by design.
-Section~\ref{sec:r-rerun} is the part of it that could be afforded.
+the whole sweep on the larger model, is limited by quota rather than design;
+Section~\ref{sec:r-rerun} is the part that could be afforded.
 
 % ============================================================== 9 tooling ===
 \section{Evaluation Tooling and Reproducibility}
 
-Two properties of the measurement setup are reported here because they changed
-results.
+Two properties of the measurement setup changed results.
 
-\paragraph{Records are rebuilt from replies, not trusted.} The sweep writes one
-JSON record per configuration and one folder per query holding every stage's
-rendered input and reply. Running two notebooks against the same record file
-produced a \emph{lost update}: each held the whole file in memory and wrote it
-back, so the later save silently dropped the other's queries, while the file still
-parsed and could still be scored. The analysis notebook therefore ignores the
-record files and rebuilds every ranking from the per-query folders, mapping the
-ranker's numeric labels back to crops by aligning the CLIP-similarity sequence in
-the saved prompt with the retrieval cache, position by position. When an alignment
-check fails, the query is \emph{skipped and named}, never guessed, because
-attaching a reply's labels to the wrong candidate list would produce a complete,
-plausible and wrong record.
+\paragraph{Records are rebuilt from replies, not trusted.} The sweep writes one JSON
+record per configuration and one folder per query with every stage's rendered input
+and reply. Two notebooks writing the same record file caused a \emph{lost update}:
+each held the whole file in memory, so the later save silently dropped the other's
+queries while the file still parsed and scored. The analysis notebook therefore
+ignores the record files and rebuilds every ranking from the per-query folders,
+mapping the ranker's labels back to crops by aligning the CLIP-similarity sequence
+of the saved prompt with the retrieval cache, position by position. A query whose
+alignment check fails is \emph{skipped and named}, never guessed, since attaching
+labels to the wrong candidate list would produce a complete, plausible and wrong
+record.
 
 \paragraph{Every rate is reported with its denominator and its ceiling.} Queries
-with no ground-truth track are counted and excluded rather than silently dropped,
-since a dropped query inflates every rate by shrinking the denominator.
-\code{cap@75} is stored per query rather than as one rate, so any later subset can
-recompute its own ceiling.
+without a ground-truth track are counted and excluded, not silently dropped, since
+a dropped query inflates every rate. \code{cap@75} is stored per query, so any
+subset can recompute its own ceiling.
 
-The supporting tools built for this analysis are: a per-identity viewer showing
-the ground truth's CLIP rank and its rank after each stage together with the
-ranker's reason; a \emph{funnel-lost} report listing the identities that CLIP had
-in its top 10 and the funnel did not (the source of Tables~\ref{tab:r-lost}
-and~\ref{tab:r-lostwhy}); a coverage table over all evaluated identities; and a
-work-queue notebook that classifies every full-pool query not yet evaluated as
-\emph{CLIP hit}, \emph{miss but inside the pool} (what reranking can still gain)
-or \emph{miss outside the pool} (to be fixed in retrieval).
+The supporting tools are: a per-identity viewer of the ground truth's CLIP rank and
+its rank after each stage with the ranker's reason; a \emph{funnel-lost} report of
+identities in CLIP's top 10 but not the funnel's (the source of
+Tables~\ref{tab:r-lost} and~\ref{tab:r-lostwhy}); a coverage table over all
+evaluated identities; and a work-queue notebook classifying every full-pool query
+not yet evaluated as \emph{CLIP hit}, \emph{miss but inside the pool} (what
+reranking can still gain) or \emph{miss outside the pool} (to be fixed in
+retrieval).
 
 % ============================================================ 9 limitations =

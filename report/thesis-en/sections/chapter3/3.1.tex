@@ -8,7 +8,7 @@
 
 Given a set of person images extracted from the video of many cameras, called the \emph{gallery} $\mathcal{G} = \{g_1, g_2, \ldots, g_n\}$, and a \emph{query} $q$ describing the person being sought, the system must rank the elements of $\mathcal{G}$ by how well they match $q$ and return the $k$ best matches. The common approach is to learn a representation function that maps the query and every element into a vector space, then measure relevance with a similarity function $s(q, g_i)$; search then becomes finding the nearest vectors.
 
-In surveillance data, the people to be indexed are not available as tightly cropped images as in benchmark datasets; they appear in full frames together with many other people and objects, so the complete problem also includes a person detection step. Xiao et al.\ learn detection and identification jointly in one model~\cite{xiao2017personsearch}; another approach uses a separate detector and a separate identification model~\cite{zheng2017reidwild}. The project follows the second approach so that each component can be replaced independently.
+In surveillance video, people are not tightly cropped as in benchmarks but appear in full frames among others, so the problem also includes detection. Xiao et al.\ learn detection and identification jointly~\cite{xiao2017personsearch}, while another approach separates the detector from the identification model~\cite{zheng2017reidwild}; the project follows the latter so that each component can be replaced independently.
 
 \subsection{Three Forms of Query}
 \label{sec:3.1.2}
@@ -19,9 +19,9 @@ In surveillance data, the people to be indexed are not available as tightly crop
 
 \paragraph{Search by text.} When the user only has a verbal description, for example ``a man wearing a black jacket and blue jeans, carrying a backpack'', the problem is text-based person search (TBPS), proposed by Li et al.\ together with the CUHK-PEDES dataset of person images with English descriptions~\cite{li2017cuhkpedes}. It is a cross-modal problem: the model must bring text and images into one representation space, while descriptions are often vague and the differences between people often lie in small details.
 
-\paragraph{Search by attributes.} The user chooses appearance attributes from a predefined list such as gender, garment type and colour, and carried items. There are two ways to implement it: use a pedestrian attribute recognition model~\cite{wang2022parsurvey} and filter by label, which needs labelled data for every attribute; or combine the attributes into a description sentence from a fixed template and handle it as a text query. The project uses the second way so that it shares the model of text search; the trade-off is that attributes only affect the ranking and are not hard filters. Negative options such as ``no backpack'' are not supported, because CLIP-style vision-language models have considerable difficulty with negation, in many cases performing at chance level~\cite{alhamoud2025negation}.
+\paragraph{Search by attributes.} The user picks attributes such as gender, garment type and colour, and carried items. They can be handled by a pedestrian attribute recognition model~\cite{wang2022parsurvey} filtering by label, which needs labelled data for every attribute, or turned into a sentence from a fixed template and searched as text. The project takes the second way to share the text model, so attributes affect the ranking but are not hard filters. Negative options such as ``no backpack'' are not supported, because CLIP-style vision-language models have considerable difficulty with negation, in many cases performing at chance level~\cite{alhamoud2025negation}.
 
-Appearance search differs from face recognition: it does not rely on biometric features, which need a clearly visible face, but on clothing, colours and carried items, which are easy to observe from cameras mounted high and far away but can change and be shared by many people. The results are therefore suggestions for the user to assess, not conclusions about identity.
+Unlike face recognition, appearance search relies not on biometrics, which need a visible face, but on clothing, colours and carried items, easy to see from high, distant cameras but changeable and shared by many people. Its results are suggestions to assess, not conclusions about identity.
 
 \subsection{Approach of the Project}
 \label{sec:3.1.6}
@@ -46,8 +46,8 @@ Attributes & Gender, type and colour of the upper and lower garments, carried it
 \end{table}
 
 \begin{itemize}
-    \item \textbf{One shared representation space.} The RaSa model~\cite{bai2023rasa} encodes both images and text into one vector space, so person images from video, query images, description sentences and sentences generated from attributes can all be compared directly (Section~\ref{sec:3.5}).
-    \item \textbf{The result unit is an appearance.} People are detected and tracked across frames (Sections~\ref{sec:3.2} and~\ref{sec:3.3}); each continuous appearance of a person on one camera (a track) is represented by one representative frame and one vector, which reduces the number of elements to match and avoids duplicate results.
-    \item \textbf{Two separate stages.} The indexing stage runs in the background, processes camera streams and stores features; the query stage only encodes the user's description and finds the nearest vectors (Section~\ref{sec:3.6}), without processing images again.
-    \item \textbf{A human makes the final decision.} The system only ranks; users assess each result on the original image before saving it to a case file.
+    \item \textbf{One shared representation space.} RaSa~\cite{bai2023rasa} encodes images and text into one vector space, so person images, query images, descriptions and attribute sentences are compared directly (Section~\ref{sec:3.5}).
+    \item \textbf{The result unit is an appearance.} People are detected and tracked (Sections~\ref{sec:3.2} and~\ref{sec:3.3}), and each continuous appearance on one camera (a track) gets one representative frame and one vector, reducing matching work and duplicate results.
+    \item \textbf{Two separate stages.} Indexing runs in the background and stores features; querying only encodes the description and finds the nearest vectors (Section~\ref{sec:3.6}).
+    \item \textbf{A human makes the final decision.} The system only ranks; users assess each result on the original image before saving it.
 \end{itemize}

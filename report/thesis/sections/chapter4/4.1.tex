@@ -4,56 +4,45 @@
 % architect.md mục 2 (vai trò và chức năng), mục 5 (khu vực, owner Case, đổi khu vực).
 % Đây là nơi ĐẦU TIÊN nêu tên vai trò: Quản trị viên (Admin), Giám sát viên (Operator), Quản lý (Viewer); Case = vụ việc.
 % Tài khoản Admin khởi tạo khi triển khai (backend plan: bootstrap Admin qua seed/CLI) — không có chức năng tạo Admin trên giao diện.
+% Viết gọn 2026-10-05 (SV duyệt): giữ nội dung, câu ngắn hơn, bỏ danh sách trách nhiệm lặp với 4.2.
 \section{Các tác nhân của hệ thống}
 \label{sec:4.1}
 
-Hệ thống có ba tác nhân, tương ứng với ba loại tài khoản người dùng được phân chia theo trách nhiệm: \textbf{Quản trị viên} (Admin), \textbf{Giám sát viên} (Operator) và \textbf{Quản lý} (Viewer). Cả ba tác nhân dùng chung một chức năng đăng nhập; sau khi xác thực, hệ thống xác định vai trò của tài khoản và chỉ cung cấp các chức năng, dữ liệu phù hợp với vai trò đó.
+Hệ thống có ba tác nhân, ứng với ba loại tài khoản: \textbf{Quản trị viên} (Admin), \textbf{Giám sát viên} (Operator) và \textbf{Quản lý} (Viewer). Cả ba dùng chung chức năng đăng nhập; sau khi đăng nhập, hệ thống chỉ cung cấp chức năng và dữ liệu của vai trò tương ứng.
 
-Trước khi mô tả từng tác nhân, cần làm rõ hai khái niệm nghiệp vụ được dùng xuyên suốt các chương sau:
+Hai khái niệm nghiệp vụ được dùng xuyên suốt các chương sau:
 \begin{itemize}
-    \item \textbf{Khu vực giám sát:} một phạm vi địa lý như một tòa nhà hay một khu vực công cộng. Mỗi camera thuộc đúng một khu vực, được xác định khi thêm camera và không thay đổi sau đó. Danh mục khu vực được khai báo sẵn khi triển khai hệ thống; phiên bản hiện tại không có chức năng thêm, sửa, xóa khu vực trên giao diện.
-    \item \textbf{Vụ việc} (Case): hồ sơ do Giám sát viên tạo ra để lưu lại các kết quả tìm kiếm liên quan đến một sự việc, kèm tiêu đề, ghi chú và trạng thái \emph{Đang xử lý} hoặc \emph{Hoàn thành}. Vụ việc gắn với Giám sát viên phụ trách nhưng không gắn trực tiếp với một khu vực giám sát: khu vực chỉ dùng để giới hạn phạm vi tìm kiếm, còn quyền đối với vụ việc được xác định theo người phụ trách. Do khu vực của Giám sát viên có thể thay đổi, một vụ việc có thể chứa kết quả thuộc nhiều khu vực khác nhau.
+    \item \textbf{Khu vực giám sát:} một phạm vi địa lý như một tòa nhà hay một khu vực công cộng. Mỗi camera thuộc đúng một khu vực, xác định khi thêm camera và không đổi sau đó. Danh mục khu vực được khai báo khi triển khai; phiên bản hiện tại chưa có giao diện quản lý khu vực.
+    \item \textbf{Vụ việc} (Case): hồ sơ do Giám sát viên tạo để lưu các kết quả tìm kiếm liên quan đến một sự việc, kèm tiêu đề, ghi chú và trạng thái \emph{Đang xử lý} hoặc \emph{Hoàn thành}. Vụ việc thuộc về Giám sát viên phụ trách, không gắn với khu vực: khu vực chỉ giới hạn phạm vi tìm kiếm. Do khu vực của Giám sát viên có thể thay đổi, một vụ việc có thể chứa kết quả của nhiều khu vực.
 \end{itemize}
 
 \subsection{Quản trị viên}
 \label{sec:4.1.1}
 
-Quản trị viên là người chịu trách nhiệm \emph{quản trị kỹ thuật} của hệ thống, bảo đảm hệ thống camera và quá trình xử lý AI hoạt động ổn định để các tác nhân khác có thể sử dụng. Trách nhiệm của Quản trị viên gồm:
+Quản trị viên bảo đảm camera và xử lý AI hoạt động để các tác nhân khác sử dụng, và chịu trách nhiệm về:
 \begin{itemize}
-    \item \textbf{Quản lý tài khoản} của Giám sát viên và Quản lý, gồm cả việc gán khu vực giám sát cho Giám sát viên.
-    \item \textbf{Quản lý camera} và kết nối tới luồng RTSP của từng camera.
-    \item \textbf{Quản lý xử lý AI:} quyết định camera nào được phân tích, và chọn mô hình phát hiện người (Detector) cùng thuật toán theo vết (Tracker) dùng chung cho toàn hệ thống.
-    \item \textbf{Theo dõi vận hành:} theo dõi trạng thái camera và quá trình xử lý AI, kiểm tra các thành phần AI, và tra cứu nhật ký hệ thống (audit log).
+    \item \textbf{Tài khoản} của Giám sát viên và Quản lý, gồm cả khu vực của từng Giám sát viên.
+    \item \textbf{Camera} và kết nối RTSP của từng camera.
+    \item \textbf{Xử lý AI:} camera nào được phân tích, cùng mô hình phát hiện người (Detector) và thuật toán theo vết (Tracker) dùng cho toàn hệ thống.
+    \item \textbf{Theo dõi vận hành:} trạng thái camera và xử lý AI, kiểm tra các thành phần AI, và nhật ký hệ thống (audit log).
 \end{itemize}
-
-Quyền quản trị kỹ thuật \emph{không} mặc nhiên bao gồm quyền nghiệp vụ: theo mặc định, Quản trị viên không được tìm kiếm người và không xem các vụ việc. Tài khoản Quản trị viên được khởi tạo khi triển khai hệ thống; trên giao diện, Quản trị viên chỉ tạo và gán được hai vai trò Giám sát viên và Quản lý.
+Quyền kỹ thuật này \emph{không} bao gồm quyền nghiệp vụ: Quản trị viên không tìm kiếm người và không xem vụ việc. Tài khoản Quản trị viên được tạo khi triển khai; trên giao diện chỉ tạo được tài khoản Giám sát viên và Quản lý.
 
 \subsection{Giám sát viên}
 \label{sec:4.1.2}
 
-Giám sát viên là người trực tiếp sử dụng chức năng nghiệp vụ chính của hệ thống: tìm kiếm người trong dữ liệu camera đã được phân tích và lưu lại các kết quả phù hợp vào vụ việc. Trách nhiệm của Giám sát viên gồm:
-\begin{itemize}
-    \item \textbf{Tìm kiếm người} bằng ảnh, câu mô tả tiếng Anh hoặc các thuộc tính ngoại hình.
-    \item \textbf{Đánh giá kết quả:} xem từng kết quả trong ngữ cảnh khung hình và tự quyết định kết quả nào đúng là người cần tìm.
-    \item \textbf{Quản lý vụ việc:} lưu các kết quả phù hợp vào vụ việc và theo dõi vụ việc cho tới khi hoàn thành.
-\end{itemize}
+Giám sát viên sử dụng chức năng chính của hệ thống: tìm kiếm người trong dữ liệu camera đã phân tích, đánh giá từng kết quả trong ngữ cảnh khung hình, và lưu các kết quả phù hợp vào vụ việc cho tới khi vụ việc hoàn thành.
 
-Phạm vi hoạt động của Giám sát viên bị giới hạn theo hai nguyên tắc. Thứ nhất, \emph{phạm vi tìm kiếm} được xác định bởi khu vực giám sát gắn với tài khoản: hệ thống chỉ tìm trên các camera đang vận hành thuộc khu vực đó, và từ chối mọi yêu cầu chứa camera hay khu vực nằm ngoài quyền. Thứ hai, \emph{phạm vi vụ việc} được xác định bởi quyền phụ trách: mỗi vụ việc có đúng một Giám sát viên phụ trách là người đã tạo ra nó, Giám sát viên chỉ thao tác trên các vụ việc do mình phụ trách, và không thể chuyển quyền phụ trách cho người khác. Hai phạm vi này độc lập với nhau: khi được chuyển sang khu vực khác, Giám sát viên vẫn xem và quản lý được các vụ việc cũ của mình, còn các lượt tìm kiếm mới chỉ thực hiện trong khu vực mới.
+Giám sát viên bị giới hạn bởi hai phạm vi. \emph{Phạm vi tìm kiếm} là khu vực của tài khoản: hệ thống chỉ tìm trên các camera đang vận hành của khu vực đó và từ chối yêu cầu chứa camera hay khu vực khác. \emph{Phạm vi vụ việc} là quyền phụ trách: mỗi vụ việc có đúng một Giám sát viên phụ trách là người tạo ra nó, và không chuyển được cho người khác. Hai phạm vi độc lập với nhau: khi chuyển sang khu vực khác, Giám sát viên vẫn quản lý các vụ việc cũ, còn các lượt tìm kiếm mới chỉ chạy trong khu vực mới.
 
 \subsection{Quản lý}
 \label{sec:4.1.3}
 
-Quản lý là người ở cấp quản lý của đơn vị, như trưởng bộ phận hoặc giám đốc, có nhu cầu theo dõi kết quả công việc nhưng không trực tiếp tìm kiếm hay cấu hình hệ thống. Trách nhiệm của Quản lý gồm:
-\begin{itemize}
-    \item \textbf{Xem thông tin tổng quan} về các vụ việc trên toàn hệ thống.
-    \item \textbf{Xem vụ việc:} xem mọi vụ việc và các kết quả đã lưu trong đó.
-\end{itemize}
-
-Quản lý chỉ có quyền đọc và không tìm kiếm người. Khác với Giám sát viên, Quản lý không bị giới hạn theo khu vực, vì phạm vi xem của Quản lý là các vụ việc, vốn không gắn với khu vực.
+Quản lý ở cấp quản lý của đơn vị, như trưởng bộ phận, theo dõi kết quả công việc mà không tìm kiếm hay cấu hình hệ thống. Quản lý xem thông tin tổng quan về vụ việc của toàn hệ thống và mọi vụ việc cùng kết quả đã lưu, chỉ với quyền đọc. Vì vụ việc không gắn với khu vực, Quản lý không bị giới hạn theo khu vực.
 
 \subsection{Nguyên tắc phân chia vai trò}
 \label{sec:4.1.4}
 
-Cách phân chia trên tuân theo hai nguyên tắc: \textbf{tách quyền kỹ thuật khỏi quyền nghiệp vụ}, để người cấu hình hệ thống không mặc nhiên truy cập được dữ liệu tìm kiếm và người sử dụng dữ liệu không can thiệp được vào cấu hình; và \textbf{quyền tối thiểu}, để mỗi tác nhân chỉ có những quyền cần cho công việc của mình. Quyền của từng vai trò theo từng nhóm hành động được tổng hợp trong ma trận phân quyền ở Mục~\ref{sec:4.6}.
+Cách phân chia tuân theo hai nguyên tắc: \textbf{tách quyền kỹ thuật khỏi quyền nghiệp vụ}, để người cấu hình hệ thống không xem được dữ liệu tìm kiếm và người dùng dữ liệu không thay đổi được cấu hình; và \textbf{quyền tối thiểu}, để mỗi tác nhân chỉ có quyền cần cho công việc của mình. Ma trận phân quyền ở Mục~\ref{sec:4.6} trình bày chi tiết các quyền này.
 
-Các luồng camera và việc xử lý AI chạy nền không được xem là tác nhân: camera là nguồn dữ liệu do Quản trị viên cấu hình, còn việc phân tích dữ liệu camera được hệ thống thực hiện tự động khi xử lý AI được bật, không do người dùng trực tiếp kích hoạt.
+Camera và việc xử lý AI chạy nền không phải là tác nhân: camera là nguồn dữ liệu do Quản trị viên cấu hình, còn việc phân tích chạy tự động khi xử lý AI được bật.

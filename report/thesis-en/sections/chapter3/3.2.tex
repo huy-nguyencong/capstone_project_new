@@ -23,12 +23,12 @@ A \emph{two-stage} model such as Faster R-CNN~\cite{ren2017fasterrcnn} first use
 
 Modern YOLO models have three parts: a feature extractor (backbone) at several levels of detail, a feature aggregator (neck) at several scales so that both large objects close to the camera and small distant ones can be detected, and a prediction head for boxes, classes and confidence. YOLO11 was released by Ultralytics in 2024 in five sizes (n, s, m, l, x) that trade speed for accuracy~\cite{ultralytics2024yolo11docs}. The models are pre-trained on COCO~\cite{lin2014coco}, which has 80 common object classes including \emph{person}, so they can detect people directly without further training.
 
-\subsection{Post-Processing: Confidence Threshold and Duplicate Removal}
+\subsection{Post-Processing: Thresholding and Duplicate Removal}
 \label{sec:3.2.4}
 
-The raw output of the model contains many low-confidence boxes and many overlapping boxes describing the same object. Two post-processing steps are applied: boxes below a confidence threshold are discarded, and Non-Maximum Suppression (NMS) repeatedly keeps the most confident box and removes every box of the same class whose IoU with it exceeds a threshold. A lower confidence threshold misses fewer people but produces more false detections; a lower IoU threshold removes overlapping boxes more aggressively but may remove people standing close together.
+The raw output has many low-confidence and overlapping boxes. Boxes below a confidence threshold are discarded, and Non-Maximum Suppression (NMS) keeps the most confident box and removes same-class boxes overlapping it beyond an IoU threshold. A lower confidence threshold misses fewer people but adds false detections; a lower IoU threshold removes overlaps more aggressively but may merge people standing close together.
 
 \subsection{Role of Detection in the System}
 \label{sec:3.2.5}
 
-The detector is applied to the sampled frames (Section~\ref{sec:3.4}) and keeps only the \emph{person} class, with a confidence threshold of 0.1, an NMS IoU threshold of 0.7 and at most 300 detections per frame. The low confidence threshold is deliberate: the ByteTrack tracker in the next step needs low-confidence detections, often partially occluded people, to keep existing tracks alive (Section~\ref{sec:3.3}). These detections are not used to start new tracks, and a track is only confirmed when the object is detected in at least two processed frames, so most transient false detections are removed by the tracking step. The reasons for choosing YOLO11n are given in Section~\ref{sec:6.1.4}.
+The detector is applied to the sampled frames (Section~\ref{sec:3.4}) and keeps only the \emph{person} class, with a confidence threshold of 0.1, an NMS IoU threshold of 0.7 and at most 300 detections per frame. The low threshold is deliberate: ByteTrack needs low-confidence detections, often partially occluded people, to keep tracks alive (Section~\ref{sec:3.3}); they never start tracks, and a track needs two observations to be confirmed, so most transient false detections are removed by tracking. The reasons for choosing YOLO11n are given in Section~\ref{sec:6.1.4}.

@@ -12,21 +12,21 @@
 \label{sec:6.3.1}
 \label{sec:6.3.2}
 
-Ứng dụng web là một ứng dụng một trang xây dựng bằng React, với việc chuyển màn hình do React Router đảm nhận. Các đường dẫn được chia thành ba nhóm theo vai trò: nếu chưa đăng nhập, người dùng được chuyển tới màn hình đăng nhập. Nếu mở một đường dẫn không thuộc vai trò của mình, người dùng được chuyển về trang chủ của vai trò đó. Việc chặn này chỉ nhằm tránh hiển thị màn hình không dùng được, còn quyền thực sự luôn được máy chủ kiểm tra ở từng yêu cầu.
+Điều hướng dùng React Router với các đường dẫn nhóm theo vai trò: chưa đăng nhập thì về màn hình đăng nhập, mở đường dẫn của vai trò khác thì về trang chủ của mình. Việc chặn này chỉ để ẩn màn hình không dùng được; quyền do máy chủ kiểm tra (NFR-01).
 
-Mọi yêu cầu tới máy chủ đi qua một lớp gọi API chung. Lớp này gắn mã CSRF vào mọi yêu cầu thay đổi dữ liệu (Mục~\ref{sec:5.5.2}). Mã CSRF chỉ được giữ trong bộ nhớ của trang, không lưu vào bộ nhớ trình duyệt. Phản hồi lỗi được chuyển thành thông báo tiếng Việt. Với lỗi phía máy chủ, thông báo kèm một \emph{mã tra cứu} gồm tám ký tự đầu của mã yêu cầu để Quản trị viên tìm đúng dòng nhật ký (Mục~\ref{sec:6.4}). Khi bất kỳ yêu cầu nào nhận mã 401, ứng dụng xóa trạng thái đăng nhập và đưa người dùng về màn hình đăng nhập. Phiên chỉ được làm mới khi người dùng thực sự thao tác. Các yêu cầu tự động chạy nền không giữ phiên sống, và thời điểm thao tác gần nhất được chia sẻ giữa các thẻ trình duyệt.
+Mọi yêu cầu đi qua một lớp gọi API chung. Lớp này gắn mã CSRF vào mọi yêu cầu thay đổi dữ liệu (Mục~\ref{sec:5.5.2}); mã chỉ được giữ trong bộ nhớ của trang. Phản hồi lỗi được chuyển thành thông báo tiếng Việt, và lỗi phía máy chủ kèm một \emph{mã tra cứu} gồm tám ký tự đầu của mã yêu cầu để tìm đúng dòng nhật ký (Mục~\ref{sec:6.4}). Phản hồi 401 xóa trạng thái đăng nhập và đưa về màn hình đăng nhập. Phiên chỉ được làm mới khi người dùng thực sự thao tác, theo dõi chung giữa các thẻ trình duyệt, nên yêu cầu chạy nền không giữ phiên sống.
 
 \subsection{Hiển thị ảnh người trong kết quả}
 \label{sec:6.3.3}
 
-Ảnh người trong danh sách kết quả được máy chủ dựng từ khung hình toàn cảnh và khung bao mỗi khi được yêu cầu (Mục~\ref{sec:5.3.3}). Thẻ kết quả trên giao diện có tỉ lệ 3:5; vùng cắt được nới rộng từ khung bao bằng phần cảnh thật xung quanh cho tới khi đạt tỉ lệ này, chỉ nới ra chứ không cắt vào người. Vì vùng cắt rộng có thể chứa cả người khác, phần xung quanh được giảm độ sáng còn 60\% và người được tìm thấy được viền bằng màu nhấn. Khung hình toàn cảnh trong hộp thoại chi tiết được vẽ khung bao màu đỏ quanh người. Ảnh chỉ được trả khi người yêu cầu có quyền xem kết quả tương ứng, kèm chỉ dẫn không lưu vào bộ nhớ đệm; nếu khung hình không còn trong kho, thẻ kết quả hiển thị biểu tượng \emph{Không còn ảnh}.
+Máy chủ dựng mỗi ảnh người từ khung hình toàn cảnh và khung bao (Mục~\ref{sec:5.3.3}). Với thẻ kết quả tỉ lệ 3:5, vùng cắt được nới bằng cảnh thật xung quanh cho tới khi vừa, không cắt vào người; vì có thể chứa người khác, phần xung quanh được giảm sáng còn 60\% và người được tìm thấy được viền màu nhấn. Hộp thoại chi tiết hiển thị khung hình toàn cảnh với khung bao đỏ. Ảnh chỉ gửi cho người có quyền xem kết quả, kèm chỉ dẫn không lưu đệm, và khung hình bị thiếu hiển thị biểu tượng \emph{Không còn ảnh}.
 
 \subsection{Các màn hình chính}
 \label{sec:6.3.4}
 
-Các hình dưới đây là những màn hình chính của ứng dụng theo từng vai trò, chụp trên dữ liệu trình diễn (Mục~\ref{sec:7.2}).
+Các hình dưới đây là màn hình chính theo từng vai trò, chụp trên dữ liệu trình diễn (Mục~\ref{sec:7.2}).
 
-\paragraph{Giám sát viên.} Màn hình \emph{Tìm kiếm người} (Hình~\ref{fig:ui-search-image}) gồm biểu mẫu truy vấn bên trái, với ảnh truy vấn, các camera trong khu vực, khoảng ngày và số kết quả, và danh sách kết quả xếp hạng bên phải. Mỗi kết quả hiển thị ảnh người trong ngữ cảnh, camera, giờ xuất hiện và điểm phù hợp; khu vực và ngày chung chỉ hiển thị một lần ở đầu danh sách, và danh sách có thể lọc lại theo thời gian, theo camera hay sắp xếp theo thời gian mà không gửi truy vấn mới. Khi tìm theo thuộc tính (Hình~\ref{fig:ui-search-attr}), câu mô tả tiếng Anh được sinh từ các thuộc tính đã chọn hiển thị ngay trong biểu mẫu, để người dùng biết hệ thống thực sự tìm theo mô tả nào. Chọn một kết quả mở hộp thoại chi tiết với khung hình toàn cảnh (Hình~\ref{fig:ui-result}), từ đó kết quả được lưu vào vụ việc mới, với người phụ trách tự động là tài khoản đang đăng nhập và tùy chọn đánh dấu hoàn thành ngay (Hình~\ref{fig:ui-create-case}). Màn hình \emph{Vụ việc của tôi} (Hình~\ref{fig:ui-cases}) gồm danh sách vụ việc theo trạng thái và chi tiết vụ việc đang chọn; vụ việc đã hoàn thành bị khóa và chỉ có thể mở lại.
+\paragraph{Giám sát viên.} \emph{Tìm kiếm người} (Hình~\ref{fig:ui-search-image}) có biểu mẫu truy vấn bên trái (ảnh, camera của khu vực, khoảng ngày, số kết quả) và kết quả xếp hạng bên phải, mỗi kết quả gồm ảnh người trong ngữ cảnh, camera, giờ và điểm phù hợp; khu vực và ngày chung chỉ hiện một lần ở đầu danh sách. Khi tìm theo thuộc tính (Hình~\ref{fig:ui-search-attr}), biểu mẫu hiển thị câu mô tả tiếng Anh được sinh ra, để người dùng biết hệ thống thực sự tìm gì. Một kết quả mở hộp thoại chi tiết (Hình~\ref{fig:ui-result}), từ đó lưu vào vụ việc (Hình~\ref{fig:ui-create-case}). \emph{Vụ việc của tôi} (Hình~\ref{fig:ui-cases}) gồm danh sách vụ việc theo trạng thái và chi tiết vụ việc đang chọn; vụ việc đã hoàn thành bị khóa cho tới khi mở lại.
 
 \begin{figure}[!htbp]
 \centering
@@ -67,7 +67,7 @@ Các hình dưới đây là những màn hình chính của ứng dụng theo t
 \label{fig:ui-cases}
 \end{figure}
 
-\paragraph{Quản lý.} Màn hình \emph{Tổng quan} (Hình~\ref{fig:ui-overview}) hiển thị số vụ việc theo trạng thái, số kết quả đã lưu và danh sách vụ việc gần đây; chọn một vụ việc mở màn hình \emph{Hồ sơ vụ việc}, có cùng bố cục như Hình~\ref{fig:ui-cases} nhưng ở chế độ chỉ đọc.
+\paragraph{Quản lý.} \emph{Tổng quan} (Hình~\ref{fig:ui-overview}) hiển thị số vụ việc theo trạng thái, số kết quả đã lưu và các vụ việc gần đây; một vụ việc mở ở \emph{Hồ sơ vụ việc}, bản chỉ đọc của Hình~\ref{fig:ui-cases}.
 
 \begin{figure}[!htbp]
 \centering
@@ -76,7 +76,7 @@ Các hình dưới đây là những màn hình chính của ứng dụng theo t
 \label{fig:ui-overview}
 \end{figure}
 
-\paragraph{Quản trị viên.} Màn hình \emph{Camera} (Hình~\ref{fig:ui-cameras}) liệt kê các camera theo khu vực cùng trạng thái kết nối, trong đó camera chỉ xử lý tệp video được ghi là \emph{Video tải lên}, trạng thái xử lý AI và các thao tác kiểm tra kết nối, sửa, loại khỏi vận hành. Màn hình \emph{Mô hình AI} (Hình~\ref{fig:ui-models}) cho chọn Detector và Tracker; mô hình không đủ điều kiện được đánh dấu \emph{Không khả dụng}, còn bộ mã hóa được hiển thị là thành phần cố định (Mục~\ref{sec:6.2.1}). Màn hình \emph{Xử lý video} (Hình~\ref{fig:ui-video}) dùng để tải video lên cho một camera với chế độ lấy mẫu định sẵn và theo dõi tiến độ từng công việc theo số khung hình và số track đã sẵn sàng. Hai màn hình giám sát là \emph{Trạng thái hệ thống} (Hình~\ref{fig:ui-status}, Mục~\ref{sec:6.4}) và \emph{Kiểm tra AI} (Hình~\ref{fig:ui-diagnostics}, Mục~\ref{sec:6.2.5}).
+\paragraph{Quản trị viên.} \emph{Camera} (Hình~\ref{fig:ui-cameras}) liệt kê camera theo khu vực với trạng thái kết nối (\emph{Video tải lên} cho camera chỉ xử lý tệp), trạng thái xử lý AI và các thao tác. \emph{Mô hình AI} (Hình~\ref{fig:ui-models}) chọn Detector và Tracker, đánh dấu mô hình không dùng được và hiển thị bộ mã hóa là cố định (Mục~\ref{sec:6.2.1}). \emph{Xử lý video} (Hình~\ref{fig:ui-video}) tải video lên với chế độ lấy mẫu định sẵn và theo dõi từng công việc theo số khung hình và track đã sẵn sàng. Hai màn hình giám sát là \emph{Trạng thái hệ thống} (Hình~\ref{fig:ui-status}, Mục~\ref{sec:6.4}) và \emph{Kiểm tra AI} (Hình~\ref{fig:ui-diagnostics}, Mục~\ref{sec:6.2.5}).
 
 \begin{figure}[!htbp]
 \centering
