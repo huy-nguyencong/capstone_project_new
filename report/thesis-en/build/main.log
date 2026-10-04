@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2026.5.25)  5 OCT 2026 02:37
+This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2026.5.25)  5 OCT 2026 03:26
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -1962,8 +1962,8 @@ File: figures/H12-luong-man-hinh.png Graphic file (type bmp)
 Chapter 6.
 (sections/chapter6/6.1.tex [63
 
-] [64] [65]) (sections/chapter6/6.2.tex [66])
-(sections/chapter6/6.3.tex [67] [68]
+] [64] [65]) (sections/chapter6/6.2.tex [66]
+[67]) (sections/chapter6/6.3.tex [68]
 File: figures/H10a-tim-kiem-anh-cat.png Graphic file (type bmp)
 <figures/H10a-tim-kiem-anh-cat.png>
 File: figures/H10b-tim-kiem-thuoc-tinh-cat.png Graphic file (type bmp)
@@ -1976,6 +1976,7 @@ File: figures/H10e-vu-viec-cua-toi-cat.png Graphic file (type bmp)
 <figures/H10e-vu-viec-cua-toi-cat.png>
 File: figures/H10f-tong-quan-cat.png Graphic file (type bmp)
 <figures/H10f-tong-quan-cat.png>
+ [69] [70] [71]
 File: figures/H10g-camera-cat.png Graphic file (type bmp)
 <figures/H10g-camera-cat.png>
 File: figures/H10h-mo-hinh-ai-cat.png Graphic file (type bmp)
@@ -1986,8 +1987,8 @@ File: figures/H10j-trang-thai-he-thong-cat.png Graphic file (type bmp)
 <figures/H10j-trang-thai-he-thong-cat.png>
 File: figures/H10k-kiem-tra-ai-cat.png Graphic file (type bmp)
 <figures/H10k-kiem-tra-ai-cat.png>
-) (sections/chapter6/6.4.tex [69] [70]
-[71] [72] [73])) (sections/chapter7/chapter7.tex [74]
+)
+(sections/chapter6/6.4.tex [72] [73])) (sections/chapter7/chapter7.tex [74]
 Chapter 7.
 (sections/chapter7/7.1.tex) (sections/chapter7/7.2.tex [75
 
@@ -2115,4 +2116,4 @@ Here is how much of TeX's memory you used:
  108i,15n,107p,1199b,5143s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
 Output written on D:\uni-studies\semester-253\capstone_project_new\report\thesi
-s-en\build\main.xdv (154 pages, 2404664 bytes).
+s-en\build\main.xdv (154 pages, 2414208 bytes).

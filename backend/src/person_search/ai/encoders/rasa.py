@@ -136,10 +136,18 @@ class RasaPreprocessor:
 
 
 class RasaRuntime:
-    def __init__(self, model: Any, preprocessor: RasaPreprocessor, *, device: str) -> None:
+    def __init__(
+        self,
+        model: Any,
+        preprocessor: RasaPreprocessor,
+        *,
+        device: str,
+        fusion_layers_loaded: bool = True,
+    ) -> None:
         self.model = model
         self.preprocessor = preprocessor
         self.device = device
+        self.fusion_layers_loaded = fusion_layers_loaded
 
     def image_embedding(self, image: Image.Image):
         import torch
@@ -148,9 +156,7 @@ class RasaRuntime:
         with torch.inference_mode():
             tensor = self.preprocessor.image(image).unsqueeze(0).to(self.device)
             features = self.model.visual_encoder(tensor)
-            vector = functional.normalize(
-                self.model.vision_proj(features[:, 0, :]), dim=-1
-            )
+            vector = functional.normalize(self.model.vision_proj(features[:, 0, :]), dim=-1)
         return self._validate(vector)
 
     def text_embedding(self, text: str):
@@ -188,6 +194,7 @@ class RasaRuntimeFactory:
         artifact_root: str | Path,
         settings: RasaRuntimeSettings,
         device: str = "cpu",
+        keep_fusion_layers: bool = False,
     ) -> None:
         if not isinstance(entry, EncoderEntry) or entry.adapter_kind != "rasa":
             raise ValueError("Encoder entry is not a RaSa adapter.")
@@ -215,6 +222,7 @@ class RasaRuntimeFactory:
         self.entry = entry
         self.settings = settings
         self.device = device
+        self.keep_fusion_layers = keep_fusion_layers
         self.checkpoint = checkpoint
         self.vocab = vocab
 
@@ -241,35 +249,83 @@ class RasaRuntimeFactory:
             raise ValueError("RaSa checkpoint architecture does not match CUHK-PEDES v1.")
         return metadata
 
-    def load(self) -> RasaRuntime:
+    def load(self, *, full_training_module: bool = False) -> RasaRuntime:
+        """Load the encoders for inference.
+
+        By default only the modules that ``image_embedding`` and ``text_embedding`` read are
+        built, on the ``meta`` device, and the matching checkpoint tensors are assigned to them
+        without an intermediate random initialisation, so neither the momentum copies nor the
+        contrastive queues of the training checkpoint ever occupy memory. ``full_training_module``
+        rebuilds the original ``ALBEF`` class instead; it exists for equivalence checks and costs
+        about twice the steady memory and four times the peak (``tools/measure_encoder_memory.py``).
+        """
+
         import torch
 
-        from person_search.ai.encoders.rasa_vendor.model_person_search import ALBEF
-
         self.inspect_checkpoint()
-        config = {
-            "bert_config": str(Path(__file__).with_name("rasa_vendor") / "config_bert.json"),
-            "embed_dim": self.settings.embedding_dimension,
-            "image_res": self.settings.image_size,
-            "vision_width": 768,
-            "temp": 0.07,
-            "mlm_probability": 0.15,
-            "mrtd_mask_probability": 0.3,
-            "queue_size": 65536,
-            "momentum": 0.995,
-        }
         preprocessor = RasaPreprocessor(self.settings, vocab_path=self.vocab)
-        model = ALBEF(config=config, text_encoder=None, tokenizer=None)
+        bert_config = str(Path(__file__).with_name("rasa_vendor") / "config_bert.json")
         checkpoint = torch.load(
             self.checkpoint,
             map_location="cpu",
             weights_only=True,
             mmap=True,
         )
-        result = model.load_state_dict(checkpoint["model"], strict=False)
-        if result.missing_keys or result.unexpected_keys:
-            raise ValueError(
-                "RaSa checkpoint state does not match the vendored model architecture."
+        if full_training_module:
+            from person_search.ai.encoders.rasa_vendor.model_person_search import ALBEF
+
+            config = {
+                "bert_config": bert_config,
+                "embed_dim": self.settings.embedding_dimension,
+                "image_res": self.settings.image_size,
+                "vision_width": 768,
+                "temp": 0.07,
+                "mlm_probability": 0.15,
+                "mrtd_mask_probability": 0.3,
+                "queue_size": 65536,
+                "momentum": 0.995,
+            }
+            model = ALBEF(config=config, text_encoder=None, tokenizer=None)
+            result = model.load_state_dict(checkpoint["model"], strict=False)
+            if result.missing_keys or result.unexpected_keys:
+                raise ValueError(
+                    "RaSa checkpoint state does not match the vendored model architecture."
+                )
+            fusion_layers_loaded = True
+        else:
+            from person_search.ai.encoders.rasa_vendor.inference_model import RasaInferenceModel
+
+            with torch.device("meta"):
+                model = RasaInferenceModel(
+                    bert_config_path=bert_config,
+                    image_res=self.settings.image_size,
+                    embed_dim=self.settings.embedding_dimension,
+                    keep_fusion_layers=self.keep_fusion_layers,
+                )
+            state = RasaInferenceModel.select_state(
+                checkpoint["model"],
+                fusion_layer=model.fusion_layer,
+                keep_fusion_layers=self.keep_fusion_layers,
             )
+            try:
+                model.load_state_dict(state, strict=True, assign=True)
+            except RuntimeError as exc:
+                raise ValueError(
+                    "RaSa checkpoint state does not match the inference model architecture."
+                ) from exc
+            left_on_meta = [
+                name
+                for name, tensor in list(model.named_parameters()) + list(model.named_buffers())
+                if tensor.device.type == "meta"
+            ]
+            if left_on_meta:
+                raise ValueError(
+                    "RaSa inference model has tensors the checkpoint did not fill: "
+                    + ", ".join(left_on_meta[:5])
+                )
+            fusion_layers_loaded = self.keep_fusion_layers
+        del checkpoint
         model.eval().to(self.device)
-        return RasaRuntime(model, preprocessor, device=self.device)
+        return RasaRuntime(
+            model, preprocessor, device=self.device, fusion_layers_loaded=fusion_layers_loaded
+        )

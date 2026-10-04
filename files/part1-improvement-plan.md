@@ -128,47 +128,59 @@ nguyên nhân ở trên được xác nhận bằng số đo.
 
 ### A1. Chỉ nạp các mô-đun RaSa cần cho suy luận
 
-**Code.**
+**Code (đã làm 05/10/2026).**
 
-- Tạo `backend/src/person_search/ai/encoders/rasa_vendor/inference_model.py` với lớp
-  `RasaInferenceModel(nn.Module)` chỉ gồm `visual_encoder`, `text_encoder` (BertModel, không
-  đầu MLM), `vision_proj`, `text_proj`. Giữ nguyên `vit.py` và `xbert.py`.
-- Kiểm tra trong `xbert.py` chế độ `mode="text"` dùng những lớp nào (các lớp trước
-  `fusion_layer` trong `config_bert.json`). Thêm tham số `keep_fusion_layers: bool`; mặc định
-  `False` vì re-rank ITM đang tắt (mục 3.5.3). Khi `False`, bỏ các lớp fusion và đầu MLM khỏi
-  mô-đun và khỏi state dict trước khi nạp.
-- Trong `RasaRuntimeFactory.load`: lọc `checkpoint["model"]` theo tiền tố mô-đun giữ lại, bỏ các
-  khóa `*_m.*`, `*_queue`, `queue_ptr`, `temp`, `itm_head`, `prd_head`, `mrtd_head`; nạp với
-  `strict=True` trên tập đã lọc. Khởi tạo mô-đun trên thiết bị `meta` rồi
-  `load_state_dict(..., assign=True)` để không cấp phát trọng số ngẫu nhiên trước khi chép.
-  Giữ `inspect_checkpoint` nguyên (vẫn kiểm tra 849 khóa của file gốc).
-- `RasaRuntime.text_embedding` và `image_embedding` giữ nguyên giao diện; chỉ đổi cách gọi bên
-  trong nếu lớp mới không còn thuộc tính `text_encoder.bert`.
-- Không đổi `encoder_version`: vector phải trùng với bản cũ (xem Đo).
+- Mới: `backend/src/person_search/ai/encoders/rasa_vendor/inference_model.py` với lớp
+  `RasaInferenceModel` chỉ gồm `visual_encoder`, `text_encoder.bert` (BertModel, không đầu MLM),
+  `vision_proj`, `text_proj`; giữ nguyên tên tham số để checkpoint nạp không cần đổi khóa. Cờ
+  `keep_fusion_layers` (mặc định `False`): chế độ `text` của BERT chỉ chạy các lớp trước
+  `fusion_layer = 6`, nên 6 lớp fusion và đầu MLM bị bỏ; `select_state` lọc state dict theo
+  đúng các mô-đun giữ lại, bỏ mọi khóa `*_m.*`, hàng đợi, `temp` và ba đầu phụ.
+- `rasa.py`: `RasaRuntimeFactory(..., keep_fusion_layers=False)`;
+  `load(full_training_module=False)` tạo mô-đun trên thiết bị `meta` rồi
+  `load_state_dict(strict=True, assign=True)` từ checkpoint mmap, kiểm tra không còn tensor nào ở
+  `meta`; nhánh `full_training_module=True` giữ lớp `ALBEF` gốc chỉ để đối chứng.
+  `RasaRuntime.fusion_layers_loaded` ghi lại lựa chọn. `inspect_checkpoint` giữ nguyên (849 khóa).
+- `rasa_vendor/vit.py`: một dòng đổi `torch.linspace(..., device="cpu")` kèm chú thích, vì `.item()`
+  không chạy được trên tensor `meta`. Đây là thay đổi duy nhất trong mã vendor.
+- Mới: `backend/tools/rasa_equivalence_check.py` (đối chứng vector hai đường nạp, mô tả trong
+  README backend). `tools/measure_encoder_memory.py` đo đường production tự dùng đường mới.
+- Không đổi `encoder_version`, không đổi collection Milvus.
 
-**Đo.**
+**Đo (05/10/2026).**
 
-- Test tương đương: mã hóa 50 crop từ dữ liệu demo và 20 câu bằng mô hình cũ và mới, yêu cầu
-  `allclose(atol=1e-6)`. Kết quả ghi vào `var/benchmark/rasa-equivalence.json`. Đây là bằng
-  chứng để giữ nguyên collection Milvus và phiên bản encoder (NFR-09).
-- Chạy lại `tools/measure_encoder_memory.py` với tag `after-a1`. Kỳ vọng: tiến trình encoder từ
-  khoảng 2.2 GiB ổn định xuống dưới 1.0 GiB; đỉnh lúc nạp từ khoảng 3.7 GiB xuống dưới 1.3 GiB.
-- Unit test: cập nhật `tests/unit/test_rasa_runtime.py`, `test_rasa_image_encoder.py`,
-  `test_rasa_query_inference.py`; thêm test cho việc lọc state dict và cho cờ `keep_fusion_layers`.
-- Chạy `scripts/check.ps1` đầy đủ.
+| Số đo | Trước (ALBEF gốc) | Sau (RasaInferenceModel) |
+| --- | --- | --- |
+| Trọng số nạp | 1,911 MiB | 583 MiB |
+| RSS ổn định sau suy luận | 2,239 MiB | 950 MiB |
+| Đỉnh working set lúc nạp | 3,961 MiB | 983 MiB |
+| Thời gian nạp (đã có trong page cache) | 19 đến 20 s | 4 đến 9 s |
+| Mã hóa một crop ảnh, CPU 4 luồng | 1.22 đến 1.49 s | 1.17 đến 1.37 s |
+| Mã hóa một câu | 0.08 đến 0.09 s | 0.09 đến 0.11 s |
 
-**Báo cáo.**
+Nguồn: `var/benchmark/encoder-memory-before.json`, `encoder-memory-after-a1.json`,
+`rasa-equivalence.json`. Thời gian suy luận của hai đường nằm trong nhiễu đo (hai lần chạy cùng
+đường mới cho 1.37 và 1.22 s); giữ tham số tham chiếu thẳng vào mmap, không sao chép ra bộ nhớ
+ẩn danh, vì bản sao chỉ nâng đỉnh lên 1,583 MiB mà không nhanh hơn.
 
-- Mục 3.5.3 "Use of RaSa in the System": thêm một câu rằng ứng dụng chỉ nạp hai bộ mã hóa và hai
-  projection từ checkpoint, không nạp bản momentum, hàng đợi và các lớp fusion khi re-rank tắt.
-- Mục 6.2.1 "Model Management and Packaging": một đoạn ngắn về cách nạp (lọc state dict,
-  khởi tạo meta, `assign=True`) và lý do.
-- Mục 8.3 và 12.2: cập nhật ở A5.
+Tương đương vector: 50 crop WILDTRACK và 10 câu, sai khác lớn nhất 0.0, cosine nhỏ nhất
+1.00000000 giữa đường cũ và mới, nên NFR-09 được giữ mà không cần index lại.
 
-**Tiêu chí hoàn thành.** Vector trùng bản cũ trong sai số, 713 unit test và các test mới đều qua,
-số đo `after-a1` có trong JSON.
+Kiểm thử: thêm `tests/unit/test_rasa_inference_model.py` (lọc state dict với và không có lớp
+fusion, giữ thứ tự khóa, cờ của factory, và một test `model_real` nạp checkpoint thật bằng đường
+mới); `scripts/check.ps1` (pytest `-m unit`, ruff, compileall) qua toàn bộ.
 
-**Trạng thái.** Chưa làm.
+**Báo cáo (đã sửa).** Mục 3.5.3 thêm câu về checkpoint huấn luyện và phần được nạp; mục 6.2.1
+thêm đoạn "The RaSa checkpoint is loaded selectively" với số trước và sau; PDF build lại không
+lỗi. Bảng bộ nhớ toàn hệ thống ở 8.3 và chương 12 đợi A5.
+
+**Lưu ý cho A2.** Tham số giờ là trang file ánh xạ từ cùng một file checkpoint, nên hai tiến trình
+(application server và worker) nạp cùng file chia sẻ trang vật lý qua page cache của Windows.
+A5 cần đo mức dùng của cả máy, không chỉ cộng RSS từng tiến trình, trước khi quyết định có làm A2.
+
+**Tiêu chí hoàn thành.** Đạt toàn bộ: vector trùng, test qua, số đo `after-a1` có trong JSON.
+
+**Trạng thái.** Xong 05/10/2026.
 
 ### A2. Một bản mã hóa dùng chung cho server và worker
 

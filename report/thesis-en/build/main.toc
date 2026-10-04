@@ -63,7 +63,7 @@
 \contentsline {subsection}{\numberline {3.7.1}H.264 Compressed Video}{22}{subsection.3.7.1}%
 \contentsline {subsection}{\numberline {3.7.2}RTSP and RTP}{23}{subsection.3.7.2}%
 \contentsline {subsection}{\numberline {3.7.3}Simulating Cameras with a Streaming Server}{23}{subsection.3.7.3}%
-\contentsline {subsection}{\numberline {3.7.4}Receiving RTSP Streams in the System}{23}{subsection.3.7.4}%
+\contentsline {subsection}{\numberline {3.7.4}Receiving RTSP Streams in the System}{24}{subsection.3.7.4}%
 \contentsline {chapter}{\numberline {4}System Analysis}{25}{chapter.4}%
 \contentsline {section}{\numberline {4.1}Actors}{25}{section.4.1}%
 \contentsline {subsection}{\numberline {4.1.1}Administrator}{25}{subsection.4.1.1}%
@@ -136,14 +136,14 @@
 \contentsline {section}{\numberline {6.2}Background AI Worker Implementation}{66}{section.6.2}%
 \contentsline {subsection}{\numberline {6.2.1}Model Management and Packaging}{66}{subsection.6.2.1}%
 \contentsline {subsection}{\numberline {6.2.2}Resource Limits and Error Handling}{67}{subsection.6.2.2}%
-\contentsline {paragraph}{AI check.}{67}{paragraph*.66}%
+\contentsline {paragraph}{AI check.}{68}{paragraph*.66}%
 \contentsline {section}{\numberline {6.3}User Interface Implementation}{68}{section.6.3}%
 \contentsline {subsection}{\numberline {6.3.1}Navigation and Communication with the Server}{68}{subsection.6.3.1}%
 \contentsline {subsection}{\numberline {6.3.2}Rendering Person Images in the Results}{68}{subsection.6.3.2}%
-\contentsline {subsection}{\numberline {6.3.3}Main Screens}{68}{subsection.6.3.3}%
-\contentsline {paragraph}{Operator.}{68}{paragraph*.67}%
+\contentsline {subsection}{\numberline {6.3.3}Main Screens}{69}{subsection.6.3.3}%
+\contentsline {paragraph}{Operator.}{69}{paragraph*.67}%
 \contentsline {paragraph}{Viewer.}{69}{paragraph*.72}%
-\contentsline {paragraph}{Administrator.}{69}{paragraph*.74}%
+\contentsline {paragraph}{Administrator.}{72}{paragraph*.74}%
 \contentsline {section}{\numberline {6.4}Operation Monitoring}{74}{section.6.4}%
 \contentsline {paragraph}{Technical logs.}{74}{paragraph*.80}%
 \contentsline {paragraph}{Audit log.}{74}{paragraph*.81}%

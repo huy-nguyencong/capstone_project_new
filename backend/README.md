@@ -266,6 +266,14 @@ python tools/benchmark_sampling.py \
   ```bash
   python tools/measure_encoder_memory.py --registry config/models.example.json     --artifact-root config --settings config/rasa_cuhk_pedes_runtime.json     --tag before --output var/benchmark/encoder-memory-before.json
   ```
+- `rasa_equivalence_check.py` nạp cùng checkpoint RaSa bằng lớp huấn luyện gốc (`ALBEF`) và bằng
+  mô-đun suy luận rút gọn (`RasaInferenceModel`, đường production), mã hóa cùng 50 crop WILDTRACK
+  và 10 câu, rồi so vector từng phần tử. PASS nghĩa là không gian vector và phiên bản encoder không
+  đổi (NFR-09); chạy lại sau mọi thay đổi ở cách nạp hoặc tiền xử lý:
+
+  ```bash
+  python tools/rasa_equivalence_check.py --registry config/models.example.json     --artifact-root config --settings config/rasa_cuhk_pedes_runtime.json     --dataset-root ../wildtrack-dataset --queries ../files/wildtrack_evaluation_queries.json     --output var/benchmark/rasa-equivalence.json
+  ```
 
 Batch ngoài máy local (ví dụ Colab T4) xuất result bundle rồi import qua đúng invariant ingestion:
 
