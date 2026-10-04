@@ -1,12 +1,12 @@
 \babel@toc {english}{}\relax 
 \contentsline {chapter}{Declaration of Authenticity}{i}{chapter*.1}%
-\contentsline {chapter}{Acknowledgements}{ii}{chapter*.2}%
-\contentsline {chapter}{Work Contribution}{iii}{chapter*.3}%
-\contentsline {chapter}{Abstract}{iv}{chapter*.5}%
-\contentsline {chapter}{Chapter Summary}{vi}{chapter*.6}%
-\contentsline {chapter}{List of Figures}{xvi}{section*.8}%
-\contentsline {chapter}{List of Tables}{xviii}{section*.10}%
-\contentsline {chapter}{List of Abbreviations}{xx}{chapter*.12}%
+\contentsline {chapter}{Acknowledgements}{iii}{chapter*.2}%
+\contentsline {chapter}{Work Contribution}{iv}{chapter*.3}%
+\contentsline {chapter}{Abstract}{v}{chapter*.5}%
+\contentsline {chapter}{Chapter Summary}{vii}{chapter*.6}%
+\contentsline {chapter}{List of Figures}{xvii}{section*.8}%
+\contentsline {chapter}{List of Tables}{xix}{section*.10}%
+\contentsline {chapter}{List of Abbreviations}{xxi}{chapter*.12}%
 \contentsline {chapter}{\numberline {1}Introduction}{1}{chapter.1}%
 \contentsline {section}{\numberline {1.1}Motivation}{1}{section.1.1}%
 \contentsline {section}{\numberline {1.2}Objectives}{2}{section.1.2}%

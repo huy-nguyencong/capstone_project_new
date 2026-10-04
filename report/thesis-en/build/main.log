@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2026.5.25)  5 OCT 2026 02:22
+This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2026.5.25)  5 OCT 2026 02:37
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -1704,31 +1704,31 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 File: images/Logo_BK.png Graphic file (type bmp)
 <images/Logo_BK.png>
  [1]) (sections/front/decl-of-authen.tex
-LaTeX Font Info:    Calculating math sizes for size <13> on input line 16.
-) (sections/front/ack.tex [1
+LaTeX Font Info:    Calculating math sizes for size <13> on input line 9.
+ [1
 
 
-])
-(sections/front/contribution.tex [2
+]) (sections/front/ack.tex
+[2]) (sections/front/contribution.tex [3
 
-]) (sections/front/abstract.tex [3
+]) (sections/front/abstract.tex
+[4
 
-])
-(sections/front/chapter-summary.tex [4
+]) (sections/front/chapter-summary.tex [5
 
-] [5] [6
+] [6] [7
 
-] [7]) [8]
+] [8]) [9]
 (D:\uni-studies\semester-253\capstone_project_new\report\thesis-en\build\main.t
-oc [9
+oc [10
 
-] [10] [11] [12] [13] [14])
+] [11] [12] [13] [14] [15])
 \tf@toc=\write6
 \openout6 = `main.toc'.
 
- [15]
+ [16]
 (D:\uni-studies\semester-253\capstone_project_new\report\thesis-en\build\main.l
-of [16
+of [17
 
 
 
@@ -1736,9 +1736,9 @@ of [16
 \tf@lof=\write7
 \openout7 = `main.lof'.
 
- [17]
+ [18]
 (D:\uni-studies\semester-253\capstone_project_new\report\thesis-en\build\main.l
-ot [18
+ot [19
 
 
 
@@ -1746,11 +1746,11 @@ ot [18
 \tf@lot=\write8
 \openout8 = `main.lot'.
 
- (sections/front/abbreviations.tex [19]
+ (sections/front/abbreviations.tex [20]
 sections/front/abbreviations.tex:91: ignored error: Infinite glue shrinkage fou
-nd in box being split [20
+nd in box being split [21
 
-]) [21] (sections/chapter1/chapter1.tex
+]) [22] (sections/chapter1/chapter1.tex
 Chapter 1.
 (sections/chapter1/1.1.tex [1
 
@@ -2106,13 +2106,13 @@ Package logreq Info: Writing requests to 'main.run.xml'.
 
  ) 
 Here is how much of TeX's memory you used:
- 51573 strings out of 402987
- 1169263 string characters out of 5448524
- 2206853 words of memory out of 5000000
- 79363 multiletter control sequences out of 15000+600000
+ 51566 strings out of 402987
+ 1168956 string characters out of 5448524
+ 2206727 words of memory out of 5000000
+ 79356 multiletter control sequences out of 15000+600000
  642423 words of font info for 145 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
- 108i,15n,107p,1199b,5142s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 108i,15n,107p,1199b,5143s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
 Output written on D:\uni-studies\semester-253\capstone_project_new\report\thesi
-s-en\build\main.xdv (153 pages, 2402932 bytes).
+s-en\build\main.xdv (154 pages, 2404664 bytes).

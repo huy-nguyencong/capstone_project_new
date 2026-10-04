@@ -2154,6 +2154,11 @@
       \field{booktitle}{IEEE Conference on Computer Vision and Pattern Recognition (CVPR)}
       \field{title}{{WILDTRACK}: A Multi-camera {HD} Dataset for Dense Unscripted Pedestrian Detection}
       \field{year}{2018}
+      \field{pages}{5030\bibrangedash 5039}
+      \range{pages}{10}
+      \verb{doi}
+      \verb 10.1109/CVPR.2018.00528
+      \endverb
     \endentry
     \entry{li2025zara}{misc}{}{}
       \name{author}{4}{}{%
@@ -2204,41 +2209,6 @@
       \verb https://arxiv.org/html/2508.04038v1
       \endverb
     \endentry
-    \entry{jocher2024yolo11}{software}{}{}
-      \name{author}{2}{}{%
-        {{hash=c5c5e5cd7f4f477f617289b32613deb0}{%
-           family={Jocher},
-           familyi={J\bibinitperiod},
-           given={Glenn},
-           giveni={G\bibinitperiod}}}%
-        {{hash=b8739ebbf3f871d471b6720a02ed541f}{%
-           family={Qiu},
-           familyi={Q\bibinitperiod},
-           given={Jing},
-           giveni={J\bibinitperiod}}}%
-      }
-      \strng{namehash}{7ffa0dad9709ac21fa40cfa507db39d1}
-      \strng{fullhash}{7ffa0dad9709ac21fa40cfa507db39d1}
-      \strng{fullhashraw}{7ffa0dad9709ac21fa40cfa507db39d1}
-      \strng{bibnamehash}{7ffa0dad9709ac21fa40cfa507db39d1}
-      \strng{authorbibnamehash}{7ffa0dad9709ac21fa40cfa507db39d1}
-      \strng{authornamehash}{7ffa0dad9709ac21fa40cfa507db39d1}
-      \strng{authorfullhash}{7ffa0dad9709ac21fa40cfa507db39d1}
-      \strng{authorfullhashraw}{7ffa0dad9709ac21fa40cfa507db39d1}
-      \field{sortinit}{7}
-      \field{sortinithash}{108d0be1b1bee9773a1173443802c0a3}
-      \field{labelnamesource}{author}
-      \field{labeltitlesource}{title}
-      \field{note}{AGPL-3.0 licence}
-      \field{title}{Ultralytics {YOLO11}}
-      \field{year}{2024}
-      \verb{urlraw}
-      \verb https://github.com/ultralytics/ultralytics
-      \endverb
-      \verb{url}
-      \verb https://github.com/ultralytics/ultralytics
-      \endverb
-    \endentry
     \entry{laion2022clipvith14}{misc}{}{}
       \name{author}{1}{}{%
         {{hash=e8f6daf48e5298b73672773ceccfb9ae}{%
@@ -2265,33 +2235,6 @@
       \endverb
       \verb{url}
       \verb https://huggingface.co/laion/CLIP-ViT-H-14-laion2B-s32B-b79K
-      \endverb
-    \endentry
-    \entry{milvusdocs}{online}{}{}
-      \name{author}{1}{}{%
-        {{hash=9b05331e5638e4e471c7ff9b50575eba}{%
-           family={{Zilliz / Milvus}},
-           familyi={Z\bibinitperiod}}}%
-      }
-      \strng{namehash}{9b05331e5638e4e471c7ff9b50575eba}
-      \strng{fullhash}{9b05331e5638e4e471c7ff9b50575eba}
-      \strng{fullhashraw}{9b05331e5638e4e471c7ff9b50575eba}
-      \strng{bibnamehash}{9b05331e5638e4e471c7ff9b50575eba}
-      \strng{authorbibnamehash}{9b05331e5638e4e471c7ff9b50575eba}
-      \strng{authornamehash}{9b05331e5638e4e471c7ff9b50575eba}
-      \strng{authorfullhash}{9b05331e5638e4e471c7ff9b50575eba}
-      \strng{authorfullhashraw}{9b05331e5638e4e471c7ff9b50575eba}
-      \field{sortinit}{7}
-      \field{sortinithash}{108d0be1b1bee9773a1173443802c0a3}
-      \field{labelnamesource}{author}
-      \field{labeltitlesource}{title}
-      \field{note}{Milvus documentation}
-      \field{title}{Milvus: A Cloud-Native Vector Database}
-      \verb{urlraw}
-      \verb https://milvus.io
-      \endverb
-      \verb{url}
-      \verb https://milvus.io
       \endverb
     \endentry
     \entry{qwen2024qwen25vl3b}{misc}{}{}
@@ -2341,6 +2284,10 @@
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{title}{Gemini Flash-Lite}
+      \field{urlday}{28}
+      \field{urlmonth}{9}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
       \verb{urlraw}
       \verb https://deepmind.google/models/gemini/flash-lite/
       \endverb
@@ -2397,6 +2344,11 @@
       \field{booktitle}{IEEE International Conference on Computer Vision (ICCV)}
       \field{title}{Scalable Person Re-identification: A Benchmark}
       \field{year}{2015}
+      \field{pages}{1116\bibrangedash 1124}
+      \range{pages}{9}
+      \verb{doi}
+      \verb 10.1109/ICCV.2015.133
+      \endverb
       \verb{urlraw}
       \verb https://zheng-lab-anu.github.io/Project/project_reid.html
       \endverb
@@ -2458,7 +2410,13 @@
       \field{journaltitle}{Pattern Recognition}
       \field{note}{The repository contains the 27 hand-annotated Market-1501 attributes and gives this paper as its citation}
       \field{title}{Improving Person Re-identification by Attribute and Identity Learning}
+      \field{volume}{95}
       \field{year}{2019}
+      \field{pages}{151\bibrangedash 161}
+      \range{pages}{11}
+      \verb{doi}
+      \verb 10.1016/j.patcog.2019.06.006
+      \endverb
       \verb{urlraw}
       \verb https://github.com/vana77/Market-1501_Attribute
       \endverb
