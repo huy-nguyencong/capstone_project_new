@@ -3,18 +3,24 @@
 > Tài liệu thực hiện cho buổi bảo vệ (R7 trong `remaining-work-plan.md`); không phải nguồn yêu cầu.
 > Luồng trình diễn bám theo architect §1/§10, theo thứ tự Giám sát viên tìm kiếm và lưu vụ việc → Quản lý
 > theo dõi → Quản trị viên thiết lập camera RTSP, bật AI, kiểm tra và đổi mô hình.
+>
+> **Buổi bảo vệ (20 phút cả nhóm):** demo là **video ghi trước khoảng 5 phút**, chiếu cuối buổi và thuyết
+> minh trực tiếp (mục 4.0). Bản đầy đủ ở mục 4.1–4.3 dùng để ghi hình, diễn tập và mở trực tiếp khi hội
+> đồng hỏi. Cập nhật 2026-10-05 theo trạng thái ứng dụng sau các thay đổi trong `part1-improvement-plan.md`.
 
 ## 1. Tóm tắt
 
 | Phần | Vai trò | Nội dung | Thời gian thao tác |
 | --- | --- | --- | --- |
+| 4.0 | Cả ba vai trò | Bản video cho buổi bảo vệ: 6 cảnh rút từ G1–G5, G7, Q1–Q2, A1–A3b | ~5 phút có thuyết minh |
 | 4.1 | Giám sát viên | G1–G9: tìm bằng ảnh, xem chi tiết, tạo vụ việc và đánh dấu hoàn thành, vụ việc của tôi, tìm bằng văn bản, từ văn bản sang ảnh, thuộc tính | ~1,5 phút |
 | 4.2 | Quản lý | Q1–Q3: tổng quan, hồ sơ vụ việc | ~15 giây |
 | 4.3 | Quản trị viên | A1–A7: thêm camera RTSP, bật AI, tiến trình nền tự xử lý, kiểm tra AI, đổi mô hình, nhật ký, tắt AI | ~1 phút thao tác + vài phút chờ (bật AI, kiểm tra AI, đổi mô hình) |
 
 Thời gian thao tác đo khi diễn tập tự động (2026-09-28, hai lần liên tiếp đều đạt): 85–88 giây chưa kể
 lời thuyết minh. Bản tự động (mục 7) chạy theo thứ tự cũ Quản trị viên → Giám sát viên → Quản lý và
-không gồm G5–G8, A4–A6; nội dung kiểm tra tương đương. Khi trình bày có lời nói, dự kiến 6–8 phút.
+không gồm G5–G8, A4–A6; nội dung kiểm tra tương đương. Khi trình bày đủ mọi bước có lời nói, dự kiến
+6–8 phút; buổi bảo vệ chỉ dùng bản video 5 phút ở mục 4.0.
 
 Dữ liệu demo: 7 camera WILDTRACK (khu vực Gate A), 1.488 track trong 2 phút đầu của mỗi video, cùng
 camera `RTSP Cam 1` (35 track) và 1 vụ việc có sẵn ("Tìm người để quên hành lý", 3 kết quả); tổng
@@ -22,13 +28,20 @@ camera `RTSP Cam 1` (35 track) và 1 vụ việc có sẵn ("Tìm người để
 
 ## 2. Chuẩn bị trước ngày bảo vệ
 
-- [ ] Máy cắm sạc, tắt chế độ ngủ; đóng trình duyệt/IDE không cần thiết (RAM máy 16 GB chỉ còn ~2 GB
-      trống khi chạy đủ stack).
+- [ ] Máy cắm sạc, tắt chế độ ngủ; đóng trình duyệt/IDE không cần thiết (máy 16 GB; ứng dụng dùng
+      khoảng 4,3 GiB khi đang xử lý, máy ảo Docker thêm 1,7–3,2 GiB).
+- [ ] Build giao diện nếu có sửa frontend: `cd frontend; npm run build` (máy chủ API phục vụ
+      `frontend/dist`, xem mục 3).
 - [ ] Chạy trọn kịch bản ít nhất một lần bằng tay trên chính máy demo; sau đó đưa dữ liệu về mốc
       (mục 6).
-- [ ] Quay video màn hình có thuyết minh làm phương án dự phòng, theo thứ tự mục 4. Bản dự phòng không lời do diễn tập tự
-      động tạo: `frontend/ui-smoke/output/demo/2026-09-28T18-28-24/demo.mp4` (83 giây). Chép video ra
-      USB/Drive.
+- [ ] Thử lại các truy vấn văn bản/thuộc tính (ghi chú 05/10 ở cuối mục 4) và cập nhật số "Khớp / 8"
+      trước khi ghi hình.
+- [ ] **Ghi video demo chính** theo mục 4.0, không lồng tiếng (thuyết minh trực tiếp khi chiếu): ghi ở
+      1920×1080, phóng trình duyệt 110–125%, tắt thông báo hệ điều hành; cắt các đoạn chờ (gõ chữ, phiên
+      RTSP 3–4 phút) và chèn chú thích ngắn trên hình. Xuất MP4, nhúng vào slide Demo, chép thêm ra
+      desktop và USB/Drive.
+- [ ] Bản dự phòng không lời do diễn tập tự động tạo (giao diện ngày 28/09):
+      `frontend/ui-smoke/output/demo/2026-09-28T18-28-24/demo.mp4` (83 giây).
 - [ ] Chép ảnh truy vấn `backend/var/demo-queries/WT-Q00*.jpg` ra màn hình desktop để kéo thả nhanh.
 
 ## 3. Trước giờ bảo vệ (khoảng 30 phút)
@@ -38,10 +51,12 @@ camera `RTSP Cam 1` (35 track) và 1 vụ việc có sẵn ("Tìm người để
    .\scripts\storage.ps1 up
    .\scripts\rtsp.ps1 up          # in ra 7 địa chỉ rtsp://<IP-LAN>:8554/cam1..7
    ```
+   Nếu Docker Desktop hoặc WSL vừa khởi động lại mà API báo không nối được PostgreSQL/MinIO/Milvus,
+   xem mục 5.
 2. **Nếu IP in ra khác `PERSON_SEARCH_RTSP_NETWORKS` trong `backend/.env`** (đổi mạng Wi-Fi): sửa dòng
    này thành `<IP-LAN>/32`. Camera `RTSP Cam 1` cũ vẫn trỏ IP cũ; không cần sửa vì nó đang tắt AI và
    không dùng trong kịch bản.
-3. Mở ba terminal PowerShell, bắt đầu từ thư mục gốc repo:
+3. Mở hai terminal PowerShell, bắt đầu từ thư mục gốc repo:
    ```powershell
    # Terminal 1 — API
    cd backend
@@ -52,16 +67,21 @@ camera `RTSP Cam 1` (35 track) và 1 vụ việc có sẵn ("Tìm người để
    cd backend
    .\.venv\Scripts\Activate.ps1
    person-search-production-worker
-
-   # Terminal 3 — giao diện
-   cd frontend
-   npm run dev
    ```
    Kích hoạt thành công thì đầu dòng lệnh hiện `(.venv)`. Nếu PowerShell báo không được chạy script
    (`running scripts is disabled`), chạy `Set-ExecutionPolicy -Scope Process Bypass` trong terminal đó
-   rồi kích hoạt lại; lệnh chỉ có hiệu lực cho terminal hiện tại. Mở `http://localhost:5173`.
+   rồi kích hoạt lại; lệnh chỉ có hiệu lực cho terminal hiện tại.
+
+   Giao diện do API phục vụ từ bản build `frontend/dist` (`PERSON_SEARCH_STATIC_DIR` trong
+   `backend/.env`): mở `http://127.0.0.1:5000`. Không cần `npm run dev`; chỉ khi sửa frontend mới phải
+   `npm run build` lại. Muốn dùng Vite dev server như cũ thì để trống `PERSON_SEARCH_STATIC_DIR`, chạy
+   `npm run dev` ở thư mục `frontend` và mở `http://localhost:5173`.
+
+   Bước xếp hạng lại (ITM) mặc định tắt: để trống `PERSON_SEARCH_TEXT_RERANK_TOP_N`. Chỉ đặt `=64` khi
+   ghi cảnh tùy chọn ở mục 4.0.
 4. **Làm nóng tìm kiếm (bắt buộc):** đăng nhập `operator`, tìm bằng ảnh `WT-Q006.jpg` một lần. Lần tìm
-   đầu sau khi API khởi động phải nạp encoder RaSa (~30 giây); nếu để đến lúc demo, cùng lúc worker
+   đầu sau khi API khởi động phải nạp encoder RaSa (~30 giây, đo trước 05/10; đo lại khi diễn tập); nếu
+   để đến lúc demo, cùng lúc worker
    đang xử lý RTSP, lần tìm đầu mất tới ~100 giây. Sau đó đăng xuất.
 5. Đăng nhập `admin`, trang **Trạng thái hệ thống**: bốn dịch vụ nền "Hoạt động", worker `IDLE`
    ("Sẵn sàng"), không camera nào báo lỗi.
@@ -74,6 +94,30 @@ rảnh nên kết quả ra nhanh; phần Quản trị viên (bật AI, kiểm tr
 
 Tài khoản: `operator`, `viewer`, `admin` (mật khẩu seed). Ảnh truy vấn ở `backend/var/demo-queries/`
 (đã chép ra desktop theo mục 2).
+
+### 4.0. Bản video 5 phút cho buổi bảo vệ
+
+Thầy hướng dẫn yêu cầu không demo mọi tính năng mà ưu tiên phần có đóng góp cho đề tài. Video cho thấy
+ba điều: dữ liệu camera trở thành tìm kiếm được, tìm người trong phạm vi được phép, và xem lại trong
+khung hình gốc rồi lưu hồ sơ. Ghi hình theo các bước chi tiết ở 4.1–4.3, dựng thành sáu cảnh:
+
+| Cảnh | Thời lượng | Bước | Nội dung | Ghi chú dựng |
+| --- | --- | --- | --- | --- |
+| 1. Phạm vi | 0:20 | G1 | Màn hình tìm kiếm của Giám sát viên, rê chuột qua danh sách camera của Gate A | Chú thích: chỉ thấy camera của khu vực mình |
+| 2. Tìm bằng ảnh | 1:20 | G2, G3 | Kéo thả `WT-Q006.jpg`, 8 kết quả trên năm camera, mở một kết quả xem khung hình gốc | Giữ tốc độ thật (1–2 giây) để thấy độ trễ thực; chú thích: không có ngưỡng, người dùng quyết định |
+| 3. Văn bản khoanh vùng, ảnh xác định | 1:00 | G7 | Gõ câu vali, kéo kết quả #1 sang ô ảnh, tìm lại bằng ảnh | Cắt thời gian gõ chữ; thử lại câu này trước khi ghi (ghi chú 05/10) |
+| 4. Lưu vụ việc | 0:50 | G4, G5 | Tạo vụ việc từ kết quả, mở Vụ việc của tôi | Cắt thời gian gõ tiêu đề, ghi chú |
+| 5. Quản lý | 0:30 | Q1, Q2 | Tổng quan có vụ việc vừa tạo, mở hồ sơ ở chế độ chỉ đọc | Chú thích: chỉ đọc |
+| 6. Từ camera đến kết quả | 1:00 | A1, A2, A3, A3b | Thêm camera RTSP, bật AI, phiên xử lý chạy và kết thúc, tìm lần xuất hiện vừa thu | Tua nhanh 3–4 phút chờ phiên; chú thích: chậm hơn thời gian thực khoảng 7 lần |
+
+- **Không ghi hình:** G6, G8, A4, A5, A6, A7. Nếu hội đồng hỏi, mở trực tiếp trên hệ thống đang chạy
+  (slide 17 và 18 đã có ảnh màn hình Mô hình AI và Kiểm tra AI).
+- **Cảnh tùy chọn, xếp hạng lại:** mặc định không ghi, vì giao diện chưa hiển thị dấu hiệu "đã xếp hạng
+  lại" và mỗi truy vấn mất khoảng 9 giây; kết quả đo đã có ở slide 21. Nếu muốn cho thấy nó chạy thật:
+  đặt `PERSON_SEARCH_TEXT_RERANK_TOP_N=64`, khởi động lại API, ghi một truy vấn văn bản đã diễn tập và
+  cắt đoạn chờ còn 2 giây kèm chú thích "xếp hạng lại 64 ứng viên: 9 giây trên CPU".
+- **Khi chiếu:** thuyết minh mỗi cảnh một ý chính, không đọc lại chữ trên màn hình. Vẫn để hệ thống
+  chạy thật ở nền (đã làm nóng theo mục 3) để mở một truy vấn ảnh trực tiếp nếu hội đồng yêu cầu.
 
 ### 4.1. Giám sát viên (`operator`) — tìm kiếm và lập vụ việc
 
@@ -120,7 +164,7 @@ Tài khoản: `operator`, `viewer`, `admin` (mật khẩu seed). Ảnh truy vấ
   hành lý" nằm ở tab Đang xử lý.
 - **Lời thuyết trình:** "Vụ việc lọc theo trạng thái; vụ việc hoàn thành có thể mở lại khi cần bổ sung."
 
-#### G6. Tìm bằng mô tả văn bản
+#### G6. Tìm bằng mô tả văn bản (không có trong video)
 
 - **Dữ liệu:** `A woman with long blonde hair wearing a black jacket.`
 - **Thao tác:** **Tìm kiếm người** → tab **Văn bản** → gõ câu → **Tìm kiếm**.
@@ -137,7 +181,7 @@ Tài khoản: `operator`, `viewer`, `admin` (mật khẩu seed). Ảnh truy vấ
   người đó trên Cam 6 và 4 (kết quả #1 là chính lần xuất hiện vừa kéo vào).
 - **Lời thuyết trình:** "Văn bản để khoanh vùng; thấy đúng người thì kéo kết quả sang tìm bằng ảnh, lúc này tám kết quả đều là người đó."
 
-#### G8. Tìm bằng thuộc tính
+#### G8. Tìm bằng thuộc tính (không có trong video)
 
 - **Dữ liệu:** Giới tính `Woman` · Loại áo `Coat` · Màu áo `Black`.
 - **Thao tác:** tab **Thuộc tính** → chọn ba giá trị → xem câu được sinh ra → **Tìm kiếm**.
@@ -195,7 +239,20 @@ URL RTSP: dùng địa chỉ `cam2` do `rtsp.ps1 up` in ra, ví dụ `rtsp://192
   giây.
 - **Lời thuyết trình:** "Tiến trình nền tự nhận camera và bắt đầu xử lý luồng, không cần thao tác thêm."
 
-#### A4. Kiểm tra AI
+#### A3b. Tìm lần xuất hiện vừa thu từ luồng trực tiếp
+
+- **Dữ liệu:** ảnh `WT-Q004.jpg` (người này có trên Cam 2, là video nguồn của luồng `cam2`).
+- **Thao tác:** chờ phiên RTSP kết thúc: ở **Trạng thái hệ thống**, camera mới hết "Đang xử lý" (một
+  phiên 1.800 khung hình nguồn, khoảng 3–4 phút; track chỉ được ghi khi phiên kết thúc) → sang cửa sổ
+  `operator` → **Tìm kiếm người** → trong danh sách camera chỉ chọn `Camera sảnh chính (RTSP)` → tìm
+  bằng ảnh.
+- **Kết quả mong đợi:** mọi kết quả đều thuộc camera mới, thời gian là hôm nay. Chưa diễn tập: luồng
+  phát lặp nên người xuất hiện trong phiên tùy thời điểm bật AI. Nếu không có đúng người trong ảnh truy
+  vấn, kết quả vẫn là các lần xuất hiện vừa thu; khi đó kéo một kết quả sang ô ảnh và bỏ lọc camera để
+  tìm người đó trên các camera WILDTRACK.
+- **Lời thuyết trình:** "Vài phút sau khi bật AI, người đi qua camera này đã tìm được: từ luồng camera tới kết quả tìm kiếm không cần thao tác tay nào."
+
+#### A4. Kiểm tra AI (không có trong video)
 
 - **Dữ liệu:** camera `Camera sảnh chính (RTSP)` (hoặc `RTSP Cam 1`).
 - **Thao tác:** **Kiểm tra AI** → mục kiểm tra luồng xử lý camera → chọn camera → chạy kiểm tra.
@@ -204,7 +261,7 @@ URL RTSP: dùng địa chỉ `cam2` do `rtsp.ps1 up` in ra, ví dụ `rtsp://192
   thành công, mỗi bước có thời gian.
 - **Lời thuyết trình:** "Kiểm tra AI chạy thử từng bước của luồng xử lý trên camera và báo kết quả, thời gian từng bước."
 
-#### A5. Đổi mô hình theo dõi
+#### A5. Đổi mô hình theo dõi (không có trong video)
 
 - **Dữ liệu:** Tracker `BoT-SORT`.
 - **Thao tác:** **Mô hình AI** → chọn thẻ BoT-SORT → **Áp dụng cấu hình** → chờ "Đang áp dụng…".
@@ -212,7 +269,7 @@ URL RTSP: dùng địa chỉ `cam2` do `rtsp.ps1 up` in ra, ví dụ `rtsp://192
   mô hình "Không khả dụng" (YOLO small, YOLOX) không chọn được.
 - **Lời thuyết trình:** "Đổi Tracker sang BoT-SORT; hệ thống nạp thử mô hình trước khi áp dụng nên mất vài chục giây."
 
-#### A6. Nhật ký hệ thống
+#### A6. Nhật ký hệ thống (không có trong video)
 
 - **Dữ liệu:** không.
 - **Thao tác:** **Nhật ký hệ thống**.
@@ -241,11 +298,19 @@ cấu hình mô hình về mốc.
 | `WT-Q004.jpg` | túi đeo trắng, túi đen | 7 | Cam 3, 2, 4, 1 |
 | `WT-Q003.jpg` (dự phòng) | túi đeo vàng-đen | 4 | Cam 5, 7 |
 
-Tìm bằng văn bản/thuộc tính chạy được nhưng Recall thấp trên WILDTRACK (architect §13: miền dữ liệu
-khác CUHK-PEDES). Nếu được hỏi, trình diễn như chức năng hỗ trợ và giải thích giới hạn, không dùng
-làm phần chính.
+Tìm bằng văn bản/thuộc tính chỉ bằng vector có Recall thấp trên WILDTRACK (báo cáo mục 8.2, slide 21):
+Recall@8 bằng 0 trên 26 truy vấn. Hai nguyên nhân đã đo: (1) ứng dụng so vector tương phản của RaSa,
+trong khi độ chính xác của mô hình nằm ở bước xếp hạng lại (trên CUHK-PEDES, R@1 từ 0,05 lên 0,65 khi
+có nó); (2) khác biệt miền dữ liệu (ảnh cắt chọn tay vẫn chỉ đạt R@16 0,19). Hai cách sửa đã đo: xếp
+hạng lại 128 ứng viên cho R@8 0,42 với 17 giây mỗi truy vấn trên CPU; vector CLIP cho văn bản 0,42
+nhưng ảnh chỉ 0,42 so với 0,89 của RaSa. Nếu được hỏi, trình diễn như chức năng hỗ trợ và giải thích
+bằng các số này, không dùng làm phần chính.
 
 ### Truy vấn văn bản và thuộc tính đã thử
+
+> **Cần thử lại (2026-10-05):** các bảng dưới đây đo ngày 01/10 với bộ tách từ BERT chuẩn. Từ 05/10 truy
+> vấn dùng bộ tách từ của RaSa (không có [SEP]) nên vector câu truy vấn đã đổi; số "Khớp / 8" của G6,
+> G7, G8 và hai bảng này có thể khác. Chạy lại từng câu trước khi ghi hình và cập nhật cột "Khớp / 8".
 
 Thử trên dữ liệu demo ngày 2026-10-01 (1.523 track, top 8, tài khoản `operator`, xem bằng mắt). Cột
 "Khớp / 8" đếm số kết quả **đúng với mô tả** (giới tính, tóc, quần áo, đồ mang theo), không phải số
@@ -279,6 +344,16 @@ Mô hình nhận tốt giới tính, tóc dài/tóc vàng, ba lô, vali và qu�
 bằng ảnh → 8/8 cùng một người (đã thử 2026-10-01; kết quả #1 là chính track vừa kéo vào, 7 kết quả còn lại là các lần xuất hiện khác trên Cam 6 và Cam 4). Luồng này cho thấy văn bản dùng để khoanh vùng ban đầu,
 ảnh dùng để xác định chính xác.
 
+### Bước xếp hạng lại (tùy chọn, mặc định tắt)
+
+- Bật bằng `PERSON_SEARCH_TEXT_RERANK_TOP_N` trong `backend/.env` (0 hoặc để trống là tắt, tối đa 128),
+  rồi khởi động lại API. Chỉ áp dụng cho truy vấn văn bản và thuộc tính.
+- Thời gian mỗi truy vấn trên CPU: khoảng 9 giây với 64 ứng viên, 17 giây với 128.
+- Token ảnh của 1.523 track dữ liệu demo đã có sẵn ở `backend/var/cache/itm_tokens`. Track mới từ phiên
+  RTSP chưa có trong bộ đệm, nên lần đầu gặp mỗi track tốn thêm khoảng 1,3 giây.
+- Giao diện chưa hiển thị dấu hiệu đã xếp hạng lại (API có trả trường `reranked`); khi bật, điểm hiển
+  thị là điểm so khớp chứ không phải độ tương đồng vector.
+
 ## 5. Sự cố và phương án dự phòng
 
 | Hiện tượng | Xử lý |
@@ -287,6 +362,8 @@ bằng ảnh → 8/8 cùng một người (đã thử 2026-10-01; kết quả #1
 | A1 báo "Mất kết nối" hoặc lỗi địa chỉ không được phép | IP đổi: kiểm tra `rtsp.ps1 status`, sửa `PERSON_SEARCH_RTSP_NETWORKS`, khởi động lại API và worker. Nếu không kịp, bỏ A1–A3, làm tiếp A4–A6 với `RTSP Cam 1` hoặc camera WILDTRACK và nói phần RTSP bằng video. |
 | A3 camera không lên "Đang xử lý" sau 1 phút | Kiểm tra terminal worker; trang Trạng thái hệ thống phải thấy worker có heartbeat. Có thể bỏ qua: tìm kiếm dùng dữ liệu đã lập chỉ mục. |
 | Trang trắng hoặc lỗi giao diện | Tải lại trang (F5); đăng nhập lại. |
+| `http://127.0.0.1:5000` không ra giao diện | Chưa build hoặc `PERSON_SEARCH_STATIC_DIR` sai: `cd frontend; npm run build`, kiểm tra `backend/.env`, khởi động lại API. |
+| API báo không nối được PostgreSQL/MinIO/Milvus dù container đang chạy (thường sau khi Docker Desktop hoặc WSL vừa khởi động lại) | `docker ps` để xem tên container, `docker restart <tên>` cho container bị lỗi, rồi khởi động lại API và worker. |
 | Máy/mạng hỏng hẳn | Chiếu video dự phòng (mục 2). |
 | Dữ liệu demo hỏng | Dừng API/worker, `.\scripts\demo-reset.ps1` (~70 giây), khởi động lại. |
 
@@ -311,6 +388,7 @@ Script khôi phục PostgreSQL/MinIO/Milvus từ bản sao lưu, xóa ảnh/vect
 ```powershell
 cd frontend
 $env:DEMO_RTSP_URL = 'rtsp://192.168.110.145:8554/cam2'   # IP theo rtsp.ps1 up
+$env:UI_SMOKE_BASE = 'http://127.0.0.1:5000'              # giao diện do API phục vụ; bỏ dòng này nếu chạy npm run dev
 npm run ui:demo           # ghi dữ liệu: chạy trên mốc rồi demo-reset.ps1
 ```
 

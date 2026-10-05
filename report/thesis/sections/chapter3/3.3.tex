@@ -33,6 +33,6 @@ Thuật toán theo vết nhận các phát hiện trên những khung hình đã
 \begin{itemize}
     \item \textbf{Ngưỡng độ tin cậy:} phát hiện từ 0,25 trở lên được xem là cao và có thể khởi tạo track mới; phát hiện từ 0,1 đến dưới 0,25 chỉ dùng trong bước liên kết thứ hai.
     \item \textbf{Xác nhận:} track chỉ được xác nhận sau ít nhất hai lần quan sát; track chưa xác nhận không tạo ra kết quả.
-    \item \textbf{Kết thúc:} track kết thúc khi mất dấu quá ba khung hình xử lý liên tiếp hoặc quá hai giây không quan sát, hoặc khi luồng kết thúc. Tệp video dùng dấu thời gian trong tệp nên không phụ thuộc tốc độ máy; luồng RTSP dùng thời điểm nhận, nên khi xử lý chậm, quy tắc hai giây có thể kết thúc track sớm.
+    \item \textbf{Kết thúc:} track kết thúc khi mất dấu quá ba khung hình xử lý liên tiếp hoặc quá hai giây không quan sát, hoặc khi luồng kết thúc. Cả tệp video lẫn luồng RTSP đều dùng dấu thời gian ghi trong chính luồng (Mục~\ref{sec:3.7.4}), nên quy tắc đo thời gian đã trôi qua trước camera và không phụ thuộc tốc độ xử lý của máy.
     \item \textbf{Phạm vi mã định danh:} chỉ trong một camera và một phiên xử lý; hệ thống không liên kết track của cùng một người giữa nhiều camera.
 \end{itemize}

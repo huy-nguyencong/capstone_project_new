@@ -6,7 +6,7 @@
 
 Bên cạnh phạm vi đã xác định, kết quả của đề tài còn các hạn chế sau; mức độ của các hạn chế được lượng hóa tại Chương~\ref{chapter:kiemthu} và tổng kết tại Chương~\ref{chapter:tongket}.
 \begin{itemize}
-    \item \textbf{Chất lượng tìm kiếm phụ thuộc vào các mô hình có sẵn.} Các mô hình được huấn luyện trên dữ liệu có bối cảnh khác với dữ liệu camera của đề tài và không được tinh chỉnh thêm. Tìm kiếm bằng văn bản và thuộc tính bị ảnh hưởng mạnh nhất, nên tìm kiếm bằng ảnh là hình thức đáng tin cậy nhất.
+    \item \textbf{Chất lượng tìm kiếm phụ thuộc vào các mô hình có sẵn.} Các mô hình được huấn luyện trên dữ liệu có bối cảnh khác với dữ liệu camera của đề tài và không được tinh chỉnh thêm, còn bước xếp hạng lại của mô hình văn bản, nơi chứa phần lớn độ chính xác của nó, chỉ là tùy chọn vì chậm trên CPU. Tìm kiếm bằng văn bản và thuộc tính bị ảnh hưởng mạnh nhất, nên tìm kiếm bằng ảnh là hình thức đáng tin cậy nhất.
     \item \textbf{Dữ liệu thử nghiệm hẹp.} Hệ thống chỉ được thử nghiệm trên bảy camera tĩnh cùng quan sát một địa điểm ngoài trời vào ban ngày; các điều kiện khó hơn như ánh sáng yếu hay độ phân giải thấp chưa được kiểm chứng.
     \item \textbf{Không phân tích liên tục toàn bộ các camera.} Do chạy trên máy không có card đồ họa rời, hệ thống phân tích chậm hơn tốc độ ghi hình và xử lý luân phiên từng camera, nên dữ liệu có thể tìm kiếm của mỗi camera có những khoảng trống.
     \item \textbf{Có thể bỏ sót hoặc tách rời các lần xuất hiện.} Hệ thống chỉ phân tích một phần các khung hình và biểu diễn mỗi lần xuất hiện bằng một khung hình, nên người xuất hiện rất ngắn có thể bị bỏ sót, còn người bị che khuất có thể bị tách thành nhiều kết quả hoặc xếp hạng thấp.

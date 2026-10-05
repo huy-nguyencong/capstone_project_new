@@ -64,7 +64,8 @@ Hình~\ref{fig:search-sequence} trình bày luồng tìm kiếm.
     \item \textbf{kiểm tra đầu vào:} ảnh JPEG hoặc PNG tối đa 10~MB; thuộc tính thuộc danh sách cho phép và tạo thành tổ hợp hợp lệ; $k$ thuộc tập $\{4, 8, 12, 16\}$;
     \item \textbf{mã hóa truy vấn:} ảnh qua bộ mã hóa ảnh, câu mô tả qua bộ mã hóa văn bản; thuộc tính được ghép thành câu tiếng Anh theo mẫu cố định, ví dụ \emph{``A woman wearing a red jacket and blue jeans, carrying a handbag.''};
     \item \textbf{xác định phạm vi:} khu vực lấy từ tài khoản của Giám sát viên, camera là các camera được chọn hoặc mọi camera đang vận hành của khu vực; camera khác bị từ chối;
-    \item \textbf{tìm kiếm vector có lọc trước} trong Milvus, đối chiếu với PostgreSQL và tìm lại gấp đôi khi thiếu kết quả hợp lệ, tối đa ba lượt (Mục~\ref{sec:3.6.4}).
+    \item \textbf{tìm kiếm vector có lọc trước} trong Milvus, đối chiếu với PostgreSQL và tìm lại gấp đôi khi thiếu kết quả hợp lệ, tối đa ba lượt (Mục~\ref{sec:3.6.4});
+    \item \textbf{xếp hạng lại truy vấn văn bản và thuộc tính} khi bước này được bật: tìm kiếm vector trả về một tập lớn hơn gồm $N$ ứng viên ($N$ từ $k$ đến 128), ảnh cắt đại diện của mỗi ứng viên được bộ mã hóa truy vấn chuyển thành đặc trưng token ảnh, lưu đệm trên đĩa theo từng lần xuất hiện, rồi được chấm điểm với câu truy vấn bằng đầu so khớp ảnh-văn bản của RaSa; tập ứng viên được trả về theo thứ tự đó, cắt còn $k$, với điểm so khớp làm điểm phù hợp (Mục~\ref{sec:3.5.4}). Truy vấn bằng ảnh không được xếp hạng lại.
 \end{enumerate}
 Danh sách chỉ chứa thông tin mô tả và điểm phù hợp; mỗi ảnh là một yêu cầu riêng, được kiểm tra quyền lại và dựng từ khung hình đại diện (Mục~\ref{sec:6.3.3}), nên danh sách trả về nhanh và không ảnh nào bỏ qua bước kiểm tra quyền.
 

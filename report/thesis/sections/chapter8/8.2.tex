@@ -1,35 +1,107 @@
 % !TEX root = ../../main.tex
-% C8.4 — Đánh giá chất lượng tìm kiếm. Số liệu: report-data-guide.md mục 3 dòng C8.4.
-% Lần 1 = CŨ (ngưỡng Detector 0,25; gallery 1.552 track; 6 truy vấn; var/evaluation/wildtrack-full.json).
-% Lần 2 = HIỆN HÀNH chỉ cho thuộc tính (ngưỡng 0,1; gallery 1.526 track; wildtrack-attributes-v2.json).
-% Recall ảnh/văn bản ở ngưỡng 0,1 CHƯA ĐO: không được ghi "Recall ảnh 0,83 trên 1.526 track". Không so sánh Recall với truy vấn demo (tập khác).
-% Định nghĩa metric: evaluation/metrics.py (recall@k = tỉ lệ truy vấn có kết quả đúng đầu tiên ở hạng <= k; MRR = trung bình 1/hạng).
+% C8.4 — Đánh giá chất lượng tìm kiếm. 05/10/2026: 26 truy vấn (files/wildtrack_evaluation_queries_v2.json), cấu hình hiện hành,
+% backend/var/evaluation/wildtrack-v2-conf010*.json (B3, B1, B2, B4 trong files/part1-improvement-plan.md). Đồng bộ với bản tiếng Anh 8.2.
+% Định nghĩa metric: evaluation/metrics.py (recall@k = tỉ lệ truy vấn có kết quả đúng đầu tiên ở hạng <= k; MRR = trung bình 1/hạng; khoảng Wilson 95%).
 \section{Đánh giá chất lượng tìm kiếm}
 \label{sec:8.4}
 
-\paragraph{Phương pháp.} Quy trình được chạy trên các khung hình có nhãn của bảy camera WILDTRACK, và mỗi track được gán, chỉ để đánh giá, người chiếm đa số trong các nhãn khớp với nó. Bộ đánh giá gồm 6 truy vấn, mỗi truy vấn có ba dạng: ảnh cắt, câu mô tả tiếng Anh và bộ thuộc tính. Lần quan sát dùng làm ảnh truy vấn được loại khỏi tập tìm kiếm. \emph{Recall@$k$} là tỉ lệ truy vấn có ít nhất một kết quả đúng trong $k$ kết quả đầu, với $k \in \{4, 8, 12, 16\}$, còn \emph{MRR} là trung bình nghịch đảo hạng của kết quả đúng đầu tiên. Lần đánh giá 1 dùng ngưỡng tin cậy 0,25, tập tìm kiếm 1.552 track, cho cả ba hình thức. Lần 2 dùng ngưỡng 0,1 như cấu hình hiện hành, tập 1.526 track và bộ thuộc tính mở rộng, nhưng chỉ đánh giá lại tìm kiếm theo thuộc tính. Kết quả tìm bằng ảnh và văn bản ở ngưỡng 0,1 \emph{chưa được đo}.
+\subsection{Giao thức đo}
+
+\paragraph{Phương pháp.} Quy trình được chạy với cấu hình hiện hành (YOLO11n ở ngưỡng tin cậy 0,1, ByteTrack, RaSa, mọi khung hình) trên các khung hình có nhãn của bảy camera WILDTRACK, 400 khung hình mỗi camera, tạo ra tập tìm kiếm gồm 1.526 track; mỗi track được gán, chỉ để đánh giá, người chiếm đa số trong các nhãn khớp với nó. Bộ đánh giá gồm 26 truy vấn, mỗi truy vấn có ba dạng: ảnh cắt, câu mô tả tiếng Anh và bộ thuộc tính. Các danh tính được chọn trong số những người xuất hiện trên cả bảy camera với ít nhất 30 khung bao có nhãn, còn câu mô tả và thuộc tính được viết tay từ ba ảnh cắt trên các camera khác nhau, chỉ dùng từ vựng thuộc tính của ứng dụng; hai danh tính đi cạnh một người ăn mặc giống hệt bị loại. Lần quan sát dùng làm ảnh truy vấn được loại khỏi tập tìm kiếm, và mọi lần quan sát có nhãn khác của cùng người đó là kết quả đúng, từ 5 đến 33 mỗi truy vấn. \emph{Recall@$k$} là tỉ lệ truy vấn có ít nhất một kết quả đúng trong $k$ kết quả đầu, với $k \in \{4, 8, 12, 16\}$, còn \emph{MRR} là trung bình nghịch đảo hạng của kết quả đúng đầu tiên; truy vấn văn bản và thuộc tính được tách từ bằng bộ tách từ của chính RaSa (Mục~\ref{sec:3.5.4}). Với 26 truy vấn, mỗi truy vấn tương ứng 3,8 điểm recall, nên Bảng~\ref{tab:recall} nêu thêm khoảng tin cậy Wilson 95\% của Recall@8. Một lần chạy khác với sáu truy vấn đầu ở ngưỡng tin cậy 0,25, trên tập 1.552 track, cho cùng bức tranh: Recall@8 bằng 1,0 với ảnh và 0 với văn bản và thuộc tính.
+
+\paragraph{Phát hiện và theo vết người.} WILDTRACK gán nhãn người theo vị trí trên mặt đất và cho, với mỗi khung hình thứ năm (400 mỗi camera), khung bao của từng người có nhãn trong từng góc nhìn camera. Một phát hiện được tính là đúng khi chồng lên một khung bao có nhãn của cùng khung hình với IoU ít nhất 0,5, các khung bao được ghép một-một theo thứ tự IoU giảm dần; phát hiện không được ghép là khung thừa và nhãn không được ghép là bỏ sót. Ở ngưỡng tin cậy 0,1, 2.800 khung hình có nhãn cho 27.194 khung bao đúng, 35.602 khung thừa (2.278 trong số đó là khung thứ hai trên một người đã được ghép) và 15.527 lần bỏ sót, tức độ chính xác (precision) 0,43 và độ phủ (recall) 0,64; lần chạy ở ngưỡng 0,25 cho 0,58 và 0,54. Độ chính xác là cận dưới chứ không phải thước đo phát hiện sai: nhãn chỉ bao phủ người trong vùng quan tâm của bộ dữ liệu, còn camera thấy nhiều người hơn hẳn, nhất là đám đông trên bậc thang phía sau quảng trường. Chẳng hạn ở khung hình 400, khoảng 19 trong 30 người thấy được trên camera C1 và 3 trong khoảng 40 người trên camera C5 có nhãn, và mọi phát hiện đúng của những người còn lại đều bị tính là khung thừa. Độ phủ mới là con số có ý nghĩa: ngưỡng thấp bỏ sót ít người có nhãn hơn, còn các khung sai và trùng mà nó thêm vào phần lớn bị loại ở bước theo vết (Mục~\ref{sec:3.2.5}). Trong 1.526 track, 491 track không khớp người có nhãn nào (phần lớn cũng vì lý do trên), và 825 trong 1.639 người có nhãn được ít nhất một track bao phủ; số còn lại chủ yếu là người chỉ xuất hiện thoáng qua hoặc ở xa camera.
+
+\subsection{Kết quả của ba hình thức}
 
 \begin{table}[H]
 \centering
-\caption{Kết quả đánh giá chất lượng tìm kiếm (6 truy vấn)}
+\caption{Kết quả đánh giá chất lượng tìm kiếm ở cấu hình hiện hành (26 truy vấn, 1.526 track, ngưỡng tin cậy 0,1)}
 \label{tab:recall}
-\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{2.6cm}|L|c|c|c|c|c|}
+\begin{tabularx}{\textwidth}{|L|c|c|c|c|c|c|}
 \hline
-\textbf{Hình thức} & \textbf{Điều kiện đo} & \textbf{R@4} & \textbf{R@8} & \textbf{R@12} & \textbf{R@16} & \textbf{MRR} \\
+\textbf{Hình thức} & \textbf{R@4} & \textbf{R@8} & \textbf{R@12} & \textbf{R@16} & \textbf{MRR} & \textbf{Khoảng 95\% của R@8} \\
 \hline
-Tìm bằng ảnh & Lần 1: ngưỡng 0,25; 1.552 track & 0,833 & 1,0 & 1,0 & 1,0 & 0,867 \\
+Tìm bằng ảnh & 0,846 & 0,885 & 0,885 & 0,885 & 0,671 & 0,71 đến 0,96 \\
 \hline
-Tìm bằng văn bản & Lần 1: ngưỡng 0,25; 1.552 track & 0 & 0 & 0 & 0 & 0,01 \\
+Tìm bằng văn bản & 0 & 0 & 0,038 & 0,038 & 0,021 & 0 đến 0,13 \\
 \hline
-Tìm theo thuộc tính & Lần 1: ngưỡng 0,25; 1.552 track & 0 & 0 & 0 & 0 & 0,005 \\
-\hline
-Tìm theo thuộc tính & Lần 2: ngưỡng 0,1; 1.526 track; bộ thuộc tính mở rộng & 0 & 0 & 0 & 0 & 0,0045 \\
+Tìm theo thuộc tính & 0 & 0 & 0 & 0,038 & 0,015 & 0 đến 0,13 \\
 \hline
 \end{tabularx}
 \end{table}
 
-\paragraph{Phát hiện người.} Ở lần 1, bước phát hiện đạt độ chính xác (precision) 0,58 và độ phủ (recall) 0,54; ở lần 2, sau khi hạ ngưỡng tin cậy xuống 0,1, độ chính xác là 0,43 và độ phủ là 0,64. Hai lần đo khác cả ngưỡng lẫn bộ nhãn thuộc tính nên chỉ so sánh định tính: ngưỡng thấp bỏ sót ít người hơn nhưng thêm phát hiện sai, phần lớn bị loại ở bước theo vết (Mục~\ref{sec:3.2.5}).
-
-\paragraph{Nhận xét.} Tìm kiếm bằng ảnh cho kết quả tốt: ở lần 1, mọi truy vấn đều có kết quả đúng trong 8 kết quả đầu. Ngược lại, tìm kiếm bằng văn bản và thuộc tính không đưa được kết quả đúng nào vào 16 kết quả đầu; ở lần 2, kết quả đúng đầu tiên của các truy vấn thuộc tính chỉ xuất hiện ở hạng 87, 241 và 365, và bộ thuộc tính mở rộng không cải thiện kết quả. Nguyên nhân chính là khác biệt về miền dữ liệu giữa CUHK-PEDES, nơi RaSa được huấn luyện, và ảnh người được cắt tự động từ khung hình toàn cảnh của WILDTRACK (Mục~\ref{sec:3.5.4}). Vì vậy tìm bằng ảnh là hình thức chính, còn tìm bằng văn bản và thuộc tính đóng vai trò hỗ trợ, cần người dùng đánh giá kỹ bằng mắt.
+\paragraph{Nhận xét.} Tìm kiếm bằng ảnh cho kết quả tốt: 23 trong 26 truy vấn có kết quả đúng trong 8 kết quả đầu, kết quả đúng đầu tiên nằm ở hạng 1 với 14 truy vấn, và ba truy vấn thất bại có kết quả đúng đầu tiên ở hạng 99, 109 và 553. Ngược lại, tìm kiếm bằng văn bản và thuộc tính gần như không đưa được gì vào 16 kết quả đầu: một truy vấn văn bản (ở hạng 12) và một truy vấn thuộc tính (ở hạng 15). Kết quả đúng đầu tiên nằm ở hạng trung vị 73 với văn bản và 111 với thuộc tính trong tập 1.526 track; với 5 đến 33 track đúng mỗi truy vấn, một thứ tự ngẫu nhiên sẽ đặt nó ở hạng trung vị khoảng 150, nên bộ mã hóa văn bản phân biệt rất ít trên dữ liệu này. Hai nguyên nhân được xác lập dưới đây: ứng dụng tìm kiếm chỉ bằng vector tương phản của RaSa, trong khi độ chính xác của mô hình dựa vào bước xếp hạng lại liên phương thức của nó, và khác biệt miền dữ liệu giữa CUHK-PEDES, nơi RaSa được huấn luyện, và ảnh người được cắt tự động từ khung hình toàn cảnh của WILDTRACK. Vì vậy tìm bằng ảnh là hình thức chính, còn tìm bằng văn bản và thuộc tính đóng vai trò hỗ trợ, cần người dùng đánh giá kỹ bằng mắt.
 
 \paragraph{Kiểm tra định tính trên dữ liệu trình diễn.} Trên dữ liệu trình diễn (Mục~\ref{sec:7.2}), năm ảnh truy vấn được thử với 8 kết quả đầu và đánh giá bằng mắt: ba truy vấn có 8/8 kết quả đúng, một truy vấn 7/8 và một truy vấn 4/8; các kết quả đúng nằm trên 4 đến 5 camera khác nhau. Đây chỉ là kiểm tra định tính trên một tập dữ liệu khác với tập đánh giá, không so sánh được với các giá trị Recall ở Bảng~\ref{tab:recall}.
+
+\subsection{Vì sao tìm kiếm bằng văn bản yếu}
+
+\paragraph{Kiểm tra quy trình trên miền huấn luyện.} Để phân biệt lỗi hiện thực với khác biệt miền dữ liệu, các bộ chuyển đổi phục vụ truy vấn (ảnh qua bộ mã hóa ảnh, câu qua bộ mã hóa văn bản, xếp hạng bằng tích vô hướng) được chạy trên 600 ảnh của tập huấn luyện CUHK-PEDES, miền của checkpoint, cùng các câu chú thích của chúng; tập kiểm tra công bố không được phân phối lại, và bản sao được dùng gán câu chú thích của một người cho mọi ảnh của người đó, nên kết quả truy xuất được tính theo danh tính. Ba điều rút ra. Truy xuất ảnh-sang-ảnh của cùng người là hoàn hảo (Recall@1 bằng 1,000 trên 109 truy vấn), nên phía ảnh đúng. Truy xuất văn bản-sang-ảnh chỉ bằng vector, như cách ứng dụng tìm kiếm, đạt Recall@1 là 0,035 và Recall@10 là 0,177, so với 0,002 và 0,017 của thứ tự ngẫu nhiên: cao hơn hẳn ngẫu nhiên, nhưng thấp xa con số 76,5\% đã công bố. Xếp hạng lại 32 ứng viên đầu bằng đầu so khớp liên phương thức của RaSa, như mã đánh giá của các tác giả làm trên 128 ứng viên đầu, nâng Recall@1 lên 0,650 trên 40 truy vấn trong số này với tập 150 ảnh (chỉ vector tương phản: 0,050), với khoảng 0,2 giây mỗi ứng viên trên CPU. Độ chính xác công bố của RaSa vì vậy thuộc về bước xếp hạng lại của nó, mà ứng dụng không dùng; vector tương phản mà tìm kiếm vector so sánh chỉ là bộ sinh ứng viên của mô hình. Đây, chứ không phải lỗi hiện thực, là lý do thứ nhất khiến tìm kiếm bằng văn bản yếu, trước cả khác biệt miền dữ liệu. Lần kiểm tra cũng tìm thấy một khác biệt so với mã của các tác giả: truy vấn được tách từ bằng bộ tách từ BERT chuẩn, vốn đóng câu bằng [SEP], trong khi RaSa huấn luyện và đánh giá không có nó; dùng bộ tách từ của chính RaSa nâng Recall@10 trên mẫu này từ 0,137 lên 0,177 và nay là mặc định, với vector ảnh và chỉ mục không đổi.
+
+\paragraph{Tìm kiếm vector thất bại ở đâu.} Ba chẩn đoán nữa trên cùng tập tìm kiếm và truy vấn tách riêng ảnh cắt với bộ mã hóa. Thứ nhất, kích thước ảnh cắt: ảnh cắt của quy trình có chiều cao trung vị 243 điểm ảnh (phân vị 10 đến 90: 134 đến 580); 1.100 trong 1.526 ảnh thấp hơn 384 điểm ảnh của ảnh huấn luyện và 122 ảnh thấp hơn 128, trong khi tỉ lệ khung hình trung vị 0,38 gần với 0,33 của tập huấn luyện. Thứ hai, độ khít của khung bao: cắt cùng các khung hình đại diện bằng khung bao nhãn vẽ tay của người được ghép thay vì khung bao của Detector (làm được với 947 track) đưa Recall@16 văn bản từ 0,04 lên 0,19 và hạng trung vị của kết quả đúng đầu tiên từ 73 xuống 67. Thứ ba, chọn khung hình: một tập tìm kiếm gồm ảnh cắt theo nhãn cao nhất của mỗi người trên mỗi camera, 1.439 ảnh của 266 người, cho Recall@8 văn bản 0,12 và Recall@16 là 0,19, hạng trung vị trên 100. Khung bao khít hơn và khung hình tốt hơn giúp một chút, nhưng vector vẫn yếu ngay cả trên ảnh cắt chọn tay, nên phần còn lại là khác biệt miền của bộ mã hóa chứ không phải do phát hiện hay chọn khung hình. Điểm tương đồng nói điều tương tự: cosin giữa một truy vấn văn bản và 1.526 track có trung bình 0,19 và độ lệch chuẩn 0,04, các track đúng trung bình 0,21 và kết quả đầu tiên 0,30, nên người đúng chỉ cao hơn đám đông chưa tới nửa độ lệch chuẩn, trong khi trên CUHK-PEDES ảnh của chính câu chú thích cao hơn các ảnh khác trọn một độ lệch chuẩn (Mục~\ref{sec:3.5.4}). Truy vấn một thuộc tính cho thấy rõ: 16 kết quả đầu của \emph{``A person wearing a red top''} không có áo đỏ nào, và các danh sách 16 kết quả đầu của sáu truy vấn màu như vậy trùng nhau với chỉ số Jaccard trung bình 0,30, 47 track khác nhau lấp đầy 96 vị trí, phần lớn là ảnh cắt cận cảnh quần áo và tóc sẫm màu. Vector xếp hạng theo mức độ một ảnh cắt giống ảnh huấn luyện chứ không theo nội dung câu, và đó là điều đầu so khớp sửa được như trình bày dưới đây.
+
+\subsection{Hai cách cải thiện tìm kiếm bằng văn bản}
+
+\paragraph{Xếp hạng lại các ứng viên vector.} Sau lần kiểm tra trên, đầu so khớp được đưa vào luồng tìm kiếm như một bước tùy chọn (Mục~\ref{sec:5.2.3}) và đo ngoại tuyến trên cùng tập tìm kiếm và truy vấn: tìm kiếm vector xếp hạng 1.526 track, $N$ ứng viên đầu được chấm lại bằng đầu so khớp và trả về theo thứ tự đó, phần còn lại giữ thứ tự vector. Bảng~\ref{tab:rerank} cho kết quả với $N$ từ 32 đến 128. Mức cải thiện tăng theo $N$ vì thứ tự vector đặt người đúng ở hạng thấp: trong 16 ứng viên đầu với 1 trong 26 truy vấn văn bản, trong 64 ứng viên đầu với 13 và trong 128 ứng viên đầu với 19. Với $N = 128$, như trong đánh giá của các tác giả, tìm kiếm bằng văn bản đạt Recall@8 là 0,423 (khoảng 95\%: 0,26 đến 0,61) và tìm theo thuộc tính 0,154, từ 0 ở cả hai. Chi phí là một lượt hợp nhất (fusion) cho mỗi ứng viên, 0,19 giây trên CPU khi token ảnh của các ứng viên đã được lưu đệm, nên một truy vấn trên 128 ứng viên mất khoảng 17 giây và trên 64 ứng viên khoảng 9 giây (Mục~\ref{sec:8.7}). Tìm theo thuộc tính cải thiện ít hơn văn bản tự do: câu mẫu của nó chỉ nêu loại và màu trang phục, vốn nhiều track có chung.
+
+\begin{table}[H]
+\centering
+\caption{Tìm kiếm bằng văn bản và thuộc tính khi đầu so khớp xếp hạng lại $N$ ứng viên vector đầu (26 truy vấn, 1.526 track)}
+\label{tab:rerank}
+\begin{tabularx}{\textwidth}{|L|c|c|c|c|c|c|}
+\hline
+\textbf{Hình thức và bước} & \textbf{R@4} & \textbf{R@8} & \textbf{R@12} & \textbf{R@16} & \textbf{MRR} & \textbf{Hạng trung vị} \\
+\hline
+Văn bản, chỉ tìm kiếm vector & 0 & 0 & 0,038 & 0,038 & 0,021 & 73 \\
+\hline
+Văn bản, xếp hạng lại, $N = 32$ & 0,115 & 0,115 & 0,115 & 0,154 & 0,104 & 73 \\
+\hline
+Văn bản, xếp hạng lại, $N = 64$ & 0,269 & 0,308 & 0,423 & 0,423 & 0,248 & 73 \\
+\hline
+Văn bản, xếp hạng lại, $N = 128$ & 0,346 & 0,423 & 0,462 & 0,500 & 0,329 & 18 \\
+\hline
+Thuộc tính, chỉ tìm kiếm vector & 0 & 0 & 0 & 0,038 & 0,015 & 111 \\
+\hline
+Thuộc tính, xếp hạng lại, $N = 32$ & 0,038 & 0,038 & 0,077 & 0,077 & 0,053 & 111 \\
+\hline
+Thuộc tính, xếp hạng lại, $N = 64$ & 0,115 & 0,115 & 0,154 & 0,231 & 0,105 & 111 \\
+\hline
+Thuộc tính, xếp hạng lại, $N = 128$ & 0,115 & 0,154 & 0,269 & 0,269 & 0,116 & 88 \\
+\hline
+\end{tabularx}
+\end{table}
+
+\paragraph{Một bộ mã hóa khác trên cùng dữ liệu.} Lựa chọn RaSa thay vì một mô hình tổng quát (Mục~\ref{sec:6.1.4}) được đưa ra khi chưa đo trên dữ liệu của đề tài, nên phép so sánh được chạy sau đó với cùng bước phát hiện, theo vết, khung hình đại diện và truy vấn, chỉ thay bộ mã hóa bằng CLIP ViT-B/16 huấn luyện trên LAION-2B~\cite{radford2021clip}, vốn không có bước xếp hạng lại và tốn khoảng 0,15 giây mỗi ảnh cắt trên CPU. Bảng~\ref{tab:encoders} cho kết quả. Chỉ với vector, CLIP đạt Recall@8 là 0,346 với văn bản và 0,269 với thuộc tính, trong khi vector của RaSa đạt 0; mức này gần với RaSa có xếp hạng lại trên 128 ứng viên (0,423 và 0,154) với thời gian truy vấn chỉ bằng khoảng một phần trăm. Với ảnh, ngược lại, CLIP chỉ đạt 0,346 so với 0,885 của RaSa: huấn luyện chuyên về người của RaSa là thứ làm truy vấn bằng ảnh hoạt động, còn huấn luyện tổng quát của CLIP là thứ làm truy vấn bằng văn bản hoạt động trên ảnh cắt từ camera. Bản lớn hơn CLIP ViT-L/14 (LAION-2B) cho Recall@8 là 0,423 với văn bản, 0,346 với thuộc tính và 0,423 với ảnh. Thêm tiền tố \emph{``a photo of''} vào câu thay đổi kết quả của CLIP nhiều nhất một truy vấn. Kết luận cho thiết kế là một không gian vector dùng chung phục vụ tốt truy vấn bằng ảnh và kém truy vấn bằng văn bản, và tìm kiếm bằng văn bản tốt nhất trên dữ liệu này sẽ đến từ một vector thứ hai cho mỗi lần xuất hiện bằng bộ mã hóa kiểu CLIP, hoặc từ bước xếp hạng lại của RaSa được làm nhanh; Mục~\ref{sec:9.3} bàn tiếp điều này.
+
+\begin{table}[H]
+\centering
+\caption{RaSa và CLIP trên cùng tập tìm kiếm và truy vấn (26 truy vấn, 1.526 track, chỉ vector trừ khi ghi khác)}
+\label{tab:encoders}
+\begin{tabularx}{\textwidth}{|L|c|c|c|c|}
+\hline
+\textbf{Hình thức và bộ mã hóa} & \textbf{R@4} & \textbf{R@8} & \textbf{R@16} & \textbf{MRR} \\
+\hline
+Ảnh, vector RaSa & 0,846 & 0,885 & 0,885 & 0,671 \\
+\hline
+Ảnh, vector CLIP ViT-B/16 & 0,231 & 0,346 & 0,423 & 0,195 \\
+\hline
+Ảnh, vector CLIP ViT-L/14 & 0,346 & 0,423 & 0,423 & 0,287 \\
+\hline
+Văn bản, vector RaSa & 0 & 0 & 0,038 & 0,021 \\
+\hline
+Văn bản, vector RaSa xếp hạng lại, $N = 128$ & 0,346 & 0,423 & 0,500 & 0,329 \\
+\hline
+Văn bản, vector CLIP ViT-B/16 & 0,308 & 0,346 & 0,500 & 0,237 \\
+\hline
+Văn bản, vector CLIP ViT-L/14 & 0,346 & 0,423 & 0,577 & 0,286 \\
+\hline
+Thuộc tính, vector RaSa & 0 & 0 & 0,038 & 0,015 \\
+\hline
+Thuộc tính, vector RaSa xếp hạng lại, $N = 128$ & 0,115 & 0,154 & 0,269 & 0,116 \\
+\hline
+Thuộc tính, vector CLIP ViT-B/16 & 0,154 & 0,269 & 0,462 & 0,133 \\
+\hline
+Thuộc tính, vector CLIP ViT-L/14 & 0,269 & 0,346 & 0,462 & 0,184 \\
+\hline
+\end{tabularx}
+\end{table}

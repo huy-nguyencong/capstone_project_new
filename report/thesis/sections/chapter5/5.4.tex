@@ -13,6 +13,6 @@ Lỗi có một định dạng chung: \emph{mã lỗi} ổn định, \emph{thôn
 
 Cập nhật tài khoản, camera và vụ việc phải kèm số phiên bản giao diện đang có, và nhận 409 nếu dữ liệu đã đổi ở nơi khác. Yêu cầu tải video có thể kèm khóa chống lặp nên gửi lại không tạo thêm công việc, và là tác vụ không đồng bộ: máy chủ trả 202 cùng công việc, còn giao diện theo dõi tiến độ sau đó.
 
-Không API nào nhận khu vực của Giám sát viên hay người phụ trách vụ việc làm tham số (Mục~\ref{sec:5.5.3}). Ảnh của kết quả tìm kiếm và của kết quả đã lưu có đường dẫn riêng, ứng với hai căn cứ ở Mục~\ref{sec:4.6}.
+Phản hồi của tìm kiếm cho biết bước xếp hạng lại ở Mục~\ref{sec:5.2.3} có được áp dụng hay không, vì nó thay đổi ý nghĩa của điểm phù hợp. Không API nào nhận khu vực của Giám sát viên hay người phụ trách vụ việc làm tham số (Mục~\ref{sec:5.5.3}). Ảnh của kết quả tìm kiếm và của kết quả đã lưu có đường dẫn riêng, ứng với hai căn cứ ở Mục~\ref{sec:4.6}.
 
 Ba đường dẫn kiểm tra tình trạng (\path{/health/live}, \path{/health/ready}, \path{/health/storage}) phục vụ triển khai và giám sát.

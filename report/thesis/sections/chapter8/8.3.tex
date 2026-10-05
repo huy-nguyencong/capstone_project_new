@@ -3,8 +3,8 @@
 % C8.5 (N=10/N=20) = HIỆN HÀNH, ngưỡng 0,1: var/benchmark/local-cpu-demo-conf010.json; bắt buộc ghi điều kiện đo
 %   (không đóng ứng dụng khác, dao động ±12 s; lượt đầu N=10 là cold nên warm N=10 chỉ 2 lượt; RSS/CPU lấy mẫu 0,25 s là giá trị dưới).
 % C8.6 số track = CŨ (ngưỡng 0,25, AIW-28), kết luận chức năng vẫn đúng; tự tạo phiên 13–24 s = Hiện hành (R7).
-% C8.7 độ trễ từng lần qua giao diện = Hiện hành (R7); p50/p95 qua API = Hiện hành (search-latency-conf010.json);
-%   dung lượng = Hiện hành; RAM toàn stack = Hiện hành (stack-memory*.json) kèm 4 điều kiện đo bắt buộc.
+% C8.7 (05/10/2026): độ trễ qua API kể cả xếp hạng lại (search-latency-*.json); mốc thời gian RTSP (rtsp-timestamp-check.json);
+%   dung lượng; RAM toàn hệ thống (stack-memory-*-after.json) kèm 4 điều kiện đo. Đồng bộ với bản tiếng Anh 8.3.
 \section{Hiệu năng và xử lý luồng camera}
 \label{sec:8.5}
 \label{sec:8.6}
@@ -41,11 +41,13 @@ Với $N = 20$, thời gian CPU giảm khoảng một phần tư và dung lượ
 
 \paragraph{Xử lý luồng RTSP.} Việc tiếp nhận luồng RTSP giả lập được kiểm chứng trong ba tình huống, với ngưỡng tin cậy 0,25 nên số track chỉ mang tính tham khảo: một phiên chạy bình thường xử lý 300 khung hình, tạo 29 track và tìm kiếm bằng văn bản trả về 8 kết quả, trong 136 giây; khi máy phát luồng bị ngắt 5 giây giữa phiên, tiến trình xử lý nền kết nối lại một lần rồi tiếp tục, hoàn tất 600 khung hình với 38 track trong 140 giây; khi Quản trị viên tắt xử lý AI giữa phiên, công việc chuyển sang \emph{Đã hủy} và không để lại track dở dang. Với cấu hình hiện hành, trong các lần diễn tập, camera RTSP mới được thêm có trạng thái \emph{Trực tuyến} và tiến trình xử lý nền tự tạo phiên xử lý sau 13 đến 24 giây kể từ khi bật xử lý AI.
 
+\paragraph{Mốc thời gian của khung hình RTSP.} Khung hình của luồng RTSP được gắn mốc theo dấu thời gian trình chiếu của chính luồng thay vì theo thời điểm hệ thống nhận được (Mục~\ref{sec:3.7.4}), vì phân tích chậm hơn luồng khoảng bảy lần. Khác biệt được đo trên luồng giả lập của camera C1, đọc 300 khung hình với thời gian xử lý mô phỏng 100 mili giây mỗi khung hình và khoảng lấy mẫu $N = 20$: theo thời điểm nhận, hai khung hình được xử lý liên tiếp cách nhau trung vị 2.456 mili giây, vượt quy tắc kết thúc hai giây ở cả 14 cặp; theo dấu thời gian của luồng, chúng cách nhau 334 mili giây, đúng khoảng cách của 20 khung hình ở 60 khung hình mỗi giây. Khi xử lý nhanh ngang bộ giải mã, hai cách cho kết quả như nhau (409 so với 334 mili giây, chênh lệch do dao động giải mã). Quy tắc kết thúc track vì vậy không phụ thuộc tốc độ xử lý.
+
 \paragraph{Độ trễ tìm kiếm.} Độ trễ được đo phía máy khách bằng cách gọi API tìm kiếm với $k = 8$ trên dữ liệu trình diễn 1.523 track, 30 lượt cho mỗi hình thức sau một lượt làm nóng, các lượt gọi xen kẽ và cách nhau 2,5 giây, khi tiến trình xử lý nền rảnh. Kết quả ở Bảng~\ref{tab:latency}; không lượt nào bị từ chối do giới hạn tần suất.
 
 \begin{table}[H]
 \centering
-\caption{Độ trễ tìm kiếm qua API (30 lượt mỗi hình thức, $k = 8$)}
+\caption{Độ trễ tìm kiếm qua API ($k = 8$; 30 lượt mỗi hình thức khi không xếp hạng lại, 10 lượt khi có)}
 \label{tab:latency}
 \begin{tabularx}{\textwidth}{|L|c|c|c|}
 \hline
@@ -57,11 +59,46 @@ Tìm bằng văn bản & 106 ms & 142 ms & 151 ms \\
 \hline
 Tìm theo thuộc tính & 103 ms & 136 ms & 136 ms \\
 \hline
+Tìm bằng văn bản, xếp hạng lại 64 ứng viên & 9.383 ms & 10.220 ms & 10.220 ms \\
+\hline
+Tìm theo thuộc tính, xếp hạng lại 64 ứng viên & 9.073 ms & 9.753 ms & 9.753 ms \\
+\hline
+Tìm bằng văn bản, xếp hạng lại 128 ứng viên & 17.034 ms & 19.747 ms & 19.747 ms \\
+\hline
+Tìm theo thuộc tính, xếp hạng lại 128 ứng viên & 17.110 ms & 17.904 ms & 17.904 ms \\
+\hline
 \end{tabularx}
 \end{table}
 
-Tìm bằng ảnh chậm hơn hơn mười lần vì ảnh truy vấn phải qua bộ mã hóa ảnh của RaSa trên CPU, còn câu mô tả chỉ qua bộ mã hóa văn bản. Khi thao tác qua giao diện trong các lần diễn tập, lần tìm đầu tiên sau khi khởi động mất khoảng 31 giây, chủ yếu để nạp bộ mã hóa. Các lần sau mất khoảng 8 giây, vì được đo khi tiến trình nền đang chạy phiên RTSP và tính cả thời gian hiển thị. Nếu không làm nóng và tiến trình nền đang bận, lần tìm đầu tiên mất khoảng 97 giây, vì vậy quy trình triển khai có bước làm nóng tìm kiếm (Mục~\ref{sec:7.1}).
+Tìm bằng ảnh chậm hơn hơn mười lần vì ảnh truy vấn phải qua bộ mã hóa ảnh của RaSa trên CPU, còn câu mô tả chỉ qua bộ mã hóa văn bản. Khi bật bước xếp hạng lại ở Mục~\ref{sec:8.4}, mỗi lượt tìm bằng văn bản hoặc thuộc tính tốn thêm một lượt hợp nhất cho mỗi ứng viên, khoảng 0,15 giây mỗi ứng viên khi token ảnh của dữ liệu trình diễn đã được tính sẵn (khoảng 1,3 giây mỗi track một lần, 1,4~GB trên đĩa cho 1.523 track), nên khoảng 9 và 17 giây cho 64 và 128 ứng viên; khi chưa có bộ đệm, lượt tìm đầu tiên trên một ứng viên còn phải trả thêm chi phí mã hóa ảnh của nó. Khi thao tác qua giao diện trong các lần diễn tập, lần tìm đầu tiên sau khi khởi động mất khoảng 31 giây, chủ yếu để nạp bộ mã hóa. Các lần sau mất khoảng 8 giây, vì được đo khi tiến trình nền đang chạy phiên RTSP và tính cả thời gian hiển thị. Nếu không làm nóng và tiến trình nền đang bận, lần tìm đầu tiên mất khoảng 97 giây, vì vậy quy trình triển khai có bước làm nóng tìm kiếm (Mục~\ref{sec:7.1}).
 
-\paragraph{Dung lượng và bộ nhớ.} Mỗi track chiếm trung bình khoảng 358~KB cho khung hình toàn cảnh dạng JPEG và 1~KB cho vector 256 chiều; cơ sở dữ liệu quan hệ có dung lượng khoảng 24~MB. Bộ nhớ được đo cho từng thành phần khi chạy đầy đủ hệ thống như lúc trình diễn, lấy giá trị lớn nhất trong mỗi trạng thái. Khi rảnh và đã làm nóng tìm kiếm, các dịch vụ trong Docker dùng 515~MiB (828~MiB tính cả máy ảo Docker), máy chủ ứng dụng 1.978~MiB (153~MiB trước khi nạp bộ mã hóa truy vấn), tiến trình xử lý nền 338~MiB, máy chủ phát triển giao diện 318~MiB và các tiến trình FFmpeg phát luồng camera 286~MiB, tổng cộng khoảng 3,7~GiB. Khi đang tìm kiếm, máy chủ ứng dụng tăng lên 2.037~MiB. Khi đang xử lý một công việc, quy trình phân tích dùng thêm tối đa 4.772~MiB, đưa tổng mức sử dụng của hệ thống lên khoảng 8,0~GiB.
+\paragraph{Dung lượng và bộ nhớ.} Mỗi track chiếm trung bình khoảng 358~KB cho khung hình toàn cảnh dạng JPEG và 1~KB cho vector 256 chiều; cơ sở dữ liệu quan hệ có dung lượng khoảng 24~MB. Bộ nhớ được đo cho từng thành phần khi chạy đầy đủ hệ thống như lúc trình diễn, lấy giá trị lớn nhất trong mỗi trạng thái, ở ba trạng thái; Bảng~\ref{tab:memory} cho kết quả.
 
-Các số liệu bộ nhớ có bốn điều kiện cần lưu ý. Thứ nhất, để không ghi dữ liệu vào tập trình diễn, trạng thái đang xử lý được đo bằng công cụ chạy đúng quy trình phân tích của hệ thống trên đoạn video 10 giây thay cho tiến trình xử lý nền. Thứ hai, giá trị đỉnh 4.772~MiB cộng đỉnh của tiến trình chính và các tiến trình mô hình, vốn có thể không xảy ra cùng lúc, nên là cận trên. Thứ ba, trên Windows, bộ nhớ đo được là phần đang nằm trong RAM, và có thể bị hệ điều hành thu hẹp khi RAM gần cạn. Thứ tư, trong lúc đo, các ứng dụng khác vẫn mở, nên RAM đã dùng của cả máy tăng từ 13,2~GiB khi rảnh lên 13,9~GiB khi tìm kiếm và 15,2~GiB khi đang xử lý, trên tổng 15,7~GiB. Nguyên nhân chính là máy chủ và quy trình phân tích mỗi bên nạp mô hình riêng, khoảng 1,8~GiB cho bộ mã hóa truy vấn và 4,2~GiB cho Detector cùng bộ mã hóa ảnh, nên khi trình diễn cần đóng các ứng dụng không cần thiết.
+\begin{table}[H]
+\centering
+\caption{Bộ nhớ theo thành phần trong ba trạng thái, tính bằng MiB}
+\label{tab:memory}
+\begin{tabularx}{\textwidth}{|L|r|r|r|}
+\hline
+\textbf{Thành phần} & \textbf{Rảnh, đã làm nóng} & \textbf{Đang tìm kiếm} & \textbf{Đang xử lý công việc} \\
+\hline
+Các dịch vụ trong Docker (năm container) & 363 & 373 & 378 \\
+\hline
+Máy chủ ứng dụng, đã nạp bộ mã hóa truy vấn & 1.134 & 1.173 & 1.149 \\
+\hline
+Tiến trình xử lý nền, rảnh & 300 & 339 & 346 \\
+\hline
+Các tiến trình FFmpeg phát luồng camera & 286 & 365 & 361 \\
+\hline
+Quy trình phân tích, đỉnh của tiến trình chính và các tiến trình mô hình & -- & -- & 2.098 \\
+\hline
+\textbf{Tổng các mục trên} & \textbf{2.083} & \textbf{2.250} & \textbf{4.332} \\
+\hline
+Máy ảo Docker (Vmmem), tính thêm & 3.184 & 1.686 & 1.676 \\
+\hline
+\end{tabularx}
+\end{table}
+
+Các tiến trình của ứng dụng dùng khoảng 2,1~GiB khi rảnh và khoảng 4,3~GiB khi đang xử lý một công việc. Máy chủ ứng dụng chiếm khoảng 1,1~GiB, trong đó 0,6~GB là trọng số RaSa được giữ lại nhờ cách nạp có chọn lọc ở Mục~\ref{sec:6.2.1}, phần còn lại là môi trường chạy PyTorch và bản thân máy chủ. Quy trình phân tích đạt đỉnh khoảng 2,1~GiB: khoảng 1,0~GiB cho tiến trình mã hóa ảnh, 0,4~GiB cho tiến trình Detector và 0,7~GiB cho tiến trình chính. Ứng dụng web không chiếm thêm gì, vì các tệp tĩnh của nó do máy chủ ứng dụng phục vụ (Mục~\ref{sec:7.1}). Máy ảo Docker được liệt kê riêng vì con số của nó chủ yếu là bộ đệm trang (page cache) của Linux bên trong máy ảo và phụ thuộc thời gian đã chạy: 3,2~GiB ngay sau khi khởi động lại và 1,7~GiB sau bốn mươi phút; mức giới hạn 3~GB ở Mục~\ref{sec:7.1} chặn trên chứ không làm nó nhỏ lại.
+
+Các số liệu bộ nhớ có bốn điều kiện cần lưu ý. Thứ nhất, để không ghi dữ liệu vào tập trình diễn, trạng thái đang xử lý được đo bằng công cụ chạy đúng quy trình phân tích của hệ thống trên đoạn video 10 giây thay cho tiến trình xử lý nền. Thứ hai, giá trị đỉnh của quy trình (2.098~MiB) cộng đỉnh của tiến trình chính và các tiến trình mô hình, vốn có thể không xảy ra cùng lúc, nên là cận trên; bộ lấy mẫu 5 giây của phép đo toàn hệ thống ghi nhận 1.936~MiB. Thứ ba, trên Windows, bộ nhớ đo được là phần đang nằm trong RAM, và có thể bị hệ điều hành thu hẹp khi RAM gần cạn. Thứ tư, trong lúc đo, các ứng dụng khác vẫn mở, nên RAM đã dùng của cả máy tăng từ 13,7~GiB khi rảnh lên 15,1~GiB khi đang xử lý, trên tổng 15,7~GiB. Khoản lớn nhất là bộ mã hóa truy vấn, mà máy chủ ứng dụng và tiến trình nền mỗi bên nạp một bản, khoảng 1~GiB mỗi bản tính cả môi trường chạy PyTorch; khi trình diễn vẫn nên đóng các ứng dụng không cần thiết.
