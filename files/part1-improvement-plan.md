@@ -386,25 +386,37 @@ bật re-rank; tóm tắt và 1.4 sửa câu nguyên nhân. README backend mô t
 
 ### B2. Phân tích nguyên nhân thất bại trên WILDTRACK
 
-**Code.** `backend/tools/wildtrack_text_diagnostics.py` chạy trên gallery của B3 và ghi
-`var/evaluation/wildtrack-text-diagnostics.json`:
+**Code (đã làm 05/10/2026).** Mới `backend/tools/wildtrack_text_diagnostics.py` (mô tả trong README
+backend), chạy từ cache gallery của B3, embedding hai gallery nhãn cache ở
+`var/evaluation/wildtrack-diag-embeddings.json`, ảnh ghép ở `var/evaluation/color-queries/`.
+Kết quả `var/evaluation/wildtrack-text-diagnostics.json`.
 
-1. Phân bố kích thước crop (chiều cao điểm ảnh) của các track trong gallery so với CUHK-PEDES
-   (ảnh cao khoảng 384). Crop nhỏ bị phóng to lên 384x384 là một giả thuyết cần số liệu.
-2. Crop tay sát người so với crop tự động nới 5% (mục 5.2.1): với 6 truy vấn hiện có, đo lại R@k
-   của tìm bằng văn bản khi gallery dùng crop sát từ nhãn WILDTRACK thay vì crop của pipeline.
-   Nếu khác biệt lớn, nguyên nhân nằm ở detector và chọn khung đại diện, không phải ở encoder.
-3. Truy vấn màu đơn: "a person wearing a red top", "... a white top", "... black trousers"
-   trên gallery, đếm bằng mắt số kết quả đúng màu trong top 16 và lưu ảnh ghép
-   (`var/evaluation/color-queries/`). Đây là thứ có thể chiếu khi bảo vệ.
-4. Điểm số: phân bố cosine của truy vấn văn bản với toàn gallery (trung bình, độ lệch chuẩn,
-   khoảng giữa hạng 1 và hạng 100) để thấy encoder có phân biệt gì trên dữ liệu này không.
+**Đo (05/10/2026, chỉ vector, 26 truy vấn).**
 
-**Báo cáo.** Mục 8.2 "Discussion" viết lại: nguyên nhân nêu theo bằng chứng của B1 và B2 thay vì
-khẳng định "the main cause is the domain gap". Nếu crop sát cải thiện rõ, mục 12.3 thêm hướng
-cải thiện detector và chọn khung đại diện trước khi đổi encoder.
+1. Kích thước crop pipeline (1.526 track): chiều cao median 243 px (p10 134, p90 580); 1.100
+   thấp hơn 384 px của crop huấn luyện, 122 thấp hơn 128 px; tỉ lệ rộng/cao median 0,38 so với
+   0,33 của CUHK-PEDES. Crop nhỏ nhưng không nhỏ tới mức giải thích thất bại.
+2. Cùng khung đại diện, cắt theo box nhãn tay thay cho box detector (947 track thay được):
+   văn bản R@16 0,038 → 0,192, hạng đúng đầu tiên median 73 → 67; thuộc tính R@16 0,038 → 0,115.
+3. Gallery nhãn: crop cao nhất mỗi người mỗi camera, 1.439 crop của 266 người: văn bản R@8 0,115,
+   R@16 0,192, median 107; thuộc tính R@8 0,077.
+4. Cosine truy vấn văn bản với gallery: trung bình 0,19, độ lệch chuẩn 0,04, track đúng trung
+   bình 0,21, top-1 0,30: người đúng chỉ cao hơn đám đông chưa tới nửa độ lệch chuẩn (trên
+   CUHK-PEDES: cặp đúng cao hơn một độ lệch chuẩn, B1). Sáu truy vấn màu đơn cho top-16 gần như
+   cùng một tập (Jaccard trung bình giữa các cặp 0,30; 47 track riêng biệt trên 96 chỗ;
+   "a person wearing a red top" không có áo đỏ nào trong top 16), bị chi phối bởi các crop cận
+   cảnh tóc và áo tối.
 
-**Trạng thái.** Chưa làm.
+**Kết luận.** Box sát hơn và khung tốt hơn chỉ giúp ít (R@16 lên 0,19); với crop tay chọn kỹ
+vector vẫn yếu, nên phần còn lại nằm ở encoder (domain gap thật) chứ không ở detector hay chọn
+khung. Vector xếp hạng theo mức độ crop "giống crop huấn luyện" hơn là theo nội dung câu; đầu ITM
+(B5) sửa được phần lớn điều đó. Hai nguyên nhân nêu ở 8.2 Discussion được giữ nguyên, nay có
+số liệu cho nguyên nhân thứ hai.
+
+**Báo cáo (đã sửa).** Mục 8.2 thêm đoạn "Where the vector search fails" trước đoạn re-ranking,
+với bốn số liệu trên; `report-data-guide.md` thêm dòng C8.4.
+
+**Trạng thái.** Xong 05/10/2026.
 
 ### B3. Đo lại ở cấu hình hiện hành và mở rộng bộ truy vấn
 
@@ -533,17 +545,19 @@ trường.
 
 ### B6. Sửa cách trình bày kết quả và giao thức đo phát hiện
 
-**Báo cáo (không có mã).**
+**Báo cáo (đã sửa 05/10/2026, không có mã).**
 
-- Mục 8.2 "Person detection": mô tả giao thức đo precision và recall: box tham chiếu lấy từ
-  `annotations_positions` thế nào, khớp ở IoU 0.5, trên những frame có nhãn nào, và
-  precision thấp phản ánh gì (người ngoài vùng nhãn, box không khớp, phát hiện sai). Nếu một
-  phần precision thấp là do vùng nhãn WILDTRACK hẹp hơn khung hình, nói rõ.
-- Mục 12.1 Part I điểm 2: thay "works but with low quality" bằng câu nêu thẳng kết quả theo
-  bảng 8.2 mới.
-- Mục 1.4 "Search quality depends on existing models": thêm một câu dẫn tới B1 và B2.
+- Mục 8.2 "Person detection and tracking" viết lại: giao thức (nhãn WILDTRACK là vị trí trên mặt
+  đất kèm box mỗi góc nhìn, mỗi khung thứ năm; khớp một-một theo IoU giảm dần, ngưỡng 0,5;
+  2.278 box trùng trên người đã khớp), và vì sao precision 0,43 chỉ là cận dưới: nhãn chỉ phủ
+  người trong vùng quan tâm của bộ dữ liệu, camera nhìn thấy nhiều người hơn (khung 400: C1
+  khoảng 19/30 người có nhãn, C5 3/40, xem ảnh kiểm tra
+  `scratchpad/labels-C1.png`, `labels-C5.png` lúc làm). Recall là con số có nghĩa.
+- Mục 12.1 điểm 2 "works but with low quality" đã thay ở B5 bằng câu nêu số (R@8 ảnh 0,89;
+  văn bản 0 bằng vector, 0,42 khi re-rank 128). Mục 1.4 đã sửa ở B1/B5.
 
-**Trạng thái.** Chưa làm.
+**Trạng thái.** Xong 05/10/2026 (phần nêu nguyên nhân theo bằng chứng của B1/B2 nằm ở 8.2
+Discussion, đã viết ở B1 và bổ sung ở B2).
 
 ## 4. Nhóm C: pipeline RTSP
 
