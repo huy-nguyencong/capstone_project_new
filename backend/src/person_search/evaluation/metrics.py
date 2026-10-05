@@ -285,6 +285,18 @@ def rank_gallery(
     return QueryOutcome(query_id, mode, person_id, positives, first, top)
 
 
+def wilson_interval(successes: int, total: int, z: float = 1.96) -> tuple[float, float] | None:
+    """Wilson score interval of a proportion; the usual choice for small samples."""
+
+    if total <= 0:
+        return None
+    p = successes / total
+    denominator = 1 + z * z / total
+    centre = (p + z * z / (2 * total)) / denominator
+    half = z * math.sqrt(p * (1 - p) / total + z * z / (4 * total * total)) / denominator
+    return (round(max(0.0, centre - half), 4), round(min(1.0, centre + half), 4))
+
+
 def recall_summary(
     outcomes: Iterable[QueryOutcome], ks: Sequence[int] = RECALL_KS
 ) -> dict[str, dict[str, Any]]:
@@ -304,6 +316,12 @@ def recall_summary(
             **{
                 f"recall@{k}": _round(
                     sum(item.hit(k) for item in evaluable) / len(evaluable) if evaluable else None
+                )
+                for k in ks
+            },
+            **{
+                f"recall@{k}_ci95": wilson_interval(
+                    sum(item.hit(k) for item in evaluable), len(evaluable)
                 )
                 for k in ks
             },

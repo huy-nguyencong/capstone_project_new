@@ -4,9 +4,13 @@ Latexmk: This is Latexmk, John Collins, 15 June 2025. Version 4.87.
 Latexmk: applying rule 'xelatex'...
 Rule 'xelatex':  Reasons for rerun
 Changed files or newly in use/created:
-  sections/chapter7/7.1.tex
+  sections/chapter12/12.2.tex
+  sections/chapter12/12.3.tex
+  sections/chapter8/8.2.tex
 Category 'changed_user':
-  sections/chapter7/7.1.tex
+  sections/chapter12/12.2.tex
+  sections/chapter12/12.3.tex
+  sections/chapter8/8.2.tex
 
 ------------
 Run number 1 of rule 'xelatex'
@@ -460,9 +464,9 @@ Underfull \hbox (badness 1910) in paragraph at lines 12--13
 []\TU/TimesNewRoman(0)/m/n/13 The common approach is \TU/TimesNewRoman(0)/m/it/
 13 tracking-by-detection\TU/TimesNewRoman(0)/m/n/13 , founded on the SORT algo-
 
-[17]) (sections/chapter3/3.4.tex [18]) (sections/chapter3/3.5.tex [19] [20])
-(sections/chapter3/3.6.tex [21]) (sections/chapter3/3.7.tex [22]))
-(sections/chapter4/chapter4.tex [23] [24]
+[17] [18]) (sections/chapter3/3.4.tex) (sections/chapter3/3.5.tex [19] [20])
+(sections/chapter3/3.6.tex [21]) (sections/chapter3/3.7.tex [22] [23]))
+(sections/chapter4/chapter4.tex [24]
 Chapter 4.
 (sections/chapter4/4.1.tex [25] [26]) (sections/chapter4/4.2.tex [27] [28]
 [29]) (sections/chapter4/4.3.tex [30] [31] [32]) (sections/chapter4/4.4.tex
@@ -560,15 +564,15 @@ Underfull \hbox (badness 1776) in paragraph at lines 8--9
 )) (sections/chapter8/chapter8.tex [76] [77]
 Chapter 8.
 (sections/chapter8/8.1.tex [78] [79]) (sections/chapter8/8.2.tex [80])
-(sections/chapter8/8.3.tex [81] [82])) [83] [84] [85]
+(sections/chapter8/8.3.tex [81] [82] [83] [84])) [85] [86] [87]
 (sections/research/chapter9.tex
 Chapter 9.
-[86] [87] [88] [89] [90] [91]) (sections/research/chapter10.tex [92]
+[88] [89] [90] [91] [92] [93]) (sections/research/chapter10.tex [94]
 Chapter 10.
-[93] [94] [95] [96] [97] [98] [99] [100] [101] [102] [103])
-(sections/research/chapter11.tex [104]
+[95] [96] [97] [98] [99] [100] [101] [102] [103] [104] [105])
+(sections/research/chapter11.tex [106]
 Chapter 11.
-[105] [106] [107] [108] [109] [110] [111] [112] [113] [114] [115]
+[107] [108] [109] [110] [111] [112] [113] [114] [115] [116] [117]
 Underfull \hbox (badness 3735) in paragraph at lines 421--430
 [] []\TU/TimesNewRoman(0)/b/n/13 Switchable but not yet measured.[] \TU/TimesNe
 wRoman(0)/m/n/13 The pipeline keeps one flag per experi-
@@ -585,12 +589,12 @@ Underfull \hbox (badness 1577) in paragraph at lines 421--430
 \TU/TimesNewRoman(0)/m/n/13 tics block), \TU/lmtt/m/n/13 LAB_FRAME_AGREEMENT \T
 U/TimesNewRoman(0)/m/n/13 (the \TU/lmtt/m/n/13 agrees \TU/TimesNewRoman(0)/m/n/
 13 line under each quoted frame),
-[116] [117]) (sections/chapter12/chapter12.tex [118]
+[118] [119]) (sections/chapter12/chapter12.tex [120]
 Chapter 12.
-(sections/chapter12/timeline.tex) (sections/chapter12/12.1.tex [119] [120]
-(sections/research/_conclusion.tex [121])) (sections/chapter12/12.2.tex
-(sections/research/_limits.tex [122] [123])) (sections/chapter12/12.3.tex))
-[124] [125] [126] [127] [128] [129] [130] [131]
+(sections/chapter12/timeline.tex) (sections/chapter12/12.1.tex [121] [122]
+(sections/research/_conclusion.tex [123])) (sections/chapter12/12.2.tex
+(sections/research/_limits.tex [124] [125])) (sections/chapter12/12.3.tex))
+[126] [127] [128] [129] [130] [131] [132] [133]
 
 enddocument/afterlastpage (AED): lastpage setting LastPage.
 
@@ -602,7 +606,7 @@ LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
  )
 (see the transcript file for additional information)
 Output written on D:\uni-studies\semester-253\capstone_project_new\report\thesi
-s-en\build\main.xdv (155 pages, 2418748 bytes).
+s-en\build\main.xdv (157 pages, 2459232 bytes).
 SyncTeX written on D:\uni-studies\semester-253\capstone_project_new\report\thesis-en\build/main.synctex.gz.
 Transcript written on D:\uni-studies\semester-253\capstone_project_new\report\t
 hesis-en\build\main.log.
@@ -1087,9 +1091,9 @@ Underfull \hbox (badness 1910) in paragraph at lines 12--13
 []\TU/TimesNewRoman(0)/m/n/13 The common approach is \TU/TimesNewRoman(0)/m/it/
 13 tracking-by-detection\TU/TimesNewRoman(0)/m/n/13 , founded on the SORT algo-
 
-[17]) (sections/chapter3/3.4.tex [18]) (sections/chapter3/3.5.tex [19] [20])
-(sections/chapter3/3.6.tex [21]) (sections/chapter3/3.7.tex [22]))
-(sections/chapter4/chapter4.tex [23] [24]
+[17] [18]) (sections/chapter3/3.4.tex) (sections/chapter3/3.5.tex [19] [20])
+(sections/chapter3/3.6.tex [21]) (sections/chapter3/3.7.tex [22] [23]))
+(sections/chapter4/chapter4.tex [24]
 Chapter 4.
 (sections/chapter4/4.1.tex [25] [26]) (sections/chapter4/4.2.tex [27] [28]
 [29]) (sections/chapter4/4.3.tex [30] [31] [32]) (sections/chapter4/4.4.tex
@@ -1187,15 +1191,15 @@ Underfull \hbox (badness 1776) in paragraph at lines 8--9
 )) (sections/chapter8/chapter8.tex [76] [77]
 Chapter 8.
 (sections/chapter8/8.1.tex [78] [79]) (sections/chapter8/8.2.tex [80])
-(sections/chapter8/8.3.tex [81] [82])) [83] [84] [85]
+(sections/chapter8/8.3.tex [81] [82] [83] [84])) [85] [86] [87]
 (sections/research/chapter9.tex
 Chapter 9.
-[86] [87] [88] [89] [90] [91]) (sections/research/chapter10.tex [92]
+[88] [89] [90] [91] [92] [93]) (sections/research/chapter10.tex [94]
 Chapter 10.
-[93] [94] [95] [96] [97] [98] [99] [100] [101] [102] [103])
-(sections/research/chapter11.tex [104]
+[95] [96] [97] [98] [99] [100] [101] [102] [103] [104] [105])
+(sections/research/chapter11.tex [106]
 Chapter 11.
-[105] [106] [107] [108] [109] [110] [111] [112] [113] [114] [115]
+[107] [108] [109] [110] [111] [112] [113] [114] [115] [116] [117]
 Underfull \hbox (badness 3735) in paragraph at lines 421--430
 [] []\TU/TimesNewRoman(0)/b/n/13 Switchable but not yet measured.[] \TU/TimesNe
 wRoman(0)/m/n/13 The pipeline keeps one flag per experi-
@@ -1212,12 +1216,12 @@ Underfull \hbox (badness 1577) in paragraph at lines 421--430
 \TU/TimesNewRoman(0)/m/n/13 tics block), \TU/lmtt/m/n/13 LAB_FRAME_AGREEMENT \T
 U/TimesNewRoman(0)/m/n/13 (the \TU/lmtt/m/n/13 agrees \TU/TimesNewRoman(0)/m/n/
 13 line under each quoted frame),
-[116] [117]) (sections/chapter12/chapter12.tex [118]
+[118] [119]) (sections/chapter12/chapter12.tex [120]
 Chapter 12.
-(sections/chapter12/timeline.tex) (sections/chapter12/12.1.tex [119] [120]
-(sections/research/_conclusion.tex [121])) (sections/chapter12/12.2.tex
-(sections/research/_limits.tex [122] [123])) (sections/chapter12/12.3.tex))
-[124] [125] [126] [127] [128] [129] [130] [131]
+(sections/chapter12/timeline.tex) (sections/chapter12/12.1.tex [121] [122]
+(sections/research/_conclusion.tex [123])) (sections/chapter12/12.2.tex
+(sections/research/_limits.tex [124] [125])) (sections/chapter12/12.3.tex))
+[126] [127] [128] [129] [130] [131] [132] [133]
 
 enddocument/afterlastpage (AED): lastpage setting LastPage.
 
@@ -1225,7 +1229,7 @@ enddocument/afterlastpage (AED): lastpage setting LastPage.
 ux) )
 (see the transcript file for additional information)
 Output written on D:\uni-studies\semester-253\capstone_project_new\report\thesi
-s-en\build\main.xdv (155 pages, 2418780 bytes).
+s-en\build\main.xdv (157 pages, 2459940 bytes).
 SyncTeX written on D:\uni-studies\semester-253\capstone_project_new\report\thesis-en\build/main.synctex.gz.
 Transcript written on D:\uni-studies\semester-253\capstone_project_new\report\t
 hesis-en\build\main.log.
@@ -1256,7 +1260,7 @@ Running 'xdvipdfmx -E -o "build/main.pdf"  "build/main.xdv"'
 build/main.xdv -> build/main.pdf
 [1][2
 xdvipdfmx:warning: Object @page.A already defined.
-][3][4][5][6][7][8][9][10][11][12][13][14][15][16][17][18][19][20][21][22][23][24][25][26][27][28][29][30][31][32][33][34][35][36][37][38][39][40][41][42][43][44][45][46][47][48][49][50][51][52][53][54][55][56][57][58][59][60][61][62][63][64][65][66][67][68][69][70][71][72][73][74][75][76][77][78][79][80][81][82][83][84][85][86][87][88][89][90][91][92][93][94][95][96][97][98][99][100][101][102][103][104][105][106][107][108][109][110][111][112][113][114][115][116][117][118][119][120][121][122][123][124][125][126][127][128][129][130][131][132][133][134][135][136][137][138][139][140][141][142][143][144][145][146][147][148][149][150][151][152][153][154][155]
-21715463 bytes written
+][3][4][5][6][7][8][9][10][11][12][13][14][15][16][17][18][19][20][21][22][23][24][25][26][27][28][29][30][31][32][33][34][35][36][37][38][39][40][41][42][43][44][45][46][47][48][49][50][51][52][53][54][55][56][57][58][59][60][61][62][63][64][65][66][67][68][69][70][71][72][73][74][75][76][77][78][79][80][81][82][83][84][85][86][87][88][89][90][91][92][93][94][95][96][97][98][99][100][101][102][103][104][105][106][107][108][109][110][111][112][113][114][115][116][117][118][119][120][121][122][123][124][125][126][127][128][129][130][131][132][133][134][135][136][137][138][139][140][141][142][143][144][145][146][147][148][149][150][151][152][153][154][155][156][157]
+21721354 bytes written
 Latexmk: All targets (build/main.xdv build/main.pdf) are up-to-date
 

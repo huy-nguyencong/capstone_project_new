@@ -1,0 +1,732 @@
+{
+  "schema": "wildtrack-evaluation-queries/v2",
+  "dataset_tree_sha256": "ecdd328ca203770a143b951b56253e851cbfda4fb19b9b432e73d615f2b5a8f0",
+  "language": "en",
+  "label_status": "v1 six queries reviewed 2026-09-27; twenty identities added 2026-10-05 from contact sheets of three crops on different cameras, descriptions in the attribute vocabulary of the application",
+  "ground_truth_policy": {
+    "identity_field": "personID",
+    "offline_evaluation_only": true,
+    "persist_identity_in_application": false,
+    "exclude_exact_query_observation": true,
+    "positive_match": "Any other valid observation with the same personID.",
+    "bbox_format": "inclusive xmin,ymin,xmax,ymax in the 1920x1080 source image"
+  },
+  "queries": [
+    {
+      "id": "WT-Q001",
+      "person_id": 115,
+      "image_query": {
+        "camera": "C7",
+        "frame": "00000410",
+        "path": "Image_subsets/C7/00000410.png",
+        "bbox": {
+          "xmin": 1172,
+          "ymin": 459,
+          "xmax": 1407,
+          "ymax": 1053
+        }
+      },
+      "text_query": "A person wearing a dark jacket and light beige pants with a blue and black backpack.",
+      "attribute_query": {
+        "upper_type": "jacket",
+        "upper_color": "black",
+        "lower_type": "pants",
+        "lower_color": "beige",
+        "carrying": "backpack"
+      },
+      "difficulty_tags": [
+        "partial_occlusion",
+        "distinctive_backpack"
+      ]
+    },
+    {
+      "id": "WT-Q002",
+      "person_id": 147,
+      "image_query": {
+        "camera": "C7",
+        "frame": "00000215",
+        "path": "Image_subsets/C7/00000215.png",
+        "bbox": {
+          "xmin": 807,
+          "ymin": 414,
+          "xmax": 973,
+          "ymax": 989
+        }
+      },
+      "text_query": "A person in a black jacket and dark pants carrying a large brown backpack and pulling luggage.",
+      "attribute_query": {
+        "upper_type": "jacket",
+        "upper_color": "black",
+        "lower_type": "pants",
+        "lower_color": "black",
+        "carrying": "backpack"
+      },
+      "difficulty_tags": [
+        "distinctive_backpack",
+        "carrying_luggage"
+      ]
+    },
+    {
+      "id": "WT-Q003",
+      "person_id": 196,
+      "image_query": {
+        "camera": "C5",
+        "frame": "00000640",
+        "path": "Image_subsets/C5/00000640.png",
+        "bbox": {
+          "xmin": 213,
+          "ymin": 141,
+          "xmax": 396,
+          "ymax": 845
+        }
+      },
+      "text_query": "A person wearing a dark jacket, blue jeans and brown boots with a large yellow and black shoulder bag.",
+      "attribute_query": {
+        "upper_type": "jacket",
+        "upper_color": "black",
+        "lower_type": "jeans",
+        "lower_color": "blue",
+        "carrying": "handbag"
+      },
+      "difficulty_tags": [
+        "distinctive_shoulder_bag",
+        "side_view"
+      ]
+    },
+    {
+      "id": "WT-Q004",
+      "person_id": 559,
+      "image_query": {
+        "camera": "C3",
+        "frame": "00000615",
+        "path": "Image_subsets/C3/00000615.png",
+        "bbox": {
+          "xmin": 569,
+          "ymin": 342,
+          "xmax": 752,
+          "ymax": 929
+        }
+      },
+      "text_query": "A person in a navy jacket and gray pants carrying a light shoulder bag and a dark duffel bag.",
+      "attribute_query": {
+        "upper_type": "jacket",
+        "upper_color": "navy",
+        "lower_type": "pants",
+        "lower_color": "gray",
+        "carrying": "handbag"
+      },
+      "difficulty_tags": [
+        "rear_view",
+        "multiple_bags"
+      ]
+    },
+    {
+      "id": "WT-Q005",
+      "person_id": 563,
+      "image_query": {
+        "camera": "C3",
+        "frame": "00000575",
+        "path": "Image_subsets/C3/00000575.png",
+        "bbox": {
+          "xmin": 122,
+          "ymin": 276,
+          "xmax": 268,
+          "ymax": 695
+        }
+      },
+      "text_query": "A person wearing glasses, a brown jacket and blue jeans while carrying a black bag.",
+      "attribute_query": {
+        "upper_type": "jacket",
+        "upper_color": "brown",
+        "lower_type": "jeans",
+        "lower_color": "blue",
+        "carrying": "handbag"
+      },
+      "difficulty_tags": [
+        "crowded",
+        "partial_occlusion",
+        "glasses"
+      ]
+    },
+    {
+      "id": "WT-Q006",
+      "person_id": 16,
+      "image_query": {
+        "camera": "C6",
+        "frame": "00001635",
+        "path": "Image_subsets/C6/00001635.png",
+        "bbox": {
+          "xmin": 15,
+          "ymin": 174,
+          "xmax": 116,
+          "ymax": 537
+        }
+      },
+      "text_query": "A person wearing a dark cap, dark top, gray pants and white shoes with a patterned side bag.",
+      "attribute_query": {
+        "upper_color": "black",
+        "lower_type": "pants",
+        "lower_color": "gray",
+        "carrying": "handbag"
+      },
+      "difficulty_tags": [
+        "small_person",
+        "side_view",
+        "distinctive_white_shoes"
+      ]
+    },
+    {
+      "id": "WT-Q007",
+      "person_id": 353,
+      "image_query": {
+        "camera": "C7",
+        "frame": "00000685",
+        "path": "Image_subsets/C7/00000685.png",
+        "bbox": {
+          "xmin": 509,
+          "ymin": 448,
+          "xmax": 666,
+          "ymax": 1064
+        }
+      },
+      "text_query": "A man in a black puffer jacket and dark pants, talking on the phone, with a bag on his shoulder.",
+      "attribute_query": {
+        "gender": "man",
+        "upper_type": "jacket",
+        "upper_color": "black",
+        "lower_type": "pants",
+        "lower_color": "black",
+        "carrying": "shoulder_bag"
+      },
+      "difficulty_tags": [
+        "black_jacket_common",
+        "phone_call"
+      ]
+    },
+    {
+      "id": "WT-Q008",
+      "person_id": 592,
+      "image_query": {
+        "camera": "C3",
+        "frame": "00001395",
+        "path": "Image_subsets/C3/00001395.png",
+        "bbox": {
+          "xmin": 1268,
+          "ymin": 341,
+          "xmax": 1451,
+          "ymax": 991
+        }
+      },
+      "text_query": "A man wearing a black jacket and blue jeans with a white messenger bag across his body.",
+      "attribute_query": {
+        "gender": "man",
+        "upper_type": "jacket",
+        "upper_color": "black",
+        "lower_type": "jeans",
+        "lower_color": "blue",
+        "carrying": "shoulder_bag"
+      },
+      "difficulty_tags": [
+        "distinctive_white_bag"
+      ]
+    },
+    {
+      "id": "WT-Q009",
+      "person_id": 617,
+      "image_query": {
+        "camera": "C4",
+        "frame": "00001760",
+        "path": "Image_subsets/C4/00001760.png",
+        "bbox": {
+          "xmin": 273,
+          "ymin": 386,
+          "xmax": 489,
+          "ymax": 1051
+        }
+      },
+      "text_query": "A man in a dark navy coat and blue jeans carrying a black backpack and wearing white sneakers.",
+      "attribute_query": {
+        "gender": "man",
+        "upper_type": "coat",
+        "upper_color": "navy",
+        "lower_type": "jeans",
+        "lower_color": "blue",
+        "carrying": "backpack"
+      },
+      "difficulty_tags": [
+        "white_sneakers"
+      ]
+    },
+    {
+      "id": "WT-Q010",
+      "person_id": 91,
+      "image_query": {
+        "camera": "C7",
+        "frame": "00001770",
+        "path": "Image_subsets/C7/00001770.png",
+        "bbox": {
+          "xmin": 1473,
+          "ymin": 465,
+          "xmax": 1754,
+          "ymax": 1048
+        }
+      },
+      "text_query": "A man in a black jacket over a white t-shirt, with black pants.",
+      "attribute_query": {
+        "gender": "man",
+        "upper_type": "jacket",
+        "upper_color": "black",
+        "lower_type": "pants",
+        "lower_color": "black"
+      },
+      "difficulty_tags": [
+        "black_jacket_common",
+        "no_bag"
+      ]
+    },
+    {
+      "id": "WT-Q011",
+      "person_id": 83,
+      "image_query": {
+        "camera": "C5",
+        "frame": "00001765",
+        "path": "Image_subsets/C5/00001765.png",
+        "bbox": {
+          "xmin": 1028,
+          "ymin": 132,
+          "xmax": 1259,
+          "ymax": 1045
+        }
+      },
+      "text_query": "A man wearing a black jacket and blue jeans, holding a bag in his hand.",
+      "attribute_query": {
+        "gender": "man",
+        "upper_type": "jacket",
+        "upper_color": "black",
+        "lower_type": "jeans",
+        "lower_color": "blue"
+      },
+      "difficulty_tags": [
+        "black_jacket_common"
+      ]
+    },
+    {
+      "id": "WT-Q012",
+      "person_id": 375,
+      "image_query": {
+        "camera": "C6",
+        "frame": "00001155",
+        "path": "Image_subsets/C6/00001155.png",
+        "bbox": {
+          "xmin": 1640,
+          "ymin": 288,
+          "xmax": 1906,
+          "ymax": 1030
+        }
+      },
+      "text_query": "A man in a dark green parka with a fur-trimmed hood over a gray hoodie, and blue jeans.",
+      "attribute_query": {
+        "gender": "man",
+        "upper_type": "coat",
+        "upper_color": "green",
+        "lower_type": "jeans",
+        "lower_color": "blue"
+      },
+      "difficulty_tags": [
+        "distinctive_parka",
+        "fur_hood"
+      ]
+    },
+    {
+      "id": "WT-Q013",
+      "person_id": 406,
+      "image_query": {
+        "camera": "C4",
+        "frame": "00001055",
+        "path": "Image_subsets/C4/00001055.png",
+        "bbox": {
+          "xmin": 888,
+          "ymin": 400,
+          "xmax": 1071,
+          "ymax": 1069
+        }
+      },
+      "text_query": "A man with glasses wearing a gray hoodie over a purple shirt and blue jeans.",
+      "attribute_query": {
+        "gender": "man",
+        "upper_type": "sweater",
+        "upper_color": "gray",
+        "lower_type": "jeans",
+        "lower_color": "blue"
+      },
+      "difficulty_tags": [
+        "glasses",
+        "gray_hoodie"
+      ]
+    },
+    {
+      "id": "WT-Q014",
+      "person_id": 1,
+      "image_query": {
+        "camera": "C5",
+        "frame": "00000170",
+        "path": "Image_subsets/C5/00000170.png",
+        "bbox": {
+          "xmin": 244,
+          "ymin": 127,
+          "xmax": 466,
+          "ymax": 1012
+        }
+      },
+      "text_query": "A woman in a black puffer jacket and blue jeans carrying a pink handbag.",
+      "attribute_query": {
+        "gender": "woman",
+        "upper_type": "jacket",
+        "upper_color": "black",
+        "lower_type": "jeans",
+        "lower_color": "blue",
+        "carrying": "handbag"
+      },
+      "difficulty_tags": [
+        "distinctive_pink_bag"
+      ]
+    },
+    {
+      "id": "WT-Q015",
+      "person_id": 64,
+      "image_query": {
+        "camera": "C2",
+        "frame": "00001550",
+        "path": "Image_subsets/C2/00001550.png",
+        "bbox": {
+          "xmin": 1294,
+          "ymin": 79,
+          "xmax": 1568,
+          "ymax": 1016
+        }
+      },
+      "text_query": "A man with glasses in a black jacket and black pants carrying a black backpack.",
+      "attribute_query": {
+        "gender": "man",
+        "upper_type": "jacket",
+        "upper_color": "black",
+        "lower_type": "pants",
+        "lower_color": "black",
+        "carrying": "backpack"
+      },
+      "difficulty_tags": [
+        "black_jacket_common",
+        "walks_with_similar_person"
+      ]
+    },
+    {
+      "id": "WT-Q016",
+      "person_id": 1020,
+      "image_query": {
+        "camera": "C7",
+        "frame": "00001820",
+        "path": "Image_subsets/C7/00001820.png",
+        "bbox": {
+          "xmin": 860,
+          "ymin": 418,
+          "xmax": 1034,
+          "ymax": 994
+        }
+      },
+      "text_query": "A woman in a navy puffer coat with a fur-trimmed hood and black pants, carrying a navy backpack.",
+      "attribute_query": {
+        "gender": "woman",
+        "upper_type": "coat",
+        "upper_color": "navy",
+        "lower_type": "pants",
+        "lower_color": "black",
+        "carrying": "backpack"
+      },
+      "difficulty_tags": [
+        "fur_hood",
+        "navy_backpack"
+      ]
+    },
+    {
+      "id": "WT-Q017",
+      "person_id": 94,
+      "image_query": {
+        "camera": "C5",
+        "frame": "00001925",
+        "path": "Image_subsets/C5/00001925.png",
+        "bbox": {
+          "xmin": 1564,
+          "ymin": 163,
+          "xmax": 1765,
+          "ymax": 758
+        }
+      },
+      "text_query": "A man with sunglasses in a light gray jacket and blue jeans, carrying a black backpack.",
+      "attribute_query": {
+        "gender": "man",
+        "upper_type": "jacket",
+        "upper_color": "gray",
+        "lower_type": "jeans",
+        "lower_color": "blue",
+        "carrying": "backpack"
+      },
+      "difficulty_tags": [
+        "sunglasses"
+      ]
+    },
+    {
+      "id": "WT-Q018",
+      "person_id": 1149,
+      "image_query": {
+        "camera": "C5",
+        "frame": "00001180",
+        "path": "Image_subsets/C5/00001180.png",
+        "bbox": {
+          "xmin": 14,
+          "ymin": 127,
+          "xmax": 268,
+          "ymax": 987
+        }
+      },
+      "text_query": "A man in a black jacket and black pants with a backpack.",
+      "attribute_query": {
+        "gender": "man",
+        "upper_type": "jacket",
+        "upper_color": "black",
+        "lower_type": "pants",
+        "lower_color": "black",
+        "carrying": "backpack"
+      },
+      "difficulty_tags": [
+        "black_jacket_common",
+        "generic_description"
+      ]
+    },
+    {
+      "id": "WT-Q019",
+      "person_id": 81,
+      "image_query": {
+        "camera": "C6",
+        "frame": "00001795",
+        "path": "Image_subsets/C6/00001795.png",
+        "bbox": {
+          "xmin": 1700,
+          "ymin": 245,
+          "xmax": 1906,
+          "ymax": 817
+        }
+      },
+      "text_query": "A woman with long dark hair wearing a black jacket with a purple scarf, dark jeans and black boots, carrying a black bag.",
+      "attribute_query": {
+        "gender": "woman",
+        "upper_type": "jacket",
+        "upper_color": "black",
+        "lower_type": "jeans",
+        "lower_color": "navy",
+        "carrying": "handbag"
+      },
+      "difficulty_tags": [
+        "purple_scarf",
+        "long_hair"
+      ]
+    },
+    {
+      "id": "WT-Q020",
+      "person_id": 0,
+      "image_query": {
+        "camera": "C5",
+        "frame": "00000140",
+        "path": "Image_subsets/C5/00000140.png",
+        "bbox": {
+          "xmin": 49,
+          "ymin": 134,
+          "xmax": 275,
+          "ymax": 914
+        }
+      },
+      "text_query": "A man with glasses in a black puffer jacket over a red checked shirt and light blue jeans.",
+      "attribute_query": {
+        "gender": "man",
+        "upper_type": "jacket",
+        "upper_color": "black",
+        "lower_type": "jeans",
+        "lower_color": "blue"
+      },
+      "difficulty_tags": [
+        "red_checked_shirt",
+        "glasses"
+      ]
+    },
+    {
+      "id": "WT-Q021",
+      "person_id": 190,
+      "image_query": {
+        "camera": "C6",
+        "frame": "00000450",
+        "path": "Image_subsets/C6/00000450.png",
+        "bbox": {
+          "xmin": 363,
+          "ymin": 272,
+          "xmax": 552,
+          "ymax": 1003
+        }
+      },
+      "text_query": "A man with glasses wearing a light gray quilted jacket and blue jeans, with a dark brown shoulder bag.",
+      "attribute_query": {
+        "gender": "man",
+        "upper_type": "jacket",
+        "upper_color": "gray",
+        "lower_type": "jeans",
+        "lower_color": "blue",
+        "carrying": "shoulder_bag"
+      },
+      "difficulty_tags": [
+        "quilted_jacket",
+        "glasses"
+      ]
+    },
+    {
+      "id": "WT-Q022",
+      "person_id": 134,
+      "image_query": {
+        "camera": "C5",
+        "frame": "00000555",
+        "path": "Image_subsets/C5/00000555.png",
+        "bbox": {
+          "xmin": 131,
+          "ymin": 127,
+          "xmax": 367,
+          "ymax": 994
+        }
+      },
+      "text_query": "A man in a black coat and khaki pants carrying a black backpack.",
+      "attribute_query": {
+        "gender": "man",
+        "upper_type": "coat",
+        "upper_color": "black",
+        "lower_type": "pants",
+        "lower_color": "khaki",
+        "carrying": "backpack"
+      },
+      "difficulty_tags": [
+        "khaki_pants",
+        "walks_with_similar_person"
+      ]
+    },
+    {
+      "id": "WT-Q023",
+      "person_id": 160,
+      "image_query": {
+        "camera": "C6",
+        "frame": "00000745",
+        "path": "Image_subsets/C6/00000745.png",
+        "bbox": {
+          "xmin": 15,
+          "ymin": 266,
+          "xmax": 218,
+          "ymax": 986
+        }
+      },
+      "text_query": "A woman wearing headphones, a black puffer jacket and black pants, carrying a black shoulder bag with a pink strap.",
+      "attribute_query": {
+        "gender": "woman",
+        "upper_type": "jacket",
+        "upper_color": "black",
+        "lower_type": "pants",
+        "lower_color": "black",
+        "carrying": "shoulder_bag"
+      },
+      "difficulty_tags": [
+        "headphones",
+        "pink_strap"
+      ]
+    },
+    {
+      "id": "WT-Q024",
+      "person_id": 82,
+      "image_query": {
+        "camera": "C4",
+        "frame": "00001775",
+        "path": "Image_subsets/C4/00001775.png",
+        "bbox": {
+          "xmin": 23,
+          "ymin": 379,
+          "xmax": 260,
+          "ymax": 1040
+        }
+      },
+      "text_query": "A woman with glasses and her hair in a bun, in a black coat and dark jeans, with a black shoulder bag.",
+      "attribute_query": {
+        "gender": "woman",
+        "upper_type": "coat",
+        "upper_color": "black",
+        "lower_type": "jeans",
+        "lower_color": "black",
+        "carrying": "shoulder_bag"
+      },
+      "difficulty_tags": [
+        "glasses",
+        "hair_bun",
+        "looking_at_phone"
+      ]
+    },
+    {
+      "id": "WT-Q025",
+      "person_id": 625,
+      "image_query": {
+        "camera": "C5",
+        "frame": "00001195",
+        "path": "Image_subsets/C5/00001195.png",
+        "bbox": {
+          "xmin": 820,
+          "ymin": 127,
+          "xmax": 1027,
+          "ymax": 1077
+        }
+      },
+      "text_query": "A man with a beard in a black hooded jacket and light blue jeans, wearing gray sneakers.",
+      "attribute_query": {
+        "gender": "man",
+        "upper_type": "jacket",
+        "upper_color": "black",
+        "lower_type": "jeans",
+        "lower_color": "blue"
+      },
+      "difficulty_tags": [
+        "beard"
+      ]
+    },
+    {
+      "id": "WT-Q026",
+      "person_id": 572,
+      "image_query": {
+        "camera": "C4",
+        "frame": "00001395",
+        "path": "Image_subsets/C4/00001395.png",
+        "bbox": {
+          "xmin": 958,
+          "ymin": 405,
+          "xmax": 1153,
+          "ymax": 1077
+        }
+      },
+      "text_query": "A woman with glasses in a long black coat and black pants carrying a black handbag.",
+      "attribute_query": {
+        "gender": "woman",
+        "upper_type": "coat",
+        "upper_color": "black",
+        "lower_type": "pants",
+        "lower_color": "black",
+        "carrying": "handbag"
+      },
+      "difficulty_tags": [
+        "glasses",
+        "long_coat"
+      ]
+    }
+  ],
+  "selection_policy": {
+    "identities": "appear on all seven cameras with at least 30 labelled boxes taller than 120 pixels; identities that walk next to a person dressed alike were skipped (63, 161) or tagged walks_with_similar_person",
+    "image_query": "the tallest labelled box of the identity whose box lies fully inside the frame, on the camera where that happens"
+  }
+}

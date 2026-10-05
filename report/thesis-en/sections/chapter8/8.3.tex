@@ -37,6 +37,8 @@ With $N = 20$, CPU time drops by about a quarter and the image size by about a t
 
 \paragraph{RTSP stream handling.} The ingestion of simulated RTSP streams was verified in three situations, with a confidence threshold of 0.25, so the track counts are only indicative: a normal session processed 300 frames, produced 29 tracks and a text search returned 8 results, in 136 seconds; when the streaming source was cut for 5 seconds mid-session, the background worker reconnected once and continued, completing 600 frames with 38 tracks in 140 seconds; when the Administrator disabled AI processing mid-session, the job became \emph{Cancelled} and left no incomplete track. With the current configuration, in the rehearsals, a newly added RTSP camera was \emph{Online} and the background worker created a processing session 13 to 24 seconds after AI processing was enabled.
 
+\paragraph{Timestamps of RTSP frames.} Until 5 October, RTSP frames were timestamped with the time the system received them. Since analysis runs about seven times slower than the stream, two processed frames were then further apart in the stored timeline than in the camera's: on the simulated stream of camera C1, reading 300 frames with an emulated processing time of 100 milliseconds per frame and the sampling interval $N = 20$, consecutive processed frames were a median of 2,456 milliseconds apart by the reception time, above the two-second termination rule for all 14 pairs, but 334 milliseconds apart by the stream's own timestamps, the true spacing of 20 frames at 60 frames per second. The source now uses the stream timestamps (Section~\ref{sec:3.7.4}); with processing as fast as the decoder, both methods agree (409 against 334 milliseconds, the difference being decoding jitter). The track termination rule therefore no longer depends on the processing speed, and the 35 RTSP tracks of the demonstration data, indexed before this change, keep their reception-time timestamps.
+
 \paragraph{Search latency.} Latency was measured on the client side by calling the search API with $k = 8$ on the 1,523-track demonstration data, 30 calls per form after one warm-up call, interleaved and 2.5 seconds apart, with the background worker idle. The results are in Table~\ref{tab:latency}; no call was rejected by the rate limit.
 
 \begin{table}[H]
@@ -58,6 +60,37 @@ By attributes & 103 ms & 136 ms & 136 ms \\
 
 Search by image is over ten times slower because the query image goes through RaSa's image encoder on the CPU, while a description only needs the text encoder. Through the interface in the rehearsals, the first search after start-up took about 31 seconds, mostly to load the encoder. Later searches took about 8 seconds, as they were measured while the worker ran an RTSP session and include the rendering time. Without warm-up and with a busy worker, the first search took about 97 seconds, which is why the deployment procedure includes a warm-up search (Section~\ref{sec:7.1}).
 
-\paragraph{Storage and memory.} Each track takes about 358~KB on average for its full JPEG frame and 1~KB for its 256-dimensional vector; the relational database is about 24~MB. Memory was measured for each component with the whole system running as in the demonstration, taking the maximum in each state. When idle and after the search warm-up, the services in Docker use 515~MiB (828~MiB including the Docker virtual machine), the application server 1,978~MiB (153~MiB before loading the query encoder), the background worker 338~MiB, the front-end development server 318~MiB and the FFmpeg processes streaming the cameras 286~MiB, about 3.7~GiB in total. While searching, the application server rises to 2,037~MiB. While processing a job, the analysis pipeline uses up to 4,772~MiB more, bringing the system's total to about 8.0~GiB.
+\paragraph{Storage and memory.} Each track takes about 358~KB on average for its full JPEG frame and 1~KB for its 256-dimensional vector; the relational database is about 24~MB. Memory was measured for each component with the whole system running as in the demonstration, taking the maximum in each state, twice: on 29 September with the original loading code and the Vite development server, and on 5 October after the RaSa checkpoint was loaded selectively (Section~\ref{sec:6.2.1}) and the web application was served by the application server (Section~\ref{sec:7.1}). Table~\ref{tab:memory} gives both measurements.
 
-The memory figures come with four conditions. First, to avoid writing into the demonstration data, the processing state was measured with a tool that runs exactly the system's analysis pipeline on a 10-second video in place of the background worker. Second, the peak of 4,772~MiB adds the peaks of the main process and the model processes, which may not occur at the same time, so it is an upper bound. Third, on Windows, the measured memory is the part currently in RAM, which the operating system may trim when RAM runs low. Fourth, other applications were open during the measurement, so the RAM used by the whole machine rose from 13.2~GiB when idle to 13.9~GiB while searching and 15.2~GiB while processing, out of 15.7~GiB. The main reason is that the server and the pipeline load their own models, about 1.8~GiB for the query encoder and 4.2~GiB for the Detector and image encoder, so unneeded applications should be closed during a demonstration.
+\begin{table}[H]
+\centering
+\caption{Memory by component in three states, before (29 September) and after (5 October) the changes of Sections~\ref{sec:6.2.1} and~\ref{sec:7.1}, in MiB}
+\label{tab:memory}
+\begin{tabularx}{\textwidth}{|L|r|r|r|r|r|r|}
+\hline
+\textbf{Component} & \multicolumn{2}{c|}{\textbf{Idle, warmed up}} & \multicolumn{2}{c|}{\textbf{Searching}} & \multicolumn{2}{c|}{\textbf{Processing a job}} \\
+\cline{2-7}
+ & before & after & before & after & before & after \\
+\hline
+Services in Docker (five containers) & 515 & 363 & 517 & 373 & 524 & 378 \\
+\hline
+Application server, query encoder loaded & 1,978 & 1,134 & 2,037 & 1,173 & 1,990 & 1,149 \\
+\hline
+Background worker, idle & 338 & 300 & 338 & 339 & 272 & 346 \\
+\hline
+Web application (Vite dev server; after: served by the server) & 318 & 0 & 253 & 0 & 120 & 0 \\
+\hline
+FFmpeg camera streams & 286 & 286 & 285 & 365 & 243 & 361 \\
+\hline
+Analysis pipeline, peak of main and model processes & -- & -- & -- & -- & 4,772 & 2,098 \\
+\hline
+\textbf{Total of the above} & \textbf{3,435} & \textbf{2,083} & \textbf{3,430} & \textbf{2,250} & \textbf{7,921} & \textbf{4,332} \\
+\hline
+Docker virtual machine (Vmmem), in addition & 828 & 3,184 & 839 & 1,686 & 817 & 1,676 \\
+\hline
+\end{tabularx}
+\end{table}
+
+The application processes fell from about 7.9~GiB to about 4.3~GiB while a job runs, for three reasons. The application server holds 0.6~GB of RaSa weights instead of the 1.9~GB training checkpoint. The image encoder process of the pipeline no longer allocates random weights before copying the checkpoint, so its peak fell from about 3.9~GiB to about 1.0~GiB, next to about 0.4~GiB for the detector process and 0.7~GiB for the main process. And the Vite development server is no longer needed. The Docker virtual machine is listed separately because its figure is mostly the Linux page cache inside the machine and depends on how long it has been running: 0.8~GiB after a long uptime on 29 September, 3.2~GiB right after a restart on 5 October and 1.7~GiB forty minutes later; the 3~GB cap of Section~\ref{sec:7.1} bounds it without shrinking it.
+
+The memory figures come with four conditions. First, to avoid writing into the demonstration data, the processing state was measured with a tool that runs exactly the system's analysis pipeline on a 10-second video in place of the background worker. Second, the pipeline peaks (4,772 and 2,098~MiB) add the peaks of the main process and the model processes, which may not occur at the same time, so they are upper bounds; the 5-second sampler of the whole-stack measurement saw 3,313 and 1,936~MiB. Third, on Windows, the measured memory is the part currently in RAM, which the operating system may trim when RAM runs low. Fourth, other applications were open during both measurements, so the RAM used by the whole machine rose from 13.2~GiB when idle to 15.2~GiB while processing on 29 September, and from 13.7 to 15.1~GiB on 5 October, out of 15.7~GiB. The largest remaining item is the query encoder, which the application server and the worker still load separately, about 1~GiB each with the PyTorch runtime; unneeded applications should still be closed during a demonstration.

@@ -23,7 +23,8 @@ def dist(tmp_path: Path) -> Path:
 
 
 def _app(dist: Path | None):
-    config = {"TESTING": True, "ENVIRONMENT": "testing"}
+    # The local .env may point at frontend/dist; the test decides explicitly.
+    config = {"TESTING": True, "ENVIRONMENT": "testing", "STATIC_FRONTEND_DIR": ""}
     if dist is not None:
         config["STATIC_FRONTEND_DIR"] = str(dist)
     return create_app(config)

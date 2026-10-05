@@ -1,9 +1,17 @@
-"""Bounded RTSP frame source with SSRF policy, reconnects, and safe errors."""
+"""Bounded RTSP frame source with SSRF policy, reconnects, and safe errors.
+
+Frame timestamps follow the stream's own clock (the RTP presentation timestamps) anchored to the
+machine clock at the first frame of each session, so the time between two processed frames is
+the stream time between them, however slowly the machine processes. The machine clock is only
+the fallback for frames without a usable PTS.
+"""
 
 from __future__ import annotations
 
+import logging
 import time
 from collections.abc import Callable, Iterator
+from fractions import Fraction
 from pathlib import Path
 from typing import Any
 from uuid import UUID
@@ -14,7 +22,11 @@ from person_search.services.camera_runtime import CameraRuntime
 from person_search.workers.contracts import SourceFrame, SourceKind
 from person_search.workers.errors import AIErrorCode, AIWorkerError
 from person_search.workers.sources.base import BaseFrameSource, source_frame
-from person_search.workers.sources.file import DEFAULT_MAX_FRAME_PIXELS
+from person_search.workers.sources.file import DEFAULT_MAX_FRAME_PIXELS, _positive_fraction
+
+logger = logging.getLogger(__name__)
+
+TIMESTAMP_MODES = ("stream", "clock")
 
 
 class RtspFrameSource(BaseFrameSource):
@@ -35,10 +47,13 @@ class RtspFrameSource(BaseFrameSource):
         max_pixels: int = DEFAULT_MAX_FRAME_PIXELS,
         clock: Callable[[], float] = time.monotonic,
         sleeper: Callable[[float], None] = time.sleep,
+        timestamp_mode: str = "stream",
     ) -> None:
         super().__init__(SourceKind.RTSP, cancelled=cancelled)
         if connect_timeout <= 0 or read_timeout <= 0:
             raise ValueError("RTSP timeouts must be positive.")
+        if timestamp_mode not in TIMESTAMP_MODES:
+            raise ValueError("timestamp_mode must be 'stream' or 'clock'.")
         if max_reconnects < 0 or backoff_seconds < 0 or max_backoff_seconds < 0:
             raise ValueError("RTSP reconnect settings must be nonnegative.")
         if max_pixels < 1:
@@ -64,10 +79,32 @@ class RtspFrameSource(BaseFrameSource):
         self._next_index = 0
         self._last_capture_ms = 0
         self._reconnects = 0
+        self._timestamp_mode = timestamp_mode
+        self._anchor_pts_seconds: Fraction | None = None
+        self._anchor_ms = 0
+        self._last_pts_seconds: Fraction | None = None
+        self._timeline_anchors = 0
+        self._fallback_frames = 0
 
     @property
     def reconnects(self) -> int:
         return self._reconnects
+
+    @property
+    def timestamp_mode(self) -> str:
+        return self._timestamp_mode
+
+    @property
+    def timeline_anchors(self) -> int:
+        """Times the stream clock was anchored to the machine clock (sessions, restarts)."""
+
+        return self._timeline_anchors
+
+    @property
+    def timestamp_fallback_frames(self) -> int:
+        """Frames timestamped from the machine clock because they carried no usable PTS."""
+
+        return self._fallback_frames
 
     def _open_source(self, source: str | Path, *, camera_id: UUID) -> None:
         if not isinstance(source, str):
@@ -114,6 +151,9 @@ class RtspFrameSource(BaseFrameSource):
                 raise ValueError("RTSP dimensions exceed the configured pixel limit.")
             self._container = container
             self._frames = iter(container.decode(stream))
+            # A new RTSP session has its own PTS base: anchor it again at its first frame.
+            self._anchor_pts_seconds = None
+            self._last_pts_seconds = None
         except Exception:
             if container is not None:
                 container.close()
@@ -135,10 +175,7 @@ class RtspFrameSource(BaseFrameSource):
             except Exception as exc:
                 self._reconnect(self._read_error(exc))
                 continue
-            captured_ms = max(
-                self._last_capture_ms,
-                round((self._clock() - self._timeline_origin) * 1000),
-            )
+            captured_ms = self._timestamp_ms(decoded)
             frame = source_frame(
                 camera_id=self._camera_id,
                 source_frame_index=self._next_index,
@@ -149,6 +186,40 @@ class RtspFrameSource(BaseFrameSource):
             self._next_index += 1
             self._last_capture_ms = captured_ms
             return frame
+
+    def _timestamp_ms(self, decoded: Any) -> int:
+        assert self._timeline_origin is not None
+        wall_ms = round((self._clock() - self._timeline_origin) * 1000)
+        pts = getattr(decoded, "pts", None)
+        time_base = _positive_fraction(getattr(decoded, "time_base", None))
+        usable = (
+            self._timestamp_mode == "stream"
+            and isinstance(pts, int)
+            and not isinstance(pts, bool)
+            and time_base is not None
+        )
+        if not usable:
+            self._fallback_frames += 1
+            if self._fallback_frames == 1 and self._timestamp_mode == "stream":
+                logger.warning("rtsp frame without usable PTS; timestamp taken from the clock")
+            return max(self._last_capture_ms, wall_ms)
+        current = pts * time_base
+        if self._anchor_pts_seconds is None or (
+            self._last_pts_seconds is not None and current < self._last_pts_seconds
+        ):
+            # First frame of a session, or the stream clock went backwards (source restarted):
+            # the stream clock is anchored to the machine clock here, after the last frame.
+            self._anchor_pts_seconds = current
+            self._anchor_ms = max(wall_ms, self._last_capture_ms)
+            self._timeline_anchors += 1
+            if self._timeline_anchors > 1:
+                logger.info(
+                    "rtsp stream clock anchored again",
+                    extra={"anchor_ms": self._anchor_ms, "anchors": self._timeline_anchors},
+                )
+        self._last_pts_seconds = current
+        timestamp_ms = self._anchor_ms + round(float(current - self._anchor_pts_seconds) * 1000)
+        return max(self._last_capture_ms, timestamp_ms)
 
     def _reconnect(self, error: AIWorkerError) -> None:
         last_error = error

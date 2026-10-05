@@ -28,6 +28,6 @@ The tracker receives the detections of the sampled frames, separately for each c
 \begin{itemize}
     \item \textbf{Confidence thresholds:} detections of 0.25 or more are high and may start a new track; detections from 0.1 to below 0.25 are only used in the second association step.
     \item \textbf{Confirmation:} a track is confirmed only after at least two observations; an unconfirmed track produces no result.
-    \item \textbf{Termination:} a track ends after more than three lost processed frames or two seconds without observation, or when the stream ends. Video files use their recorded timestamps, so the rule does not depend on machine speed; RTSP streams use the reception time, so slow processing may end tracks early under the two-second rule.
+    \item \textbf{Termination:} a track ends after more than three lost processed frames or two seconds without observation, or when the stream ends. Both video files and RTSP streams use the timestamps recorded in the stream itself (Section~\ref{sec:3.7.4}), so the rule measures the time that passed in front of the camera and does not depend on how fast the machine processes.
     \item \textbf{Identifier scope:} one camera and one processing session only; the system does not link the tracks of the same person across cameras.
 \end{itemize}

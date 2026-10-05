@@ -1,6 +1,9 @@
 # Resource limits of the WSL 2 virtual machine that Docker Desktop uses (the "Vmmem" process).
 # Without this file WSL 2 may claim up to 50% of the machine's RAM and gives it back slowly; on
 # the 16 GB demo laptop Vmmem measured 0.8 to 1.2 GiB while the containers need about 0.5 GiB.
+# The cap alone does not shrink Vmmem: the Linux page cache inside the VM grows up to the cap
+# (2.7 GiB measured right after start-up). autoMemoryReclaim (WSL 2.0 or later) returns that
+# cache to Windows while the VM is idle, which is what keeps Vmmem close to what the containers use.
 #
 # Usage (PowerShell, once, from the repository root):
 #   Copy-Item infra\wslconfig.example "$env:USERPROFILE\.wslconfig"
@@ -12,3 +15,6 @@
 memory=3GB
 processors=2
 swap=0
+
+[experimental]
+autoMemoryReclaim=gradual

@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2026.5.25)  5 OCT 2026 03:37
+This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2026.5.25)  5 OCT 2026 15:58
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -1787,9 +1787,9 @@ Underfull \hbox (badness 1910) in paragraph at lines 12--13
 
  []
 
-[17]) (sections/chapter3/3.4.tex [18]) (sections/chapter3/3.5.tex [19] [20])
-(sections/chapter3/3.6.tex [21]) (sections/chapter3/3.7.tex [22]))
-(sections/chapter4/chapter4.tex [23] [24]
+[17] [18]) (sections/chapter3/3.4.tex) (sections/chapter3/3.5.tex [19] [20])
+(sections/chapter3/3.6.tex [21]) (sections/chapter3/3.7.tex [22] [23]))
+(sections/chapter4/chapter4.tex [24]
 Chapter 4.
 (sections/chapter4/4.1.tex [25
 
@@ -2003,56 +2003,56 @@ Chapter 8.
 (sections/chapter8/8.1.tex [78
 
 ] [79]) (sections/chapter8/8.2.tex [80])
-(sections/chapter8/8.3.tex [81] [82])) [83] [84] [85
+(sections/chapter8/8.3.tex [81] [82] [83] [84])) [85] [86] [87
 
 ]
 (sections/research/chapter9.tex
 Chapter 9.
-[86
+[88
 
-] [87]
+] [89]
 File: figures/research/S23-overall-pipeline.png Graphic file (type bmp)
 <figures/research/S23-overall-pipeline.png>
- [88]
+ [90]
 File: figures/research/S26-zara.png Graphic file (type bmp)
 <figures/research/S26-zara.png>
- [89] [90]
+ [91] [92]
 File: figures/research/S31-offline-indexing.png Graphic file (type bmp)
 <figures/research/S31-offline-indexing.png>
 File: figures/research/S35-text-retrieval.png Graphic file (type bmp)
 <figures/research/S35-text-retrieval.png>
- [91]) (sections/research/chapter10.tex [92]
+ [93]) (sections/research/chapter10.tex [94]
 Chapter 10.
-[93
+[95
 
-] [94] [95] [96]
+] [96] [97] [98]
 File: figures/research/S36-reasoning-block.png Graphic file (type bmp)
 <figures/research/S36-reasoning-block.png>
- [97] [98]
+ [99] [100]
 File: figures/research/S37-selector.png Graphic file (type bmp)
 <figures/research/S37-selector.png>
 File: figures/research/S38-selector-example.png Graphic file (type bmp)
 <figures/research/S38-selector-example.png>
- [99]
+ [101]
 File: figures/research/S39-evidence-ranker.png Graphic file (type bmp)
 <figures/research/S39-evidence-ranker.png>
 File: figures/research/S40-evidence-example.png Graphic file (type bmp)
 <figures/research/S40-evidence-example.png>
- [100] [101] [102] [103])
-(sections/research/chapter11.tex [104]
+ [102] [103] [104] [105])
+(sections/research/chapter11.tex [106]
 Chapter 11.
-[105
+[107
 
-] [106] [107] [108] [109] [110]
+] [108] [109] [110] [111] [112]
 File: figures/research/case_lost.png Graphic file (type bmp)
 <figures/research/case_lost.png>
- [111]
+ [113]
 File: figures/research/case_lost_fixed.png Graphic file (type bmp)
 <figures/research/case_lost_fixed.png>
- [112]
+ [114]
 File: figures/research/case_rescued.png Graphic file (type bmp)
 <figures/research/case_rescued.png>
- [113] [114] [115]
+ [115] [116] [117]
 Underfull \hbox (badness 3735) in paragraph at lines 421--430
 [] []\TU/TimesNewRoman(0)/b/n/13 Switchable but not yet measured.[] \TU/TimesNe
 wRoman(0)/m/n/13 The pipeline keeps one flag per experi-
@@ -2077,22 +2077,22 @@ U/TimesNewRoman(0)/m/n/13 (the \TU/lmtt/m/n/13 agrees \TU/TimesNewRoman(0)/m/n/
 13 line under each quoted frame),
  []
 
-[116] [117]) (sections/chapter12/chapter12.tex [118]
+[118] [119]) (sections/chapter12/chapter12.tex [120]
 Chapter 12.
-(sections/chapter12/timeline.tex) (sections/chapter12/12.1.tex [119
+(sections/chapter12/timeline.tex) (sections/chapter12/12.1.tex [121
 
 ]
 File: figures/S05-ke-hoach.png Graphic file (type bmp)
 <figures/S05-ke-hoach.png>
- [120]
-(sections/research/_conclusion.tex [121
+ [122]
+(sections/research/_conclusion.tex [123
 
 
 ])) (sections/chapter12/12.2.tex
-(sections/research/_limits.tex [122] [123])) (sections/chapter12/12.3.tex))
-[124] [125] [126
+(sections/research/_limits.tex [124] [125])) (sections/chapter12/12.3.tex))
+[126] [127] [128
 
-] [127] [128] [129] [130] [131]
+] [129] [130] [131] [132] [133]
 
 enddocument/afterlastpage (AED): lastpage setting LastPage.
 
@@ -2107,13 +2107,13 @@ Package logreq Info: Writing requests to 'main.run.xml'.
 
  ) 
 Here is how much of TeX's memory you used:
- 51566 strings out of 402987
- 1168956 string characters out of 5448524
- 2206729 words of memory out of 5000000
- 79356 multiletter control sequences out of 15000+600000
+ 51567 strings out of 402987
+ 1168968 string characters out of 5448524
+ 2206977 words of memory out of 5000000
+ 79357 multiletter control sequences out of 15000+600000
  642423 words of font info for 145 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
- 108i,15n,107p,1199b,5143s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 108i,15n,107p,1653b,5143s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
 Output written on D:\uni-studies\semester-253\capstone_project_new\report\thesi
-s-en\build\main.xdv (155 pages, 2418780 bytes).
+s-en\build\main.xdv (157 pages, 2459940 bytes).

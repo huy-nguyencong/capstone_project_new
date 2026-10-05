@@ -238,9 +238,10 @@ package, GPU, checksum model/config và checksum video để tái lập. Tóm t�
 ```bash
 python tools/evaluate_wildtrack.py \
   --dataset-root <wildtrack-dataset> \
-  --queries ../files/wildtrack_evaluation_queries.json \
+  --queries ../files/wildtrack_evaluation_queries_v2.json \
   --registry <registry production> --artifact-root <artifact root> \
-  --output var/evaluation/wildtrack.json
+  --gallery-cache var/evaluation/wildtrack-gallery-conf010.json \
+  --output var/evaluation/wildtrack-v2-conf010.json
 
 python tools/benchmark_sampling.py \
   --registry <registry production> --artifact-root <artifact root> \
@@ -251,7 +252,12 @@ python tools/benchmark_sampling.py \
 - `evaluate_wildtrack.py` chạy pipeline production trên `Image_subsets/C1..C7` (frame có
   annotation, mặc định `--sampling-interval 1` vì subset đã được lấy mẫu sẵn) và đo detection
   precision/recall, track đứt, identity switch, người bị bỏ sót, cùng Recall@4/8/12/16 và MRR cho
-  image/text/attribute. Quan sát chính xác của query bị loại khỏi gallery; rerank giữ tắt.
+  image/text/attribute, kèm khoảng tin cậy Wilson 95% cho mỗi Recall. Quan sát chính xác của query bị
+  loại khỏi gallery; rerank giữ tắt. `--gallery-cache` ghi kết quả pipeline (metric, timing, gallery kèm
+  embedding) sau mỗi camera và dùng lại khi khóa (model, cấu hình, N, IoU) trùng, nên đổi bộ truy vấn
+  chỉ mất vài phút thay vì hơn một giờ; bị ngắt giữa chừng thì chạy lại tiếp từ camera chưa xong. Pipeline
+  trên 7 camera x 400 frame mất khoảng 65 phút trên máy demo (05/10/2026). Khi chạy lâu, chạy tách
+  tiến trình (`Start-Process`) để không bị giới hạn thời gian của terminal.
 - `benchmark_sampling.py` đo wall time cold/warm, source/sampled FPS, latency từng stage, CPU,
   peak RSS của process và model child process, peak VRAM qua `nvidia-smi`, dung lượng JPEG
   đại diện và số track ngắn. `--profile` ghi nhãn môi trường (`local_cpu`, `colab_t4`...).
@@ -273,6 +279,15 @@ python tools/benchmark_sampling.py \
 
   ```bash
   python tools/rasa_equivalence_check.py --registry config/models.example.json     --artifact-root config --settings config/rasa_cuhk_pedes_runtime.json     --dataset-root ../wildtrack-dataset --queries ../files/wildtrack_evaluation_queries.json     --output var/benchmark/rasa-equivalence.json
+  ```
+- `rtsp_timestamp_check.py` đọc một luồng RTSP qua đúng `RtspFrameSource`, giả lập xử lý chậm bằng
+  `--slow-ms` mỗi khung, và so khoảng cách giữa hai khung được lấy mẫu theo timestamp của khung
+  (chế độ `stream`, mặc định) và theo đồng hồ máy (chế độ `clock`, hành vi cũ). Bằng chứng cho
+  task C1 trong `files/part1-improvement-plan.md` và mục 8.3 của báo cáo:
+
+  ```bash
+  python tools/rtsp_timestamp_check.py --url rtsp://<host>:8554/cam1 --frames 300 \
+    --sampling 20 --slow-ms 100 --output var/evidence/rtsp-timestamps-slow100.json
   ```
 
 Batch ngoài máy local (ví dụ Colab T4) xuất result bundle rồi import qua đúng invariant ingestion:

@@ -12,12 +12,14 @@ from person_search.evaluation.environment import environment_snapshot, gpu_snaps
 from person_search.evaluation.metrics import (
     Box,
     GalleryItem,
+    QueryOutcome,
     detection_metrics,
     iou,
     match_boxes,
     rank_gallery,
     recall_summary,
     tracking_metrics,
+    wilson_interval,
 )
 from person_search.evaluation.wildtrack_eval import (
     ANNOTATION_UNIT_MS,
@@ -427,3 +429,17 @@ def test_environment_snapshot_is_offline_safe():
     ]
     assert snapshot["profile"] == "colab_t4"
     assert gpu_snapshot(lambda command: None) == []
+
+
+def test_wilson_interval_matches_known_values_and_recall_summary_reports_it():
+    assert wilson_interval(0, 0) is None
+    low, high = wilson_interval(5, 6)
+    assert (low, high) == (0.4365, 0.9699)
+    low, high = wilson_interval(0, 6)
+    assert low == 0.0 and 0.38 < high < 0.40
+    outcomes = [
+        QueryOutcome(f"q{index}", "image", 1, 1, 1 if index < 5 else None, ()) for index in range(6)
+    ]
+    summary = recall_summary(outcomes)["image"]
+    assert summary["recall@4"] == 0.8333
+    assert summary["recall@4_ci95"] == (0.4365, 0.9699)

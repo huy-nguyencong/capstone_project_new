@@ -15,9 +15,11 @@ from person_search.evaluation.environment import (
     registry_lineage,
     settings_lineage,
 )
+from person_search.evaluation.metrics import Box, GalleryItem
 from person_search.evaluation.wildtrack_eval import (
     CAMERAS,
     QUERY_MODES,
+    CameraRun,
     ImageSequenceSource,
     build_report,
     evaluate_camera,
@@ -29,6 +31,79 @@ from person_search.workers.production import ProductionPipeline
 
 DETECTOR_ID = "yolo11n_coco"
 TRACKER_ID = "bytetrack_v1"
+GALLERY_CACHE_SCHEMA = "person-search-wildtrack-gallery-cache/v1"
+
+
+def _dump_runs(runs, *, path: Path, key: dict) -> None:
+    """Keep the pipeline output (metrics, timings, gallery with embeddings) for later query runs."""
+
+    payload = {
+        "schema": GALLERY_CACHE_SCHEMA,
+        "key": key,
+        "runs": [
+            {
+                "camera": run.camera,
+                "detection": run.detection,
+                "tracking": run.tracking,
+                "source_frames": run.source_frames,
+                "sampled_frames": run.sampled_frames,
+                "encoded_tracks": run.encoded_tracks,
+                "timings": run.timings,
+                "gallery": [
+                    {
+                        "key": item.key,
+                        "person_id": item.person_id,
+                        "camera": item.camera,
+                        "frame": item.frame,
+                        "box": [item.box.x1, item.box.y1, item.box.x2, item.box.y2],
+                        "embedding": list(item.embedding),
+                    }
+                    for item in run.gallery
+                ],
+            }
+            for run in runs
+        ],
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+
+def _load_runs(path: Path, *, key: dict) -> list:
+    """Cached camera runs whose key matches; a cache may hold only some of the cameras."""
+
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if payload.get("schema") != GALLERY_CACHE_SCHEMA:
+        raise SystemExit(f"Unsupported gallery cache: {path}")
+    if payload.get("key") != key:
+        raise SystemExit(
+            "Gallery cache was built with other models, settings or cameras; "
+            f"delete it or run without --gallery-cache: {path}"
+        )
+    runs = []
+    for row in payload["runs"]:
+        runs.append(
+            CameraRun(
+                camera=row["camera"],
+                detection=row["detection"],
+                tracking=row["tracking"],
+                gallery=[
+                    GalleryItem(
+                        key=item["key"],
+                        person_id=item["person_id"],
+                        camera=item["camera"],
+                        frame=item["frame"],
+                        box=Box(*item["box"]),
+                        embedding=tuple(item["embedding"]),
+                    )
+                    for item in row["gallery"]
+                ],
+                source_frames=row["source_frames"],
+                sampled_frames=row["sampled_frames"],
+                encoded_tracks=row["encoded_tracks"],
+                timings=row["timings"],
+            )
+        )
+    return runs
 
 
 def main() -> int:
@@ -47,6 +122,12 @@ def main() -> int:
     parser.add_argument("--iou-threshold", type=float, default=0.5)
     parser.add_argument("--job-timeout-seconds", type=float, default=7200.0)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument(
+        "--gallery-cache",
+        type=Path,
+        help="JSON file with the pipeline output; reused when it exists and matches the models, "
+        "settings and cameras, otherwise written after the pipeline has run",
+    )
     args = parser.parse_args()
     if args.sampling_interval < 1:
         parser.error("--sampling-interval must be positive")
@@ -96,8 +177,46 @@ def main() -> int:
             job_timeout_seconds=args.job_timeout_seconds,
         )
 
+    settings_paths = {
+        "detector": Path(
+            os.getenv("PERSON_SEARCH_DETECTOR_CONFIG")
+            or args.config_root / "ultralytics_yolo_detector.json"
+        ),
+        "selector": selector_path,
+        "rasa": Path(
+            os.getenv("PERSON_SEARCH_RASA_CONFIG")
+            or args.config_root / "rasa_cuhk_pedes_runtime.json"
+        ),
+        "tracker": args.artifact_root / selection.tracker.artifact.relative_path,
+    }
+    cache_key = {
+        "models": registry_lineage(registry, DETECTOR_ID, TRACKER_ID),
+        "settings": settings_lineage(settings_paths),
+        "cameras": cameras,
+        "sampling_interval": args.sampling_interval,
+        "frame_limit": args.frame_limit,
+        "iou_threshold": args.iou_threshold,
+    }
+    # The camera list is not part of the key: a cache may be filled one camera at a time.
+    cache_key = json.loads(json.dumps({**cache_key, "cameras": None}, default=str))
+    cached = {}
+    if args.gallery_cache is not None and args.gallery_cache.is_file():
+        cached = {run.camera: run for run in _load_runs(args.gallery_cache, key=cache_key)}
+        print(
+            json.dumps(
+                {
+                    "gallery_cache": str(args.gallery_cache),
+                    "cached_cameras": sorted(cached),
+                    "tracks": sum(run.encoded_tracks for run in cached.values()),
+                }
+            ),
+            flush=True,
+        )
     runs = []
     for camera in cameras:
+        if camera in cached:
+            runs.append(cached[camera])
+            continue
         source = ImageSequenceSource(
             args.dataset_root / "Image_subsets" / camera, camera, limit=args.frame_limit
         )
@@ -106,12 +225,18 @@ def main() -> int:
             camera, source, truths, build_pipeline, iou_threshold=args.iou_threshold
         )
         runs.append(run)
+        cached[camera] = run
         print(
             json.dumps(
                 {"camera": camera, "tracks": run.encoded_tracks, "detection": run.detection}
             ),
             flush=True,
         )
+        if args.gallery_cache is not None:
+            # Written after every camera so that an interrupted run resumes where it stopped.
+            _dump_runs(
+                [cached[name] for name in sorted(cached)], path=args.gallery_cache, key=cache_key
+            )
 
     query_set = json.loads(args.queries.read_text(encoding="utf-8"))
     gateway = components.query_gateway(SimpleNamespace(encoder=selection.encoder))
@@ -134,20 +259,8 @@ def main() -> int:
         outcomes,
         lineage={
             "models": registry_lineage(registry, DETECTOR_ID, TRACKER_ID),
-            "settings": settings_lineage(
-                {
-                    "detector": Path(
-                        os.getenv("PERSON_SEARCH_DETECTOR_CONFIG")
-                        or args.config_root / "ultralytics_yolo_detector.json"
-                    ),
-                    "selector": selector_path,
-                    "rasa": Path(
-                        os.getenv("PERSON_SEARCH_RASA_CONFIG")
-                        or args.config_root / "rasa_cuhk_pedes_runtime.json"
-                    ),
-                    "tracker": args.artifact_root / selection.tracker.artifact.relative_path,
-                }
-            ),
+            "settings": settings_lineage(settings_paths),
+            "gallery_cache": str(args.gallery_cache) if args.gallery_cache else None,
             "query_set": {
                 "schema": query_set.get("schema"),
                 "label_status": query_set.get("label_status"),

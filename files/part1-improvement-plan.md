@@ -276,22 +276,50 @@ giới hạn RAM Docker. PDF build lại không lỗi.
 
 ### A5. Đo lại toàn hệ thống và cập nhật báo cáo
 
-**Đo.** Lặp lại đúng giao thức của mục 8.3 (idle sau warm-up, searching, processing bằng công cụ
-chạy pipeline trên video 10 giây) với `tools/measure_stack_memory.py`, lưu
-`var/benchmark/stack-memory-after.json`. Mục tiêu: tổng khi đang xử lý không quá 4.5 GiB
-(từ 8.0 GiB), application server sau warm-up dưới 1.0 GiB (từ 1,978 MiB).
+**Đo (05/10/2026, cùng giao thức mục 8.3; stack như khi demo: storage, MediaMTX + 7 FFmpeg, API
+phục vụ `frontend/dist`, worker rảnh, không Vite).** Đơn vị MiB, giá trị lớn nhất mỗi trạng thái.
 
-**Báo cáo.**
+| Thành phần | Rảnh sau warm-up (trước / sau) | Đang tìm kiếm (trước / sau) | Đang xử lý (trước / sau) |
+| --- | --- | --- | --- |
+| Container Docker (5) | 515 / 363 | 517 / 373 | 524 / 378 |
+| Application server (đã nạp encoder) | 1,978 / 1,134 | 2,037 / 1,173 | 1,990 / 1,149 |
+| Worker (rảnh) | 338 / 300 | 338 / 339 | 272 / 346 |
+| Web application (Vite / do API phục vụ) | 318 / 0 | 253 / 0 | 120 / 0 |
+| FFmpeg 7 luồng | 286 / 286 | 285 / 365 | 243 / 361 |
+| Pipeline AI, đỉnh (chính + con) | - | - | 4,772 / 2,098 |
+| **Tổng tiến trình ứng dụng** | **3,435 / 2,083** | **3,430 / 2,250** | **7,921 / 4,332** |
+| Máy ảo Docker (Vmmem), tính riêng | 828 / 3,184 | 839 / 1,686 | 817 / 1,676 |
 
-- Mục 8.3 "Storage and memory": thay đoạn số liệu bằng một bảng theo thành phần với hai cột
-  trước và sau, và một đoạn ngắn nêu bốn nguyên nhân của A0 cùng phần tiết kiệm của mỗi biện pháp.
-  Giữ bốn điều kiện đo nhưng viết lại câu cuối (không còn "server and the pipeline load their own
-  models" nếu A2 đã làm).
-- Mục 12.2 Part I: bỏ hoặc viết lại câu "memory is tight ... about 8 GiB".
-- Mục 12.3 Part I: bỏ ý tối ưu bộ nhớ nếu đã làm, giữ hướng GPU và OpenVINO.
-- Tóm tắt (abstract) không nêu số bộ nhớ nên không cần sửa.
+Mục tiêu "tổng khi xử lý không quá 4.5 GiB" đạt với tiến trình ứng dụng (4.2 GiB), chưa đạt nếu
+cộng máy ảo Docker. Pipeline: đỉnh tiến trình chính 728, tiến trình con 1,370 (detector ~0.4 GiB
+và encoder ~1.0 GiB). Độ trễ tìm kiếm (10 lượt mỗi hình thức, máy đang thiếu RAM vì ứng dụng
+khác): ảnh p50 1,169 ms, văn bản 109 ms, thuộc tính 100 ms, cùng mức bảng 8.4.
 
-**Trạng thái.** Chưa làm.
+**Phát hiện về máy ảo Docker.** Số Vmmem chủ yếu là page cache Linux bên trong VM và phụ thuộc
+thời gian VM đã chạy: 828 MiB ngày 29/09 (VM chạy lâu), 3,184 ngay sau khởi động lại ngày 05/10,
+1,686 sau khoảng 40 phút. Thử cả ba cấu hình trong phiên đo: có `memory=3GB`, có thêm
+`autoMemoryReclaim=gradual`, và không có `.wslconfig`: Vmmem đều ở 3.0 đến 3.2 GiB trong 5 đến 6
+phút đầu, xả cache bên trong VM (`drop_caches`) chỉ hạ xuống 2.5 GiB. Kết luận: giới hạn 3 GB
+chặn trần (mặc định WSL cho phép tới 8 GB) chứ không làm nhỏ lại; giữ cấu hình và ghi đúng như
+vậy trong báo cáo. `infra/wslconfig.example` có thêm `autoMemoryReclaim=gradual` (WSL 2.6.1 hỗ trợ).
+
+**Sự cố khi đo, cần biết khi demo.** Sau `wsl --shutdown` và khởi động lại Docker Desktop, cổng
+chuyển tiếp 127.0.0.1 của một số container (PostgreSQL, MinIO, có lần cả Milvus) nhận kết nối rồi
+đóng ngay ("server closed the connection unexpectedly"), dù container đã healthy và trả lời được
+từ bên trong. Khắc phục: `docker restart <container>` từng container bị lỗi rồi thử lại từ host.
+Nên đưa bước kiểm tra này vào thủ tục khởi động demo. Ngoài ra máy tính đã ngủ hơn 6 giờ giữa
+phiên đo, làm các tiến trình nền bị dừng; các trạng thái bị ảnh hưởng đã được đo lại.
+
+**Báo cáo (đã sửa).** Mục 8.3 "Storage and memory" thay bằng bảng 8.5 (trước và sau theo ba
+trạng thái, máy ảo Docker tách riêng) cùng đoạn giải thích ba nguyên nhân giảm và đoạn điều kiện
+đo cập nhật; mục 12.2 Part I sửa câu về bộ nhớ; mục 12.3 thêm hướng dùng chung một tiến trình
+encoder. `files/report-data-guide.md` ba dòng C8.7 về RAM cập nhật theo. PDF build lại không lỗi.
+
+**Nguồn số liệu.** `backend/var/benchmark/stack-memory-before.json`, `stack-memory-after.json`,
+`stack-memory-processing-proxy-run-a5.json`, `search-latency-a5.json`.
+
+**Trạng thái.** Xong 05/10/2026. Phần còn lại lớn nhất là hai bản encoder truy vấn (API và
+worker), mỗi bản ~1 GiB kể cả runtime torch: đó là A2 nếu cần giảm thêm.
 
 ## 3. Nhóm B: chất lượng tìm kiếm bằng văn bản và thuộc tính
 
@@ -345,29 +373,48 @@ cải thiện detector và chọn khung đại diện trước khi đổi encode
 
 ### B3. Đo lại ở cấu hình hiện hành và mở rộng bộ truy vấn
 
-**Code.**
+**Code (đã làm 05/10/2026).**
 
-- Tạo `files/wildtrack_evaluation_queries_v2.json` cùng schema với bản hiện tại: chọn thêm ít
-  nhất 14 `personID` từ `wildtrack-dataset/annotations_positions/` (400 frame có nhãn, 7 camera)
-  sao cho mỗi người xuất hiện trên ít nhất 2 camera, ưu tiên đa dạng màu áo, giới tính, vật mang.
-  Mỗi truy vấn có ảnh crop từ nhãn, một câu tiếng Anh và bộ thuộc tính, viết tay và được cả hai
-  thành viên xem lại. Tổng ít nhất 20 truy vấn.
-- `tools/evaluate_wildtrack.py` nhận `--queries` mới; xác nhận ngưỡng detector đọc từ
-  `config/ultralytics_yolo_detector.json` hiện hành (0.1). Chạy đủ ba chế độ, ghi
-  `var/evaluation/wildtrack-v2-conf010.json`.
-- Thêm vào báo cáo JSON khoảng tin cậy Wilson 95% cho mỗi R@k (hàm nhỏ trong
-  `evaluation/wildtrack_eval.py`), vì n vẫn nhỏ.
+- Mới `files/wildtrack_evaluation_queries_v2.json`: 6 truy vấn cũ giữ nguyên + 20 identity mới
+  (WT-Q007 đến WT-Q026), chọn trong số người xuất hiện trên cả 7 camera với ít nhất 30 box cao hơn
+  120 px; mô tả tiếng Anh và bộ thuộc tính viết từ bảng ghép 3 crop trên 3 camera khác nhau, chỉ
+  dùng từ vựng thuộc tính của ứng dụng; bỏ identity 63 và 161 vì đi cạnh người mặc giống hệt
+  (64 và 134 giữ lại, gắn thẻ `walks_with_similar_person`). Ảnh truy vấn là box cao nhất nằm trọn
+  trong khung hình. `selection_policy` ghi trong file.
+- `evaluation/metrics.py`: `wilson_interval` và trường `recall@k_ci95` trong `recall_summary`.
+- `tools/evaluate_wildtrack.py`: `--gallery-cache` ghi kết quả pipeline (metric, timing, gallery
+  kèm embedding) sau mỗi camera, dùng lại khi khóa (model, cấu hình, N, IoU) trùng, tiếp tục từ
+  camera chưa xong nếu bị ngắt. Lý do: pipeline trên 7 x 400 frame mất ~65 phút; lần chạy đầu
+  bị harness dừng ở phút 50 và mất trắng vì cache chỉ ghi ở cuối.
+- Test: `test_evaluation.py` thêm test Wilson; 9 test qua.
 
-**Báo cáo.**
+**Đo (05/10/2026, cấu hình hiện hành: YOLO11n ngưỡng 0,1, ByteTrack, RaSa, mọi frame; gallery
+1.526 track; 26 truy vấn; mỗi truy vấn có 5 đến 33 track đúng).**
 
-- Bảng 8.2 thay bằng kết quả mới (n = 20+, ngưỡng 0.1), bỏ hai dòng "Run 1/Run 2" không so sánh
-  được; giữ kết quả cũ trong một câu nếu muốn truy vết.
-- Mục 8.2 "Method" cập nhật số truy vấn và cách chọn; nêu khoảng tin cậy.
-- Mục 12.2 Part I: bỏ câu "the evaluation is incomplete"; 12.3 bỏ ý "measuring search by image
-  and by text again".
-- Mục 1.4, tóm tắt và chương 12 chỉnh lại câu chữ nếu con số thay đổi về chất.
+| Hình thức | R@4 | R@8 | R@12 | R@16 | MRR | R@8 khoảng tin cậy 95% | Hạng đúng đầu tiên (median) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Ảnh | 0,846 | 0,885 | 0,885 | 0,885 | 0,671 | 0,71 đến 0,96 | 1 (thất bại ở hạng 99, 109, 553) |
+| Văn bản | 0 | 0,038 | 0,038 | 0,038 | 0,021 | 0,01 đến 0,19 | 73 |
+| Thuộc tính | 0 | 0 | 0 | 0 | 0,013 | 0 đến 0,13 | 80 |
 
-**Trạng thái.** Chưa làm.
+Tách theo nhóm: 6 truy vấn cũ ảnh R@8 1,0 / văn bản 0 / thuộc tính 0; 20 truy vấn mới ảnh R@8
+0,85 / văn bản 0,05 / thuộc tính 0. Phát hiện người ở ngưỡng 0,1: precision 0,433, recall 0,637
+(TP 27.194, FP 35.602, FN 15.527, IoU 0,5); 491 trong 1.526 track không khớp người có nhãn;
+825 trong 1.639 người có nhãn được ít nhất một track phủ. Kết luận cho B1/B2: với 5 đến 33 track
+đúng trong 1.526, thứ tự ngẫu nhiên cho hạng đúng đầu tiên median khoảng 150; văn bản và thuộc
+tính đạt 73 và 80, tức là có tách nhưng rất yếu, chưa phải hoàn toàn ngẫu nhiên.
+
+Nguồn: `backend/var/evaluation/wildtrack-v2-conf010.json`, cache
+`wildtrack-gallery-conf010.json` (dùng lại cho B1, B2, B4 không cần chạy lại pipeline).
+
+**Báo cáo (đã sửa).** Mục 8.2: "Method" viết lại (26 truy vấn, cách chọn, khoảng tin cậy), bảng
+8.2 thay bằng kết quả hiện hành, đoạn "Person detection and tracking" với số mới, "Discussion"
+cập nhật số; mục 12.2 bỏ câu "the evaluation is incomplete" và sửa câu "no query has a correct
+result" thành 1/26 văn bản; mục 12.3 chỉ còn so sánh ByteTrack với BoT-SORT.
+`files/report-data-guide.md` các dòng C8.4 cập nhật; README backend mô tả `--gallery-cache`.
+
+**Trạng thái.** Xong 05/10/2026. B6 còn phải viết giao thức đo phát hiện và sửa câu "works but
+with low quality" ở 12.1; B2 dùng cache gallery để chẩn đoán.
 
 ### B4. So sánh CLIP với RaSa trên WILDTRACK (ngoại tuyến)
 
@@ -428,40 +475,46 @@ thêm trường `reranked` vào phản hồi API.
 
 ### C1. Timestamp khung hình RTSP lấy từ PTS của luồng
 
-**Vấn đề.** `RtspFrameSource._read_source` trong `backend/src/person_search/workers/sources/rtsp.py`
-đặt `source_timestamp_ms` bằng đồng hồ máy trừ gốc phiên, nên khi xử lý chậm hơn luồng, hai
-khung được xử lý cách nhau theo thời gian máy chứ không theo thời gian luồng; quy tắc kết thúc
-track "hai giây không quan sát" (mục 3.3.5) vì thế cắt track sớm. Video file không bị vì dùng
-timestamp ghi trong file.
+**Vấn đề.** `RtspFrameSource._read_source` đặt `source_timestamp_ms` bằng đồng hồ máy trừ gốc
+phiên, nên khi xử lý chậm hơn luồng, hai khung được xử lý cách nhau theo thời gian máy chứ không
+theo thời gian luồng; quy tắc kết thúc track "hai giây không quan sát" (mục 3.3.5) vì thế cắt track
+sớm. Video file không bị vì dùng timestamp ghi trong file.
 
-**Code.**
+**Code (đã làm 05/10/2026).** `backend/src/person_search/workers/sources/rtsp.py`:
 
-- Lấy `decoded.pts` và `stream.time_base` của PyAV; `source_timestamp_ms = origin_ms +
-  (pts - first_pts) * time_base * 1000`, với `first_pts` neo ở khung đầu của phiên và
-  `origin_ms` là thời điểm thực của khung đầu (giữ ý nghĩa "thời gian xuất hiện" cho người dùng).
-- Khi `pts` là `None` hoặc giảm (luồng lặp lại từ đầu sau `-stream_loop -1`, hoặc sau reconnect),
-  neo lại `first_pts` tại khung đó với `origin_ms` lấy từ đồng hồ, và ghi log một sự kiện.
-  Giữ bảo vệ đơn điệu `max(last, new)`.
-- Giữ đồng hồ máy làm dự phòng khi luồng không có PTS, ghi vào metrics của job nguồn timestamp
-  nào đang dùng.
+- `timestamp_mode="stream"` (mặc định): timestamp = mốc neo + (pts - pts neo) x time_base, với mốc
+  neo là thời gian máy (so với gốc phiên) tại khung đầu của mỗi phiên RTSP. Mỗi lần `_connect`
+  (mở lần đầu hoặc reconnect) xóa neo để phiên mới tự neo lại; pts giảm (nguồn phát lại từ đầu)
+  cũng neo lại tại khung đó, mốc neo không nhỏ hơn timestamp cuối. Bảo vệ đơn điệu
+  `max(last, new)` giữ nguyên.
+- Khung không có pts hoặc time_base dùng đồng hồ máy như cũ và được đếm vào
+  `timestamp_fallback_frames` (cảnh báo log một lần); `timeline_anchors` đếm số lần neo;
+  `timestamp_mode="clock"` giữ hành vi cũ để đối chứng.
+- Mới `backend/tools/rtsp_timestamp_check.py` (mô tả trong README backend).
 
-**Đo.**
+**Đo (05/10/2026, luồng cam1 của MediaMTX, 300 khung, N = 20, 14 cặp khung lấy mẫu).**
 
-- Unit test trong `tests/unit/test_rtsp_frame_source.py`: khung có pts đều, pts thiếu, pts giảm,
-  reconnect; khẳng định khoảng cách timestamp không phụ thuộc đồng hồ giả.
-- Lặp lại phép thử "RTSP stream handling" của mục 8.3 với cấu hình hiện hành: số track và số
-  track ngắn dưới 2 giây trên cùng 300 và 600 khung trước và sau, ghi
-  `var/evidence/rtsp-pts-<ngày>.json` qua `tools/rtsp_evidence.py`.
+| Xử lý giả lập | Chế độ | Khoảng cách hai khung lấy mẫu theo timestamp (median / max) | Số cặp > 2 s | Theo đồng hồ máy |
+| --- | --- | --- | --- | --- |
+| 100 ms mỗi khung (chậm ~6 lần) | clock (cũ) | 2,456 / 2,579 ms | 14 / 14 | 2,456 ms |
+| 100 ms mỗi khung | stream (mới) | 334 / 334 ms | 0 / 14 | 2,413 ms |
+| nhanh nhất có thể | clock (cũ) | 407 / 441 ms | 0 / 14 | 409 ms |
+| nhanh nhất có thể | stream (mới) | 334 / 334 ms | 0 / 14 | 404 ms |
 
-**Báo cáo.**
+334 ms đúng bằng 20 khung ở 60 fps. Nguồn: `var/evidence/rtsp-timestamps-slow100.json`,
+`rtsp-timestamps-fast.json`. Không chạy lại phiên RTSP qua worker để khỏi ghi thêm track vào dữ
+liệu demo; 35 track RTSP đã có trong dữ liệu demo vẫn mang timestamp theo đồng hồ máy.
 
-- Mục 3.3.5 "Track Life Cycle": sửa gạch đầu dòng "Termination" (bỏ vế "RTSP streams use the
-  reception time, so slow processing may end tracks early").
-- Mục 3.7.4: sửa câu "Each frame is timestamped with the time the system receives it".
-- Mục 8.3 "RTSP stream handling": thêm số track trước và sau.
-- Mục 12.2 Part I: bỏ câu về timestamp; mục 12.3 bỏ hướng tương lai tương ứng.
+**Kiểm thử.** Mới `tests/unit/test_rtsp_stream_timestamps.py` (6 test: theo luồng không theo tốc
+độ xử lý, chế độ clock, khung thiếu pts, pts giảm, reconnect, giá trị cờ sai); test cũ trong
+`test_rtsp_frame_source.py` vẫn qua vì khung giả không có pts đi đường dự phòng.
+`scripts/check.ps1` qua toàn bộ sau khi sửa `test_static_frontend.py` cho độc lập với `.env`.
 
-**Trạng thái.** Chưa làm.
+**Báo cáo (đã sửa).** Mục 3.3.5 gạch "Termination" (cả hai nguồn dùng timestamp trong luồng);
+mục 3.7.4 câu về timestamp; mục 8.3 thêm đoạn "Timestamps of RTSP frames" với số đo; mục 12.2 bỏ
+câu hạn chế; mục 12.3 bỏ hướng tương lai tương ứng. PDF build lại không lỗi.
+
+**Trạng thái.** Xong 05/10/2026.
 
 ### C2. Mã hóa và ghi appearance ngay khi track kết thúc
 
