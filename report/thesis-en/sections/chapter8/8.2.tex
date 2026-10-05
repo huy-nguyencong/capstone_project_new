@@ -60,4 +60,39 @@ Attributes, re-ranked, $N = 128$ & 0.115 & 0.154 & 0.269 & 0.269 & 0.116 & 88 \\
 \end{tabularx}
 \end{table}
 
+\paragraph{Another encoder on the same data.} The choice of RaSa over a general model (Section~\ref{sec:6.1.4}) was made without a measurement on the project's data, so the comparison was run afterwards with the same detection, tracking, representative frames and queries, replacing only the encoder with CLIP ViT-B/16 trained on LAION-2B~\cite{radford2021clip}, which has no re-ranker and costs about 0.15 seconds per crop on the CPU. Table~\ref{tab:encoders} gives the result. CLIP's vectors alone reach Recall@8 of 0.346 by text and 0.269 by attributes, where RaSa's vectors reach 0; this is close to RaSa with its re-ranker over 128 candidates (0.423 and 0.154) at about a hundredth of the query time. By image, however, CLIP reaches only 0.346 against RaSa's 0.885: the person-specific training of RaSa is what makes the image query work, and the general training of CLIP is what makes the text query work on camera crops. The larger CLIP ViT-L/14 (LAION-2B) gives Recall@8 of 0.423 by text, 0.346 by attributes and 0.423 by image. Prefixing the sentence with \emph{``a photo of''} changes CLIP's figures by at most one query. The conclusion for the design is that one shared vector space serves image queries well and text queries badly, and that the best text search on this data would come from a second vector per appearance from a CLIP-like encoder, or from RaSa's re-ranker made fast; Section~\ref{sec:12.3.1} takes this up.
+
+\begin{table}[H]
+\centering
+\caption{RaSa and CLIP on the same gallery and queries (26 queries, 1,526 tracks, vectors only unless stated)}
+\label{tab:encoders}
+\begin{tabularx}{\textwidth}{|L|c|c|c|c|}
+\hline
+\textbf{Form and encoder} & \textbf{R@4} & \textbf{R@8} & \textbf{R@16} & \textbf{MRR} \\
+\hline
+Image, RaSa vectors & 0.846 & 0.885 & 0.885 & 0.671 \\
+\hline
+Image, CLIP ViT-B/16 vectors & 0.231 & 0.346 & 0.423 & 0.195 \\
+\hline
+Image, CLIP ViT-L/14 vectors & 0.346 & 0.423 & 0.423 & 0.287 \\
+\hline
+Text, RaSa vectors & 0 & 0 & 0.038 & 0.021 \\
+\hline
+Text, RaSa vectors re-ranked, $N = 128$ & 0.346 & 0.423 & 0.500 & 0.329 \\
+\hline
+Text, CLIP ViT-B/16 vectors & 0.308 & 0.346 & 0.500 & 0.237 \\
+\hline
+Text, CLIP ViT-L/14 vectors & 0.346 & 0.423 & 0.577 & 0.286 \\
+\hline
+Attributes, RaSa vectors & 0 & 0 & 0.038 & 0.015 \\
+\hline
+Attributes, RaSa vectors re-ranked, $N = 128$ & 0.115 & 0.154 & 0.269 & 0.116 \\
+\hline
+Attributes, CLIP ViT-B/16 vectors & 0.154 & 0.269 & 0.462 & 0.133 \\
+\hline
+Attributes, CLIP ViT-L/14 vectors & 0.269 & 0.346 & 0.462 & 0.184 \\
+\hline
+\end{tabularx}
+\end{table}
+
 \paragraph{Qualitative check on the demonstration data.} On the demonstration data (Section~\ref{sec:7.2}), five query images were tried with the top 8 results and assessed visually: three queries had 8/8 correct results, one 7/8 and one 4/8; the correct results lay on 4 to 5 different cameras. This is only a qualitative check on a dataset different from the evaluation set and cannot be compared with the Recall values of Table~\ref{tab:recall}.

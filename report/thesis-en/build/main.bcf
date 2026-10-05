@@ -2439,16 +2439,17 @@
     <bcf:citekey order="67" intorder="1">radford2021clip</bcf:citekey>
     <bcf:citekey order="68" intorder="1">bai2023rasa</bcf:citekey>
     <bcf:citekey order="69" intorder="1">chavdarova2018wildtrack</bcf:citekey>
-    <bcf:citekey order="70" intorder="1">li2025zara</bcf:citekey>
-    <bcf:citekey order="71" intorder="1">ultralytics2024yolo11docs</bcf:citekey>
-    <bcf:citekey order="72" intorder="1">zhang2022bytetrack</bcf:citekey>
-    <bcf:citekey order="73" intorder="1">laion2022clipvith14</bcf:citekey>
-    <bcf:citekey order="74" intorder="1">wang2021milvus</bcf:citekey>
-    <bcf:citekey order="75" intorder="1">qwen2024qwen25vl3b</bcf:citekey>
-    <bcf:citekey order="76" intorder="1">googledeepmind-geminiflashlite</bcf:citekey>
-    <bcf:citekey order="77" intorder="1">zheng2015market1501</bcf:citekey>
-    <bcf:citekey order="78" intorder="1">lin2019market1501attr</bcf:citekey>
+    <bcf:citekey order="70" intorder="1">radford2021clip</bcf:citekey>
+    <bcf:citekey order="71" intorder="1">li2025zara</bcf:citekey>
+    <bcf:citekey order="72" intorder="1">ultralytics2024yolo11docs</bcf:citekey>
+    <bcf:citekey order="73" intorder="1">zhang2022bytetrack</bcf:citekey>
+    <bcf:citekey order="74" intorder="1">laion2022clipvith14</bcf:citekey>
+    <bcf:citekey order="75" intorder="1">wang2021milvus</bcf:citekey>
+    <bcf:citekey order="76" intorder="1">qwen2024qwen25vl3b</bcf:citekey>
+    <bcf:citekey order="77" intorder="1">googledeepmind-geminiflashlite</bcf:citekey>
+    <bcf:citekey order="78" intorder="1">zheng2015market1501</bcf:citekey>
     <bcf:citekey order="79" intorder="1">lin2019market1501attr</bcf:citekey>
+    <bcf:citekey order="80" intorder="1">lin2019market1501attr</bcf:citekey>
   </bcf:section>
   <!-- SORTING TEMPLATES -->
   <bcf:sortingtemplate name="none">

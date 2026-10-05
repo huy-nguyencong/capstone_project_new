@@ -30,19 +30,19 @@
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {9.1}{\ignorespaces The pipeline as a template of replaceable blocks}}{94}{figure.caption.109}%
-\contentsline {figure}{\numberline {9.2}{\ignorespaces ZARA's retrieval of discriminative evidence}}{96}{figure.caption.111}%
-\contentsline {figure}{\numberline {9.3}{\ignorespaces Extended offline indexing with the attribute describer}}{97}{figure.caption.113}%
-\contentsline {figure}{\numberline {9.4}{\ignorespaces Online search with the reasoning layer}}{98}{figure.caption.114}%
+\contentsline {figure}{\numberline {9.1}{\ignorespaces The pipeline as a template of replaceable blocks}}{95}{figure.caption.111}%
+\contentsline {figure}{\numberline {9.2}{\ignorespaces ZARA's retrieval of discriminative evidence}}{97}{figure.caption.113}%
+\contentsline {figure}{\numberline {9.3}{\ignorespaces Extended offline indexing with the attribute describer}}{98}{figure.caption.115}%
+\contentsline {figure}{\numberline {9.4}{\ignorespaces Online search with the reasoning layer}}{99}{figure.caption.116}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {10.1}{\ignorespaces The semantic reasoning block}}{103}{figure.caption.117}%
-\contentsline {figure}{\numberline {10.2}{\ignorespaces The attribute-value selector}}{105}{figure.caption.120}%
-\contentsline {figure}{\numberline {10.3}{\ignorespaces The selector with its real inputs and output}}{105}{figure.caption.121}%
-\contentsline {figure}{\numberline {10.4}{\ignorespaces The evidence and decision stages}}{106}{figure.caption.122}%
-\contentsline {figure}{\numberline {10.5}{\ignorespaces The evidence and decision stages at work}}{106}{figure.caption.123}%
+\contentsline {figure}{\numberline {10.1}{\ignorespaces The semantic reasoning block}}{104}{figure.caption.119}%
+\contentsline {figure}{\numberline {10.2}{\ignorespaces The attribute-value selector}}{106}{figure.caption.122}%
+\contentsline {figure}{\numberline {10.3}{\ignorespaces The selector with its real inputs and output}}{106}{figure.caption.123}%
+\contentsline {figure}{\numberline {10.4}{\ignorespaces The evidence and decision stages}}{107}{figure.caption.124}%
+\contentsline {figure}{\numberline {10.5}{\ignorespaces The evidence and decision stages at work}}{107}{figure.caption.125}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {11.1}{\ignorespaces A lost case}}{118}{figure.caption.139}%
-\contentsline {figure}{\numberline {11.2}{\ignorespaces The lost case after re-ranking with the larger model}}{119}{figure.caption.141}%
-\contentsline {figure}{\numberline {11.3}{\ignorespaces A rescued case}}{120}{figure.caption.143}%
+\contentsline {figure}{\numberline {11.1}{\ignorespaces A lost case}}{119}{figure.caption.141}%
+\contentsline {figure}{\numberline {11.2}{\ignorespaces The lost case after re-ranking with the larger model}}{120}{figure.caption.143}%
+\contentsline {figure}{\numberline {11.3}{\ignorespaces A rescued case}}{121}{figure.caption.145}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {12.1}{\ignorespaces Project timeline and the member responsible for each task}}{126}{figure.caption.150}%
+\contentsline {figure}{\numberline {12.1}{\ignorespaces Project timeline and the member responsible for each task}}{127}{figure.caption.152}%

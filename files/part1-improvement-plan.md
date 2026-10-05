@@ -465,27 +465,44 @@ with low quality" ở 12.1; B2 dùng cache gallery để chẩn đoán.
 
 ### B4. So sánh CLIP với RaSa trên WILDTRACK (ngoại tuyến)
 
-**Mục đích.** Trả lời câu hỏi "vì sao không thử CLIP" bằng số đo trên chính dữ liệu của đề tài,
-và nối với Phần II bằng cùng encoder cơ sở.
+**Code (đã làm 05/10/2026).** Mới `backend/tools/evaluate_wildtrack_clip.py` (mô tả trong README
+backend): cùng cache gallery (detector, tracker, khung đại diện của pipeline) và cùng 26 truy vấn,
+chỉ thay encoder bằng open_clip; mã hóa ảnh theo lô 16, xếp hạng bằng `rank_gallery` như công cụ
+chính (loại quan sát của chính truy vấn). `open_clip_torch` cài thêm vào venv; trọng số tải về
+`var/datasets/open_clip`. Không đăng ký CLIP vào registry của ứng dụng.
 
-**Code.**
+**Đo (05/10/2026, chỉ vector, 26 truy vấn, 1.526 track).**
 
-- `backend/src/person_search/evaluation/clip_gateway.py`: lớp đánh giá cài `EncoderGateway`
-  (`image`, `text`) bằng `open_clip`, mặc định ViT-B/16 (vừa RAM máy demo), tùy chọn ViT-H/14
-  laion2B như Phần II nếu đủ RAM. Chỉ dùng trong công cụ đánh giá, không đăng ký vào registry.
-- `tools/evaluate_wildtrack.py` thêm `--encoder rasa|clip-vit-b16|clip-vit-h14`: gallery được
-  mã hóa lại bằng encoder chọn, phần phát hiện và theo dõi dùng chung.
-- Chạy trên bộ truy vấn B3, ghi `var/evaluation/wildtrack-v2-clip-*.json`.
+| Hình thức, encoder | R@4 | R@8 | R@16 | MRR | Thời gian mã hóa một crop (CPU) |
+| --- | --- | --- | --- | --- | --- |
+| Ảnh, RaSa | 0,846 | 0,885 | 0,885 | 0,671 | 1,3 s |
+| Ảnh, CLIP ViT-B/16 | 0,231 | 0,346 | 0,423 | 0,195 | 0,15 s |
+| Ảnh, CLIP ViT-L/14 | 0,346 | 0,423 | 0,423 | 0,287 | 0,7 s |
+| Văn bản, RaSa | 0 | 0 | 0,038 | 0,021 | |
+| Văn bản, RaSa + ITM N=128 | 0,346 | 0,423 | 0,500 | 0,329 | 17 s mỗi truy vấn |
+| Văn bản, CLIP ViT-B/16 | 0,308 | 0,346 | 0,500 | 0,237 | ~0,1 s mỗi truy vấn |
+| Văn bản, CLIP ViT-L/14 | 0,346 | 0,423 | 0,577 | 0,286 | |
+| Thuộc tính, RaSa | 0 | 0 | 0,038 | 0,015 | |
+| Thuộc tính, RaSa + ITM N=128 | 0,115 | 0,154 | 0,269 | 0,116 | |
+| Thuộc tính, CLIP ViT-B/16 | 0,154 | 0,269 | 0,462 | 0,133 | |
+| Thuộc tính, CLIP ViT-L/14 | 0,269 | 0,346 | 0,462 | 0,185 | |
 
-**Quyết định sau khi đo.** Nếu CLIP hơn RaSa rõ ở văn bản và không kém đáng kể ở ảnh, ghi nhận
-là hướng thay encoder (phiên bản encoder mới, collection mới) cho mục 12.3 và nối thẳng với
-mục 12.4.2 "Bringing the Two Parts Together". Không đổi encoder trong ứng dụng trước bảo vệ
-trừ khi còn dư thời gian sau E1.
+Tiền tố "a photo of" đổi tối đa một truy vấn. Nguồn: `wildtrack-v2-conf010-clip-vit-b16.json`,
+`-clip-vit-l14.json`.
 
-**Báo cáo.** Mục 8.2 thêm bảng so sánh hai encoder; mục 6.1.4 "Encoder" sửa câu khẳng định
-CLIP "separate small clothing differences less well" thành câu có số liệu.
+**Kết luận.** Câu "CLIP tách khác biệt nhỏ về quần áo kém hơn" ở 6.1.4 đúng với truy vấn ảnh
+(RaSa 0,885 so với CLIP 0,35 đến 0,42) nhưng sai với truy vấn văn bản: vector CLIP không cần
+re-rank đã bằng RaSa + ITM (R@8 0,42) với chi phí truy vấn nhỏ hơn hai bậc, và thuộc tính còn
+tốt hơn (0,35 so với 0,15). Thiết kế "một không gian vector chung" vì vậy phục vụ tốt tìm bằng
+ảnh và kém tìm bằng văn bản. Hướng rẻ nhất: hai vector mỗi appearance (RaSa cho ảnh, CLIP cho
+văn bản/thuộc tính) trong hai collection Milvus, điều thiết kế đã cho phép (một collection mỗi
+phiên bản encoder). Không đổi encoder trong ứng dụng trước bảo vệ; ghi ở 12.3.
 
-**Trạng thái.** Chưa làm.
+**Báo cáo (đã sửa).** 8.2 thêm đoạn "Another encoder on the same data" và bảng 8.4 (RaSa, RaSa
++ ITM, CLIP B/16, CLIP L/14 theo ba hình thức); 6.1.4 sửa câu khẳng định thành kỳ vọng được
+kiểm chứng một nửa; 12.3 thêm hướng hai vector mỗi appearance. `report-data-guide.md` thêm dòng.
+
+**Trạng thái.** Xong 05/10/2026.
 
 ### B5. Bật re-rank ITM của RaSa cho truy vấn văn bản
 

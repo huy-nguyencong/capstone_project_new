@@ -1,17 +1,17 @@
 # Fdb version 4
-["biber build/main"] 1791142670.41362 "build/main.bcf" "build/main.bbl" "build/main" 1791205092.29815 0
-  "build/main.bcf" 1791205059.00026 113242 f04eb516d836de99d4bcf596ec71343b "xelatex"
+["biber build/main"] 1791208750.23524 "build/main.bcf" "build/main.bbl" "build/main" 1791208808.36613 0
+  "build/main.bcf" 1791208772.12186 113313 c68c01663d9b9fe7a413c39770719c03 "xelatex"
   "ref.bib" 1791142620.2117 18453 da840e7bfd3762b4452a4005e73ebd66 ""
   (generated)
   "build/main.bbl"
   "build/main.blg"
   (rewritten before read)
-["xdvipdfmx"] 1791205059.65368 "build/main.xdv" "build/main.pdf" "build/main" 1791205092.36237 0
-  "build/main.xdv" 1791205059.00326 2562828 fd721cdac4f87d62fe83ce952adb5237 "xelatex"
+["xdvipdfmx"] 1791208772.9515 "build/main.xdv" "build/main.pdf" "build/main" 1791208808.42012 0
+  "build/main.xdv" 1791208772.12637 2595060 42df8072c8b634026ee9bc7dfed20b9e "xelatex"
   (generated)
   "build/main.pdf"
   (rewritten before read)
-["xelatex"] 1791205050.76003 "main.tex" "build/main.xdv" "main" 1791205092.29815 0
+["xelatex"] 1791208761.67773 "main.tex" "build/main.xdv" "main" 1791208808.36713 0
   "C:/Users/congh/AppData/Local/MiKTeX/miktex/data/le/xetex/xelatex.fmt" 1779672279.4074 27176696 439a93584631008e62498818fdc24f2f ""
   "C:/Users/congh/AppData/Local/Programs/MiKTeX/fonts/tfm/adobe/zapfding/pzdr.tfm" 1136747054 1528 f853c4d1b4e0550255e02831fdc8496f ""
   "C:/Users/congh/AppData/Local/Programs/MiKTeX/fonts/tfm/public/amsfonts/cmextra/cmex7.tfm" 1233951848 1004 54797486969f23fa377b128694d548df ""
@@ -278,17 +278,17 @@
   "C:/Users/congh/AppData/Local/Programs/MiKTeX/tex/latex/url/url.sty" 1388490452 12796 8edb7d69a20b857904dd0ea757c14ec9 ""
   "C:/Users/congh/AppData/Local/Programs/MiKTeX/tex/latex/xcolor/xcolor.sty" 1729265222 55384 b454dec21c2d9f45ec0b793f0995b992 ""
   "C:/Users/congh/AppData/Local/Programs/MiKTeX/tex/latex/xurl/xurl.sty" 1641733940 4675 e4b8c405820368c2dfb03526e16d725a ""
-  "D:/uni-studies/semester-253/capstone_project_new/report/thesis-en/build/main.aux" 1791205058.969 79579 e7d879dc5c04ffb050f887dd84bbfbd6 ""
-  "D:/uni-studies/semester-253/capstone_project_new/report/thesis-en/build/main.bbl" 1791142672.95412 99739 d9fdae877ab819b064e92a425fb13ccf ""
-  "D:/uni-studies/semester-253/capstone_project_new/report/thesis-en/build/main.lof" 1791205059.00326 4576 618235b8627971dde70a728fb4c1b29a ""
-  "D:/uni-studies/semester-253/capstone_project_new/report/thesis-en/build/main.lot" 1791205059.00326 4889 6d263718996ea790e4832be89eac9487 ""
-  "D:/uni-studies/semester-253/capstone_project_new/report/thesis-en/build/main.toc" 1791205059.00326 21599 35fa40e9f8f1619061dbb8f5249b662a ""
-  "build/main.aux" 1791205058.969 79579 e7d879dc5c04ffb050f887dd84bbfbd6 "xelatex"
-  "build/main.bbl" 1791142672.95412 99739 d9fdae877ab819b064e92a425fb13ccf "biber build/main"
-  "build/main.lof" 1791205059.00326 4576 618235b8627971dde70a728fb4c1b29a "xelatex"
-  "build/main.lot" 1791205059.00326 4889 6d263718996ea790e4832be89eac9487 "xelatex"
-  "build/main.run.xml" 1791205059.00326 2430 9ef17f3f830dd87eb38c49da58a4bec1 "xelatex"
-  "build/main.toc" 1791205059.00326 21599 35fa40e9f8f1619061dbb8f5249b662a "xelatex"
+  "D:/uni-studies/semester-253/capstone_project_new/report/thesis-en/build/main.aux" 1791208772.07612 80176 35e37108660c6b6b7b8c42cc4b51f96b ""
+  "D:/uni-studies/semester-253/capstone_project_new/report/thesis-en/build/main.bbl" 1791208761.50049 99739 d9fdae877ab819b064e92a425fb13ccf ""
+  "D:/uni-studies/semester-253/capstone_project_new/report/thesis-en/build/main.lof" 1791208772.12637 4576 39945a10440b3458ea499dc1b0272d5c ""
+  "D:/uni-studies/semester-253/capstone_project_new/report/thesis-en/build/main.lot" 1791208772.12637 5070 695b5dbe98edb6e47712a725713b96b3 ""
+  "D:/uni-studies/semester-253/capstone_project_new/report/thesis-en/build/main.toc" 1791208772.12637 21684 34285b944a3a9b623d3bc9efad402a44 ""
+  "build/main.aux" 1791208772.07612 80176 35e37108660c6b6b7b8c42cc4b51f96b "xelatex"
+  "build/main.bbl" 1791208761.50049 99739 d9fdae877ab819b064e92a425fb13ccf "biber build/main"
+  "build/main.lof" 1791208772.12637 4576 39945a10440b3458ea499dc1b0272d5c "xelatex"
+  "build/main.lot" 1791208772.12637 5070 695b5dbe98edb6e47712a725713b96b3 "xelatex"
+  "build/main.run.xml" 1791208772.12637 2430 9ef17f3f830dd87eb38c49da58a4bec1 "xelatex"
+  "build/main.toc" 1791208772.12637 21684 34285b944a3a9b623d3bc9efad402a44 "xelatex"
   "figures/H1-use-case.png" 1790755588.83702 788198 babdba7938faece1fa84b11f15d59fdb ""
   "figures/H10a-tim-kiem-anh-cat.png" 1790754224.72713 1110701 06f144e525bcb1fde33cc3c8af6c73cc ""
   "figures/H10b-tim-kiem-thuoc-tinh-cat.png" 1790754224.69512 1201764 5f56dd890136f2123da0852a9f516c11 ""
@@ -334,7 +334,7 @@
   "sections/chapter1/chapter1.tex" 1790754341.00277 461 983fd2640ff81ee3f20db6f291858d8c ""
   "sections/chapter12/12.1.tex" 1791201318.12967 2541 c387e1b1423a533648173a7ddbcaf1bb ""
   "sections/chapter12/12.2.tex" 1791201318.1312 2252 f08af0c23a246fb2c2d161e4ddad71b3 ""
-  "sections/chapter12/12.3.tex" 1791201318.1322 2670 9e4d87537b09c2493b8d9aa8e7fdbbc4 ""
+  "sections/chapter12/12.3.tex" 1791208736.67426 3165 a1dad1be2adf615b95dabea850a955dc ""
   "sections/chapter12/chapter12.tex" 1790963693.26029 618 e43fb679ba3c972812ca476532148bba ""
   "sections/chapter12/timeline.tex" 1790964197.87587 1352 da16d99b2e2da580624e99bacc9d1d07 ""
   "sections/chapter2/2.1.tex" 1791140612.08122 4697 5c1e726690beeec973bb978eb79ddcc3 ""
@@ -363,7 +363,7 @@
   "sections/chapter5/5.5.tex" 1791139482.82358 3862 f76a826b8bc6ad87eff6f92cc06b055c ""
   "sections/chapter5/5.6.tex" 1791139482.82458 2188 1bd75258c45d64d4dd6853bd33f30c68 ""
   "sections/chapter5/chapter5.tex" 1790754681.18765 533 01c888fb0f4a490d20eeb877fe7a0d1c ""
-  "sections/chapter6/6.1.tex" 1791141748.16815 6431 9b39f91a5d61a576977731cb615cc0d1 ""
+  "sections/chapter6/6.1.tex" 1791208736.67324 6630 a702ee0d413a6d455f413a6fea6429b4 ""
   "sections/chapter6/6.2.tex" 1791144413.72247 3700 d085f2b5d50663c65a6ec28a9efe48ba ""
   "sections/chapter6/6.3.tex" 1791141748.16915 5879 d5a9155c4f4b04641551213b6c7af27a ""
   "sections/chapter6/6.4.tex" 1791140026.39632 1746 9ce2810b2ed32a5bbe3a20b50db33e38 ""
@@ -372,7 +372,7 @@
   "sections/chapter7/7.2.tex" 1791140612.08579 2049 291eb9b4745e857439396f1e29c540a3 ""
   "sections/chapter7/chapter7.tex" 1790754876.8699 392 50fa8ba3c36465005a5a0878f97566eb ""
   "sections/chapter8/8.1.tex" 1791140612.08729 3143 424ca0d8985f94d0db2d1084e3dd17da ""
-  "sections/chapter8/8.2.tex" 1791205040.81196 11751 aecc5366b638553126e21f6e99e99c3c ""
+  "sections/chapter8/8.2.tex" 1791208736.67174 14335 0b3bb5723f58bb1adb8e125a9bd1e479 ""
   "sections/chapter8/8.3.tex" 1791201318.12767 10584 641b2c3873296968130c3fc466fb451a ""
   "sections/chapter8/chapter8.tex" 1790754880.02506 489 1594cc664ddba9d9c0c2fb6a4dd5febc ""
   "sections/front/abbreviations.tex" 1790964906.5731 2322 99258ad4c5d85ca2834a8bb2350339a0 ""

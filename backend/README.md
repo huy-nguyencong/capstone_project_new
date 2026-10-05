@@ -296,6 +296,10 @@ python tools/benchmark_sampling.py \
   vector search bằng đầu ITM của RaSa (như mã đánh giá gốc làm trên top-128), dùng cache gallery của
   `evaluate_wildtrack.py`; token ảnh của mỗi track được tính một lần vào `--token-cache` (float16,
   ~1,3 GB cho 1.526 track). Kết quả cho task B5 và mục 8.2 của báo cáo.
+- `evaluate_wildtrack_clip.py` chạy cùng gallery (cache của `evaluate_wildtrack.py`) và cùng bộ truy vấn nhưng
+  thay encoder bằng một mô hình open_clip (mặc định ViT-B/16 laion2b_s34b_b88k; cần `pip install
+  open_clip_torch`, trọng số tải về `var/datasets/open_clip`), đo cả ba hình thức để so với RaSa trên
+  cùng dữ liệu (task B4, mục 8.2). Embedding gallery cache theo mô hình (`--embedding-cache`).
 - `wildtrack_text_diagnostics.py` chẩn đoán vì sao tìm bằng văn bản yếu trên WILDTRACK từ cache gallery:
   phân bố kích thước crop; cùng khung đại diện nhưng cắt theo box nhãn tay; gallery crop tốt nhất mỗi
   người mỗi camera từ nhãn; chạy lại truy vấn văn bản/thuộc tính trên cả ba gallery; truy vấn màu đơn

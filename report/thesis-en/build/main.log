@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2026.5.25)  5 OCT 2026 19:57
+This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2026.5.25)  5 OCT 2026 20:59
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -1976,7 +1976,7 @@ File: figures/H10e-vu-viec-cua-toi-cat.png Graphic file (type bmp)
 <figures/H10e-vu-viec-cua-toi-cat.png>
 File: figures/H10f-tong-quan-cat.png Graphic file (type bmp)
 <figures/H10f-tong-quan-cat.png>
- [70] [71] [72]
+ [70] [71]
 File: figures/H10g-camera-cat.png Graphic file (type bmp)
 <figures/H10g-camera-cat.png>
 File: figures/H10h-mo-hinh-ai-cat.png Graphic file (type bmp)
@@ -1987,8 +1987,8 @@ File: figures/H10j-trang-thai-he-thong-cat.png Graphic file (type bmp)
 <figures/H10j-trang-thai-he-thong-cat.png>
 File: figures/H10k-kiem-tra-ai-cat.png Graphic file (type bmp)
 <figures/H10k-kiem-tra-ai-cat.png>
-)
-(sections/chapter6/6.4.tex [73] [74])) (sections/chapter7/chapter7.tex [75]
+) (sections/chapter6/6.4.tex
+[72] [73] [74])) (sections/chapter7/chapter7.tex [75]
 Chapter 7.
 (sections/chapter7/7.1.tex) (sections/chapter7/7.2.tex [76
 
@@ -2003,56 +2003,56 @@ Chapter 8.
 (sections/chapter8/8.1.tex [79
 
 ] [80]) (sections/chapter8/8.2.tex [81] [82]
-[83] [84]) (sections/chapter8/8.3.tex [85] [86] [87] [88])) [89] [90] [91
-
-]
-(sections/research/chapter9.tex
-Chapter 9.
+[83] [84] [85]) (sections/chapter8/8.3.tex [86] [87] [88] [89])) [90] [91]
 [92
 
-] [93]
+] (sections/research/chapter9.tex
+Chapter 9.
+[93
+
+] [94]
 File: figures/research/S23-overall-pipeline.png Graphic file (type bmp)
 <figures/research/S23-overall-pipeline.png>
- [94]
+ [95]
 File: figures/research/S26-zara.png Graphic file (type bmp)
 <figures/research/S26-zara.png>
- [95] [96]
+ [96] [97]
 File: figures/research/S31-offline-indexing.png Graphic file (type bmp)
 <figures/research/S31-offline-indexing.png>
 File: figures/research/S35-text-retrieval.png Graphic file (type bmp)
 <figures/research/S35-text-retrieval.png>
- [97]) (sections/research/chapter10.tex [98]
+ [98]) (sections/research/chapter10.tex [99]
 Chapter 10.
-[99
+[100
 
-] [100] [101] [102]
+] [101] [102] [103]
 File: figures/research/S36-reasoning-block.png Graphic file (type bmp)
 <figures/research/S36-reasoning-block.png>
- [103] [104]
+ [104] [105]
 File: figures/research/S37-selector.png Graphic file (type bmp)
 <figures/research/S37-selector.png>
 File: figures/research/S38-selector-example.png Graphic file (type bmp)
 <figures/research/S38-selector-example.png>
- [105]
+ [106]
 File: figures/research/S39-evidence-ranker.png Graphic file (type bmp)
 <figures/research/S39-evidence-ranker.png>
 File: figures/research/S40-evidence-example.png Graphic file (type bmp)
 <figures/research/S40-evidence-example.png>
- [106] [107] [108] [109])
-(sections/research/chapter11.tex [110]
+ [107] [108] [109] [110])
+(sections/research/chapter11.tex [111]
 Chapter 11.
-[111
+[112
 
-] [112] [113] [114] [115] [116]
+] [113] [114] [115] [116] [117]
 File: figures/research/case_lost.png Graphic file (type bmp)
 <figures/research/case_lost.png>
- [117]
+ [118]
 File: figures/research/case_lost_fixed.png Graphic file (type bmp)
 <figures/research/case_lost_fixed.png>
- [118]
+ [119]
 File: figures/research/case_rescued.png Graphic file (type bmp)
 <figures/research/case_rescued.png>
- [119] [120] [121]
+ [120] [121] [122]
 Underfull \hbox (badness 3735) in paragraph at lines 421--430
 [] []\TU/TimesNewRoman(0)/b/n/13 Switchable but not yet measured.[] \TU/TimesNe
 wRoman(0)/m/n/13 The pipeline keeps one flag per experi-
@@ -2077,22 +2077,22 @@ U/TimesNewRoman(0)/m/n/13 (the \TU/lmtt/m/n/13 agrees \TU/TimesNewRoman(0)/m/n/
 13 line under each quoted frame),
  []
 
-[122] [123]) (sections/chapter12/chapter12.tex [124]
+[123] [124]) (sections/chapter12/chapter12.tex [125]
 Chapter 12.
-(sections/chapter12/timeline.tex) (sections/chapter12/12.1.tex [125
+(sections/chapter12/timeline.tex) (sections/chapter12/12.1.tex [126
 
 ]
 File: figures/S05-ke-hoach.png Graphic file (type bmp)
 <figures/S05-ke-hoach.png>
- [126]
-(sections/research/_conclusion.tex [127
+ [127]
+(sections/research/_conclusion.tex [128
 
 
 ])) (sections/chapter12/12.2.tex
-[128] (sections/research/_limits.tex [129])) (sections/chapter12/12.3.tex
-[130])) [131] [132
+[129] (sections/research/_limits.tex [130])) (sections/chapter12/12.3.tex
+[131])) [132] [133
 
-] [133] [134] [135] [136] [137]
+] [134] [135] [136] [137] [138]
 
 enddocument/afterlastpage (AED): lastpage setting LastPage.
 
@@ -2107,13 +2107,13 @@ Package logreq Info: Writing requests to 'main.run.xml'.
 
  ) 
 Here is how much of TeX's memory you used:
- 51568 strings out of 402987
- 1168980 string characters out of 5448524
- 2207164 words of memory out of 5000000
- 79358 multiletter control sequences out of 15000+600000
+ 51569 strings out of 402987
+ 1168994 string characters out of 5448524
+ 2207299 words of memory out of 5000000
+ 79359 multiletter control sequences out of 15000+600000
  642423 words of font info for 145 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
  108i,15n,107p,2033b,5143s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
 Output written on D:\uni-studies\semester-253\capstone_project_new\report\thesi
-s-en\build\main.xdv (161 pages, 2562828 bytes).
+s-en\build\main.xdv (162 pages, 2595060 bytes).

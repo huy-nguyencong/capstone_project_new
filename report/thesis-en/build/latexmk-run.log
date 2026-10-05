@@ -4,8 +4,12 @@ Latexmk: This is Latexmk, John Collins, 15 June 2025. Version 4.87.
 Latexmk: applying rule 'xelatex'...
 Rule 'xelatex':  Reasons for rerun
 Changed files or newly in use/created:
+  sections/chapter12/12.3.tex
+  sections/chapter6/6.1.tex
   sections/chapter8/8.2.tex
 Category 'changed_user':
+  sections/chapter12/12.3.tex
+  sections/chapter6/6.1.tex
   sections/chapter8/8.2.tex
 
 ------------
@@ -550,8 +554,8 @@ Chapter 5.
 (sections/chapter5/5.6.tex [61] [62])) (sections/chapter6/chapter6.tex [63]
 Chapter 6.
 (sections/chapter6/6.1.tex [64] [65] [66]) (sections/chapter6/6.2.tex [67]
-[68]) (sections/chapter6/6.3.tex [69] [70] [71] [72])
-(sections/chapter6/6.4.tex [73] [74])) (sections/chapter7/chapter7.tex [75]
+[68]) (sections/chapter6/6.3.tex [69] [70] [71]) (sections/chapter6/6.4.tex
+[72] [73] [74])) (sections/chapter7/chapter7.tex [75]
 Chapter 7.
 (sections/chapter7/7.1.tex) (sections/chapter7/7.2.tex [76]
 Underfull \hbox (badness 1776) in paragraph at lines 8--9
@@ -560,15 +564,19 @@ Underfull \hbox (badness 1776) in paragraph at lines 8--9
 )) (sections/chapter8/chapter8.tex [77] [78]
 Chapter 8.
 (sections/chapter8/8.1.tex [79] [80]) (sections/chapter8/8.2.tex [81] [82]
-[83] [84]) (sections/chapter8/8.3.tex [85] [86] [87] [88])) [89] [90] [91]
+[83] [84]
+
+LaTeX Warning: Reference `tab:encoders' on page 85 undefined on input line 63.
+
+[85]) (sections/chapter8/8.3.tex [86] [87] [88] [89])) [90] [91] [92]
 (sections/research/chapter9.tex
 Chapter 9.
-[92] [93] [94] [95] [96] [97]) (sections/research/chapter10.tex [98]
+[93] [94] [95] [96] [97] [98]) (sections/research/chapter10.tex [99]
 Chapter 10.
-[99] [100] [101] [102] [103] [104] [105] [106] [107] [108] [109])
-(sections/research/chapter11.tex [110]
+[100] [101] [102] [103] [104] [105] [106] [107] [108] [109] [110])
+(sections/research/chapter11.tex [111]
 Chapter 11.
-[111] [112] [113] [114] [115] [116] [117] [118] [119] [120] [121]
+[112] [113] [114] [115] [116] [117] [118] [119] [120] [121] [122]
 Underfull \hbox (badness 3735) in paragraph at lines 421--430
 [] []\TU/TimesNewRoman(0)/b/n/13 Switchable but not yet measured.[] \TU/TimesNe
 wRoman(0)/m/n/13 The pipeline keeps one flag per experi-
@@ -585,24 +593,27 @@ Underfull \hbox (badness 1577) in paragraph at lines 421--430
 \TU/TimesNewRoman(0)/m/n/13 tics block), \TU/lmtt/m/n/13 LAB_FRAME_AGREEMENT \T
 U/TimesNewRoman(0)/m/n/13 (the \TU/lmtt/m/n/13 agrees \TU/TimesNewRoman(0)/m/n/
 13 line under each quoted frame),
-[122] [123]) (sections/chapter12/chapter12.tex [124]
+[123] [124]) (sections/chapter12/chapter12.tex [125]
 Chapter 12.
-(sections/chapter12/timeline.tex) (sections/chapter12/12.1.tex [125] [126]
-(sections/research/_conclusion.tex [127])) (sections/chapter12/12.2.tex
-[128] (sections/research/_limits.tex [129])) (sections/chapter12/12.3.tex
-[130])) [131] [132] [133] [134] [135] [136] [137]
+(sections/chapter12/timeline.tex) (sections/chapter12/12.1.tex [126] [127]
+(sections/research/_conclusion.tex [128])) (sections/chapter12/12.2.tex
+[129] (sections/research/_limits.tex [130])) (sections/chapter12/12.3.tex
+[131])) [132] [133] [134] [135] [136] [137] [138]
 
 enddocument/afterlastpage (AED): lastpage setting LastPage.
 
 (D:\uni-studies\semester-253\capstone_project_new\report\thesis-en\build\main.a
 ux)
 
+LaTeX Warning: There were undefined references.
+
+
 LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
 
  )
 (see the transcript file for additional information)
 Output written on D:\uni-studies\semester-253\capstone_project_new\report\thesi
-s-en\build\main.xdv (161 pages, 2562812 bytes).
+s-en\build\main.xdv (162 pages, 2592996 bytes).
 SyncTeX written on D:\uni-studies\semester-253\capstone_project_new\report\thesis-en\build/main.synctex.gz.
 Transcript written on D:\uni-studies\semester-253\capstone_project_new\report\t
 hesis-en\build\main.log.
@@ -618,6 +629,32 @@ Latexmk: Bibliography file(s) from .bcf file:
 Sources for biber
   ref.bib
   build/main.bcf
+Latexmk: applying rule 'biber build/main'...
+Rule 'biber build/main':  Reasons for rerun
+Changed files or newly in use/created:
+  build/main.bcf
+
+------------
+Run number 1 of rule 'biber build/main'
+------------
+------------
+Running 'biber  "build/main.bcf"'
+------------
+INFO - This is Biber 2.21
+INFO - Logfile is 'build/main.blg'
+INFO - Reading 'build/main.bcf'
+INFO - Found 52 citekeys in bib section 0
+INFO - Processing section 0
+INFO - Looking for bibtex file 'ref.bib' for section 0
+INFO - LaTeX decoding ...
+INFO - Found BibTeX data source 'ref.bib'
+INFO - Overriding locale 'en-US' defaults 'variable = shifted' with 'variable = non-ignorable'
+INFO - Overriding locale 'en-US' defaults 'normalization = NFD' with 'normalization = prenormalized'
+INFO - Sorting list 'none/global//global/global/global' of type 'entry' with template 'none' and locale 'en-US'
+INFO - No sort tailoring available for locale 'en-US'
+INFO - Writing 'build/main.bbl' with encoding 'UTF-8'
+INFO - Output to build/main.bbl
+Latexmk: Found biber source file(s) [build/main.bcf, ref.bib]
 Latexmk: applying rule 'xelatex'...
 Rule 'xelatex':  Reasons for rerun
 Changed files or newly in use/created:
@@ -1177,8 +1214,8 @@ Chapter 5.
 (sections/chapter5/5.6.tex [61] [62])) (sections/chapter6/chapter6.tex [63]
 Chapter 6.
 (sections/chapter6/6.1.tex [64] [65] [66]) (sections/chapter6/6.2.tex [67]
-[68]) (sections/chapter6/6.3.tex [69] [70] [71] [72])
-(sections/chapter6/6.4.tex [73] [74])) (sections/chapter7/chapter7.tex [75]
+[68]) (sections/chapter6/6.3.tex [69] [70] [71]) (sections/chapter6/6.4.tex
+[72] [73] [74])) (sections/chapter7/chapter7.tex [75]
 Chapter 7.
 (sections/chapter7/7.1.tex) (sections/chapter7/7.2.tex [76]
 Underfull \hbox (badness 1776) in paragraph at lines 8--9
@@ -1187,15 +1224,15 @@ Underfull \hbox (badness 1776) in paragraph at lines 8--9
 )) (sections/chapter8/chapter8.tex [77] [78]
 Chapter 8.
 (sections/chapter8/8.1.tex [79] [80]) (sections/chapter8/8.2.tex [81] [82]
-[83] [84]) (sections/chapter8/8.3.tex [85] [86] [87] [88])) [89] [90] [91]
-(sections/research/chapter9.tex
+[83] [84] [85]) (sections/chapter8/8.3.tex [86] [87] [88] [89])) [90] [91]
+[92] (sections/research/chapter9.tex
 Chapter 9.
-[92] [93] [94] [95] [96] [97]) (sections/research/chapter10.tex [98]
+[93] [94] [95] [96] [97] [98]) (sections/research/chapter10.tex [99]
 Chapter 10.
-[99] [100] [101] [102] [103] [104] [105] [106] [107] [108] [109])
-(sections/research/chapter11.tex [110]
+[100] [101] [102] [103] [104] [105] [106] [107] [108] [109] [110])
+(sections/research/chapter11.tex [111]
 Chapter 11.
-[111] [112] [113] [114] [115] [116] [117] [118] [119] [120] [121]
+[112] [113] [114] [115] [116] [117] [118] [119] [120] [121] [122]
 Underfull \hbox (badness 3735) in paragraph at lines 421--430
 [] []\TU/TimesNewRoman(0)/b/n/13 Switchable but not yet measured.[] \TU/TimesNe
 wRoman(0)/m/n/13 The pipeline keeps one flag per experi-
@@ -1212,12 +1249,12 @@ Underfull \hbox (badness 1577) in paragraph at lines 421--430
 \TU/TimesNewRoman(0)/m/n/13 tics block), \TU/lmtt/m/n/13 LAB_FRAME_AGREEMENT \T
 U/TimesNewRoman(0)/m/n/13 (the \TU/lmtt/m/n/13 agrees \TU/TimesNewRoman(0)/m/n/
 13 line under each quoted frame),
-[122] [123]) (sections/chapter12/chapter12.tex [124]
+[123] [124]) (sections/chapter12/chapter12.tex [125]
 Chapter 12.
-(sections/chapter12/timeline.tex) (sections/chapter12/12.1.tex [125] [126]
-(sections/research/_conclusion.tex [127])) (sections/chapter12/12.2.tex
-[128] (sections/research/_limits.tex [129])) (sections/chapter12/12.3.tex
-[130])) [131] [132] [133] [134] [135] [136] [137]
+(sections/chapter12/timeline.tex) (sections/chapter12/12.1.tex [126] [127]
+(sections/research/_conclusion.tex [128])) (sections/chapter12/12.2.tex
+[129] (sections/research/_limits.tex [130])) (sections/chapter12/12.3.tex
+[131])) [132] [133] [134] [135] [136] [137] [138]
 
 enddocument/afterlastpage (AED): lastpage setting LastPage.
 
@@ -1225,7 +1262,7 @@ enddocument/afterlastpage (AED): lastpage setting LastPage.
 ux) )
 (see the transcript file for additional information)
 Output written on D:\uni-studies\semester-253\capstone_project_new\report\thesi
-s-en\build\main.xdv (161 pages, 2562828 bytes).
+s-en\build\main.xdv (162 pages, 2595060 bytes).
 SyncTeX written on D:\uni-studies\semester-253\capstone_project_new\report\thesis-en\build/main.synctex.gz.
 Transcript written on D:\uni-studies\semester-253\capstone_project_new\report\t
 hesis-en\build\main.log.
@@ -1256,7 +1293,7 @@ Running 'xdvipdfmx -E -o "build/main.pdf"  "build/main.xdv"'
 build/main.xdv -> build/main.pdf
 [1][2
 xdvipdfmx:warning: Object @page.A already defined.
-][3][4][5][6][7][8][9][10][11][12][13][14][15][16][17][18][19][20][21][22][23][24][25][26][27][28][29][30][31][32][33][34][35][36][37][38][39][40][41][42][43][44][45][46][47][48][49][50][51][52][53][54][55][56][57][58][59][60][61][62][63][64][65][66][67][68][69][70][71][72][73][74][75][76][77][78][79][80][81][82][83][84][85][86][87][88][89][90][91][92][93][94][95][96][97][98][99][100][101][102][103][104][105][106][107][108][109][110][111][112][113][114][115][116][117][118][119][120][121][122][123][124][125][126][127][128][129][130][131][132][133][134][135][136][137][138][139][140][141][142][143][144][145][146][147][148][149][150][151][152][153][154][155][156][157][158][159][160][161]
-21734421 bytes written
+][3][4][5][6][7][8][9][10][11][12][13][14][15][16][17][18][19][20][21][22][23][24][25][26][27][28][29][30][31][32][33][34][35][36][37][38][39][40][41][42][43][44][45][46][47][48][49][50][51][52][53][54][55][56][57][58][59][60][61][62][63][64][65][66][67][68][69][70][71][72][73][74][75][76][77][78][79][80][81][82][83][84][85][86][87][88][89][90][91][92][93][94][95][96][97][98][99][100][101][102][103][104][105][106][107][108][109][110][111][112][113][114][115][116][117][118][119][120][121][122][123][124][125][126][127][128][129][130][131][132][133][134][135][136][137][138][139][140][141][142][143][144][145][146][147][148][149][150][151][152][153][154][155][156][157][158][159][160][161][162]
+21738792 bytes written
 Latexmk: All targets (build/main.xdv build/main.pdf) are up-to-date
 
