@@ -273,7 +273,8 @@ class MilvusPersonTrackIndex:
             output_fields=["track_id"],
             search_params={
                 "metric_type": self.index_config.metric_type,
-                "params": {"ef": self.index_config.search_ef},
+                # HNSW requires ef >= limit; a re-ranking pool may ask for more than the default.
+                "params": {"ef": max(self.index_config.search_ef, top_k)},
             },
             consistency_level="Strong",
             timeout=self.timeout,

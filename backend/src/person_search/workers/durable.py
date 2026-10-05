@@ -85,9 +85,7 @@ class PostgresWorkerLock(AbstractContextManager):
     def __enter__(self) -> bool:
         self.connection = self.engine.connect()
         self.acquired = bool(
-            self.connection.scalar(
-                text("SELECT pg_try_advisory_lock(:key)"), {"key": WORKER_LOCK}
-            )
+            self.connection.scalar(text("SELECT pg_try_advisory_lock(:key)"), {"key": WORKER_LOCK})
         )
         self.connection.commit()
         return self.acquired
@@ -281,9 +279,7 @@ class SequentialProductionWorker:
                     "worker_retries_exhausted",
                 )
                 return
-            control = _JobControl(
-                self.jobs, snapshot, self.stop, self._metrics_for(job)
-            )
+            control = _JobControl(self.jobs, snapshot, self.stop, self._metrics_for(job))
             control.checkpoint(force_metrics=True)
             source = self.source_factory(snapshot)
             pipeline = self.pipeline_factory(snapshot, control.cancelled, control.progress)
@@ -298,9 +294,7 @@ class SequentialProductionWorker:
             )
             self.result_consumer(snapshot, result)
             control.checkpoint()
-            self.jobs.finish(
-                snapshot.job_id, snapshot.lease_token, JobStatus.SUCCEEDED
-            )
+            self.jobs.finish(snapshot.job_id, snapshot.lease_token, JobStatus.SUCCEEDED)
             logger.info(
                 "job succeeded",
                 extra={

@@ -219,8 +219,7 @@ class StorageReconciler:
             (track_id, "RECONCILE_MISSING_VECTOR") for track_id in report.missing_vectors
         )
         reasons.update(
-            (track_id, "RECONCILE_CHECKSUM_MISMATCH")
-            for track_id in report.checksum_mismatches
+            (track_id, "RECONCILE_CHECKSUM_MISMATCH") for track_id in report.checksum_mismatches
         )
         reasons.update(
             (track_id, "RECONCILE_MISSING_OBJECT") for track_id in report.missing_objects
@@ -316,9 +315,7 @@ class StorageReconciler:
                 report.truncated = True
                 chunk = chunk[: len(chunk) - (seen - self._max_items)]
             existing = self._existing_track_ids(chunk)
-            report.orphan_vectors.extend(
-                track_id for track_id in chunk if track_id not in existing
-            )
+            report.orphan_vectors.extend(track_id for track_id in chunk if track_id not in existing)
 
     def _existing_track_ids(self, track_ids: Iterable[uuid.UUID]) -> set[uuid.UUID]:
         candidates = list(track_ids)

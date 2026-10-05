@@ -76,6 +76,42 @@ class RasaQueryInferenceGateway:
             self.close()
             raise AIWorkerError(AIErrorCode.TEXT_ENCODER_OUTPUT_INVALID, cause=exc) from exc
 
+    def image_tokens(self, content: bytes, *, version: str, dimension: int):
+        """Image token features (577, 768) of an uploaded crop, for ITM re-ranking."""
+
+        self._require_vector_space(version, dimension)
+        from person_search.services.searches import decode_query_image
+
+        image = decode_query_image(content)
+        try:
+            return self._backend.encode_tokens(
+                image, timeout_seconds=self.image_encoder.settings.inference_timeout_seconds
+            )
+        except Exception as exc:
+            self.close()
+            raise AIWorkerError(AIErrorCode.IMAGE_ENCODER_INFERENCE_FAILED, cause=exc) from exc
+        finally:
+            image.close()
+
+    def itm_scores(self, text: str, tokens, *, version: str, dimension: int) -> Sequence[float]:
+        """Matching logits of one English sentence against candidate image tokens (N, 577, 768)."""
+
+        self._require_vector_space(version, dimension)
+        normalized = validate_english_description(text)
+        # One fusion pass per candidate; allow the whole pool within the inference timeout each.
+        count = max(1, int(getattr(tokens, "shape", (1,))[0]))
+        try:
+            return list(
+                self._backend.itm_scores(
+                    normalized,
+                    tokens,
+                    timeout_seconds=self.image_encoder.settings.inference_timeout_seconds * count,
+                )
+            )
+        except Exception as exc:
+            self.close()
+            raise AIWorkerError(AIErrorCode.TEXT_ENCODER_INFERENCE_FAILED, cause=exc) from exc
+
     def _require_vector_space(self, version: str, dimension: int) -> None:
         if version != self.lineage.version or dimension != self.image_encoder.dimension:
             raise ValueError("Query encoder metadata does not match the active vector space.")
@@ -92,8 +128,13 @@ def build_rasa_query_gateway(
     device: str = "cpu",
     settings: ImageEncoderSettings | None = None,
     backend_factory: Callable[..., ImageEncoderBackend] = RasaImageProcessBackend,
+    keep_fusion_layers: bool = False,
 ) -> RasaQueryInferenceGateway:
-    """Build image/text query inference with one verified checkpoint and process."""
+    """Build image/text query inference with one verified checkpoint and process.
+
+    ``keep_fusion_layers`` loads the cross-modal layers and the matching head as well (about
+    0.25 GiB more), which the ITM re-ranking of text searches needs.
+    """
 
     RasaRuntimeFactory(
         entry,
@@ -102,12 +143,14 @@ def build_rasa_query_gateway(
         device=device,
     )
     selected = settings or ImageEncoderSettings()
+    backend_kwargs = {"keep_fusion_layers": True} if keep_fusion_layers else {}
     backend = backend_factory(
         entry,
         artifact_root=artifact_root,
         runtime_settings=runtime_settings,
         device=device,
         settings=selected,
+        **backend_kwargs,
     )
     image_encoder = RasaImageEncoder(
         backend,

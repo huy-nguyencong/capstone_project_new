@@ -71,8 +71,10 @@ def environment_checks(environment: Mapping[str, str]) -> list[Check]:
     minio_secret = environment.get("PERSON_SEARCH_MINIO_SECRET_KEY", "")
     secrets.append(("PERSON_SEARCH_MINIO_SECRET_KEY", minio_secret))
     for name, value in secrets:
-        weak = not value or len(value) < 12 or any(
-            marker in value.lower() for marker in DEFAULT_SECRET_MARKERS
+        weak = (
+            not value
+            or len(value) < 12
+            or any(marker in value.lower() for marker in DEFAULT_SECRET_MARKERS)
         )
         checks.append(
             _check(
@@ -84,9 +86,7 @@ def environment_checks(environment: Mapping[str, str]) -> list[Check]:
     return checks
 
 
-def registry_checks(
-    load: Callable[[], Any], detector_id: str, tracker_id: str
-) -> list[Check]:
+def registry_checks(load: Callable[[], Any], detector_id: str, tracker_id: str) -> list[Check]:
     try:
         registry = load()
     except Exception as error:

@@ -89,23 +89,18 @@ def build_worker(*, stopped, result_consumer=None, source_hook=None):
     if registry.mode is not RegistryMode.PRODUCTION:
         raise ValueError("Production worker requires a production model registry.")
     resource_settings = load_resource_settings(
-        os.getenv("PERSON_SEARCH_AI_RESOURCE_CONFIG")
-        or project_config / "ai_resources.json",
+        os.getenv("PERSON_SEARCH_AI_RESOURCE_CONFIG") or project_config / "ai_resources.json",
         os.getenv("PERSON_SEARCH_AI_RESOURCE_PROFILE", "local_cpu"),
     )
     apply_resource_environment(resource_settings)
-    device = (
-        "cuda" if resource_settings.device_preference.value == "cuda" else "cpu"
-    )
+    device = "cuda" if resource_settings.device_preference.value == "cuda" else "cpu"
     storage = StorageRuntime.from_settings(StorageSettings.from_environment())
     staging = VideoStaging.from_environment()
 
     def unit_of_work():
         return UnitOfWork(storage.postgres.session_factory)
 
-    jobs = JobService(
-        unit_of_work, staging, source_types=(JobSourceType.FILE, JobSourceType.RTSP)
-    )
+    jobs = JobService(unit_of_work, staging, source_types=(JobSourceType.FILE, JobSourceType.RTSP))
     config_cache = VersionedAIConfigCache(registry)
 
     def camera_stream(camera_id):
@@ -196,9 +191,7 @@ def build_worker(*, stopped, result_consumer=None, source_hook=None):
             job,
             interval_seconds=_positive_float("PERSON_SEARCH_WORKER_METRICS_SECONDS", 2.0),
         ),
-        heartbeat=WorkerHeartbeatReporter(
-            unit_of_work, default_worker_id(), report_process=False
-        ),
+        heartbeat=WorkerHeartbeatReporter(unit_of_work, default_worker_id(), report_process=False),
     )
     return worker, storage
 
@@ -225,9 +218,7 @@ def _heartbeat_loop(
 def start_supervisor_heartbeat(
     stopped: threading.Event, *, interval: float | None = None
 ) -> tuple[WorkerHeartbeatReporter, PostgresStorage]:
-    storage = PostgresStorage.from_settings(
-        PostgresSettings.from_environment(os.environ)
-    )
+    storage = PostgresStorage.from_settings(PostgresSettings.from_environment(os.environ))
     reporter = WorkerHeartbeatReporter(
         lambda: UnitOfWork(storage.session_factory), default_worker_id()
     )

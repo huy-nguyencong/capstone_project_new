@@ -129,6 +129,4 @@ def registry_lineage(registry: Any, detector_id: str, tracker_id: str) -> dict[s
 
 
 def settings_lineage(paths: Mapping[str, Path]) -> dict[str, dict[str, str]]:
-    return {
-        name: {"path": path.name, "sha256": file_sha256(path)} for name, path in paths.items()
-    }
+    return {name: {"path": path.name, "sha256": file_sha256(path)} for name, path in paths.items()}

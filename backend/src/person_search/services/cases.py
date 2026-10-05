@@ -432,9 +432,7 @@ class CaseService:
             repositories = self._repositories(work)
             actor = self._reader(repositories, actor_user_id)
             case = repositories.cases.get(case_id)
-            if case is None or (
-                actor.role is UserRole.OPERATOR and case.owner_user_id != actor.id
-            ):
+            if case is None or (actor.role is UserRole.OPERATOR and case.owner_user_id != actor.id):
                 raise CaseNotFoundError("Case was not found.")
             owner = repositories.users.get(case.owner_user_id)
             assert owner is not None
@@ -454,9 +452,7 @@ class CaseService:
         self, actor_user_id: uuid.UUID, *, recent_limit: int = 10
     ) -> ViewerDashboard:
         if recent_limit < 1 or recent_limit > MAX_RECENT_CASES:
-            raise InvalidCaseRequestError(
-                f"recent_limit must be between 1 and {MAX_RECENT_CASES}."
-            )
+            raise InvalidCaseRequestError(f"recent_limit must be between 1 and {MAX_RECENT_CASES}.")
         with self._unit_of_work_factory() as work:
             repositories = self._repositories(work)
             actor = self._active(repositories, actor_user_id)

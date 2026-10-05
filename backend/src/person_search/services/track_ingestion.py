@@ -270,9 +270,7 @@ class TrackIngestionService:
                 raise TrackIngestionError("Track does not exist.")
             if track.index_status is not TrackIndexStatus.FAILED:
                 raise TrackIngestionError("Only a FAILED track can be requeued.")
-            event = repositories.outbox.get_for_track(
-                track_id, TRACK_INGEST_EVENT, for_update=True
-            )
+            event = repositories.outbox.get_for_track(track_id, TRACK_INGEST_EVENT, for_update=True)
             if event is None:
                 raise TrackIngestionError("Track has no ingestion event to requeue.")
             now = self._clock()
@@ -384,9 +382,7 @@ class TrackIngestionService:
         if info.checksum_sha256 != request.frame_sha256:
             raise FrameConflictError("Stored frame checksum does not match the request.")
 
-    def _verify_vector(
-        self, track_id: uuid.UUID, area_id: uuid.UUID, camera_id: uuid.UUID
-    ) -> None:
+    def _verify_vector(self, track_id: uuid.UUID, area_id: uuid.UUID, camera_id: uuid.UUID) -> None:
         row = self._vectors.get(track_id)
         if row is None:
             raise VectorNotVisibleError("Upserted vector is not readable yet.")
@@ -413,9 +409,7 @@ class TrackIngestionService:
                 track.failure_message = None
             elif track.index_status is not TrackIndexStatus.READY:
                 raise TrackNotPublishableError("Only a PENDING track can be published.")
-            event = repositories.outbox.get_for_track(
-                track_id, TRACK_INGEST_EVENT, for_update=True
-            )
+            event = repositories.outbox.get_for_track(track_id, TRACK_INGEST_EVENT, for_update=True)
             if event is not None and event.status is not OutboxStatus.COMPLETED:
                 event.status = OutboxStatus.COMPLETED
                 event.processed_at = now
@@ -451,9 +445,7 @@ class TrackIngestionService:
             if track is None or track.index_status is not TrackIndexStatus.PENDING:
                 status = track.index_status if track is not None else TrackIndexStatus.FAILED
                 return TrackIngestionResult(track_id, status, correlation_id, failure_code)
-            event = repositories.outbox.get_for_track(
-                track_id, TRACK_INGEST_EVENT, for_update=True
-            )
+            event = repositories.outbox.get_for_track(track_id, TRACK_INGEST_EVENT, for_update=True)
             now = self._clock()
             attempts = (event.attempts if event is not None else 0) + 1
             exhausted = attempts >= self._retry_policy.max_attempts

@@ -92,8 +92,7 @@ class ProductionComponentFactory:
         config_root: Path,
     ) -> ProductionComponentFactory:
         resource_settings = load_resource_settings(
-            os.getenv("PERSON_SEARCH_AI_RESOURCE_CONFIG")
-            or config_root / "ai_resources.json",
+            os.getenv("PERSON_SEARCH_AI_RESOURCE_CONFIG") or config_root / "ai_resources.json",
             os.getenv("PERSON_SEARCH_AI_RESOURCE_PROFILE", "local_cpu"),
         )
         apply_resource_environment(resource_settings)
@@ -133,10 +132,11 @@ class ProductionComponentFactory:
             device=self.device,
         )
 
-    def query_gateway(self, selection: PipelineSelection):
+    def query_gateway(self, selection: PipelineSelection, *, keep_fusion_layers: bool = False):
         return build_rasa_query_gateway(
             selection.encoder,
             artifact_root=self.artifact_root,
             runtime_settings=self.rasa_settings,
             device=self.device,
+            keep_fusion_layers=keep_fusion_layers,
         )

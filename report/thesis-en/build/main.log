@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2026.5.25)  5 OCT 2026 17:18
+This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2026.5.25)  5 OCT 2026 18:55
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -1756,30 +1756,30 @@ Chapter 1.
 
 
 ]) (sections/chapter1/1.2.tex [2])
-(sections/chapter1/1.3.tex [3] [4]) (sections/chapter1/1.4.tex)) [5] [6
+(sections/chapter1/1.3.tex [3] [4]) (sections/chapter1/1.4.tex [5])) [6]
+[7
 
-]
-(sections/chapter2/chapter2.tex
+] (sections/chapter2/chapter2.tex
 Chapter 2.
 (sections/chapter2/2.1.tex
 File: figures/briefcam.png Graphic file (type bmp)
 <figures/briefcam.png>
- [7
+ [8
 
 ]
 File: figures/avigilon.png Graphic file (type bmp)
 <figures/avigilon.png>
- [8]
+ [9]
 File: figures/verkada.png Graphic file (type bmp)
 <figures/verkada.png>
- [9]) (sections/chapter2/2.2.tex
+ [10]) (sections/chapter2/2.2.tex
 sections/chapter2/2.2.tex:35: ignored error: Infinite glue shrinkage found in b
-ox being split [10] [11]) (sections/chapter2/2.3.tex))
-(sections/chapter3/chapter3.tex [12]
+ox being split [11] [12]) (sections/chapter2/2.3.tex))
+(sections/chapter3/chapter3.tex [13]
 Chapter 3.
-(sections/chapter3/3.1.tex [13
+(sections/chapter3/3.1.tex [14
 
-] [14]) (sections/chapter3/3.2.tex [15] [16])
+] [15]) (sections/chapter3/3.2.tex [16] [17])
 (sections/chapter3/3.3.tex
 Underfull \hbox (badness 1910) in paragraph at lines 12--13
 []\TU/TimesNewRoman(0)/m/n/13 The common approach is \TU/TimesNewRoman(0)/m/it/
@@ -1787,18 +1787,18 @@ Underfull \hbox (badness 1910) in paragraph at lines 12--13
 
  []
 
-[17] [18]) (sections/chapter3/3.4.tex) (sections/chapter3/3.5.tex [19] [20])
-(sections/chapter3/3.6.tex [21]) (sections/chapter3/3.7.tex [22] [23]))
-(sections/chapter4/chapter4.tex [24]
+[18] [19]) (sections/chapter3/3.4.tex) (sections/chapter3/3.5.tex [20] [21])
+(sections/chapter3/3.6.tex [22]) (sections/chapter3/3.7.tex [23] [24]))
+(sections/chapter4/chapter4.tex [25]
 Chapter 4.
-(sections/chapter4/4.1.tex [25
+(sections/chapter4/4.1.tex [26
 
-] [26]) (sections/chapter4/4.2.tex [27] [28]
-[29]) (sections/chapter4/4.3.tex [30] [31] [32]) (sections/chapter4/4.4.tex
+] [27]) (sections/chapter4/4.2.tex [28] [29]
+[30]) (sections/chapter4/4.3.tex [31] [32] [33]) (sections/chapter4/4.4.tex
 File: figures/H1-use-case.png Graphic file (type bmp)
 <figures/H1-use-case.png>
 
-[33] [34]) (sections/chapter4/4.5.tex [35] [36]
+[34] [35]) (sections/chapter4/4.5.tex [36] [37]
 Overfull \hbox (2.43767pt too wide) in alignment at lines 9--16
  [] [] 
  []
@@ -1829,7 +1829,7 @@ Overfull \hbox (2.43767pt too wide) in alignment at lines 40--52
  []
 
 sections/chapter4/4.5.tex:52: ignored error: Infinite glue shrinkage found in b
-ox being split [37]
+ox being split [38]
 Overfull \hbox (2.43767pt too wide) in alignment at lines 54--61
  [] [] 
  []
@@ -1845,7 +1845,7 @@ Overfull \hbox (2.43767pt too wide) in alignment at lines 64--75
  []
 
 sections/chapter4/4.5.tex:75: ignored error: Infinite glue shrinkage found in b
-ox being split [38]
+ox being split [39]
 Overfull \hbox (2.43767pt too wide) in alignment at lines 77--84
  [] [] 
  []
@@ -1877,7 +1877,7 @@ Overfull \hbox (2.43767pt too wide) in alignment at lines 107--118
  [] [] 
  []
 
-[39]
+[40]
 Overfull \hbox (2.43767pt too wide) in alignment at lines 120--127
  [] [] 
  []
@@ -1893,7 +1893,7 @@ Overfull \hbox (2.43767pt too wide) in alignment at lines 130--139
  []
 
 sections/chapter4/4.5.tex:139: ignored error: Infinite glue shrinkage found in 
-box being split [40]
+box being split [41]
 Overfull \hbox (2.43767pt too wide) in alignment at lines 141--148
  [] [] 
  []
@@ -1923,47 +1923,47 @@ Overfull \hbox (2.43767pt too wide) in alignment at lines 175--184
  [] [] 
  []
 
-[41]) (sections/chapter4/4.6.tex [42])) (sections/chapter5/chapter5.tex
-[43]
+[42]) (sections/chapter4/4.6.tex [43])) (sections/chapter5/chapter5.tex
+[44]
 Chapter 5.
 (sections/chapter5/5.1.tex
 File: figures/H2-kien-truc.png Graphic file (type bmp)
 <figures/H2-kien-truc.png>
- [44
+ [45
 
-] [45]) (sections/chapter5/5.2.tex [46]
+] [46]) (sections/chapter5/5.2.tex [47]
 File: figures/H7-trang-thai-cong-viec.png Graphic file (type bmp)
 <figures/H7-trang-thai-cong-viec.png>
- [47]
+ [48]
 File: figures/H3-luu-do-xu-ly-camera.png Graphic file (type bmp)
 <figures/H3-luu-do-xu-ly-camera.png>
 
-[48]
+[49]
 File: figures/H4-tuan-tu-tim-kiem.png Graphic file (type bmp)
 <figures/H4-tuan-tu-tim-kiem.png>
- [49] [50]
+ [50] [51]
 File: figures/H5-tuan-tu-vu-viec.png Graphic file (type bmp)
 <figures/H5-tuan-tu-vu-viec.png>
-) (sections/chapter5/5.3.tex [51] [52] [53]
+) (sections/chapter5/5.3.tex [52] [53] [54]
 File: figures/H8-erd.png Graphic file (type bmp)
 <figures/H8-erd.png>
- [54] [55
+ [55] [56
 
 
-] [56]
+] [57]
 File: figures/H6-trang-thai-lan-xuat-hien.png Graphic file (type bmp)
 <figures/H6-trang-thai-lan-xuat-hien.png>
 
-[57]) (sections/chapter5/5.4.tex [58]) (sections/chapter5/5.5.tex [59])
-(sections/chapter5/5.6.tex [60]
+[58]) (sections/chapter5/5.4.tex [59]) (sections/chapter5/5.5.tex [60])
+(sections/chapter5/5.6.tex [61]
 File: figures/H12-luong-man-hinh.png Graphic file (type bmp)
 <figures/H12-luong-man-hinh.png>
- [61])) (sections/chapter6/chapter6.tex [62]
+ [62])) (sections/chapter6/chapter6.tex [63]
 Chapter 6.
-(sections/chapter6/6.1.tex [63
+(sections/chapter6/6.1.tex [64
 
-] [64] [65]) (sections/chapter6/6.2.tex [66]
-[67]) (sections/chapter6/6.3.tex [68]
+] [65] [66]) (sections/chapter6/6.2.tex [67]
+[68]) (sections/chapter6/6.3.tex [69]
 File: figures/H10a-tim-kiem-anh-cat.png Graphic file (type bmp)
 <figures/H10a-tim-kiem-anh-cat.png>
 File: figures/H10b-tim-kiem-thuoc-tinh-cat.png Graphic file (type bmp)
@@ -1976,7 +1976,7 @@ File: figures/H10e-vu-viec-cua-toi-cat.png Graphic file (type bmp)
 <figures/H10e-vu-viec-cua-toi-cat.png>
 File: figures/H10f-tong-quan-cat.png Graphic file (type bmp)
 <figures/H10f-tong-quan-cat.png>
- [69] [70] [71]
+ [70] [71] [72]
 File: figures/H10g-camera-cat.png Graphic file (type bmp)
 <figures/H10g-camera-cat.png>
 File: figures/H10h-mo-hinh-ai-cat.png Graphic file (type bmp)
@@ -1988,9 +1988,9 @@ File: figures/H10j-trang-thai-he-thong-cat.png Graphic file (type bmp)
 File: figures/H10k-kiem-tra-ai-cat.png Graphic file (type bmp)
 <figures/H10k-kiem-tra-ai-cat.png>
 )
-(sections/chapter6/6.4.tex [72] [73])) (sections/chapter7/chapter7.tex [74]
+(sections/chapter6/6.4.tex [73] [74])) (sections/chapter7/chapter7.tex [75]
 Chapter 7.
-(sections/chapter7/7.1.tex) (sections/chapter7/7.2.tex [75
+(sections/chapter7/7.1.tex) (sections/chapter7/7.2.tex [76
 
 ]
 Underfull \hbox (badness 1776) in paragraph at lines 8--9
@@ -1998,61 +1998,61 @@ Underfull \hbox (badness 1776) in paragraph at lines 8--9
 13 The seven videos are streamed through MediaMTX (Sec-
  []
 
-)) (sections/chapter8/chapter8.tex [76] [77]
+)) (sections/chapter8/chapter8.tex [77] [78]
 Chapter 8.
-(sections/chapter8/8.1.tex [78
+(sections/chapter8/8.1.tex [79
 
-] [79]) (sections/chapter8/8.2.tex [80] [81])
-(sections/chapter8/8.3.tex [82] [83] [84] [85])) [86] [87
+] [80]) (sections/chapter8/8.2.tex [81] [82]
+[83]) (sections/chapter8/8.3.tex [84] [85] [86] [87])) [88] [89] [90
 
 ]
 (sections/research/chapter9.tex
 Chapter 9.
-[88
+[91
 
-] [89]
+] [92]
 File: figures/research/S23-overall-pipeline.png Graphic file (type bmp)
 <figures/research/S23-overall-pipeline.png>
- [90]
+ [93]
 File: figures/research/S26-zara.png Graphic file (type bmp)
 <figures/research/S26-zara.png>
- [91] [92]
+ [94] [95]
 File: figures/research/S31-offline-indexing.png Graphic file (type bmp)
 <figures/research/S31-offline-indexing.png>
 File: figures/research/S35-text-retrieval.png Graphic file (type bmp)
 <figures/research/S35-text-retrieval.png>
- [93]) (sections/research/chapter10.tex [94]
+ [96]) (sections/research/chapter10.tex [97]
 Chapter 10.
-[95
+[98
 
-] [96] [97] [98]
+] [99] [100] [101]
 File: figures/research/S36-reasoning-block.png Graphic file (type bmp)
 <figures/research/S36-reasoning-block.png>
- [99] [100]
+ [102] [103]
 File: figures/research/S37-selector.png Graphic file (type bmp)
 <figures/research/S37-selector.png>
 File: figures/research/S38-selector-example.png Graphic file (type bmp)
 <figures/research/S38-selector-example.png>
- [101]
+ [104]
 File: figures/research/S39-evidence-ranker.png Graphic file (type bmp)
 <figures/research/S39-evidence-ranker.png>
 File: figures/research/S40-evidence-example.png Graphic file (type bmp)
 <figures/research/S40-evidence-example.png>
- [102] [103] [104] [105])
-(sections/research/chapter11.tex [106]
+ [105] [106] [107] [108])
+(sections/research/chapter11.tex [109]
 Chapter 11.
-[107
+[110
 
-] [108] [109] [110] [111] [112]
+] [111] [112] [113] [114] [115]
 File: figures/research/case_lost.png Graphic file (type bmp)
 <figures/research/case_lost.png>
- [113]
+ [116]
 File: figures/research/case_lost_fixed.png Graphic file (type bmp)
 <figures/research/case_lost_fixed.png>
- [114]
+ [117]
 File: figures/research/case_rescued.png Graphic file (type bmp)
 <figures/research/case_rescued.png>
- [115] [116] [117]
+ [118] [119] [120]
 Underfull \hbox (badness 3735) in paragraph at lines 421--430
 [] []\TU/TimesNewRoman(0)/b/n/13 Switchable but not yet measured.[] \TU/TimesNe
 wRoman(0)/m/n/13 The pipeline keeps one flag per experi-
@@ -2077,22 +2077,22 @@ U/TimesNewRoman(0)/m/n/13 (the \TU/lmtt/m/n/13 agrees \TU/TimesNewRoman(0)/m/n/
 13 line under each quoted frame),
  []
 
-[118] [119]) (sections/chapter12/chapter12.tex [120]
+[121] [122]) (sections/chapter12/chapter12.tex [123]
 Chapter 12.
-(sections/chapter12/timeline.tex) (sections/chapter12/12.1.tex [121
+(sections/chapter12/timeline.tex) (sections/chapter12/12.1.tex [124
 
 ]
 File: figures/S05-ke-hoach.png Graphic file (type bmp)
 <figures/S05-ke-hoach.png>
- [122]
-(sections/research/_conclusion.tex [123
+ [125]
+(sections/research/_conclusion.tex [126
 
 
 ])) (sections/chapter12/12.2.tex
-(sections/research/_limits.tex [124] [125])) (sections/chapter12/12.3.tex))
-[126] [127] [128
+[127] (sections/research/_limits.tex [128])) (sections/chapter12/12.3.tex
+[129])) [130] [131
 
-] [129] [130] [131] [132] [133]
+] [132] [133] [134] [135] [136]
 
 enddocument/afterlastpage (AED): lastpage setting LastPage.
 
@@ -2107,13 +2107,13 @@ Package logreq Info: Writing requests to 'main.run.xml'.
 
  ) 
 Here is how much of TeX's memory you used:
- 51567 strings out of 402987
- 1168968 string characters out of 5448524
- 2206977 words of memory out of 5000000
- 79357 multiletter control sequences out of 15000+600000
+ 51568 strings out of 402987
+ 1168980 string characters out of 5448524
+ 2207163 words of memory out of 5000000
+ 79358 multiletter control sequences out of 15000+600000
  642423 words of font info for 145 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
  108i,15n,107p,1944b,5143s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
 Output written on D:\uni-studies\semester-253\capstone_project_new\report\thesi
-s-en\build\main.xdv (157 pages, 2490156 bytes).
+s-en\build\main.xdv (160 pages, 2533980 bytes).

@@ -29,4 +29,33 @@ By attributes & 0 & 0 & 0 & 0.038 & 0.015 & 0 to 0.13 \\
 
 \paragraph{Pipeline check on the training domain.} To tell an implementation fault from the domain gap, the adapters that serve queries (image bytes through the image encoder, sentence through the text encoder, inner-product ranking) were run on 600 images of the CUHK-PEDES training split, the domain of the checkpoint, with their captions; the published test split is not redistributed, and the copy used carries the captions of a person on each of that person's images, so retrieval is scored per identity. Three things follow. Image-to-image retrieval of the same person is perfect (Recall@1 of 1.000 on 109 queries), so the image side is right. Text-to-image retrieval by the vectors alone, as the application searches, reaches Recall@1 of 0.035 and Recall@10 of 0.177, against 0.002 and 0.017 for a random order: well above chance, far below the published 76.5\%. Re-ranking the top 32 candidates with RaSa's cross-modal matching head, as the authors' evaluation code does over the top 128, raises Recall@1 to 0.650 on 40 of these queries over a 150-image gallery (contrastive vectors alone: 0.050), at roughly 50 milliseconds per candidate on the CPU. The published accuracy of RaSa therefore belongs to its re-ranker, which the application keeps disabled (Section~\ref{sec:3.5.4}); the contrastive vectors that the vector search compares are only its candidate generator. This, not an implementation fault, is the first reason text search is weak, before any domain gap. The check also found one difference from the authors' code: queries were tokenised with the standard BERT tokenizer, which closes a sentence with [SEP], while RaSa trains and evaluates without it; using RaSa's own tokenizer raised Recall@10 on this sample from 0.137 to 0.177 and is now the default, with the image vectors and the index unchanged.
 
+\paragraph{Re-ranking the vector candidates.} Following that check, the matching head was added to the search flow as an optional stage (Section~\ref{sec:5.2.3}) and measured offline on the same gallery and queries: the vector search ranks the 1,526 tracks, the first $N$ candidates are re-scored by the matching head and returned in that order, and the rest keep their vector order. Table~\ref{tab:rerank} gives the result for $N$ from 32 to 128. The gain grows with $N$ because the vector ranking places the right person low: inside the first 16 candidates for 1 of the 26 text queries, inside the first 64 for 13 and inside the first 128 for 19. With $N = 128$, as in the authors' evaluation, text search reaches Recall@8 of 0.423 (95\% interval 0.26 to 0.61) and attribute search 0.154, from 0 for both. The cost is one fusion pass per candidate, 0.19 seconds on the CPU once the image tokens of the candidates are cached, so a query over 128 candidates takes about 17 seconds and over 64 about 9 seconds (Section~\ref{sec:8.7}). Attribute search gains less than free text: its template sentences name only garment types and colours, which many tracks share.
+
+\begin{table}[H]
+\centering
+\caption{Text and attribute search with the matching head re-ranking the first $N$ vector candidates (26 queries, 1,526 tracks)}
+\label{tab:rerank}
+\begin{tabularx}{\textwidth}{|L|c|c|c|c|c|c|}
+\hline
+\textbf{Form and stage} & \textbf{R@4} & \textbf{R@8} & \textbf{R@12} & \textbf{R@16} & \textbf{MRR} & \textbf{Median rank} \\
+\hline
+Text, vector search only & 0 & 0 & 0.038 & 0.038 & 0.021 & 73 \\
+\hline
+Text, re-ranked, $N = 32$ & 0.115 & 0.115 & 0.115 & 0.154 & 0.104 & 73 \\
+\hline
+Text, re-ranked, $N = 64$ & 0.269 & 0.308 & 0.423 & 0.423 & 0.248 & 73 \\
+\hline
+Text, re-ranked, $N = 128$ & 0.346 & 0.423 & 0.462 & 0.500 & 0.329 & 18 \\
+\hline
+Attributes, vector search only & 0 & 0 & 0 & 0.038 & 0.015 & 111 \\
+\hline
+Attributes, re-ranked, $N = 32$ & 0.038 & 0.038 & 0.077 & 0.077 & 0.053 & 111 \\
+\hline
+Attributes, re-ranked, $N = 64$ & 0.115 & 0.115 & 0.154 & 0.231 & 0.105 & 111 \\
+\hline
+Attributes, re-ranked, $N = 128$ & 0.115 & 0.154 & 0.269 & 0.269 & 0.116 & 88 \\
+\hline
+\end{tabularx}
+\end{table}
+
 \paragraph{Qualitative check on the demonstration data.} On the demonstration data (Section~\ref{sec:7.2}), five query images were tried with the top 8 results and assessed visually: three queries had 8/8 correct results, one 7/8 and one 4/8; the correct results lay on 4 to 5 different cameras. This is only a qualitative check on a dataset different from the evaluation set and cannot be compared with the Recall values of Table~\ref{tab:recall}.

@@ -78,9 +78,7 @@ class StorageMetrics:
     def errors(self) -> dict[StorageComponent, ComponentErrors]:
         with self._lock:
             return {
-                component: ComponentErrors(
-                    stats.count, stats.last_error_type, stats.last_error_at
-                )
+                component: ComponentErrors(stats.count, stats.last_error_type, stats.last_error_at)
                 for component, stats in self._errors.items()
             }
 
@@ -145,8 +143,10 @@ class StorageStatusService:
             repositories = work.repositories
             assert repositories is not None
             actor = repositories.users.get(actor_user_id)
-            if actor is None or actor.status is not UserStatus.ACTIVE or actor.role is not (
-                UserRole.ADMIN
+            if (
+                actor is None
+                or actor.status is not UserStatus.ACTIVE
+                or actor.role is not (UserRole.ADMIN)
             ):
                 raise StatusAccessDeniedError("Only an active Admin can read storage status.")
             tracks = repositories.tracks.count_by_status()

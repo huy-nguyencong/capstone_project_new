@@ -1,48 +1,48 @@
 \babel@toc {english}{}\relax 
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {2.1}{\ignorespaces The search and filtering interface of BriefCam~\blx@tocontentsinit {0}\cite {milestone2026briefcam}}}{8}{figure.caption.21}%
-\contentsline {figure}{\numberline {2.2}{\ignorespaces Avigilon Control Center with a marked subject~\blx@tocontentsinit {0}\cite {avigilon2026appearance}}}{9}{figure.caption.23}%
-\contentsline {figure}{\numberline {2.3}{\ignorespaces Results of a natural-language query on the Verkada Command platform~\blx@tocontentsinit {0}\cite {verkada2024aisearch}}}{10}{figure.caption.25}%
+\contentsline {figure}{\numberline {2.1}{\ignorespaces The search and filtering interface of BriefCam~\blx@tocontentsinit {0}\cite {milestone2026briefcam}}}{9}{figure.caption.21}%
+\contentsline {figure}{\numberline {2.2}{\ignorespaces Avigilon Control Center with a marked subject~\blx@tocontentsinit {0}\cite {avigilon2026appearance}}}{10}{figure.caption.23}%
+\contentsline {figure}{\numberline {2.3}{\ignorespaces Results of a natural-language query on the Verkada Command platform~\blx@tocontentsinit {0}\cite {verkada2024aisearch}}}{11}{figure.caption.25}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {4.1}{\ignorespaces Use case diagram of the system}}{34}{figure.caption.38}%
+\contentsline {figure}{\numberline {4.1}{\ignorespaces Use case diagram of the system}}{35}{figure.caption.38}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {5.1}{\ignorespaces Overall architecture of the system}}{45}{figure.caption.41}%
-\contentsline {figure}{\numberline {5.2}{\ignorespaces State diagram of a processing job}}{47}{figure.caption.43}%
-\contentsline {figure}{\numberline {5.3}{\ignorespaces Flowchart of one processing job}}{48}{figure.caption.45}%
-\contentsline {figure}{\numberline {5.4}{\ignorespaces Sequence diagram of the search flow}}{50}{figure.caption.46}%
-\contentsline {figure}{\numberline {5.5}{\ignorespaces Sequence diagram of saving a result into a case}}{52}{figure.caption.47}%
-\contentsline {figure}{\numberline {5.6}{\ignorespaces Entity-relationship diagram of the relational database}}{54}{figure.caption.51}%
-\contentsline {figure}{\numberline {5.7}{\ignorespaces State diagram of an appearance}}{57}{figure.caption.56}%
-\contentsline {figure}{\numberline {5.8}{\ignorespaces Screen flow by role}}{61}{figure.caption.60}%
+\contentsline {figure}{\numberline {5.1}{\ignorespaces Overall architecture of the system}}{46}{figure.caption.41}%
+\contentsline {figure}{\numberline {5.2}{\ignorespaces State diagram of a processing job}}{48}{figure.caption.43}%
+\contentsline {figure}{\numberline {5.3}{\ignorespaces Flowchart of one processing job}}{49}{figure.caption.45}%
+\contentsline {figure}{\numberline {5.4}{\ignorespaces Sequence diagram of the search flow}}{51}{figure.caption.46}%
+\contentsline {figure}{\numberline {5.5}{\ignorespaces Sequence diagram of saving a result into a case}}{53}{figure.caption.47}%
+\contentsline {figure}{\numberline {5.6}{\ignorespaces Entity-relationship diagram of the relational database}}{55}{figure.caption.51}%
+\contentsline {figure}{\numberline {5.7}{\ignorespaces State diagram of an appearance}}{58}{figure.caption.56}%
+\contentsline {figure}{\numberline {5.8}{\ignorespaces Screen flow by role}}{62}{figure.caption.60}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {6.1}{\ignorespaces Person search by image}}{69}{figure.caption.68}%
-\contentsline {figure}{\numberline {6.2}{\ignorespaces Person search by attributes}}{70}{figure.caption.69}%
-\contentsline {figure}{\numberline {6.3}{\ignorespaces The result detail dialog and the case creation dialog}}{70}{figure.caption.70}%
-\contentsline {figure}{\numberline {6.4}{\ignorespaces The Operator's case management screen}}{71}{figure.caption.71}%
-\contentsline {figure}{\numberline {6.5}{\ignorespaces The Viewer's overview screen}}{71}{figure.caption.73}%
-\contentsline {figure}{\numberline {6.6}{\ignorespaces Camera management screen}}{72}{figure.caption.75}%
-\contentsline {figure}{\numberline {6.7}{\ignorespaces AI model configuration screen}}{72}{figure.caption.76}%
-\contentsline {figure}{\numberline {6.8}{\ignorespaces Uploaded video processing screen}}{73}{figure.caption.77}%
-\contentsline {figure}{\numberline {6.9}{\ignorespaces System status screen}}{73}{figure.caption.78}%
-\contentsline {figure}{\numberline {6.10}{\ignorespaces AI check screen}}{74}{figure.caption.79}%
+\contentsline {figure}{\numberline {6.1}{\ignorespaces Person search by image}}{70}{figure.caption.68}%
+\contentsline {figure}{\numberline {6.2}{\ignorespaces Person search by attributes}}{71}{figure.caption.69}%
+\contentsline {figure}{\numberline {6.3}{\ignorespaces The result detail dialog and the case creation dialog}}{71}{figure.caption.70}%
+\contentsline {figure}{\numberline {6.4}{\ignorespaces The Operator's case management screen}}{72}{figure.caption.71}%
+\contentsline {figure}{\numberline {6.5}{\ignorespaces The Viewer's overview screen}}{72}{figure.caption.73}%
+\contentsline {figure}{\numberline {6.6}{\ignorespaces Camera management screen}}{73}{figure.caption.75}%
+\contentsline {figure}{\numberline {6.7}{\ignorespaces AI model configuration screen}}{73}{figure.caption.76}%
+\contentsline {figure}{\numberline {6.8}{\ignorespaces Uploaded video processing screen}}{74}{figure.caption.77}%
+\contentsline {figure}{\numberline {6.9}{\ignorespaces System status screen}}{74}{figure.caption.78}%
+\contentsline {figure}{\numberline {6.10}{\ignorespaces AI check screen}}{75}{figure.caption.79}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {9.1}{\ignorespaces The pipeline as a template of replaceable blocks}}{90}{figure.caption.106}%
-\contentsline {figure}{\numberline {9.2}{\ignorespaces ZARA's retrieval of discriminative evidence}}{92}{figure.caption.108}%
-\contentsline {figure}{\numberline {9.3}{\ignorespaces Extended offline indexing with the attribute describer}}{93}{figure.caption.110}%
-\contentsline {figure}{\numberline {9.4}{\ignorespaces Online search with the reasoning layer}}{94}{figure.caption.111}%
+\contentsline {figure}{\numberline {9.1}{\ignorespaces The pipeline as a template of replaceable blocks}}{93}{figure.caption.108}%
+\contentsline {figure}{\numberline {9.2}{\ignorespaces ZARA's retrieval of discriminative evidence}}{95}{figure.caption.110}%
+\contentsline {figure}{\numberline {9.3}{\ignorespaces Extended offline indexing with the attribute describer}}{96}{figure.caption.112}%
+\contentsline {figure}{\numberline {9.4}{\ignorespaces Online search with the reasoning layer}}{97}{figure.caption.113}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {10.1}{\ignorespaces The semantic reasoning block}}{99}{figure.caption.114}%
-\contentsline {figure}{\numberline {10.2}{\ignorespaces The attribute-value selector}}{101}{figure.caption.117}%
-\contentsline {figure}{\numberline {10.3}{\ignorespaces The selector with its real inputs and output}}{101}{figure.caption.118}%
-\contentsline {figure}{\numberline {10.4}{\ignorespaces The evidence and decision stages}}{102}{figure.caption.119}%
-\contentsline {figure}{\numberline {10.5}{\ignorespaces The evidence and decision stages at work}}{102}{figure.caption.120}%
+\contentsline {figure}{\numberline {10.1}{\ignorespaces The semantic reasoning block}}{102}{figure.caption.116}%
+\contentsline {figure}{\numberline {10.2}{\ignorespaces The attribute-value selector}}{104}{figure.caption.119}%
+\contentsline {figure}{\numberline {10.3}{\ignorespaces The selector with its real inputs and output}}{104}{figure.caption.120}%
+\contentsline {figure}{\numberline {10.4}{\ignorespaces The evidence and decision stages}}{105}{figure.caption.121}%
+\contentsline {figure}{\numberline {10.5}{\ignorespaces The evidence and decision stages at work}}{105}{figure.caption.122}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {11.1}{\ignorespaces A lost case}}{114}{figure.caption.136}%
-\contentsline {figure}{\numberline {11.2}{\ignorespaces The lost case after re-ranking with the larger model}}{115}{figure.caption.138}%
-\contentsline {figure}{\numberline {11.3}{\ignorespaces A rescued case}}{116}{figure.caption.140}%
+\contentsline {figure}{\numberline {11.1}{\ignorespaces A lost case}}{117}{figure.caption.138}%
+\contentsline {figure}{\numberline {11.2}{\ignorespaces The lost case after re-ranking with the larger model}}{118}{figure.caption.140}%
+\contentsline {figure}{\numberline {11.3}{\ignorespaces A rescued case}}{119}{figure.caption.142}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {12.1}{\ignorespaces Project timeline and the member responsible for each task}}{122}{figure.caption.147}%
+\contentsline {figure}{\numberline {12.1}{\ignorespaces Project timeline and the member responsible for each task}}{125}{figure.caption.149}%

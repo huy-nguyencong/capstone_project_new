@@ -25,9 +25,7 @@ class StorageRuntime:
         postgres = PostgresStorage.from_settings(settings.postgres)
         milvus = MilvusStorage(settings.milvus)
         minio = MinioStorage(settings.minio)
-        health = StorageHealthService(
-            (postgres, milvus, minio), secrets=settings.secret_values()
-        )
+        health = StorageHealthService((postgres, milvus, minio), secrets=settings.secret_values())
         return cls(settings, postgres, milvus, minio, health)
 
     def close(self) -> None:

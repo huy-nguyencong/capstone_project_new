@@ -56,11 +56,7 @@ def _require_finite(value: object, field_name: str) -> float:
 
 
 def _require_utc(value: object, field_name: str) -> datetime:
-    if (
-        not isinstance(value, datetime)
-        or value.tzinfo is None
-        or value.utcoffset() != timedelta(0)
-    ):
+    if not isinstance(value, datetime) or value.tzinfo is None or value.utcoffset() != timedelta(0):
         raise ValueError(f"{field_name} must be timezone-aware and normalized to UTC.")
     return value
 

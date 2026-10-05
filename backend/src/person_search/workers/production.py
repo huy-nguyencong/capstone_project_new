@@ -33,9 +33,7 @@ class Cancellable(Protocol):
 
 
 class ProgressObserver(Protocol):
-    def __call__(
-        self, source_frames: int, sampled_frames: int, completed_tracks: int
-    ) -> None: ...
+    def __call__(self, source_frames: int, sampled_frames: int, completed_tracks: int) -> None: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -152,9 +150,7 @@ class ProductionPipeline:
                     sampled_count += 1
                     detections = tuple(self._call("detector", self.detector.detect, sampled))
                     detection_count += len(detections)
-                    updates = tuple(
-                        self._call("tracker", self.tracker.update, sampled, detections)
-                    )
+                    updates = tuple(self._call("tracker", self.tracker.update, sampled, detections))
                     update_count += len(updates)
                     for update in updates:
                         self._call("selector", self.selector.consider, sampled, update)

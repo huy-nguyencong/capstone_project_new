@@ -25,6 +25,8 @@ from person_search.storage.postgres.unit_of_work import UnitOfWork
 logger = logging.getLogger(__name__)
 
 ALLOWED_TOP_K = frozenset({4, 8, 12, 16})
+# A re-ranking stage may ask for a larger candidate pool (ef is raised to the pool size).
+MAX_POOL = 128
 # Stale or out-of-scope hits are dropped after hydration; when that leaves fewer than
 # top_k results, Milvus is queried again with a doubled limit (top_k, 2x, 4x).
 MAX_SEARCH_ROUNDS = 3
@@ -71,6 +73,7 @@ class TrackSearchResult:
     area_name: str
     appeared_at_utc: datetime
     bbox: BoundingBoxPixels
+    frame_object_key: str | None = None
 
 
 @dataclass(slots=True)
@@ -93,9 +96,20 @@ class TrackSearchService:
         self.metrics = metrics or SearchMetrics()
         self._storage_metrics = storage_metrics
 
-    def search(self, actor_user_id: uuid.UUID, query: TrackSearchQuery) -> list[TrackSearchResult]:
+    def search(
+        self, actor_user_id: uuid.UUID, query: TrackSearchQuery, *, pool: int | None = None
+    ) -> list[TrackSearchResult]:
+        """Up to ``top_k`` results, or up to ``pool`` candidates for a re-ranking stage."""
+
         if isinstance(query.top_k, bool) or query.top_k not in ALLOWED_TOP_K:
             raise InvalidSearchRequestError("top_k must be one of 4, 8, 12, or 16.")
+        if pool is not None and (
+            isinstance(pool, bool)
+            or not isinstance(pool, int)
+            or not query.top_k <= pool <= MAX_POOL
+        ):
+            raise InvalidSearchRequestError(f"pool must be between top_k and {MAX_POOL}.")
+        wanted = pool or query.top_k
         camera_ids = tuple(dict.fromkeys(query.camera_ids))
         area_id, active_cameras = self._authorize(actor_user_id, camera_ids)
         # Tracks of inactive/retired cameras are kept but not searchable until reactivated.
@@ -112,11 +126,11 @@ class TrackSearchService:
         except ValueError as error:
             raise InvalidSearchRequestError(str(error)) from error
 
-        limit = query.top_k
+        limit = wanted
         for _ in range(MAX_SEARCH_ROUNDS):
-            hits = self._vector_search(query.embedding, filters, limit)
+            hits = self._vector_search(query.embedding, filters, min(limit, MAX_POOL))
             results, stale = self._hydrate(hits, area_id=area_id, query=query, cameras=scope)
-            if len(results) >= query.top_k or len(hits) < limit:
+            if len(results) >= wanted or len(hits) < min(limit, MAX_POOL) or limit >= MAX_POOL:
                 break
             limit *= 2
         self.metrics.searches += 1
@@ -126,7 +140,7 @@ class TrackSearchService:
                 "vector search returned stale or out-of-scope hits",
                 extra={"stale_hits": stale, "actor_user_id": str(actor_user_id)},
             )
-        return results[: query.top_k]
+        return results[:wanted]
 
     def _vector_search(
         self, embedding: Sequence[float], filters: VectorFilter, limit: int
@@ -183,6 +197,7 @@ class TrackSearchService:
                         frame_width=track.frame_width,
                         frame_height=track.frame_height,
                     ),
+                    frame_object_key=track.minio_object_key,
                 )
             )
         return results, stale

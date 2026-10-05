@@ -5,17 +5,21 @@ Latexmk: applying rule 'xelatex'...
 Rule 'xelatex':  Reasons for rerun
 Changed files or newly in use/created:
   sections/chapter1/1.4.tex
+  sections/chapter12/12.1.tex
   sections/chapter12/12.2.tex
   sections/chapter12/12.3.tex
-  sections/chapter3/3.5.tex
+  sections/chapter5/5.2.tex
   sections/chapter8/8.2.tex
+  sections/chapter8/8.3.tex
   sections/front/abstract.tex
 Category 'changed_user':
   sections/chapter1/1.4.tex
+  sections/chapter12/12.1.tex
   sections/chapter12/12.2.tex
   sections/chapter12/12.3.tex
-  sections/chapter3/3.5.tex
+  sections/chapter5/5.2.tex
   sections/chapter8/8.2.tex
+  sections/chapter8/8.3.tex
   sections/front/abstract.tex
 
 ------------
@@ -456,27 +460,27 @@ sections/front/abbreviations.tex:91: ignored error: Infinite glue shrinkage fou
 nd in box being split [21]) [22] (sections/chapter1/chapter1.tex
 Chapter 1.
 (sections/chapter1/1.1.tex [1]) (sections/chapter1/1.2.tex [2])
-(sections/chapter1/1.3.tex [3] [4]) (sections/chapter1/1.4.tex)) [5] [6]
-(sections/chapter2/chapter2.tex
+(sections/chapter1/1.3.tex [3] [4]) (sections/chapter1/1.4.tex [5])) [6]
+[7] (sections/chapter2/chapter2.tex
 Chapter 2.
-(sections/chapter2/2.1.tex [7] [8] [9]) (sections/chapter2/2.2.tex
+(sections/chapter2/2.1.tex [8] [9] [10]) (sections/chapter2/2.2.tex
 sections/chapter2/2.2.tex:35: ignored error: Infinite glue shrinkage found in b
-ox being split [10] [11]) (sections/chapter2/2.3.tex))
-(sections/chapter3/chapter3.tex [12]
+ox being split [11] [12]) (sections/chapter2/2.3.tex))
+(sections/chapter3/chapter3.tex [13]
 Chapter 3.
-(sections/chapter3/3.1.tex [13] [14]) (sections/chapter3/3.2.tex [15] [16])
+(sections/chapter3/3.1.tex [14] [15]) (sections/chapter3/3.2.tex [16] [17])
 (sections/chapter3/3.3.tex
 Underfull \hbox (badness 1910) in paragraph at lines 12--13
 []\TU/TimesNewRoman(0)/m/n/13 The common approach is \TU/TimesNewRoman(0)/m/it/
 13 tracking-by-detection\TU/TimesNewRoman(0)/m/n/13 , founded on the SORT algo-
 
-[17] [18]) (sections/chapter3/3.4.tex) (sections/chapter3/3.5.tex [19] [20])
-(sections/chapter3/3.6.tex [21]) (sections/chapter3/3.7.tex [22] [23]))
-(sections/chapter4/chapter4.tex [24]
+[18] [19]) (sections/chapter3/3.4.tex) (sections/chapter3/3.5.tex [20] [21])
+(sections/chapter3/3.6.tex [22]) (sections/chapter3/3.7.tex [23] [24]))
+(sections/chapter4/chapter4.tex [25]
 Chapter 4.
-(sections/chapter4/4.1.tex [25] [26]) (sections/chapter4/4.2.tex [27] [28]
-[29]) (sections/chapter4/4.3.tex [30] [31] [32]) (sections/chapter4/4.4.tex
-[33] [34]) (sections/chapter4/4.5.tex [35] [36]
+(sections/chapter4/4.1.tex [26] [27]) (sections/chapter4/4.2.tex [28] [29]
+[30]) (sections/chapter4/4.3.tex [31] [32] [33]) (sections/chapter4/4.4.tex
+[34] [35]) (sections/chapter4/4.5.tex [36] [37]
 Overfull \hbox (2.43767pt too wide) in alignment at lines 9--16
  [] [] 
 
@@ -495,7 +499,7 @@ Overfull \hbox (2.43767pt too wide) in alignment at lines 37--40
 Overfull \hbox (2.43767pt too wide) in alignment at lines 40--52
  [] [] 
 sections/chapter4/4.5.tex:52: ignored error: Infinite glue shrinkage found in b
-ox being split [37]
+ox being split [38]
 Overfull \hbox (2.43767pt too wide) in alignment at lines 54--61
  [] [] 
 
@@ -505,7 +509,7 @@ Overfull \hbox (2.43767pt too wide) in alignment at lines 61--64
 Overfull \hbox (2.43767pt too wide) in alignment at lines 64--75
  [] [] 
 sections/chapter4/4.5.tex:75: ignored error: Infinite glue shrinkage found in b
-ox being split [38]
+ox being split [39]
 Overfull \hbox (2.43767pt too wide) in alignment at lines 77--84
  [] [] 
 
@@ -523,7 +527,7 @@ Overfull \hbox (2.43767pt too wide) in alignment at lines 104--107
 
 Overfull \hbox (2.43767pt too wide) in alignment at lines 107--118
  [] [] 
-[39]
+[40]
 Overfull \hbox (2.43767pt too wide) in alignment at lines 120--127
  [] [] 
 
@@ -533,7 +537,7 @@ Overfull \hbox (2.43767pt too wide) in alignment at lines 127--130
 Overfull \hbox (2.43767pt too wide) in alignment at lines 130--139
  [] [] 
 sections/chapter4/4.5.tex:139: ignored error: Infinite glue shrinkage found in 
-box being split [40]
+box being split [41]
 Overfull \hbox (2.43767pt too wide) in alignment at lines 141--148
  [] [] 
 
@@ -551,34 +555,37 @@ Overfull \hbox (2.43767pt too wide) in alignment at lines 172--175
 
 Overfull \hbox (2.43767pt too wide) in alignment at lines 175--184
  [] [] 
-[41]) (sections/chapter4/4.6.tex [42])) (sections/chapter5/chapter5.tex
-[43]
+[42]) (sections/chapter4/4.6.tex [43])) (sections/chapter5/chapter5.tex
+[44]
 Chapter 5.
-(sections/chapter5/5.1.tex [44] [45]) (sections/chapter5/5.2.tex [46] [47]
-[48] [49] [50]) (sections/chapter5/5.3.tex [51] [52] [53] [54] [55] [56]
-[57]) (sections/chapter5/5.4.tex [58]) (sections/chapter5/5.5.tex [59])
-(sections/chapter5/5.6.tex [60] [61])) (sections/chapter6/chapter6.tex [62]
+(sections/chapter5/5.1.tex [45] [46]) (sections/chapter5/5.2.tex [47] [48]
+[49] [50] [51]) (sections/chapter5/5.3.tex [52] [53] [54] [55] [56] [57]
+[58]) (sections/chapter5/5.4.tex [59]) (sections/chapter5/5.5.tex [60])
+(sections/chapter5/5.6.tex [61] [62])) (sections/chapter6/chapter6.tex [63]
 Chapter 6.
-(sections/chapter6/6.1.tex [63] [64] [65]) (sections/chapter6/6.2.tex [66]
-[67]) (sections/chapter6/6.3.tex [68] [69] [70] [71])
-(sections/chapter6/6.4.tex [72] [73])) (sections/chapter7/chapter7.tex [74]
+(sections/chapter6/6.1.tex [64] [65] [66]) (sections/chapter6/6.2.tex [67]
+[68]) (sections/chapter6/6.3.tex [69] [70] [71] [72])
+(sections/chapter6/6.4.tex [73] [74])) (sections/chapter7/chapter7.tex [75]
 Chapter 7.
-(sections/chapter7/7.1.tex) (sections/chapter7/7.2.tex [75]
+(sections/chapter7/7.1.tex) (sections/chapter7/7.2.tex [76]
 Underfull \hbox (badness 1776) in paragraph at lines 8--9
 [] []\TU/TimesNewRoman(0)/b/n/13 Simulated cameras.[] \TU/TimesNewRoman(0)/m/n/
 13 The seven videos are streamed through MediaMTX (Sec-
-)) (sections/chapter8/chapter8.tex [76] [77]
+)) (sections/chapter8/chapter8.tex [77] [78]
 Chapter 8.
-(sections/chapter8/8.1.tex [78] [79]) (sections/chapter8/8.2.tex [80] [81])
-(sections/chapter8/8.3.tex [82] [83] [84] [85])) [86] [87]
+(sections/chapter8/8.1.tex [79] [80]) (sections/chapter8/8.2.tex [81] [82]
+
+LaTeX Warning: Reference `tab:rerank' on page 83 undefined on input line 32.
+
+[83]) (sections/chapter8/8.3.tex [84] [85] [86] [87])) [88] [89] [90]
 (sections/research/chapter9.tex
 Chapter 9.
-[88] [89] [90] [91] [92] [93]) (sections/research/chapter10.tex [94]
+[91] [92] [93] [94] [95] [96]) (sections/research/chapter10.tex [97]
 Chapter 10.
-[95] [96] [97] [98] [99] [100] [101] [102] [103] [104] [105])
-(sections/research/chapter11.tex [106]
+[98] [99] [100] [101] [102] [103] [104] [105] [106] [107] [108])
+(sections/research/chapter11.tex [109]
 Chapter 11.
-[107] [108] [109] [110] [111] [112] [113] [114] [115] [116] [117]
+[110] [111] [112] [113] [114] [115] [116] [117] [118] [119] [120]
 Underfull \hbox (badness 3735) in paragraph at lines 421--430
 [] []\TU/TimesNewRoman(0)/b/n/13 Switchable but not yet measured.[] \TU/TimesNe
 wRoman(0)/m/n/13 The pipeline keeps one flag per experi-
@@ -595,24 +602,27 @@ Underfull \hbox (badness 1577) in paragraph at lines 421--430
 \TU/TimesNewRoman(0)/m/n/13 tics block), \TU/lmtt/m/n/13 LAB_FRAME_AGREEMENT \T
 U/TimesNewRoman(0)/m/n/13 (the \TU/lmtt/m/n/13 agrees \TU/TimesNewRoman(0)/m/n/
 13 line under each quoted frame),
-[118] [119]) (sections/chapter12/chapter12.tex [120]
+[121] [122]) (sections/chapter12/chapter12.tex [123]
 Chapter 12.
-(sections/chapter12/timeline.tex) (sections/chapter12/12.1.tex [121] [122]
-(sections/research/_conclusion.tex [123])) (sections/chapter12/12.2.tex
-(sections/research/_limits.tex [124] [125])) (sections/chapter12/12.3.tex))
-[126] [127] [128] [129] [130] [131] [132] [133]
+(sections/chapter12/timeline.tex) (sections/chapter12/12.1.tex [124] [125]
+(sections/research/_conclusion.tex [126])) (sections/chapter12/12.2.tex
+[127] (sections/research/_limits.tex [128])) (sections/chapter12/12.3.tex
+[129])) [130] [131] [132] [133] [134] [135] [136]
 
 enddocument/afterlastpage (AED): lastpage setting LastPage.
 
 (D:\uni-studies\semester-253\capstone_project_new\report\thesis-en\build\main.a
 ux)
 
+LaTeX Warning: There were undefined references.
+
+
 LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
 
  )
 (see the transcript file for additional information)
 Output written on D:\uni-studies\semester-253\capstone_project_new\report\thesi
-s-en\build\main.xdv (157 pages, 2490156 bytes).
+s-en\build\main.xdv (160 pages, 2531120 bytes).
 SyncTeX written on D:\uni-studies\semester-253\capstone_project_new\report\thesis-en\build/main.synctex.gz.
 Transcript written on D:\uni-studies\semester-253\capstone_project_new\report\t
 hesis-en\build\main.log.
@@ -1083,27 +1093,27 @@ sections/front/abbreviations.tex:91: ignored error: Infinite glue shrinkage fou
 nd in box being split [21]) [22] (sections/chapter1/chapter1.tex
 Chapter 1.
 (sections/chapter1/1.1.tex [1]) (sections/chapter1/1.2.tex [2])
-(sections/chapter1/1.3.tex [3] [4]) (sections/chapter1/1.4.tex)) [5] [6]
-(sections/chapter2/chapter2.tex
+(sections/chapter1/1.3.tex [3] [4]) (sections/chapter1/1.4.tex [5])) [6]
+[7] (sections/chapter2/chapter2.tex
 Chapter 2.
-(sections/chapter2/2.1.tex [7] [8] [9]) (sections/chapter2/2.2.tex
+(sections/chapter2/2.1.tex [8] [9] [10]) (sections/chapter2/2.2.tex
 sections/chapter2/2.2.tex:35: ignored error: Infinite glue shrinkage found in b
-ox being split [10] [11]) (sections/chapter2/2.3.tex))
-(sections/chapter3/chapter3.tex [12]
+ox being split [11] [12]) (sections/chapter2/2.3.tex))
+(sections/chapter3/chapter3.tex [13]
 Chapter 3.
-(sections/chapter3/3.1.tex [13] [14]) (sections/chapter3/3.2.tex [15] [16])
+(sections/chapter3/3.1.tex [14] [15]) (sections/chapter3/3.2.tex [16] [17])
 (sections/chapter3/3.3.tex
 Underfull \hbox (badness 1910) in paragraph at lines 12--13
 []\TU/TimesNewRoman(0)/m/n/13 The common approach is \TU/TimesNewRoman(0)/m/it/
 13 tracking-by-detection\TU/TimesNewRoman(0)/m/n/13 , founded on the SORT algo-
 
-[17] [18]) (sections/chapter3/3.4.tex) (sections/chapter3/3.5.tex [19] [20])
-(sections/chapter3/3.6.tex [21]) (sections/chapter3/3.7.tex [22] [23]))
-(sections/chapter4/chapter4.tex [24]
+[18] [19]) (sections/chapter3/3.4.tex) (sections/chapter3/3.5.tex [20] [21])
+(sections/chapter3/3.6.tex [22]) (sections/chapter3/3.7.tex [23] [24]))
+(sections/chapter4/chapter4.tex [25]
 Chapter 4.
-(sections/chapter4/4.1.tex [25] [26]) (sections/chapter4/4.2.tex [27] [28]
-[29]) (sections/chapter4/4.3.tex [30] [31] [32]) (sections/chapter4/4.4.tex
-[33] [34]) (sections/chapter4/4.5.tex [35] [36]
+(sections/chapter4/4.1.tex [26] [27]) (sections/chapter4/4.2.tex [28] [29]
+[30]) (sections/chapter4/4.3.tex [31] [32] [33]) (sections/chapter4/4.4.tex
+[34] [35]) (sections/chapter4/4.5.tex [36] [37]
 Overfull \hbox (2.43767pt too wide) in alignment at lines 9--16
  [] [] 
 
@@ -1122,7 +1132,7 @@ Overfull \hbox (2.43767pt too wide) in alignment at lines 37--40
 Overfull \hbox (2.43767pt too wide) in alignment at lines 40--52
  [] [] 
 sections/chapter4/4.5.tex:52: ignored error: Infinite glue shrinkage found in b
-ox being split [37]
+ox being split [38]
 Overfull \hbox (2.43767pt too wide) in alignment at lines 54--61
  [] [] 
 
@@ -1132,7 +1142,7 @@ Overfull \hbox (2.43767pt too wide) in alignment at lines 61--64
 Overfull \hbox (2.43767pt too wide) in alignment at lines 64--75
  [] [] 
 sections/chapter4/4.5.tex:75: ignored error: Infinite glue shrinkage found in b
-ox being split [38]
+ox being split [39]
 Overfull \hbox (2.43767pt too wide) in alignment at lines 77--84
  [] [] 
 
@@ -1150,7 +1160,7 @@ Overfull \hbox (2.43767pt too wide) in alignment at lines 104--107
 
 Overfull \hbox (2.43767pt too wide) in alignment at lines 107--118
  [] [] 
-[39]
+[40]
 Overfull \hbox (2.43767pt too wide) in alignment at lines 120--127
  [] [] 
 
@@ -1160,7 +1170,7 @@ Overfull \hbox (2.43767pt too wide) in alignment at lines 127--130
 Overfull \hbox (2.43767pt too wide) in alignment at lines 130--139
  [] [] 
 sections/chapter4/4.5.tex:139: ignored error: Infinite glue shrinkage found in 
-box being split [40]
+box being split [41]
 Overfull \hbox (2.43767pt too wide) in alignment at lines 141--148
  [] [] 
 
@@ -1178,34 +1188,34 @@ Overfull \hbox (2.43767pt too wide) in alignment at lines 172--175
 
 Overfull \hbox (2.43767pt too wide) in alignment at lines 175--184
  [] [] 
-[41]) (sections/chapter4/4.6.tex [42])) (sections/chapter5/chapter5.tex
-[43]
+[42]) (sections/chapter4/4.6.tex [43])) (sections/chapter5/chapter5.tex
+[44]
 Chapter 5.
-(sections/chapter5/5.1.tex [44] [45]) (sections/chapter5/5.2.tex [46] [47]
-[48] [49] [50]) (sections/chapter5/5.3.tex [51] [52] [53] [54] [55] [56]
-[57]) (sections/chapter5/5.4.tex [58]) (sections/chapter5/5.5.tex [59])
-(sections/chapter5/5.6.tex [60] [61])) (sections/chapter6/chapter6.tex [62]
+(sections/chapter5/5.1.tex [45] [46]) (sections/chapter5/5.2.tex [47] [48]
+[49] [50] [51]) (sections/chapter5/5.3.tex [52] [53] [54] [55] [56] [57]
+[58]) (sections/chapter5/5.4.tex [59]) (sections/chapter5/5.5.tex [60])
+(sections/chapter5/5.6.tex [61] [62])) (sections/chapter6/chapter6.tex [63]
 Chapter 6.
-(sections/chapter6/6.1.tex [63] [64] [65]) (sections/chapter6/6.2.tex [66]
-[67]) (sections/chapter6/6.3.tex [68] [69] [70] [71])
-(sections/chapter6/6.4.tex [72] [73])) (sections/chapter7/chapter7.tex [74]
+(sections/chapter6/6.1.tex [64] [65] [66]) (sections/chapter6/6.2.tex [67]
+[68]) (sections/chapter6/6.3.tex [69] [70] [71] [72])
+(sections/chapter6/6.4.tex [73] [74])) (sections/chapter7/chapter7.tex [75]
 Chapter 7.
-(sections/chapter7/7.1.tex) (sections/chapter7/7.2.tex [75]
+(sections/chapter7/7.1.tex) (sections/chapter7/7.2.tex [76]
 Underfull \hbox (badness 1776) in paragraph at lines 8--9
 [] []\TU/TimesNewRoman(0)/b/n/13 Simulated cameras.[] \TU/TimesNewRoman(0)/m/n/
 13 The seven videos are streamed through MediaMTX (Sec-
-)) (sections/chapter8/chapter8.tex [76] [77]
+)) (sections/chapter8/chapter8.tex [77] [78]
 Chapter 8.
-(sections/chapter8/8.1.tex [78] [79]) (sections/chapter8/8.2.tex [80] [81])
-(sections/chapter8/8.3.tex [82] [83] [84] [85])) [86] [87]
+(sections/chapter8/8.1.tex [79] [80]) (sections/chapter8/8.2.tex [81] [82]
+[83]) (sections/chapter8/8.3.tex [84] [85] [86] [87])) [88] [89] [90]
 (sections/research/chapter9.tex
 Chapter 9.
-[88] [89] [90] [91] [92] [93]) (sections/research/chapter10.tex [94]
+[91] [92] [93] [94] [95] [96]) (sections/research/chapter10.tex [97]
 Chapter 10.
-[95] [96] [97] [98] [99] [100] [101] [102] [103] [104] [105])
-(sections/research/chapter11.tex [106]
+[98] [99] [100] [101] [102] [103] [104] [105] [106] [107] [108])
+(sections/research/chapter11.tex [109]
 Chapter 11.
-[107] [108] [109] [110] [111] [112] [113] [114] [115] [116] [117]
+[110] [111] [112] [113] [114] [115] [116] [117] [118] [119] [120]
 Underfull \hbox (badness 3735) in paragraph at lines 421--430
 [] []\TU/TimesNewRoman(0)/b/n/13 Switchable but not yet measured.[] \TU/TimesNe
 wRoman(0)/m/n/13 The pipeline keeps one flag per experi-
@@ -1222,12 +1232,12 @@ Underfull \hbox (badness 1577) in paragraph at lines 421--430
 \TU/TimesNewRoman(0)/m/n/13 tics block), \TU/lmtt/m/n/13 LAB_FRAME_AGREEMENT \T
 U/TimesNewRoman(0)/m/n/13 (the \TU/lmtt/m/n/13 agrees \TU/TimesNewRoman(0)/m/n/
 13 line under each quoted frame),
-[118] [119]) (sections/chapter12/chapter12.tex [120]
+[121] [122]) (sections/chapter12/chapter12.tex [123]
 Chapter 12.
-(sections/chapter12/timeline.tex) (sections/chapter12/12.1.tex [121] [122]
-(sections/research/_conclusion.tex [123])) (sections/chapter12/12.2.tex
-(sections/research/_limits.tex [124] [125])) (sections/chapter12/12.3.tex))
-[126] [127] [128] [129] [130] [131] [132] [133]
+(sections/chapter12/timeline.tex) (sections/chapter12/12.1.tex [124] [125]
+(sections/research/_conclusion.tex [126])) (sections/chapter12/12.2.tex
+[127] (sections/research/_limits.tex [128])) (sections/chapter12/12.3.tex
+[129])) [130] [131] [132] [133] [134] [135] [136]
 
 enddocument/afterlastpage (AED): lastpage setting LastPage.
 
@@ -1235,7 +1245,7 @@ enddocument/afterlastpage (AED): lastpage setting LastPage.
 ux) )
 (see the transcript file for additional information)
 Output written on D:\uni-studies\semester-253\capstone_project_new\report\thesi
-s-en\build\main.xdv (157 pages, 2490156 bytes).
+s-en\build\main.xdv (160 pages, 2533980 bytes).
 SyncTeX written on D:\uni-studies\semester-253\capstone_project_new\report\thesis-en\build/main.synctex.gz.
 Transcript written on D:\uni-studies\semester-253\capstone_project_new\report\t
 hesis-en\build\main.log.
@@ -1266,7 +1276,7 @@ Running 'xdvipdfmx -E -o "build/main.pdf"  "build/main.xdv"'
 build/main.xdv -> build/main.pdf
 [1][2
 xdvipdfmx:warning: Object @page.A already defined.
-][3][4][5][6][7][8][9][10][11][12][13][14][15][16][17][18][19][20][21][22][23][24][25][26][27][28][29][30][31][32][33][34][35][36][37][38][39][40][41][42][43][44][45][46][47][48][49][50][51][52][53][54][55][56][57][58][59][60][61][62][63][64][65][66][67][68][69][70][71][72][73][74][75][76][77][78][79][80][81][82][83][84][85][86][87][88][89][90][91][92][93][94][95][96][97][98][99][100][101][102][103][104][105][106][107][108][109][110][111][112][113][114][115][116][117][118][119][120][121][122][123][124][125][126][127][128][129][130][131][132][133][134][135][136][137][138][139][140][141][142][143][144][145][146][147][148][149][150][151][152][153][154][155][156][157]
-21724493 bytes written
+][3][4][5][6][7][8][9][10][11][12][13][14][15][16][17][18][19][20][21][22][23][24][25][26][27][28][29][30][31][32][33][34][35][36][37][38][39][40][41][42][43][44][45][46][47][48][49][50][51][52][53][54][55][56][57][58][59][60][61][62][63][64][65][66][67][68][69][70][71][72][73][74][75][76][77][78][79][80][81][82][83][84][85][86][87][88][89][90][91][92][93][94][95][96][97][98][99][100][101][102][103][104][105][106][107][108][109][110][111][112][113][114][115][116][117][118][119][120][121][122][123][124][125][126][127][128][129][130][131][132][133][134][135][136][137][138][139][140][141][142][143][144][145][146][147][148][149][150][151][152][153][154][155][156][157][158][159][160]
+21731169 bytes written
 Latexmk: All targets (build/main.xdv build/main.pdf) are up-to-date
 

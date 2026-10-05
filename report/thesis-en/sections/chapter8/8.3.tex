@@ -43,7 +43,7 @@ With $N = 20$, CPU time drops by about a quarter and the image size by about a t
 
 \begin{table}[H]
 \centering
-\caption{Search latency through the API (30 calls per form, $k = 8$)}
+\caption{Search latency through the API ($k = 8$; 30 calls per form without re-ranking, 10 with)}
 \label{tab:latency}
 \begin{tabularx}{\textwidth}{|L|c|c|c|}
 \hline
@@ -55,10 +55,18 @@ By text & 106 ms & 142 ms & 151 ms \\
 \hline
 By attributes & 103 ms & 136 ms & 136 ms \\
 \hline
+By text, re-ranked over 64 candidates & 9,383 ms & 10,220 ms & 10,220 ms \\
+\hline
+By attributes, re-ranked over 64 candidates & 9,073 ms & 9,753 ms & 9,753 ms \\
+\hline
+By text, re-ranked over 128 candidates & 17,034 ms & 19,747 ms & 19,747 ms \\
+\hline
+By attributes, re-ranked over 128 candidates & 17,110 ms & 17,904 ms & 17,904 ms \\
+\hline
 \end{tabularx}
 \end{table}
 
-Search by image is over ten times slower because the query image goes through RaSa's image encoder on the CPU, while a description only needs the text encoder. Through the interface in the rehearsals, the first search after start-up took about 31 seconds, mostly to load the encoder. Later searches took about 8 seconds, as they were measured while the worker ran an RTSP session and include the rendering time. Without warm-up and with a busy worker, the first search took about 97 seconds, which is why the deployment procedure includes a warm-up search (Section~\ref{sec:7.1}).
+Search by image is over ten times slower because the query image goes through RaSa's image encoder on the CPU, while a description only needs the text encoder. With the re-ranking stage of Section~\ref{sec:8.4} enabled, a text or attribute search costs one fusion pass per candidate on top, about 0.15 seconds each with the image tokens of the demonstration data precomputed (about 1.3 seconds per track once, 1.4~GB on disk for 1,523 tracks), hence about 9 and 17 seconds for 64 and 128 candidates; without the cache the first search over a candidate pays its image encoding as well. Through the interface in the rehearsals, the first search after start-up took about 31 seconds, mostly to load the encoder. Later searches took about 8 seconds, as they were measured while the worker ran an RTSP session and include the rendering time. Without warm-up and with a busy worker, the first search took about 97 seconds, which is why the deployment procedure includes a warm-up search (Section~\ref{sec:7.1}).
 
 \paragraph{Storage and memory.} Each track takes about 358~KB on average for its full JPEG frame and 1~KB for its 256-dimensional vector; the relational database is about 24~MB. Memory was measured for each component with the whole system running as in the demonstration, taking the maximum in each state, twice: on 29 September with the original loading code and the Vite development server, and on 5 October after the RaSa checkpoint was loaded selectively (Section~\ref{sec:6.2.1}) and the web application was served by the application server (Section~\ref{sec:7.1}). Table~\ref{tab:memory} gives both measurements.
 

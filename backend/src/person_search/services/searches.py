@@ -10,7 +10,7 @@ import os
 import uuid
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Any, Protocol
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -29,6 +29,8 @@ from person_search.storage.postgres.unit_of_work import UnitOfWork
 MAX_QUERY_IMAGE_BYTES = 10 * 1024 * 1024
 MAX_QUERY_IMAGE_PIXELS = 24_000_000
 DEMO_ENCODER_VERSION = "fake_demo_v1"
+
+
 class EncoderUnavailableError(RuntimeError):
     pass
 
@@ -49,6 +51,7 @@ class SearchResponse:
     encoder_version: str
     top_k: int
     results: tuple[TrackSearchResult, ...]
+    reranked: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -119,10 +122,14 @@ class SearchService:
         *,
         encoder: EncoderGateway | None = None,
         allow_demo: bool = False,
+        rerank: Any = None,
     ) -> None:
         self._unit_of_work_factory = unit_of_work_factory
         self._milvus_client = milvus_client
         self._encoder = encoder
+        # Optional TextRerankService: text and attribute searches take a larger candidate pool
+        # from the vector search and return it in image-text matching order.
+        self._rerank = rerank
         self._allow_demo = allow_demo
 
     def cameras(self, actor_user_id: uuid.UUID) -> tuple[OperatorCamera, ...]:
@@ -184,8 +191,28 @@ class SearchService:
         )
         service = TrackSearchService(self._unit_of_work_factory, vectors)
         query = TrackSearchQuery(embedding=vector, **filters)
-        results = service.search(actor, query)
-        return SearchResponse(mode, prompt, config.encoder_version, query.top_k, tuple(results))
+        rerank = (
+            self._rerank
+            if mode in ("TEXT", "ATTRIBUTES")
+            and prompt
+            and config.encoder_version != DEMO_ENCODER_VERSION
+            else None
+        )
+        if rerank is None:
+            results = service.search(actor, query)
+            return SearchResponse(mode, prompt, config.encoder_version, query.top_k, tuple(results))
+        pool = max(query.top_k, rerank.settings.top_n)
+        candidates = service.search(actor, query, pool=pool)
+        results = rerank.rerank(
+            prompt,
+            candidates,
+            keep=query.top_k,
+            version=config.encoder_version,
+            dimension=config.encoder_dimension,
+        )
+        return SearchResponse(
+            mode, prompt, config.encoder_version, query.top_k, tuple(results), reranked=True
+        )
 
     def active_config(self):
         with self._unit_of_work_factory() as work:

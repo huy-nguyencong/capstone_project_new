@@ -225,6 +225,7 @@ def _response(value: SearchResponse) -> dict[str, object]:
         "prompt": value.prompt,
         "encoder_version": value.encoder_version,
         "top_k": value.top_k,
+        "reranked": value.reranked,
         "results": [
             {
                 "track_id": str(r.track_id),

@@ -74,6 +74,31 @@ class InProcessQueryEncoder:
     def text(self, text: str, *, version: str, dimension: int) -> Sequence[float]:
         return self._call("text", text, version, dimension)
 
+    def image_tokens(self, content: bytes, *, version: str, dimension: int):
+        return self._call_raw(lambda gateway: gateway.image_tokens, content, version, dimension)
+
+    def itm_scores(self, text: str, tokens, *, version: str, dimension: int) -> Sequence[float]:
+        return self._call_raw(
+            lambda gateway: lambda value, **kw: gateway.itm_scores(value, tokens, **kw),
+            text,
+            version,
+            dimension,
+        )
+
+    def _call_raw(self, method_of, payload: Any, version: str, dimension: int):
+        with self._lock:
+            gateway = self._ensure(version, dimension)
+            try:
+                return method_of(gateway)(payload, version=version, dimension=dimension)
+            except AIWorkerError as error:
+                self._gateway = None
+                self._discard(gateway)
+                logger.warning(
+                    "query encoder re-ranking call failed",
+                    extra={"error_code": error.code.value},
+                )
+                raise EncoderUnavailableError("Query encoder inference failed.") from error
+
     def close(self) -> None:
         with self._lock:
             gateway, self._gateway = self._gateway, None

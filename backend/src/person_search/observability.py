@@ -51,9 +51,7 @@ _CONTROL_CHARACTERS = re.compile(r"[\x00-\x08\x0b-\x1f\x7f]")
 _LINE_BREAKS = re.compile(r"[\r\n]+")
 
 _EMPTY: Mapping[str, str] = MappingProxyType({})
-_context: ContextVar[Mapping[str, str]] = ContextVar(
-    "person_search_log_context", default=_EMPTY
-)
+_context: ContextVar[Mapping[str, str]] = ContextVar("person_search_log_context", default=_EMPTY)
 
 
 def redact_text(value: str, *, multiline: bool = False) -> str:

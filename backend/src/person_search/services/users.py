@@ -241,9 +241,7 @@ class UserService:
             if not repositories.users.update_if_version(
                 user.id, expected_version=version, values=values
             ):
-                raise UserConflictError(
-                    "version_conflict", "User was changed by another request."
-                )
+                raise UserConflictError("version_conflict", "User was changed by another request.")
             repositories.users.refresh(user)
             if permission_changed:
                 repositories.auth_sessions.revoke_for_user(
@@ -262,9 +260,7 @@ class UserService:
             work.commit()
             return self._view(repositories, user)
 
-    def change_status(
-        self, user_id: uuid.UUID, *, actor_id: uuid.UUID, action: str
-    ) -> UserView:
+    def change_status(self, user_id: uuid.UUID, *, actor_id: uuid.UUID, action: str) -> UserView:
         desired = {
             "lock": UserStatus.LOCKED,
             "unlock": UserStatus.ACTIVE,

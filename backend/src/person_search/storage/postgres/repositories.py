@@ -113,9 +113,7 @@ class AuthSessionRepository(Repository[AuthSession]):
     def __init__(self, session: Session) -> None:
         super().__init__(session, AuthSession)
 
-    def get_by_token_hash(
-        self, token_hash: str, *, for_update: bool = False
-    ) -> AuthSession | None:
+    def get_by_token_hash(self, token_hash: str, *, for_update: bool = False) -> AuthSession | None:
         statement = select(AuthSession).where(AuthSession.token_hash == token_hash)
         if for_update:
             statement = statement.with_for_update()
@@ -305,9 +303,7 @@ class PersonTrackRepository(Repository[PersonTrack]):
         statement = (
             select(PersonTrack)
             .where(
-                PersonTrack.index_status.in_(
-                    (TrackIndexStatus.PENDING, TrackIndexStatus.FAILED)
-                ),
+                PersonTrack.index_status.in_((TrackIndexStatus.PENDING, TrackIndexStatus.FAILED)),
                 PersonTrack.updated_at < updated_before,
             )
             .order_by(PersonTrack.updated_at, PersonTrack.id)
@@ -413,9 +409,7 @@ class CaseResultRepository(Repository[CaseResult]):
         return bool(
             self.session.scalar(
                 select(
-                    exists().where(
-                        CaseResult.case_id == case_id, CaseResult.track_id == track_id
-                    )
+                    exists().where(CaseResult.case_id == case_id, CaseResult.track_id == track_id)
                 )
             )
         )

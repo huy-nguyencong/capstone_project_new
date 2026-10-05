@@ -477,20 +477,59 @@ CLIP "separate small clothing differences less well" thành câu có số liệu
 
 ### B5. Bật re-rank ITM của RaSa cho truy vấn văn bản
 
-**Điều kiện.** Chỉ làm khi B1 cho thấy đường xử lý đúng và B2 cho thấy kết quả đúng nằm trong
-top 128 đủ thường xuyên để re-rank có ích. Xung đột với A1: cần `keep_fusion_layers=True`
-(thêm khoảng 0.25 GiB).
+**Code (đã làm 05/10/2026).**
 
-**Code.** `RasaRuntime.rerank(text, crops)` dùng bộ mã hóa đa thức với `mode="fusion"` và
-`itm_head`; `services/searches.py` gọi re-rank trên top `itm_rerank_top_k` khi cờ cấu hình bật;
-thêm trường `reranked` vào phản hồi API.
+- `rasa_vendor/inference_model.py`: với `keep_fusion_layers=True` giữ thêm `itm_head`
+  (`select_state` giữ `itm_head.*`); `rasa.py`: `RasaRuntime.image_tokens(image)` (577x768) và
+  `RasaRuntime.itm_scores(text, tokens)` chạy đúng như `evaluation()` của RaSa (text mode →
+  fusion mode → logit "match"), theo lô 8 ứng viên.
+- `ai/encoders/image.py`: tiến trình con nhận thêm lệnh `encode_tokens` và `itm`; backend và
+  `build_rasa_query_gateway(..., keep_fusion_layers=True)`; `query.py` thêm `image_tokens`,
+  `itm_scores`; `services/query_encoder.py` chuyển tiếp hai hàm này.
+- Mới `services/text_rerank.py`: `TextRerankService.rerank(text, candidates, keep, ...)` lấy
+  khung đại diện từ MinIO, crop đúng như lúc index, lấy token ảnh qua tiến trình encoder, cache
+  `<track_id>.npy` float16 trên đĩa (`PERSON_SEARCH_ITM_TOKEN_CACHE`), chấm ITM, trả lại theo
+  thứ tự ITM với `matching_score = sigmoid(logit)`; ứng viên thiếu khung được giữ sau các ứng viên
+  đã chấm. `services/track_search.py`: `search(..., pool=N)` với `MAX_POOL = 128`, kết quả mang
+  `frame_object_key`; `storage/milvus/vectors.py`: `ef = max(64, limit)`.
+- `services/searches.py`: `SearchResponse.reranked`; TEXT/ATTRIBUTES qua re-rank khi bật;
+  API trả trường `reranked`. `app.py` đọc `PERSON_SEARCH_TEXT_RERANK_TOP_N` (0 = tắt, 16..128)
+  và nạp encoder truy vấn với lớp fusion khi bật. `.env.example` có hai biến mới.
+- Mới `tools/evaluate_wildtrack_rerank.py` (đánh giá ngoại tuyến từ cache gallery, token cache
+  float16) và `tools/warm_itm_cache.py` (tính trước token cho mọi track READY). Test mới
+  `tests/unit/test_text_rerank.py` (6 test); `test_rasa_inference_model.py` cập nhật;
+  check script qua: 740 unit test.
 
-**Đo.** R@k trên bộ B3 có và không re-rank; độ trễ truy vấn văn bản (`benchmark_search_latency.py`).
+**Đo ngoại tuyến (05/10/2026, gallery 1.526 track, 26 truy vấn, cùng cache của B3).**
 
-**Báo cáo.** Mục 3.5.3 câu "Re-ranking is disabled" sửa theo kết quả; 8.2 và 8.4 thêm dòng;
-12.3 bỏ hướng tương lai này nếu đã làm.
+| Hình thức, tầng | R@4 | R@8 | R@12 | R@16 | MRR | Hạng đúng đầu tiên median |
+| --- | --- | --- | --- | --- | --- | --- |
+| Văn bản, chỉ vector | 0 | 0 | 0,038 | 0,038 | 0,021 | 73 |
+| Văn bản, ITM N=32 | 0,115 | 0,115 | 0,115 | 0,154 | 0,104 | 73 |
+| Văn bản, ITM N=64 | 0,269 | 0,308 | 0,423 | 0,423 | 0,248 | 73 |
+| Văn bản, ITM N=128 | 0,346 | 0,423 | 0,462 | 0,500 | 0,329 | 18 |
+| Thuộc tính, chỉ vector | 0 | 0 | 0 | 0,038 | 0,015 | 111 |
+| Thuộc tính, ITM N=64 | 0,115 | 0,115 | 0,154 | 0,231 | 0,105 | 111 |
+| Thuộc tính, ITM N=128 | 0,115 | 0,154 | 0,269 | 0,269 | 0,116 | 88 |
 
-**Trạng thái.** Chưa làm.
+Người đúng nằm trong top-16/64/128 của vector: văn bản 1/13/19 trên 26, thuộc tính 1/10/15,
+nên N phải lớn; R@8 văn bản ở N=128 có khoảng tin cậy 0,26 đến 0,61. ITM 0,19 s mỗi ứng viên.
+
+**Đo trực tiếp qua API (cache token 1.523 track đã warm-up, 49 phút, 1,4 GB).** k = 8, 10
+lượt: N=64 văn bản p50 9.383 ms, thuộc tính 9.073 ms; N=128 văn bản p50 17.034 ms, thuộc tính
+17.110 ms; ảnh không đổi ~1.100 ms. Lần đầu chưa cache thêm ~1,3 s mỗi ứng viên. Phản hồi có
+`reranked: true`, điểm 0..1 theo thứ tự ITM.
+
+**Quyết định.** Giữ bước này là tùy chọn (mặc định tắt) vì 17 s mỗi truy vấn trên CPU; khi demo
+có thể bật N=64 (9 s) sau khi chạy warm-up. Hướng làm nhanh: tính token ở worker lúc index và
+chạy fusion trên GPU (ghi ở 12.3).
+
+**Báo cáo (đã sửa).** 5.2.3 thêm bước 5; 8.2 thêm đoạn "Re-ranking the vector candidates" và
+bảng 8.3 mới; 8.3 bảng độ trễ thêm 4 dòng và một đoạn; 12.1, 12.2, 12.3, tóm tắt, 1.4 cập nhật.
+`report-data-guide.md` thêm hai dòng C8.4/C8.7. README backend mô tả hai công cụ và biến môi
+trường.
+
+**Trạng thái.** Xong 05/10/2026.
 
 ### B6. Sửa cách trình bày kết quả và giao thức đo phát hiện
 

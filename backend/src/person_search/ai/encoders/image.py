@@ -55,6 +55,10 @@ class ImageEncoderBackend(Protocol):
 
     def encode_text(self, text: str, *, timeout_seconds: float) -> Sequence[float]: ...
 
+    def encode_tokens(self, image: Image.Image, *, timeout_seconds: float) -> Any: ...
+
+    def itm_scores(self, text: str, tokens: Any, *, timeout_seconds: float) -> Sequence[float]: ...
+
     def close(self) -> None: ...
 
 
@@ -64,6 +68,7 @@ def _rasa_image_child(
     artifact_root: str,
     runtime_settings: RasaRuntimeSettings,
     device: str,
+    keep_fusion_layers: bool = False,
 ) -> None:
     try:
         runtime = RasaRuntimeFactory(
@@ -71,6 +76,7 @@ def _rasa_image_child(
             artifact_root=artifact_root,
             settings=runtime_settings,
             device=device,
+            keep_fusion_layers=keep_fusion_layers,
         ).load()
         connection.send(("ready", None))
     except BaseException:
@@ -86,6 +92,29 @@ def _rasa_image_child(
                 try:
                     tensor = runtime.text_embedding(payload)
                     connection.send(("ok", tensor.detach().cpu().reshape(-1).tolist()))
+                except BaseException:
+                    connection.send(("inference_error", None))
+                continue
+            if command == "encode_tokens" and isinstance(payload, Image.Image):
+                try:
+                    import numpy
+
+                    tokens = runtime.image_tokens(payload)[0].detach().cpu().numpy()
+                    connection.send(("ok", tokens.astype(numpy.float16)))
+                except BaseException:
+                    connection.send(("inference_error", None))
+                finally:
+                    payload.close()
+                continue
+            if command == "itm" and isinstance(payload, tuple) and len(payload) == 2:
+                try:
+                    import numpy
+                    import torch
+
+                    text, tokens = payload
+                    array = torch.from_numpy(numpy.asarray(tokens, dtype=numpy.float32))
+                    scores = runtime.itm_scores(text, array)
+                    connection.send(("ok", scores.detach().cpu().reshape(-1).tolist()))
                 except BaseException:
                     connection.send(("inference_error", None))
                 continue
@@ -117,12 +146,14 @@ class RasaImageProcessBackend:
         device: str,
         settings: ImageEncoderSettings,
         context_factory: Callable[[str], Any] = multiprocessing.get_context,
+        keep_fusion_layers: bool = False,
     ) -> None:
         self.entry = entry
         self.artifact_root = str(Path(artifact_root).resolve())
         self.runtime_settings = runtime_settings
         self.device = device
         self.settings = settings
+        self.keep_fusion_layers = keep_fusion_layers
         self._context_factory = context_factory
         self._connection: Connection | None = None
         self._process: Any | None = None
@@ -140,6 +171,7 @@ class RasaImageProcessBackend:
                 self.artifact_root,
                 self.runtime_settings,
                 self.device,
+                self.keep_fusion_layers,
             ),
             daemon=True,
         )
@@ -176,6 +208,32 @@ class RasaImageProcessBackend:
         status, payload = self._connection.recv()
         if status != "ok" or not isinstance(payload, list):
             raise RuntimeError("RaSa text inference failed.")
+        return payload
+
+    def encode_tokens(self, image: Image.Image, *, timeout_seconds: float) -> Any:
+        if self._connection is None or self._process is None or not self._process.is_alive():
+            raise RuntimeError("RaSa image encoder backend is unavailable.")
+        self._connection.send(("encode_tokens", image.copy()))
+        if not self._connection.poll(timeout_seconds):
+            self.close()
+            raise TimeoutError("RaSa image token inference timed out.")
+        status, payload = self._connection.recv()
+        if status != "ok" or getattr(payload, "shape", None) != (577, 768):
+            raise RuntimeError("RaSa image token inference failed.")
+        return payload
+
+    def itm_scores(self, text: str, tokens: Any, *, timeout_seconds: float) -> Sequence[float]:
+        if self._connection is None or self._process is None or not self._process.is_alive():
+            raise RuntimeError("RaSa encoder backend is unavailable.")
+        if not self.keep_fusion_layers:
+            raise RuntimeError("ITM re-ranking needs the fusion layers (keep_fusion_layers=True).")
+        self._connection.send(("itm", (text, tokens)))
+        if not self._connection.poll(timeout_seconds):
+            self.close()
+            raise TimeoutError("RaSa ITM inference timed out.")
+        status, payload = self._connection.recv()
+        if status != "ok" or not isinstance(payload, list):
+            raise RuntimeError("RaSa ITM inference failed.")
         return payload
 
     def close(self) -> None:

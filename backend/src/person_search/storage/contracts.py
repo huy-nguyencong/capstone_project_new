@@ -43,9 +43,7 @@ _ALLOWED_TRACK_TRANSITIONS: Final = {
         {TrackStorageState.PENDING, TrackStorageState.READY, TrackStorageState.FAILED}
     ),
     TrackStorageState.READY: frozenset({TrackStorageState.READY}),
-    TrackStorageState.FAILED: frozenset(
-        {TrackStorageState.FAILED, TrackStorageState.PENDING}
-    ),
+    TrackStorageState.FAILED: frozenset({TrackStorageState.FAILED, TrackStorageState.PENDING}),
 }
 
 
@@ -68,11 +66,7 @@ def require_uuid4(value: UUID, field_name: str) -> None:
 def require_utc(value: datetime, field_name: str) -> None:
     """Require a timezone-aware datetime already normalized to UTC."""
 
-    if (
-        not isinstance(value, datetime)
-        or value.tzinfo is None
-        or value.utcoffset() != timedelta(0)
-    ):
+    if not isinstance(value, datetime) or value.tzinfo is None or value.utcoffset() != timedelta(0):
         raise ValueError(f"{field_name} must be timezone-aware and normalized to UTC.")
 
 

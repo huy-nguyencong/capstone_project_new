@@ -99,6 +99,7 @@ def test_select_state_keeps_only_the_inference_modules_without_fusion_layers() -
     assert not any("_m." in key or key.endswith("_queue") for key in selected)
     assert not any(key.startswith("text_encoder.cls.") for key in selected)
     assert not any("crossattention" in key for key in selected)
+    assert "itm_head.weight" not in selected
 
 
 def test_select_state_keeps_fusion_layers_on_request_but_never_training_parts() -> None:
@@ -115,7 +116,9 @@ def test_select_state_keeps_fusion_layers_on_request_but_never_training_parts() 
     assert any("crossattention" in key for key in selected)
     assert not any("_m." in key or key.endswith("_queue") for key in selected)
     assert "text_encoder.cls.predictions.decoder.weight" not in selected
-    assert "itm_head.weight" not in selected
+    # The matching head comes with the fusion layers (ITM re-ranking); the other heads never.
+    assert "itm_head.weight" in selected
+    assert "prd_head.weight" not in selected and "mrtd_head.weight" not in selected
 
 
 def test_select_state_preserves_checkpoint_order() -> None:

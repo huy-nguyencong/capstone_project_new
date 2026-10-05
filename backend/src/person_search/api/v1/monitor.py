@@ -85,9 +85,7 @@ def camera_pipeline():  # type: ignore[no-untyped-def]
 @require_auth(UserRole.ADMIN)
 @rate_limited("diagnostics")
 def search_components():  # type: ignore[no-untyped-def]
-    return jsonify(
-        _service("monitoring.service").search_components(actor_id=current_actor().id)
-    )
+    return jsonify(_service("monitoring.service").search_components(actor_id=current_actor().id))
 
 
 @monitor_blueprint.get("/audit-logs")

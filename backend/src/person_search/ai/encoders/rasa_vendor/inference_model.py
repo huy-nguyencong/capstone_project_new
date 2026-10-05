@@ -20,6 +20,7 @@ VISUAL_PREFIX = "visual_encoder."
 TEXT_BERT_PREFIX = "text_encoder.bert."
 TEXT_LAYER_PREFIX = "text_encoder.bert.encoder.layer."
 PROJECTION_PREFIXES = ("vision_proj.", "text_proj.")
+ITM_PREFIX = "itm_head."
 
 
 class _TextEncoderShell(nn.Module):
@@ -61,6 +62,9 @@ class RasaInferenceModel(nn.Module):
         self.text_encoder = _TextEncoderShell(bert_config)
         self.vision_proj = nn.Linear(vision_width, embed_dim)
         self.text_proj = nn.Linear(bert_config.hidden_size, embed_dim)
+        if keep_fusion_layers:
+            # The image-text matching head scores a (text, image) pair from the fused [CLS].
+            self.itm_head = nn.Linear(bert_config.hidden_size, 2)
 
     @staticmethod
     def select_state(state: dict, *, fusion_layer: int, keep_fusion_layers: bool) -> dict:
@@ -70,6 +74,9 @@ class RasaInferenceModel(nn.Module):
         for key, value in state.items():
             if key.startswith(VISUAL_PREFIX) or key.startswith(PROJECTION_PREFIXES):
                 selected[key] = value
+            elif key.startswith(ITM_PREFIX):
+                if keep_fusion_layers:
+                    selected[key] = value
             elif key.startswith(TEXT_BERT_PREFIX):
                 if not keep_fusion_layers and key.startswith(TEXT_LAYER_PREFIX):
                     layer = int(key[len(TEXT_LAYER_PREFIX) :].split(".", 1)[0])

@@ -455,9 +455,7 @@ class _CameraPipelineRun:
         if message is None and not self.frames:
             message, code = "Nguồn không trả về khung hình nào.", "source_empty"
         if message is not None:
-            self.steps.append(
-                Step("FRAME_SOURCE", label, Outcome.FAILED, message, timer.ms, code)
-            )
+            self.steps.append(Step("FRAME_SOURCE", label, Outcome.FAILED, message, timer.ms, code))
             return False
         first = self.frames[0]
         self.steps.append(

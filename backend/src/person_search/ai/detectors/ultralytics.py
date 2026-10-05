@@ -326,9 +326,7 @@ class YoloPersonDetector:
         finally:
             del raw
 
-    def _normalize(
-        self, raw: Sequence[RawDetection], frame: SampledFrame
-    ) -> tuple[Detection, ...]:
+    def _normalize(self, raw: Sequence[RawDetection], frame: SampledFrame) -> tuple[Detection, ...]:
         if len(raw) > self.settings.max_detections:
             raise ValueError("Detector exceeded max_detections.")
         detections = []

@@ -16,9 +16,7 @@ from person_search.workers.contracts import Detection, ModelLineage, SampledFram
 from person_search.workers.pipeline import Pipeline
 
 DEMO_ENCODER_VERSION: Final = "fake_demo_v1"
-DEMO_ENCODER_SHA256: Final = (
-    "eed9d600efbe54cebfb11d6bc78260fd41e2d7b652ce1ed389600fade8b6cf83"
-)
+DEMO_ENCODER_SHA256: Final = "eed9d600efbe54cebfb11d6bc78260fd41e2d7b652ce1ed389600fade8b6cf83"
 DEMO_FIXTURE_ID: Final = "central-person-v1"
 
 
@@ -107,9 +105,7 @@ class DemoTracker:
         if self.first is None:
             return []
         frame, bbox = self.first
-        result = DemoCompletedTrack(
-            str(frame.index), frame.timestamp_ms, self.last_ms, frame, bbox
-        )
+        result = DemoCompletedTrack(str(frame.index), frame.timestamp_ms, self.last_ms, frame, bbox)
         self.close()
         return [result]
 
@@ -140,16 +136,12 @@ class DemoEncoderGateway:
 
         image = decode_query_image(content)
         digest = hashlib.sha256(image.resize((16, 16)).tobytes()).digest()
-        return _normalized(
-            [float(digest[index % len(digest)] + 1) for index in range(dimension)]
-        )
+        return _normalized([float(digest[index % len(digest)] + 1) for index in range(dimension)])
 
     def text(self, text: str, *, version: str, dimension: int):
         _require_demo_encoder(version, dimension)
         digest = hashlib.sha256(text.encode("utf-8")).digest()
-        return _normalized(
-            [float(digest[index % len(digest)] + 1) for index in range(dimension)]
-        )
+        return _normalized([float(digest[index % len(digest)] + 1) for index in range(dimension)])
 
 
 class DemoPipeline(Pipeline):

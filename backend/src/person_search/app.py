@@ -38,6 +38,7 @@ from person_search.services.jobs import JobService
 from person_search.services.monitoring import MonitoringService
 from person_search.services.query_encoder import InProcessQueryEncoder
 from person_search.services.searches import SearchService
+from person_search.services.text_rerank import RerankSettings, TextRerankService
 from person_search.services.track_imagery import TrackImageService
 from person_search.services.users import UserService
 from person_search.services.video_staging import VideoStaging
@@ -110,6 +111,7 @@ def create_app(
             candidate_loader = None
             diagnostics = None
             query_encoder = None
+            text_rerank = None
             if camera_registry is not None and camera_registry.mode is RegistryMode.PRODUCTION:
                 config_root = Path(__file__).parents[2] / "config"
                 components = ProductionComponentFactory.from_environment(
@@ -132,8 +134,28 @@ def create_app(
                     settings=diagnostic_settings,
                 )
                 if not os.getenv("PERSON_SEARCH_ENCODER_URL", "").strip():
-                    query_encoder = InProcessQueryEncoder(camera_registry, components.query_gateway)
+                    rerank_top_n = int(os.getenv("PERSON_SEARCH_TEXT_RERANK_TOP_N", "0") or 0)
+                    if rerank_top_n > 0:
+                        # The re-ranking stage needs the fusion layers in the query encoder.
+                        def gateway_factory(selection, _components=components):
+                            return _components.query_gateway(selection, keep_fusion_layers=True)
+                    else:
+                        gateway_factory = components.query_gateway
+                    query_encoder = InProcessQueryEncoder(camera_registry, gateway_factory)
                     atexit.register(query_encoder.close)
+                    if rerank_top_n > 0:
+                        text_rerank = TextRerankService(
+                            query_encoder,
+                            MinioFrameStore(runtime.minio.client, settings.minio.bucket),
+                            settings=RerankSettings(
+                                top_n=rerank_top_n,
+                                cache_dir=Path(
+                                    os.getenv(
+                                        "PERSON_SEARCH_ITM_TOKEN_CACHE", "var/cache/itm_tokens"
+                                    )
+                                ),
+                            ),
+                        )
             container.register(
                 "cameras.service",
                 CameraService(
@@ -151,6 +173,7 @@ def create_app(
                     app.config["ENVIRONMENT"] != "production"
                     and parse_boolean_environment("PERSON_SEARCH_ALLOW_DEMO_MODELS")
                 ),
+                rerank=text_rerank,
             )
             container.register("searches.service", search_service)
             container.register(

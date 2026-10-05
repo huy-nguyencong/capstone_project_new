@@ -90,9 +90,7 @@ class ProductionTrackPublisher:
     area_id: uuid.UUID
     jobs: object
 
-    def __call__(
-        self, snapshot: JobExecutionSnapshot, result: ProductionPipelineResult
-    ) -> None:
+    def __call__(self, snapshot: JobExecutionSnapshot, result: ProductionPipelineResult) -> None:
         published = snapshot.published_tracks
         for ordinal, encoded in enumerate(result.encoded_tracks, start=1):
             request = ingestion_request(snapshot, self.area_id, encoded)
@@ -248,9 +246,7 @@ class BundleImporter:
                 timeline_origin_utc=datetime.fromisoformat(item["timeline_origin_utc"]),
                 source_frame_index=item["source_frame_index"],
                 source_started_at_ms=item["source_started_at_ms"],
-                representative_frame_timestamp_ms=item[
-                    "representative_frame_timestamp_ms"
-                ],
+                representative_frame_timestamp_ms=item["representative_frame_timestamp_ms"],
                 source_ended_at_ms=item["source_ended_at_ms"],
                 bbox=BoundingBoxPixels(**item["bbox"]),
                 frame_bytes=frame,

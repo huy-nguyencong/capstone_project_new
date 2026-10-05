@@ -55,7 +55,8 @@ The web application sends the query with the camera filter, time range and $k$. 
     \item \textbf{validates the input:} a JPEG or PNG image of at most 10~MB; attributes from the allowed list forming a valid combination; $k$ in $\{4, 8, 12, 16\}$;
     \item \textbf{encodes the query:} images with the image encoder, descriptions with the text encoder; attributes become an English sentence from a fixed template, such as \emph{``A woman wearing a red jacket and blue jeans, carrying a handbag.''};
     \item \textbf{determines the scope:} the area comes from the Operator's account, and the cameras are the selected ones or every operational camera of the area; others are rejected;
-    \item \textbf{runs a pre-filtered vector search} in Milvus, checked against PostgreSQL and repeated with twice the number when valid results are missing, up to three rounds (Section~\ref{sec:3.6.4}).
+    \item \textbf{runs a pre-filtered vector search} in Milvus, checked against PostgreSQL and repeated with twice the number when valid results are missing, up to three rounds (Section~\ref{sec:3.6.4});
+    \item \textbf{re-ranks text and attribute queries} when the stage is enabled: the vector search returns a larger pool of $N$ candidates ($N$ between $k$ and 64), the representative crop of each candidate is turned into image token features by the query encoder, kept in a disk cache per appearance, and scored against the sentence with RaSa's image-text matching head; the pool is returned in that order, cut to $k$, with the matching score as the relevance score (Section~\ref{sec:3.5.4}). Image queries are not re-ranked.
 \end{enumerate}
 The list only carries descriptive information and scores; each image is a separate request, checked again and rendered from the representative frame (Section~\ref{sec:6.3.3}), so the list returns fast and no image skips the permission check.
 

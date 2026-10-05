@@ -292,6 +292,14 @@ python tools/benchmark_sampling.py \
     --settings config/rasa_cuhk_pedes_runtime.json --images 600 --itm-queries 40 \
     --output var/evaluation/rasa-domain-sanity.json
   ```
+- `evaluate_wildtrack_rerank.py` đo tìm bằng văn bản/thuộc tính khi xếp hạng lại top-N ứng viên của
+  vector search bằng đầu ITM của RaSa (như mã đánh giá gốc làm trên top-128), dùng cache gallery của
+  `evaluate_wildtrack.py`; token ảnh của mỗi track được tính một lần vào `--token-cache` (float16,
+  ~1,3 GB cho 1.526 track). Kết quả cho task B5 và mục 8.2 của báo cáo.
+- `warm_itm_cache.py` tính trước token ảnh cho mọi track READY của dữ liệu demo (PostgreSQL + MinIO
+  theo `.env`, ~1,3 s mỗi track) vào `PERSON_SEARCH_ITM_TOKEN_CACHE`, để bước xếp hạng lại của API
+  (`PERSON_SEARCH_TEXT_RERANK_TOP_N` > 0) chỉ tốn ~0,15 s mỗi ứng viên khi demo. Chạy lại được sau
+  khi ngắt; track đã có trong cache được bỏ qua.
 - `rtsp_timestamp_check.py` đọc một luồng RTSP qua đúng `RtspFrameSource`, giả lập xử lý chậm bằng
   `--slow-ms` mỗi khung, và so khoảng cách giữa hai khung được lấy mẫu theo timestamp của khung
   (chế độ `stream`, mặc định) và theo đồng hồ máy (chế độ `clock`, hành vi cũ). Bằng chứng cho

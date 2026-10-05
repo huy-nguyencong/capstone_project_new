@@ -76,9 +76,7 @@ def iso(value: datetime | None) -> str | None:
     return value.astimezone(UTC).isoformat().replace("+00:00", "Z")
 
 
-def freshness(
-    observed_at: datetime | None, now: datetime, max_age: timedelta
-) -> dict[str, Any]:
+def freshness(observed_at: datetime | None, now: datetime, max_age: timedelta) -> dict[str, Any]:
     if observed_at is None:
         return {"observed_at": None, "age_seconds": None, "stale": True}
     if observed_at.tzinfo is None:
@@ -549,9 +547,7 @@ class MonitoringService:
                     "last_job_ended_at": iso(last.ended_at) if last is not None else None,
                     "last_heartbeat_at": iso(heartbeat),
                     "heartbeat_freshness": (
-                        freshness(heartbeat, now, HEARTBEAT_STALE_AFTER)
-                        if running
-                        else None
+                        freshness(heartbeat, now, HEARTBEAT_STALE_AFTER) if running else None
                     ),
                     "last_error": error,
                     "metrics": camera_metrics(
@@ -594,9 +590,7 @@ class MonitoringService:
             except DiagnosticBusyError as error:
                 raise _busy() from error
         else:
-            steps = run_pipeline_steps(
-                camera, config, self._runtime.probe, self._pipeline_factory
-            )
+            steps = run_pipeline_steps(camera, config, self._runtime.probe, self._pipeline_factory)
         report = self._report(steps)
         self._audit_failure(
             report,

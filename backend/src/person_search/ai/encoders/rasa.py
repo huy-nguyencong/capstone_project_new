@@ -179,6 +179,54 @@ class RasaRuntime:
             )
         return self._validate(vector)
 
+    def image_tokens(self, image: Image.Image):
+        """All image token features of the visual encoder (1, 577, 768), for ITM re-ranking."""
+
+        import torch
+
+        with torch.inference_mode():
+            tensor = self.preprocessor.image(image).unsqueeze(0).to(self.device)
+            return self.model.visual_encoder(tensor)
+
+    def itm_scores(self, text: str, image_tokens, *, batch_size: int = 8):
+        """Image-text matching logits of one text against image token features (N, 577, 768).
+
+        Reproduces the ranking stage of the authors' evaluation: the text is encoded once in
+        ``text`` mode, then fused with each candidate's image tokens through the cross-attention
+        layers, and the matching head's "match" logit is returned per candidate.
+        """
+
+        import torch
+
+        if not self.fusion_layers_loaded:
+            raise RuntimeError("ITM re-ranking needs the fusion layers (keep_fusion_layers=True).")
+        with torch.inference_mode():
+            tokens = self.preprocessor.text(text).to(self.device)
+            text_output = self.model.text_encoder.bert(
+                tokens.input_ids,
+                attention_mask=tokens.attention_mask,
+                return_dict=True,
+                mode="text",
+            )
+            text_feat = text_output.last_hidden_state
+            scores = []
+            for start in range(0, image_tokens.shape[0], batch_size):
+                chunk = image_tokens[start : start + batch_size].to(
+                    device=self.device, dtype=text_feat.dtype
+                )
+                fused = self.model.text_encoder.bert(
+                    encoder_embeds=text_feat.repeat(chunk.shape[0], 1, 1),
+                    attention_mask=tokens.attention_mask.repeat(chunk.shape[0], 1),
+                    encoder_hidden_states=chunk,
+                    encoder_attention_mask=torch.ones(
+                        chunk.shape[:-1], dtype=torch.long, device=self.device
+                    ),
+                    return_dict=True,
+                    mode="fusion",
+                )
+                scores.append(self.model.itm_head(fused.last_hidden_state[:, 0, :])[:, 1])
+            return torch.cat(scores)
+
     def _validate(self, vector):
         import torch
 

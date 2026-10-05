@@ -264,9 +264,11 @@ def load_resource_settings(path: str | Path, profile: str) -> ResourceSettings:
         preference = DevicePreference(data["device_preference"])
     except (TypeError, ValueError):
         raise PreflightConfigurationError("device_preference must be cpu, cuda, or auto.") from None
-    return ResourceSettings(profile=profile, device_preference=preference, **{
-        key: value for key, value in data.items() if key != "device_preference"
-    })
+    return ResourceSettings(
+        profile=profile,
+        device_preference=preference,
+        **{key: value for key, value in data.items() if key != "device_preference"},
+    )
 
 
 def apply_resource_environment(settings: ResourceSettings) -> None:
@@ -285,6 +287,7 @@ def apply_resource_environment(settings: ResourceSettings) -> None:
 
 def _memory_snapshot() -> MemorySnapshot:
     if os.name == "nt":
+
         class MemoryStatus(ctypes.Structure):
             _fields_ = [
                 ("length", ctypes.c_ulong),
@@ -772,7 +775,5 @@ def run_preflight(
 def require_ready(report: PreflightReport) -> None:
     if report.ready:
         return
-    codes = tuple(
-        check.code for check in report.checks if check.outcome is CheckOutcome.FAIL
-    )
+    codes = tuple(check.code for check in report.checks if check.outcome is CheckOutcome.FAIL)
     raise PreflightFailedError(codes)

@@ -20,9 +20,7 @@ class User(TimestampMixin, Base):
         CheckConstraint(
             "length(btrim(password_hash)) > 0", name="ck_users_password_hash_not_blank"
         ),
-        CheckConstraint(
-            "length(btrim(display_name)) > 0", name="ck_users_display_name_not_blank"
-        ),
+        CheckConstraint("length(btrim(display_name)) > 0", name="ck_users_display_name_not_blank"),
         CheckConstraint(
             "(role = 'OPERATOR' AND assigned_area_id IS NOT NULL) OR "
             "(role IN ('ADMIN', 'VIEWER') AND assigned_area_id IS NULL)",
@@ -51,6 +49,4 @@ class User(TimestampMixin, Base):
         index=True,
     )
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    version: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=1, server_default="1"
-    )
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")

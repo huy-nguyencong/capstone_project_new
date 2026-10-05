@@ -117,9 +117,7 @@ class MinioSettings:
             endpoint=_required(environment, "PERSON_SEARCH_MINIO_ENDPOINT"),
             access_key=_required(environment, "PERSON_SEARCH_MINIO_ACCESS_KEY"),
             secret_key=_required(environment, "PERSON_SEARCH_MINIO_SECRET_KEY"),
-            bucket=environment.get(
-                "PERSON_SEARCH_MINIO_BUCKET", "person-search-frames"
-            ).strip()
+            bucket=environment.get("PERSON_SEARCH_MINIO_BUCKET", "person-search-frames").strip()
             or "person-search-frames",
             secure=_boolean(environment, "PERSON_SEARCH_MINIO_SECURE", False),
             timeout_seconds=_positive_integer(
@@ -135,9 +133,7 @@ class StorageSettings:
     minio: MinioSettings
 
     @classmethod
-    def from_environment(
-        cls, environment: Mapping[str, str] | None = None
-    ) -> StorageSettings:
+    def from_environment(cls, environment: Mapping[str, str] | None = None) -> StorageSettings:
         values = os.environ if environment is None else environment
         return cls(
             postgres=PostgresSettings.from_environment(values),

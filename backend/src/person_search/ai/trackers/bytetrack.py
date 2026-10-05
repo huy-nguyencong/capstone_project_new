@@ -50,9 +50,7 @@ class ByteTrackSettings:
             self.match_threshold,
         )
         if any(
-            isinstance(value, bool)
-            or not isinstance(value, (int, float))
-            or not 0 <= value <= 1
+            isinstance(value, bool) or not isinstance(value, (int, float)) or not 0 <= value <= 1
             for value in thresholds
         ):
             raise ValueError("ByteTrack thresholds must be numbers between zero and one.")
@@ -213,9 +211,7 @@ class UltralyticsByteTrackBackend:
         confidence = np.asarray([item.confidence for item in detections], dtype=np.float32)
         classes = np.asarray([item.class_id for item in detections], dtype=np.float32)
         rows = self._tracker.update(_Results(xywh, confidence, classes))
-        return tuple(
-            RawTrack(int(row[4]), *map(float, row[:4]), int(row[7])) for row in rows
-        )
+        return tuple(RawTrack(int(row[4]), *map(float, row[:4]), int(row[7])) for row in rows)
 
     def close(self) -> None:
         self._tracker = None
@@ -366,9 +362,7 @@ class ByteTrackPersonTracker:
                 updates.append(self._track_update(item.track_id, record, TrackState.ACTIVE))
         return tuple(updates)
 
-    def _track_update(
-        self, track_id: int, record: _TrackRecord, state: TrackState
-    ) -> TrackUpdate:
+    def _track_update(self, track_id: int, record: _TrackRecord, state: TrackState) -> TrackUpdate:
         assert self._camera_id is not None
         return TrackUpdate(
             local_track_id=record.local_track_id,

@@ -49,8 +49,7 @@ class SelectorSettings:
             self.severe_border_contacts,
         )
         if any(
-            isinstance(value, bool) or not isinstance(value, int) or value < 1
-            for value in integers
+            isinstance(value, bool) or not isinstance(value, int) or value < 1 for value in integers
         ):
             raise ValueError("Selector integer limits must be positive integers.")
         positives = (
@@ -73,9 +72,7 @@ class SelectorSettings:
             self.crop_padding_ratio,
         )
         if any(
-            isinstance(value, bool)
-            or not isinstance(value, (int, float))
-            or not 0 <= value <= 1
+            isinstance(value, bool) or not isinstance(value, (int, float)) or not 0 <= value <= 1
             for value in fractions
         ):
             raise ValueError("Selector penalties and padding must be between zero and one.")
@@ -269,9 +266,7 @@ class RepresentativeFrameSelector:
             hard_filter_passed,
         )
 
-    def _retain(
-        self, record: _TrackRecord, source: SourceFrame, candidate: _Candidate
-    ) -> None:
+    def _retain(self, record: _TrackRecord, source: SourceFrame, candidate: _Candidate) -> None:
         size = source.width * source.height * 3
         if size > self.settings.max_buffer_bytes:
             raise AIWorkerError(AIErrorCode.RESOURCE_EXHAUSTED)
@@ -301,9 +296,7 @@ class RepresentativeFrameSelector:
             self._evict(min(record.candidates, key=lambda item: self._rank(item, record)))
         while self._buffered_bytes > self.settings.max_buffer_bytes:
             candidates = [
-                item
-                for item_record in self._tracks.values()
-                for item in item_record.candidates
+                item for item_record in self._tracks.values() for item in item_record.candidates
             ]
             if not candidates:
                 raise AIWorkerError(AIErrorCode.RESOURCE_EXHAUSTED)
@@ -366,9 +359,8 @@ class RepresentativeFrameSelector:
                 if other is not candidate
             ]
             candidate.occlusion_penalty = (
-                (max(overlaps) if overlaps else 0.0)
-                * self.settings.maximum_occlusion_penalty
-            )
+                max(overlaps) if overlaps else 0.0
+            ) * self.settings.maximum_occlusion_penalty
 
     def _evict(self, candidate: _Candidate) -> None:
         for record in self._tracks.values():

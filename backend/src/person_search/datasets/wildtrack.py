@@ -78,9 +78,7 @@ def _video_metadata(path: Path) -> dict[str, Any]:
                 "width": stream.codec_context.width,
                 "height": stream.codec_context.height,
                 "average_rate": (
-                    {"numerator": rate.numerator, "denominator": rate.denominator}
-                    if rate
-                    else None
+                    {"numerator": rate.numerator, "denominator": rate.denominator} if rate else None
                 ),
                 "fps": round(float(rate), 6) if rate else None,
                 "declared_frames": stream.frames or None,
@@ -248,8 +246,7 @@ def _summarize_annotations(root: Path) -> dict[str, Any]:
         "person_frame_rows": observation_rows,
         "view_box_states": dict(sorted(states.items())),
         "visible_boxes_by_camera": {
-            f"C{view + 1}": visible_by_camera[view]
-            for view in range(EXPECTED_CAMERA_COUNT)
+            f"C{view + 1}": visible_by_camera[view] for view in range(EXPECTED_CAMERA_COUNT)
         },
         "identities": identities,
     }
@@ -286,8 +283,7 @@ def build_manifest(
         "calibrations": {
             "file_count": len(list((root / "calibrations").rglob("*.xml"))),
             "paths": sorted(
-                path.relative_to(root).as_posix()
-                for path in (root / "calibrations").rglob("*.xml")
+                path.relative_to(root).as_posix() for path in (root / "calibrations").rglob("*.xml")
             ),
         },
         "rectangles": indexed_files["rectangles.pom"],
@@ -323,9 +319,7 @@ def verify_manifest(
         entry["path"]: entry for entry in manifest.get("content", {}).get("files", [])
     }
     actual_paths = {
-        path.relative_to(root).as_posix(): path
-        for path in root.rglob("*")
-        if path.is_file()
+        path.relative_to(root).as_posix(): path for path in root.rglob("*") if path.is_file()
     }
     for missing in sorted(set(expected_files) - set(actual_paths)):
         errors.append(f"missing file: {missing}")
@@ -431,19 +425,13 @@ def validate_query_set(dataset_root: str | Path, query_set: dict[str, Any]) -> l
             errors.append(f"{prefix}: annotation file is missing")
             continue
         rows = json.loads(annotation_path.read_text(encoding="utf-8"))
-        person = next(
-            (row for row in rows if row.get("personID") == query["person_id"]), None
-        )
+        person = next((row for row in rows if row.get("personID") == query["person_id"]), None)
         if person is None:
             errors.append(f"{prefix}: person_id is absent from annotation")
             continue
         view_number = int(camera[1:]) - 1
         view = next(
-            (
-                item
-                for item in person.get("views", [])
-                if item.get("viewNum") == view_number
-            ),
+            (item for item in person.get("views", []) if item.get("viewNum") == view_number),
             None,
         )
         expected_bbox = {key: view.get(key) for key in keys} if view else None
