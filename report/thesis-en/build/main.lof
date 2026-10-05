@@ -15,34 +15,34 @@
 \contentsline {figure}{\numberline {5.5}{\ignorespaces Sequence diagram of saving a result into a case}}{53}{figure.caption.47}%
 \contentsline {figure}{\numberline {5.6}{\ignorespaces Entity-relationship diagram of the relational database}}{55}{figure.caption.51}%
 \contentsline {figure}{\numberline {5.7}{\ignorespaces State diagram of an appearance}}{58}{figure.caption.56}%
-\contentsline {figure}{\numberline {5.8}{\ignorespaces Screen flow by role}}{62}{figure.caption.60}%
+\contentsline {figure}{\numberline {5.8}{\ignorespaces Screen flow by role}}{63}{figure.caption.60}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {6.1}{\ignorespaces Person search by image}}{70}{figure.caption.68}%
-\contentsline {figure}{\numberline {6.2}{\ignorespaces Person search by attributes}}{71}{figure.caption.69}%
-\contentsline {figure}{\numberline {6.3}{\ignorespaces The result detail dialog and the case creation dialog}}{71}{figure.caption.70}%
-\contentsline {figure}{\numberline {6.4}{\ignorespaces The Operator's case management screen}}{72}{figure.caption.71}%
-\contentsline {figure}{\numberline {6.5}{\ignorespaces The Viewer's overview screen}}{72}{figure.caption.73}%
-\contentsline {figure}{\numberline {6.6}{\ignorespaces Camera management screen}}{73}{figure.caption.75}%
-\contentsline {figure}{\numberline {6.7}{\ignorespaces AI model configuration screen}}{73}{figure.caption.76}%
-\contentsline {figure}{\numberline {6.8}{\ignorespaces Uploaded video processing screen}}{74}{figure.caption.77}%
-\contentsline {figure}{\numberline {6.9}{\ignorespaces System status screen}}{74}{figure.caption.78}%
-\contentsline {figure}{\numberline {6.10}{\ignorespaces AI check screen}}{75}{figure.caption.79}%
+\contentsline {figure}{\numberline {6.1}{\ignorespaces Person search by image}}{71}{figure.caption.68}%
+\contentsline {figure}{\numberline {6.2}{\ignorespaces Person search by attributes}}{72}{figure.caption.69}%
+\contentsline {figure}{\numberline {6.3}{\ignorespaces The result detail dialog and the case creation dialog}}{72}{figure.caption.70}%
+\contentsline {figure}{\numberline {6.4}{\ignorespaces The Operator's case management screen}}{73}{figure.caption.71}%
+\contentsline {figure}{\numberline {6.5}{\ignorespaces The Viewer's overview screen}}{73}{figure.caption.73}%
+\contentsline {figure}{\numberline {6.6}{\ignorespaces Camera management screen}}{74}{figure.caption.75}%
+\contentsline {figure}{\numberline {6.7}{\ignorespaces AI model configuration screen}}{74}{figure.caption.76}%
+\contentsline {figure}{\numberline {6.8}{\ignorespaces Uploaded video processing screen}}{75}{figure.caption.77}%
+\contentsline {figure}{\numberline {6.9}{\ignorespaces System status screen}}{75}{figure.caption.78}%
+\contentsline {figure}{\numberline {6.10}{\ignorespaces AI check screen}}{76}{figure.caption.79}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {9.1}{\ignorespaces The pipeline as a template of replaceable blocks}}{95}{figure.caption.111}%
-\contentsline {figure}{\numberline {9.2}{\ignorespaces ZARA's retrieval of discriminative evidence}}{97}{figure.caption.113}%
-\contentsline {figure}{\numberline {9.3}{\ignorespaces Extended offline indexing with the attribute describer}}{98}{figure.caption.115}%
-\contentsline {figure}{\numberline {9.4}{\ignorespaces Online search with the reasoning layer}}{99}{figure.caption.116}%
+\contentsline {figure}{\numberline {9.1}{\ignorespaces The pipeline as a template of replaceable blocks}}{96}{figure.caption.111}%
+\contentsline {figure}{\numberline {9.2}{\ignorespaces ZARA's retrieval of discriminative evidence}}{98}{figure.caption.113}%
+\contentsline {figure}{\numberline {9.3}{\ignorespaces Extended offline indexing with the attribute describer}}{99}{figure.caption.115}%
+\contentsline {figure}{\numberline {9.4}{\ignorespaces Online search with the reasoning layer}}{100}{figure.caption.116}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {10.1}{\ignorespaces The semantic reasoning block}}{104}{figure.caption.119}%
-\contentsline {figure}{\numberline {10.2}{\ignorespaces The attribute-value selector}}{106}{figure.caption.122}%
-\contentsline {figure}{\numberline {10.3}{\ignorespaces The selector with its real inputs and output}}{106}{figure.caption.123}%
-\contentsline {figure}{\numberline {10.4}{\ignorespaces The evidence and decision stages}}{107}{figure.caption.124}%
-\contentsline {figure}{\numberline {10.5}{\ignorespaces The evidence and decision stages at work}}{107}{figure.caption.125}%
+\contentsline {figure}{\numberline {10.1}{\ignorespaces The semantic reasoning block}}{105}{figure.caption.119}%
+\contentsline {figure}{\numberline {10.2}{\ignorespaces The attribute-value selector}}{107}{figure.caption.122}%
+\contentsline {figure}{\numberline {10.3}{\ignorespaces The selector with its real inputs and output}}{107}{figure.caption.123}%
+\contentsline {figure}{\numberline {10.4}{\ignorespaces The evidence and decision stages}}{108}{figure.caption.124}%
+\contentsline {figure}{\numberline {10.5}{\ignorespaces The evidence and decision stages at work}}{108}{figure.caption.125}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {11.1}{\ignorespaces A lost case}}{119}{figure.caption.141}%
-\contentsline {figure}{\numberline {11.2}{\ignorespaces The lost case after re-ranking with the larger model}}{120}{figure.caption.143}%
-\contentsline {figure}{\numberline {11.3}{\ignorespaces A rescued case}}{121}{figure.caption.145}%
+\contentsline {figure}{\numberline {11.1}{\ignorespaces A lost case}}{120}{figure.caption.141}%
+\contentsline {figure}{\numberline {11.2}{\ignorespaces The lost case after re-ranking with the larger model}}{121}{figure.caption.143}%
+\contentsline {figure}{\numberline {11.3}{\ignorespaces A rescued case}}{122}{figure.caption.145}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {12.1}{\ignorespaces Project timeline and the member responsible for each task}}{127}{figure.caption.152}%
+\contentsline {figure}{\numberline {12.1}{\ignorespaces Project timeline and the member responsible for each task}}{128}{figure.caption.152}%

@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2026.5.25)  5 OCT 2026 21:11
+This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2026.5.25)  5 OCT 2026 22:03
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -1954,16 +1954,16 @@ File: figures/H8-erd.png Graphic file (type bmp)
 File: figures/H6-trang-thai-lan-xuat-hien.png Graphic file (type bmp)
 <figures/H6-trang-thai-lan-xuat-hien.png>
 
-[58]) (sections/chapter5/5.4.tex [59]) (sections/chapter5/5.5.tex [60])
-(sections/chapter5/5.6.tex [61]
+[58]) (sections/chapter5/5.4.tex [59]) (sections/chapter5/5.5.tex [60] [61])
+(sections/chapter5/5.6.tex
 File: figures/H12-luong-man-hinh.png Graphic file (type bmp)
 <figures/H12-luong-man-hinh.png>
- [62])) (sections/chapter6/chapter6.tex [63]
+ [62] [63])) (sections/chapter6/chapter6.tex [64]
 Chapter 6.
-(sections/chapter6/6.1.tex [64
+(sections/chapter6/6.1.tex [65
 
-] [65] [66]) (sections/chapter6/6.2.tex [67]
-[68]) (sections/chapter6/6.3.tex [69]
+] [66] [67]) (sections/chapter6/6.2.tex [68]
+[69]) (sections/chapter6/6.3.tex [70]
 File: figures/H10a-tim-kiem-anh-cat.png Graphic file (type bmp)
 <figures/H10a-tim-kiem-anh-cat.png>
 File: figures/H10b-tim-kiem-thuoc-tinh-cat.png Graphic file (type bmp)
@@ -1976,7 +1976,7 @@ File: figures/H10e-vu-viec-cua-toi-cat.png Graphic file (type bmp)
 <figures/H10e-vu-viec-cua-toi-cat.png>
 File: figures/H10f-tong-quan-cat.png Graphic file (type bmp)
 <figures/H10f-tong-quan-cat.png>
- [70] [71]
+ [71] [72]
 File: figures/H10g-camera-cat.png Graphic file (type bmp)
 <figures/H10g-camera-cat.png>
 File: figures/H10h-mo-hinh-ai-cat.png Graphic file (type bmp)
@@ -1988,9 +1988,9 @@ File: figures/H10j-trang-thai-he-thong-cat.png Graphic file (type bmp)
 File: figures/H10k-kiem-tra-ai-cat.png Graphic file (type bmp)
 <figures/H10k-kiem-tra-ai-cat.png>
 ) (sections/chapter6/6.4.tex
-[72] [73] [74])) (sections/chapter7/chapter7.tex [75]
+[73] [74] [75])) (sections/chapter7/chapter7.tex [76]
 Chapter 7.
-(sections/chapter7/7.1.tex) (sections/chapter7/7.2.tex [76
+(sections/chapter7/7.1.tex) (sections/chapter7/7.2.tex [77
 
 ]
 Underfull \hbox (badness 1776) in paragraph at lines 8--9
@@ -1998,61 +1998,61 @@ Underfull \hbox (badness 1776) in paragraph at lines 8--9
 13 The seven videos are streamed through MediaMTX (Sec-
  []
 
-)) (sections/chapter8/chapter8.tex [77] [78]
+)) (sections/chapter8/chapter8.tex [78] [79]
 Chapter 8.
-(sections/chapter8/8.1.tex [79
+(sections/chapter8/8.1.tex [80
 
-] [80]) (sections/chapter8/8.2.tex [81] [82]
-[83] [84] [85]) (sections/chapter8/8.3.tex [86] [87] [88] [89])) [90] [91]
-[92
+] [81]) (sections/chapter8/8.2.tex [82] [83]
+[84] [85] [86]) (sections/chapter8/8.3.tex [87] [88] [89] [90])) [91] [92]
+[93
 
 ] (sections/research/chapter9.tex
 Chapter 9.
-[93
+[94
 
-] [94]
+] [95]
 File: figures/research/S23-overall-pipeline.png Graphic file (type bmp)
 <figures/research/S23-overall-pipeline.png>
- [95]
+ [96]
 File: figures/research/S26-zara.png Graphic file (type bmp)
 <figures/research/S26-zara.png>
- [96] [97]
+ [97] [98]
 File: figures/research/S31-offline-indexing.png Graphic file (type bmp)
 <figures/research/S31-offline-indexing.png>
 File: figures/research/S35-text-retrieval.png Graphic file (type bmp)
 <figures/research/S35-text-retrieval.png>
- [98]) (sections/research/chapter10.tex [99]
+ [99]) (sections/research/chapter10.tex [100]
 Chapter 10.
-[100
+[101
 
-] [101] [102] [103]
+] [102] [103] [104]
 File: figures/research/S36-reasoning-block.png Graphic file (type bmp)
 <figures/research/S36-reasoning-block.png>
- [104] [105]
+ [105] [106]
 File: figures/research/S37-selector.png Graphic file (type bmp)
 <figures/research/S37-selector.png>
 File: figures/research/S38-selector-example.png Graphic file (type bmp)
 <figures/research/S38-selector-example.png>
- [106]
+ [107]
 File: figures/research/S39-evidence-ranker.png Graphic file (type bmp)
 <figures/research/S39-evidence-ranker.png>
 File: figures/research/S40-evidence-example.png Graphic file (type bmp)
 <figures/research/S40-evidence-example.png>
- [107] [108] [109] [110])
-(sections/research/chapter11.tex [111]
+ [108] [109] [110] [111])
+(sections/research/chapter11.tex [112]
 Chapter 11.
-[112
+[113
 
-] [113] [114] [115] [116] [117]
+] [114] [115] [116] [117] [118]
 File: figures/research/case_lost.png Graphic file (type bmp)
 <figures/research/case_lost.png>
- [118]
+ [119]
 File: figures/research/case_lost_fixed.png Graphic file (type bmp)
 <figures/research/case_lost_fixed.png>
- [119]
+ [120]
 File: figures/research/case_rescued.png Graphic file (type bmp)
 <figures/research/case_rescued.png>
- [120] [121] [122]
+ [121] [122] [123]
 Underfull \hbox (badness 3735) in paragraph at lines 421--430
 [] []\TU/TimesNewRoman(0)/b/n/13 Switchable but not yet measured.[] \TU/TimesNe
 wRoman(0)/m/n/13 The pipeline keeps one flag per experi-
@@ -2077,22 +2077,22 @@ U/TimesNewRoman(0)/m/n/13 (the \TU/lmtt/m/n/13 agrees \TU/TimesNewRoman(0)/m/n/
 13 line under each quoted frame),
  []
 
-[123] [124]) (sections/chapter12/chapter12.tex [125]
+[124] [125]) (sections/chapter12/chapter12.tex [126]
 Chapter 12.
-(sections/chapter12/timeline.tex) (sections/chapter12/12.1.tex [126
+(sections/chapter12/timeline.tex) (sections/chapter12/12.1.tex [127
 
 ]
 File: figures/S05-ke-hoach.png Graphic file (type bmp)
 <figures/S05-ke-hoach.png>
- [127]
-(sections/research/_conclusion.tex [128
+ [128]
+(sections/research/_conclusion.tex [129
 
 
 ])) (sections/chapter12/12.2.tex
-[129] (sections/research/_limits.tex [130])) (sections/chapter12/12.3.tex
-[131])) [132] [133
+[130] (sections/research/_limits.tex [131])) (sections/chapter12/12.3.tex
+[132])) [133] [134
 
-] [134] [135] [136] [137] [138]
+] [135] [136] [137] [138] [139]
 
 enddocument/afterlastpage (AED): lastpage setting LastPage.
 
@@ -2107,13 +2107,13 @@ Package logreq Info: Writing requests to 'main.run.xml'.
 
  ) 
 Here is how much of TeX's memory you used:
- 51569 strings out of 402987
- 1168994 string characters out of 5448524
- 2207299 words of memory out of 5000000
- 79359 multiletter control sequences out of 15000+600000
+ 51573 strings out of 402987
+ 1169022 string characters out of 5448524
+ 2207204 words of memory out of 5000000
+ 79363 multiletter control sequences out of 15000+600000
  642423 words of font info for 145 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
  108i,15n,107p,2033b,5143s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
 Output written on D:\uni-studies\semester-253\capstone_project_new\report\thesi
-s-en\build\main.xdv (162 pages, 2598944 bytes).
+s-en\build\main.xdv (163 pages, 2596540 bytes).
