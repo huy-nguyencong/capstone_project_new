@@ -635,9 +635,42 @@ phần kho dữ liệu không đổi.
 
 ## 5. E1. Đồng bộ số liệu cuối cùng
 
-Sau khi các task ưu tiên 1 xong: rà lại tóm tắt, "Chapter Summary", mục 1.4, 12.1, 12.2, 12.3 và
-slide phần 1 cho khớp số liệu mới (bộ nhớ, bảng 8.2, RTSP). Chạy `latexmk` và kiểm tra không còn
-tham chiếu tới số cũ bằng grep các con số "8.0 GiB", "1,978", "4,772", "6 queries", "threshold 0.25".
+**Báo cáo (đã rà 05/10/2026).** Grep toàn bộ PDF sau build: không còn "713", "6 queries",
+"threshold of 0.25" (trừ câu nhắc lần đo cũ ở 8.2 và đoạn RTSP ở 8.3, đều có chủ ý),
+"not been measured", "8 GiB". Đã sửa thêm: số unit test 713 → 740 ở tóm tắt, 8.1 (bảng và
+chú thích nguồn), 12.1; "Chapter Summary" chương 8 nêu các phân tích mới thay cho câu "phép đo
+chưa làm"; 3.6.3 câu về ef (nay tăng theo pool re-rank tới 128); 5.4 thêm câu phản hồi tìm kiếm
+cho biết có xếp hạng lại hay không. Tóm tắt, 1.4, 12.1, 12.2, 12.3 đã cập nhật ở B1, B5, B4.
+PDF cuối: 162 trang, build không lỗi.
+
+**Slide phần 1 (`slides/HK253-DATN-078_2113499_2252098-Slides.pdf`, nguồn do bạn giữ).**
+Cần sửa tay các slide sau theo số mới:
+
+- Slide 19 (Software testing): "713 passed" → "740 passed".
+- Slide 20 (Performance): ô "8 GiB RAM while processing a job" → "4.3 GiB application
+  processes (from 7.9) while processing; Docker VM 1.7 to 3.2 GiB apart"; "3.7 GiB idle" →
+  "2.1 GiB idle (from 3.4)"; nên thêm dòng "query encoder 2.2 → 0.9 GiB after loading only the
+  inference modules; Vite dev server removed". Độ trễ 1.27 s / 0.11 s giữ nguyên (bảng 8.4 cũ).
+- Slide 21 (Search quality): thay bảng bằng bảng 8.2 mới (26 truy vấn, ngưỡng 0,1, 1.526 track):
+  ảnh 0,846 / 0,885 / 0,885 / 0,885 / MRR 0,671; văn bản 0 / 0 / 0,038 / 0,038 / 0,021; thuộc tính
+  0 / 0 / 0 / 0,038 / 0,015; chú thích "6 queries ... threshold 0.25 ... re-run of attribute" thay
+  bằng "26 queries, current configuration, 95% CI of R@8 by image 0.71–0.96". Phần "Why" thay
+  bằng hai nguyên nhân: (1) ứng dụng chỉ so vector tương phản, còn độ chính xác công bố của RaSa
+  nằm ở bộ xếp hạng lại ITM (trên chính CUHK-PEDES: R@1 0,05 → 0,65 khi bật ITM top-32); (2) domain
+  gap thật của encoder (crop tay chọn kỹ vẫn chỉ R@16 0,19). Thêm một dòng: "With RaSa's ITM over
+  128 candidates: text R@8 0.42, attributes 0.15, at 17 s per query on the CPU; CLIP ViT-L/14
+  vectors alone: text 0.42, attributes 0.35, image 0.42" (bảng 8.3 và 8.4).
+- Slide 57 (Achievements): "713 unit tests" → "740 unit tests"; "text search is the weak point"
+  → "text search weak by vectors alone; RaSa's re-ranker (R@8 0.42) and CLIP vectors (0.42)
+  measured as the fixes".
+- Slide 58 (Limitations / Next, Part I): bỏ "RTSP timestamps from the machine clock can split
+  tracks" và "image/text recall at threshold 0.1 not re-measured" (đã làm C1, B3); sửa "Text search
+  ineffective on WILDTRACK" thành "Text search by vectors alone ineffective; re-ranker 17 s/query
+  on CPU"; Next: "make ITM re-ranking fast (tokens at indexing time, GPU) or a second CLIP vector
+  per appearance � OpenVINO / GPU � ByteTrack vs BoT-SORT � same-domain fine-tuning".
+- Kịch bản trình bày (`presentation-script.docx`) cần sửa cùng các slide trên.
+
+**Trạng thái.** Báo cáo xong 05/10/2026; slide chờ bạn sửa theo danh sách trên.
 
 ## 6. Câu trả lời ngắn chuẩn bị cho câu hỏi 8 GB (dùng được ngay cả khi chưa làm xong)
 

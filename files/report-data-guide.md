@@ -56,7 +56,7 @@
 
 | Mục | Số liệu | Trạng thái | Nguồn |
 | --- | --- | --- | --- |
-| C8.1–C8.2 | Unit (gồm contract, security, failure injection): **713 pass** | Hiện hành | 2026-09-29, commit `b3a6889` + thay đổi đo tài nguyên trong `evaluation/benchmark.py` |
+| C8.1–C8.2 | Unit (gồm contract, security, failure injection): **740 pass** (713 ngày 29/09 + 27 test mới của các task A1, A4, C1, B3, B5 ngày 05/10) | Hiện hành | 2026-10-05, `scripts/check.ps1` trong `evaluation/benchmark.py` |
 | C8.2 | Integration (database dùng một lần, R3): kết nối storage 2 pass + 1 skip (failure injection cần tắt dịch vụ); dịch vụ dùng DSN riêng 21; adapter 4; migration/schema 7; RTSP/MediaMTX 3 | Hiện hành | R3 |
 | C8.2 | E2E: 2 pass; luồng AI thật với clip 10 giây mất 217 s (nạp mô hình 44 s, job 154 s, tìm văn bản lần đầu 16 s) | Hiện hành | R3 |
 | C8.2 | Giao diện: 20 màn hình × 3 cỡ (390, 768, 1440 px), không tràn, không lỗi console/HTTP; 3 lỗi tìm ra và đã sửa | Hiện hành | R5 |

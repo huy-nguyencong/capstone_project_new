@@ -9,6 +9,6 @@ Errors share one format: a stable \emph{error code}, a Vietnamese \emph{message}
 
 Updates to accounts, cameras and cases carry the version number held by the interface and get 409 if the data changed elsewhere. A video upload may carry an idempotency key, so a resend creates no second job, and is asynchronous: the server returns 202 with the job, whose progress the interface then follows.
 
-No API takes the Operator's area or the case owner as a parameter (Section~\ref{sec:5.5.3}). Images of search results and of saved results have separate paths, matching the two grounds of Section~\ref{sec:4.6}.
+A search response states whether the re-ranking stage of Section~\ref{sec:5.2.3} was applied, since it changes what the relevance score means. No API takes the Operator's area or the case owner as a parameter (Section~\ref{sec:5.5.3}). Images of search results and of saved results have separate paths, matching the two grounds of Section~\ref{sec:4.6}.
 
 Three health-check paths (\path{/health/live}, \path{/health/ready}, \path{/health/storage}) serve deployment and monitoring.
