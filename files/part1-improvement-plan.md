@@ -41,7 +41,7 @@ vì sao ứng dụng chiếm tới 8 GB RAM khi chạy. Bảng dưới nối m�
 | B4 | So sánh CLIP với RaSa trên WILDTRACK (ngoại tuyến) | 2 | 1.5 ngày | B3 |
 | A2 | Một bản mã hóa dùng chung cho server và worker | 2 | 1.5 ngày | A1 |
 | A3 | Lượng tử hóa int8 động cho encoder (phiên bản encoder mới) | 3 | 1.5 ngày | A1, B3 |
-| B5 | Bật re-rank ITM của RaSa cho truy vấn văn bản và đo | 3 | 1 ngày | B1, B2 |
+| B5 | Bật re-rank ITM của RaSa cho truy vấn văn bản và đo | 1 (nâng từ 3 sau B1) | 1 ngày | B1 |
 | C2 | Mã hóa và ghi appearance ngay khi track kết thúc | 3 | 2 ngày | C1 |
 | E1 | Đồng bộ tóm tắt, chương 12 và slide với số liệu mới | 1 | 0.5 ngày | tất cả |
 
@@ -325,29 +325,64 @@ worker), mỗi bản ~1 GiB kể cả runtime torch: đó là A2 nếu cần gi�
 
 ### B1. Kiểm chứng đường xử lý văn bản trên miền huấn luyện của RaSa
 
-**Mục đích.** Trả lời "lỗi cài đặt hay domain gap" bằng một thí nghiệm đối chứng: nếu đúng bộ
-adapter của ứng dụng (tiền xử lý 384x384 bicubic, chuẩn hóa CLIP, tokenizer BERT, `text_proj`)
-đạt kết quả gần số công bố trên dữ liệu cùng miền với CUHK-PEDES, thì đường xử lý đúng và thất
-bại trên WILDTRACK là do dữ liệu.
+**Dữ liệu.** Không có CUHK-PEDES hay Market-1501 trong máy. Dùng bản Hugging Face
+`MaulikMadhavi/CUHK-PEDES-processed` (tập train, 34.052 ảnh 128x384, mỗi ảnh mang đủ caption
+của identity đó), tải 2 shard (~100 MB) vào `backend/var/datasets/cuhk_pedes_processed/`;
+identity suy từ tên file theo quy ước 5 bộ nguồn. Checkpoint đang dùng được tải lại từ link
+Google Drive chính thức của RaSa và so SHA-256: trùng khớp từng byte (bc85da09...).
 
-**Code.** `backend/tools/rasa_domain_sanity.py`:
+**Code (đã làm 05/10/2026).**
 
-- Gallery: crop người đã cắt sẵn cùng kiểu với CUHK-PEDES. Nguồn ưu tiên là tập test CUHK-PEDES
-  nếu đã được cấp; nếu không, dùng các crop Market-1501 và câu mô tả có sẵn của Phần II
-  (`notebooks/`, dữ liệu của bạn cùng nhóm) với 200 đến 500 identity, chỉ đọc, không sửa gì ở Phần II.
-- Chạy `RasaQueryInferenceGateway.text` cho mỗi câu, `RasaImageEncoder.encode` cho mỗi crop,
-  xếp hạng bằng tích vô hướng như `evaluation/wildtrack_eval.rank_gallery`, báo R@1, R@5, R@10.
-- Ghi `var/evaluation/rasa-domain-sanity.json` kèm lineage mô hình như các báo cáo đánh giá khác.
+- Mới `backend/tools/rasa_domain_sanity.py`: đi đúng `build_rasa_query_gateway` (ảnh PNG qua
+  `gateway.image`, câu qua `gateway.text`), xếp hạng tích vô hướng; đo text→image và
+  image→image theo identity, lưu vector; tùy chọn `--itm-queries` chạy xếp hạng lại bằng đầu
+  ITM đúng như `evaluation()` trong `Retrieval.py` gốc (nạp `full_training_module=True`).
+- Đối chiếu mã vendor với upstream ở commit đã ghim: `xbert.py`, `vit.py`,
+  `model_person_search.py`, `config_bert.json` chỉ khác các shim tương thích (và một dòng
+  của A1). Tiền xử lý ảnh (Resize 384x384 bicubic, chuẩn hóa CLIP) và cách lấy CLS,
+  `mode="text"`, `max_words=50` trùng upstream. BERT vendor cho cùng đầu ra với BertModel
+  chuẩn của Transformers khi nạp cùng trọng số (sai khác 1e-6).
+- **Lỗi tìm được:** ứng dụng tokenise bằng `transformers.BertTokenizer` (thêm [SEP] cuối câu),
+  trong khi RaSa huấn luyện và đánh giá bằng tokenizer riêng `models/tokenization_bert.py`
+  viết "[CLS] X" không có [SEP]. Sửa `RasaPreprocessor.text` dùng tokenizer vendor;
+  test `test_tokenizer_is_offline_uncased_padded_and_truncated` cập nhật. Vector ảnh không
+  đổi nên không cần index lại.
+- `pyarrow` cài thêm vào venv cho công cụ (không đưa vào requirements khóa hash).
 
-**Kỳ vọng.** Trên CUHK-PEDES R@1 gần 76.5%; trên Market-1501 với câu mô tả sinh từ thuộc tính,
-R@10 phải cao hơn hẳn mức ngẫu nhiên và hơn CLIP cơ sở của Phần II (33%). Nếu kết quả gần ngẫu
-nhiên, dừng lại và tìm lỗi trong adapter trước khi làm B2 trở đi; điểm nghi đầu tiên là
-`RasaRuntime.text_embedding` (chế độ `text`, token CLS) và thứ tự kênh màu trong `RasaPreprocessor.image`.
+**Đo (05/10/2026, 600 ảnh ngẫu nhiên, 541 identity, caption đầu của mỗi ảnh).**
 
-**Báo cáo.** Mục 8.2 thêm đoạn "Pipeline check on the training domain" với một bảng ba dòng.
-Mục 3.5.3 câu "this domain gap directly affects text and attribute queries" được dẫn tới bảng này.
+| Phép đo | R@1 | R@5 | R@10 | Hạng đúng đầu tiên median |
+| --- | --- | --- | --- | --- |
+| image→image cùng identity (109 truy vấn) | 1,000 | 1,000 | 1,000 | 1 |
+| text→image, vector tương phản, tokenizer chuẩn có [SEP] (cũ) | 0,020 | 0,070 | 0,137 | 88 |
+| text→image, vector tương phản, tokenizer RaSa (mới) | 0,035 | 0,113 | 0,177 | 70 |
+| ngẫu nhiên (kỳ vọng) | 0,002 | 0,008 | 0,017 | 300 |
+| Tập con 150 ảnh, 40 caption: vector tương phản | 0,050 | 0,175 | 0,375 | 23 |
+| Tập con 150 ảnh, 40 caption: xếp hạng lại ITM top-32 | 0,650 | 0,675 | 0,675 | 1 |
 
-**Trạng thái.** Chưa làm.
+**Kết luận.** (1) Không có lỗi cài đặt ở đường ảnh: image→image hoàn hảo. (2) Vector tương
+phản của RaSa chỉ là bộ sinh ứng viên; con số công bố 76,5% R@1 đến từ bộ xếp hạng lại ITM
+trên top-128 trong mã đánh giá gốc, điều mà ứng dụng tắt (mục 3.5.3 cũ viết "chưa cho thấy
+có ích"). ITM trên top-32 đưa R@1 từ 0,05 lên 0,65 ngay trên miền huấn luyện, chi phí ~50 ms
+mỗi ứng viên trên CPU. Đây là nguyên nhân thứ nhất của tìm văn bản yếu, trước cả domain gap.
+(3) Lỗi [SEP] là thật nhưng nhỏ: R@10 0,137 → 0,177 trên CUHK-PEDES; trên WILDTRACK (chạy
+lại từ cache gallery) kết quả trong nhiễu: văn bản R@12/16 0,038, MRR 0,021; thuộc tính R@16
+0,038, MRR 0,015. Bảng 8.2 cập nhật theo lần chạy cuối (`wildtrack-v2-conf010-rasatok.json`).
+
+**Hệ quả cho các task sau.** B5 (bật re-rank ITM trên top-k) lên ưu tiên 1 và là hướng cải
+thiện chính; B2 vẫn cần để định lượng phần domain gap còn lại; A1 giữ mặc định bỏ lớp fusion
+nhưng B5 sẽ cần `keep_fusion_layers=True` cho đường tìm văn bản (+0,25 GiB).
+
+**Báo cáo (đã sửa).** Mục 8.2 thêm đoạn "Pipeline check on the training domain" và sửa
+Discussion (hai nguyên nhân), bảng 8.2 và Method theo lần chạy với tokenizer RaSa; mục 3.5.3
+sửa câu về re-ranking và nêu tokenizer; 12.2 và 12.3 nêu hai nguyên nhân và bước đầu tiên là
+bật re-rank; tóm tắt và 1.4 sửa câu nguyên nhân. README backend mô tả công cụ.
+
+**Nguồn.** `backend/var/evaluation/rasa-domain-sanity.json` (kèm vector),
+`wildtrack-v2-conf010-rasatok.json`, `var/tmp/rasa_cuhk_checkpoint_drive.pth` (bản tải
+đối chiếu, có thể xóa).
+
+**Trạng thái.** Xong 05/10/2026.
 
 ### B2. Phân tích nguyên nhân thất bại trên WILDTRACK
 

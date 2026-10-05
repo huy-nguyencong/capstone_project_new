@@ -55,14 +55,14 @@
 \contentsline {subsection}{\numberline {3.5.1}Joint Embedding Space and Contrastive Learning}{19}{subsection.3.5.1}%
 \contentsline {subsection}{\numberline {3.5.2}The RaSa Model}{20}{subsection.3.5.2}%
 \contentsline {subsection}{\numberline {3.5.3}Use of RaSa in the System}{21}{subsection.3.5.3}%
-\contentsline {section}{\numberline {3.6}Vector Search}{21}{section.3.6}%
-\contentsline {subsection}{\numberline {3.6.1}Nearest Neighbour Search and the HNSW Index}{21}{subsection.3.6.1}%
+\contentsline {section}{\numberline {3.6}Vector Search}{22}{section.3.6}%
+\contentsline {subsection}{\numberline {3.6.1}Nearest Neighbour Search and the HNSW Index}{22}{subsection.3.6.1}%
 \contentsline {subsection}{\numberline {3.6.2}Vector Search with Filters}{22}{subsection.3.6.2}%
 \contentsline {subsection}{\numberline {3.6.3}Vector Search in the System}{22}{subsection.3.6.3}%
 \contentsline {section}{\numberline {3.7}RTSP and Camera Stream Simulation}{23}{section.3.7}%
 \contentsline {subsection}{\numberline {3.7.1}H.264 Compressed Video}{23}{subsection.3.7.1}%
 \contentsline {subsection}{\numberline {3.7.2}RTSP and RTP}{23}{subsection.3.7.2}%
-\contentsline {subsection}{\numberline {3.7.3}Simulating Cameras with a Streaming Server}{23}{subsection.3.7.3}%
+\contentsline {subsection}{\numberline {3.7.3}Simulating Cameras with a Streaming Server}{24}{subsection.3.7.3}%
 \contentsline {subsection}{\numberline {3.7.4}Receiving RTSP Streams in the System}{24}{subsection.3.7.4}%
 \contentsline {chapter}{\numberline {4}System Analysis}{25}{chapter.4}%
 \contentsline {section}{\numberline {4.1}Actors}{25}{section.4.1}%
@@ -164,13 +164,14 @@
 \contentsline {paragraph}{Method.}{80}{paragraph*.92}%
 \contentsline {paragraph}{Person detection and tracking.}{81}{paragraph*.94}%
 \contentsline {paragraph}{Discussion.}{81}{paragraph*.95}%
-\contentsline {paragraph}{Qualitative check on the demonstration data.}{81}{paragraph*.96}%
+\contentsline {paragraph}{Pipeline check on the training domain.}{81}{paragraph*.96}%
+\contentsline {paragraph}{Qualitative check on the demonstration data.}{82}{paragraph*.97}%
 \contentsline {section}{\numberline {8.3}Performance and Camera Stream Handling}{82}{section.8.3}%
-\contentsline {paragraph}{Sampling interval.}{82}{paragraph*.97}%
-\contentsline {paragraph}{RTSP stream handling.}{83}{paragraph*.99}%
-\contentsline {paragraph}{Timestamps of RTSP frames.}{83}{paragraph*.100}%
-\contentsline {paragraph}{Search latency.}{83}{paragraph*.101}%
-\contentsline {paragraph}{Storage and memory.}{84}{paragraph*.103}%
+\contentsline {paragraph}{Sampling interval.}{82}{paragraph*.98}%
+\contentsline {paragraph}{RTSP stream handling.}{83}{paragraph*.100}%
+\contentsline {paragraph}{Timestamps of RTSP frames.}{84}{paragraph*.101}%
+\contentsline {paragraph}{Search latency.}{84}{paragraph*.102}%
+\contentsline {paragraph}{Storage and memory.}{85}{paragraph*.104}%
 \contentsline {part}{II\hspace {1em}Semantic Reasoning for Text-Based Person Search}{87}{part.2}%
 \contentsline {chapter}{\numberline {9}Semantic Reasoning: Motivation and Overview}{88}{chapter.9}%
 \contentsline {section}{\numberline {9.1}Motivation and Contributions}{88}{section.9.1}%
@@ -193,29 +194,29 @@
 \contentsline {subsection}{\numberline {10.1.4}The image-quality problem, and why voting does not work}{97}{subsection.10.1.4}%
 \contentsline {section}{\numberline {10.2}Multi-Agent Semantic Reasoning}{98}{section.10.2}%
 \contentsline {subsection}{\numberline {10.2.1}The funnel}{98}{subsection.10.2.1}%
-\contentsline {paragraph}{Why stage 0 is not in the funnel.}{99}{paragraph*.114}%
+\contentsline {paragraph}{Why stage 0 is not in the funnel.}{99}{paragraph*.115}%
 \contentsline {subsection}{\numberline {10.2.2}Stage 0: query analyst}{100}{subsection.10.2.2}%
-\contentsline {paragraph}{Why a separate pre-run.}{100}{paragraph*.115}%
+\contentsline {paragraph}{Why a separate pre-run.}{100}{paragraph*.116}%
 \contentsline {subsection}{\numberline {10.2.3}Stage 1: attribute-value selector}{101}{subsection.10.2.3}%
 \contentsline {subsection}{\numberline {10.2.4}Stage 2A: evidence reader}{102}{subsection.10.2.4}%
 \contentsline {subsection}{\numberline {10.2.5}Stage 2B: the ranker}{104}{subsection.10.2.5}%
-\contentsline {paragraph}{Reliability, not direction.}{104}{paragraph*.120}%
-\contentsline {paragraph}{What each query value is worth.}{104}{paragraph*.121}%
-\contentsline {paragraph}{The coverage floor.}{104}{paragraph*.122}%
+\contentsline {paragraph}{Reliability, not direction.}{104}{paragraph*.121}%
+\contentsline {paragraph}{What each query value is worth.}{104}{paragraph*.122}%
+\contentsline {paragraph}{The coverage floor.}{104}{paragraph*.123}%
 \contentsline {subsection}{\numberline {10.2.6}What the CLIP score is worth inside the pool}{105}{subsection.10.2.6}%
 \contentsline {subsection}{\numberline {10.2.7}Stages 3 and 4}{106}{subsection.10.2.7}%
 \contentsline {subsection}{\numberline {10.2.8}Engineering}{106}{subsection.10.2.8}%
 \contentsline {chapter}{\numberline {11}Experiments and Results}{107}{chapter.11}%
 \contentsline {section}{\numberline {11.1}Experimental Setup}{107}{section.11.1}%
 \contentsline {subsection}{\numberline {11.1.1}Dataset}{107}{subsection.11.1.1}%
-\contentsline {paragraph}{Why Market-1501, and how it stands in for a tracker.}{107}{paragraph*.124}%
-\contentsline {paragraph}{Why YOLO11n and ByteTrack are not in the experiment.}{108}{paragraph*.125}%
-\contentsline {paragraph}{The 496-identity subset.}{108}{paragraph*.126}%
+\contentsline {paragraph}{Why Market-1501, and how it stands in for a tracker.}{107}{paragraph*.125}%
+\contentsline {paragraph}{Why YOLO11n and ByteTrack are not in the experiment.}{108}{paragraph*.126}%
+\contentsline {paragraph}{The 496-identity subset.}{108}{paragraph*.127}%
 \contentsline {subsection}{\numberline {11.1.2}Models}{108}{subsection.11.1.2}%
 \contentsline {subsection}{\numberline {11.1.3}Funnel sizes and token budget}{108}{subsection.11.1.3}%
 \contentsline {subsection}{\numberline {11.1.4}Baseline}{109}{subsection.11.1.4}%
-\contentsline {paragraph}{image-clip.}{109}{paragraph*.128}%
-\contentsline {paragraph}{A grouped baseline, considered and not reported.}{109}{paragraph*.129}%
+\contentsline {paragraph}{image-clip.}{109}{paragraph*.129}%
+\contentsline {paragraph}{A grouped baseline, considered and not reported.}{109}{paragraph*.130}%
 \contentsline {subsection}{\numberline {11.1.5}Metrics}{109}{subsection.11.1.5}%
 \contentsline {section}{\numberline {11.2}Results}{110}{section.11.2}%
 \contentsline {subsection}{\numberline {11.2.1}Main comparison}{110}{subsection.11.2.1}%
@@ -223,18 +224,18 @@
 \contentsline {subsection}{\numberline {11.2.3}Where the losses happen}{111}{subsection.11.2.3}%
 \contentsline {subsection}{\numberline {11.2.4}Is the ranker the bottleneck? A targeted re-run}{112}{subsection.11.2.4}%
 \contentsline {subsection}{\numberline {11.2.5}Case studies}{113}{subsection.11.2.5}%
-\contentsline {paragraph}{A lost case (Figure~\ref {fig:r-case-lost}).}{113}{paragraph*.134}%
-\contentsline {paragraph}{The same case after the re-run (Figure~\ref {fig:r-case-lost-fixed}).}{114}{paragraph*.136}%
-\contentsline {paragraph}{A rescued case (Figure~\ref {fig:r-case-rescued}).}{115}{paragraph*.138}%
+\contentsline {paragraph}{A lost case (Figure~\ref {fig:r-case-lost}).}{113}{paragraph*.135}%
+\contentsline {paragraph}{The same case after the re-run (Figure~\ref {fig:r-case-lost-fixed}).}{114}{paragraph*.137}%
+\contentsline {paragraph}{A rescued case (Figure~\ref {fig:r-case-rescued}).}{115}{paragraph*.139}%
 \contentsline {subsection}{\numberline {11.2.6}Error analysis}{116}{subsection.11.2.6}%
 \contentsline {section}{\numberline {11.3}Ablations and Design Decisions}{117}{section.11.3}%
-\contentsline {paragraph}{The sample behind a prompt measurement is a batch, not a sweep.}{117}{paragraph*.140}%
-\contentsline {paragraph}{The model fixes a style per call.}{117}{paragraph*.141}%
-\contentsline {paragraph}{Switchable but not yet measured.}{119}{paragraph*.142}%
-\contentsline {paragraph}{The ablation this part could not run.}{119}{paragraph*.143}%
+\contentsline {paragraph}{The sample behind a prompt measurement is a batch, not a sweep.}{117}{paragraph*.141}%
+\contentsline {paragraph}{The model fixes a style per call.}{117}{paragraph*.142}%
+\contentsline {paragraph}{Switchable but not yet measured.}{119}{paragraph*.143}%
+\contentsline {paragraph}{The ablation this part could not run.}{119}{paragraph*.144}%
 \contentsline {section}{\numberline {11.4}Evaluation Tooling and Reproducibility}{119}{section.11.4}%
-\contentsline {paragraph}{Records are rebuilt from replies, not trusted.}{119}{paragraph*.144}%
-\contentsline {paragraph}{Every rate is reported with its denominator and its ceiling.}{120}{paragraph*.145}%
+\contentsline {paragraph}{Records are rebuilt from replies, not trusted.}{119}{paragraph*.145}%
+\contentsline {paragraph}{Every rate is reported with its denominator and its ceiling.}{120}{paragraph*.146}%
 \addvspace {1.5em}
 \contentsline {chapter}{\numberline {12}Conclusion and Future Work}{121}{chapter.12}%
 \contentsline {section}{\numberline {12.1}Project Timeline}{121}{section.12.1}%
@@ -244,14 +245,14 @@
 \contentsline {section}{\numberline {12.3}Limitations}{124}{section.12.3}%
 \contentsline {subsection}{\numberline {12.3.1}Part I: The Application}{124}{subsection.12.3.1}%
 \contentsline {subsection}{\numberline {12.3.2}Part II: The Reasoning Layer}{125}{subsection.12.3.2}%
-\contentsline {paragraph}{Model.}{125}{paragraph*.147}%
-\contentsline {paragraph}{Data.}{125}{paragraph*.148}%
-\contentsline {paragraph}{The blocks this part did not change.}{125}{paragraph*.149}%
-\contentsline {paragraph}{The refine round.}{125}{paragraph*.150}%
-\contentsline {paragraph}{Rarity versus mismatch cost.}{125}{paragraph*.151}%
-\contentsline {paragraph}{Output truncation.}{126}{paragraph*.152}%
-\contentsline {paragraph}{Single phrasing.}{126}{paragraph*.153}%
+\contentsline {paragraph}{Model.}{125}{paragraph*.148}%
+\contentsline {paragraph}{Data.}{125}{paragraph*.149}%
+\contentsline {paragraph}{The blocks this part did not change.}{125}{paragraph*.150}%
+\contentsline {paragraph}{The refine round.}{125}{paragraph*.151}%
+\contentsline {paragraph}{Rarity versus mismatch cost.}{125}{paragraph*.152}%
+\contentsline {paragraph}{Output truncation.}{126}{paragraph*.153}%
+\contentsline {paragraph}{Single phrasing.}{126}{paragraph*.154}%
 \contentsline {section}{\numberline {12.4}Future Work}{126}{section.12.4}%
 \contentsline {subsection}{\numberline {12.4.1}Part I: The Application}{126}{subsection.12.4.1}%
 \contentsline {subsection}{\numberline {12.4.2}Bringing the Two Parts Together}{127}{subsection.12.4.2}%
-\contentsline {chapter}{References}{128}{chapter*.154}%
+\contentsline {chapter}{References}{128}{chapter*.155}%

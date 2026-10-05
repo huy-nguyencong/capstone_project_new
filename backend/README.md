@@ -280,6 +280,18 @@ python tools/benchmark_sampling.py \
   ```bash
   python tools/rasa_equivalence_check.py --registry config/models.example.json     --artifact-root config --settings config/rasa_cuhk_pedes_runtime.json     --dataset-root ../wildtrack-dataset --queries ../files/wildtrack_evaluation_queries.json     --output var/benchmark/rasa-equivalence.json
   ```
+- `rasa_domain_sanity.py` chạy đúng adapter truy vấn của ứng dụng trên ảnh và caption CUHK-PEDES (bản
+  Hugging Face `MaulikMadhavi/CUHK-PEDES-processed`, tập train; tải shard vào
+  `var/datasets/cuhk_pedes_processed/data`, cần `pip install pyarrow`): text→image và image→image
+  theo identity, tùy chọn `--itm-queries` xếp hạng lại bằng đầu ITM như mã đánh giá gốc. Dùng để tách
+  lỗi cài đặt khỏi domain gap (task B1):
+
+  ```bash
+  python tools/rasa_domain_sanity.py --shards var/datasets/cuhk_pedes_processed/data \
+    --registry config/models.example.json --artifact-root config \
+    --settings config/rasa_cuhk_pedes_runtime.json --images 600 --itm-queries 40 \
+    --output var/evaluation/rasa-domain-sanity.json
+  ```
 - `rtsp_timestamp_check.py` đọc một luồng RTSP qua đúng `RtspFrameSource`, giả lập xử lý chậm bằng
   `--slow-ms` mỗi khung, và so khoảng cách giữa hai khung được lấy mẫu theo timestamp của khung
   (chế độ `stream`, mặc định) và theo đồng hồ máy (chế độ `clock`, hành vi cũ). Bằng chứng cho

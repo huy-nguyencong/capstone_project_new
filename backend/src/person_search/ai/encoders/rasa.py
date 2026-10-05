@@ -120,7 +120,10 @@ class RasaPreprocessor:
         if not isinstance(text, str) or not text.strip():
             raise ValueError("RaSa text preprocessing requires non-empty text.")
         if self._tokenizer is None:
-            from transformers import BertTokenizer
+            # RaSa trains and evaluates with its own copy of the BERT tokenizer, which writes
+            # "[CLS] X" without the closing [SEP]; the stock Transformers tokenizer appends [SEP],
+            # which the checkpoint never saw and which lowers text retrieval (B1, 5 Oct 2026).
+            from person_search.ai.encoders.rasa_vendor.tokenization_bert import BertTokenizer
 
             self._tokenizer = BertTokenizer(
                 vocab_file=str(self.vocab_path),

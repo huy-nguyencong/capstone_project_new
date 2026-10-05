@@ -102,7 +102,13 @@ def test_tokenizer_is_offline_uncased_padded_and_truncated() -> None:
 
     assert tuple(tokens.input_ids.shape) == (1, 50)
     assert tokens.input_ids[0, 0].item() == 101
-    assert tokens.input_ids[0, -1].item() == 102
+    # RaSa's tokenizer writes "[CLS] X" with no closing [SEP], as the checkpoint was trained.
+    assert 102 not in tokens.input_ids[0].tolist()
+    assert tokens.input_ids[0, -1].item() != 0
+    short = processor.text("A person wearing a blue jacket.")
+    assert short.input_ids[0, :2].tolist() == [101, 1037]
+    assert 102 not in short.input_ids[0].tolist()
+    assert int(short.attention_mask.sum()) == 8
     lower = processor.text("Person").input_ids[0, 1].item()
     upper = processor.text("PERSON").input_ids[0, 1].item()
     assert lower == upper

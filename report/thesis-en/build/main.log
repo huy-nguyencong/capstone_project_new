@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2026.5.25)  5 OCT 2026 15:58
+This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2026.5.25)  5 OCT 2026 17:18
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -1714,9 +1714,9 @@ LaTeX Font Info:    Calculating math sizes for size <13> on input line 9.
 ]) (sections/front/abstract.tex
 [4
 
-]) (sections/front/chapter-summary.tex [5
+] [5
 
-] [6] [7
+]) (sections/front/chapter-summary.tex [6] [7
 
 ] [8]) [9]
 (D:\uni-studies\semester-253\capstone_project_new\report\thesis-en\build\main.t
@@ -2002,8 +2002,8 @@ Underfull \hbox (badness 1776) in paragraph at lines 8--9
 Chapter 8.
 (sections/chapter8/8.1.tex [78
 
-] [79]) (sections/chapter8/8.2.tex [80])
-(sections/chapter8/8.3.tex [81] [82] [83] [84])) [85] [86] [87
+] [79]) (sections/chapter8/8.2.tex [80] [81])
+(sections/chapter8/8.3.tex [82] [83] [84] [85])) [86] [87
 
 ]
 (sections/research/chapter9.tex
@@ -2113,7 +2113,7 @@ Here is how much of TeX's memory you used:
  79357 multiletter control sequences out of 15000+600000
  642423 words of font info for 145 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
- 108i,15n,107p,1653b,5143s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 108i,15n,107p,1944b,5143s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
 Output written on D:\uni-studies\semester-253\capstone_project_new\report\thesi
-s-en\build\main.xdv (157 pages, 2459940 bytes).
+s-en\build\main.xdv (157 pages, 2490156 bytes).
